@@ -112,21 +112,18 @@ infixr 8 ^
 infixr 3 &&
 infixr 2 ||
 
-class CArith rate where
-  (&&) :: Expr rate -> Expr rate -> Expr rate
-  (||) :: Expr rate -> Expr rate -> Expr rate
-  (^)  :: Expr rate -> Expr rate -> Expr rate
 
-instance CArith IR where
-  (&&) a b = Expr $ BinOp "&&" (getExpr a) (getExpr b)
-  (||) a b = Expr $ BinOp "||" (getExpr a) (getExpr b)
-  (^)  a b = Expr $ BinOp "^"  (getExpr a) (getExpr b)
+(&&) :: IK_Rate rate
+     => Expr rate -> Expr rate -> Expr rate
+(&&) a b = Expr $ BinOp "&&" (getExpr a) (getExpr b)
 
-instance CArith KR where
-  (&&) a b = Expr $ BinOp "&&" (getExpr a) (getExpr b)
-  (||) a b = Expr $ BinOp "||" (getExpr a) (getExpr b)
-  (^)  a b = Expr $ BinOp "^"  (getExpr a) (getExpr b)
+(||) :: IK_Rate rate 
+     => Expr rate -> Expr rate -> Expr rate
+(||) a b = Expr $ BinOp "||" (getExpr a) (getExpr b)
 
+(^)  :: IK_Rate rate
+     => Expr rate -> Expr rate -> Expr rate
+(^)  a b = Expr $ BinOp "^"  (getExpr a) (getExpr b)
 
 
 infixl 7 %
@@ -137,30 +134,29 @@ infixl 7 %
 --------------------------------------------------------------------------------
 -- Math functions
 
-class CMath rate where
-  -- | I or K rate only.
-  int       :: Expr rate -> Expr rate
 
-  -- | I or K rate only.
-  frac      :: Expr rate -> Expr rate
+-- | I or K rate only.
+--
+int       :: IK_Rate rate => Expr rate -> Expr rate
+int       = Expr . Funcall "int" . getExpr
+  
 
-  -- | I or K rate only.
-  powoftwo  :: Expr rate -> Expr rate   
+-- | I or K rate only.
+--
+frac      :: IK_Rate rate => Expr rate -> Expr rate
+frac      = Expr . Funcall "frac" . getExpr
 
-  -- | I or K rate only.
-  logbtwo   :: Expr rate -> Expr rate
 
-instance CMath IR where
-  int       = Expr . Funcall "int" . getExpr
-  frac      = Expr . Funcall "frac" . getExpr
-  powoftwo  = Expr . Funcall "powoftwo" . getExpr
-  logbtwo   = Expr . Funcall "logbtwo" . getExpr
+-- | I or K rate only.
+--
+powoftwo  :: IK_Rate rate => Expr rate -> Expr rate   
+powoftwo  = Expr . Funcall "powoftwo" . getExpr
 
-instance CMath KR where
-  int       = Expr . Funcall "int" . getExpr
-  frac      = Expr . Funcall "frac" . getExpr
-  powoftwo  = Expr . Funcall "powoftwo" . getExpr
-  logbtwo   = Expr . Funcall "logbtwo" . getExpr
+-- | I or K rate only.
+--
+logbtwo   :: IK_Rate rate => Expr rate -> Expr rate
+logbtwo   = Expr . Funcall "logbtwo" . getExpr
+
 
 -- | This is @i@ in Csound.
 --
@@ -218,15 +214,11 @@ tanh = Expr . Funcall "tanh" . getExpr
 --------------------------------------------------------------------------------
 -- Amplitude functions
 
-class CAmp rate where
-  -- | I or K rate only.
-  dbamp     :: Expr rate -> Expr rate
+-- | I or K rate only.
+--
+dbamp     :: IK_Rate rate => Expr rate -> Expr rate
+dbamp     = Expr . Funcall "dbamp" . getExpr
 
-instance CAmp IR where
-  dbamp     = Expr . Funcall "dbamp" . getExpr
-
-instance CAmp KR where
-  dbamp     = Expr . Funcall "dbamp" . getExpr
 
 -- | 
 ampdb     :: Expr a -> Expr a
@@ -235,20 +227,16 @@ ampdb     = Expr . Funcall "ampdb" . getExpr
 --------------------------------------------------------------------------------
 -- Random functions
 
-class CRnd rate where
-  -- | I or K rate only.
-  rnd       :: Expr rate -> Expr rate
+-- | I or K rate only.
+--
+rnd       :: IK_Rate rate => Expr rate -> Expr rate
+rnd       = Expr . Funcall "rnd" . getExpr
  
-  -- | I or K rate only.
-  birnd     :: Expr rate -> Expr rate
+-- | I or K rate only.
+--
+birnd     :: IK_Rate rate => Expr rate -> Expr rate
+birnd     = Expr . Funcall "birnd" . getExpr
 
-instance CRnd IR where
-  rnd       = Expr . Funcall "rnd" . getExpr
-  birnd     = Expr . Funcall "birnd" . getExpr
-
-instance CRnd KR where
-  rnd       = Expr . Funcall "rnd" . getExpr
-  birnd     = Expr . Funcall "birnd" . getExpr
 
 --------------------------------------------------------------------------------
 -- Opcode equivalents of functions
@@ -279,36 +267,30 @@ maca = opcode "maca" . map getExpr
 --------------------------------------------------------------------------------
 -- Pitch conversion
 
-class CPitchConvert rate where
 
-  -- | Convert a pitch-class value to octave-point-decimal.
-  -- 
-  -- I or K rate only.
-  --
-  octpch :: Expr rate -> Expr rate
-
-  -- | I or K rate only.
-  cpspch :: Expr rate -> Expr rate
-
-  -- | I or K rate only.
-  pchoct :: Expr rate -> Expr rate
-
-  -- | I or K rate only.
-  octcps :: Expr rate -> Expr rate
+-- | Convert a pitch-class value to octave-point-decimal.
+-- 
+-- I or K rate only.
+--
+octpch :: IK_Rate rate => Expr rate -> Expr rate
+octpch = Expr . Funcall "octpch" . getExpr
 
 
+-- | I or K rate only.
+--
+cpspch :: IK_Rate rate => Expr rate -> Expr rate
+cpspch = Expr . Funcall "cpspch" . getExpr
 
-instance CPitchConvert IR where
-  octpch    = Expr . Funcall "octpch" . getExpr
-  cpspch    = Expr . Funcall "cpspch" . getExpr
-  pchoct    = Expr . Funcall "pchoct" . getExpr
-  octcps    = Expr . Funcall "octcps" . getExpr
+-- | I or K rate only.
+--
+pchoct :: IK_Rate rate => Expr rate -> Expr rate
+pchoct = Expr . Funcall "pchoct" . getExpr
 
-instance CPitchConvert KR where
-  octpch    = Expr . Funcall "octpch" . getExpr
-  cpspch    = Expr . Funcall "cpspch" . getExpr
-  pchoct    = Expr . Funcall "pchoct" . getExpr
-  octcps    = Expr . Funcall "octcps" . getExpr
+
+-- | I or K rate only.
+octcps :: IK_Rate rate => Expr rate -> Expr rate
+octcps = Expr . Funcall "octcps" . getExpr
+
 
 
 -- | No rate restriction.

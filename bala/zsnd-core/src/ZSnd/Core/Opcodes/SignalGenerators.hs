@@ -54,11 +54,17 @@ module ZSnd.Core.Opcodes.SignalGenerators
 
   -- * Basic oscillators
   , oscil
+  , oscil_
   , oscili
+  , oscili_
   , oscil3
+  , oscil3_
   , poscil
+  , poscil_
   , poscil3
+  , poscil3_
   , lfo
+  , lfo_
 
   -- * Dynamic spectrum oscillators
   , buzz
@@ -87,9 +93,23 @@ module ZSnd.Core.Opcodes.SignalGenerators
   , fmb3
   , fmpercfl
 
-  -- * Sample playback
+  -- * Sample playback - full spec versions todo
   , loscil
   , biloscil
+  , loscil3
+  , biloscil3
+  , lposcil
+  , lposcil3
+
+
+  -- * Random noise generators
+  , rand
+
+  , linrand
+  , trirand
+  , exprand
+
+  , unirand
 
   ) where
 
@@ -99,79 +119,56 @@ import ZSnd.Core.CsoundInst
 --------------------------------------------------------------------------------
 -- Linear and Exponential generators
 
-class CLinear rate where
-  line      :: Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
-  expon     :: Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
-  linseg    :: Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-                       -> InstBuilder (Expr rate)
-
-  linsegr   :: Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-                       -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  expseg    :: Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-                       -> InstBuilder (Expr rate)
-
-  expsegr   :: Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-                       -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
 
 
 
-instance CLinear KR where
-  line ia idur ib = opcode "line" [ getExpr ia, getExpr idur, getExpr ib ]
 
-  expon ia idur ib = opcode "expon" [ getExpr ia, getExpr idur, getExpr ib ]
+line :: KA_Rate rate
+     => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+line ia idur ib = opcode "line" [ getExpr ia, getExpr idur, getExpr ib ]
 
-  linseg ia idur ib xs = 
+
+expon :: KA_Rate rate
+      => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+expon ia idur ib = opcode "expon" [ getExpr ia, getExpr idur, getExpr ib ]
+
+
+linseg :: KA_Rate rate
+       => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
+       -> InstBuilder (Expr rate)
+linseg ia idur ib xs = 
     opcode "linseg" (getExpr ia : getExpr idur : getExpr ib : rest)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+  where
+    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
 
-  linsegr ia idur ib xs irel iz = 
+
+linsegr :: KA_Rate rate
+        => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
+        -> Expr IR -> Expr IR 
+        -> InstBuilder (Expr rate)
+linsegr ia idur ib xs irel iz = 
     opcode "linsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-        end  = [getExpr irel, getExpr iz]
+  where
+    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+    end  = [getExpr irel, getExpr iz]
 
-  expseg ia idur ib xs = 
+expseg :: KA_Rate rate 
+       => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
+       -> InstBuilder (Expr rate)
+expseg ia idur ib xs = 
     opcode "expseg" (getExpr ia : getExpr idur : getExpr ib : rest)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+  where
+    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
 
-  expsegr ia idur ib xs irel iz = 
+expsegr :: KA_Rate rate
+        => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
+        -> Expr IR -> Expr IR 
+        -> InstBuilder (Expr rate)
+expsegr ia idur ib xs irel iz = 
     opcode "linsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-        end  = [getExpr irel, getExpr iz]
-
-
-instance CLinear AR where
-  line ia idur ib = opcode "line" [ getExpr ia, getExpr idur, getExpr ib ]
-
-  expon ia idur ib = opcode "expon" [ getExpr ia, getExpr idur, getExpr ib ]
-
-  linseg ia idur ib xs = 
-    opcode "linseg" (getExpr ia : getExpr idur : getExpr ib : rest)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-
-  linsegr ia idur ib xs irel iz = 
-    opcode "linsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-        end  = [getExpr irel, getExpr iz]
-
-  expseg ia idur ib xs = 
-    opcode "expseg" (getExpr ia : getExpr idur : getExpr ib : rest)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-
-  expsegr ia idur ib xs irel iz = 
-    opcode "expsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
-      where
-        rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-        end  = [getExpr irel, getExpr iz]
+  where
+    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+    end  = [getExpr irel, getExpr iz]
 
 
 
@@ -184,86 +181,56 @@ expsega ia idur ib xs =
     rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
 
 
-class CAdsr rate where
-  adsr      :: Expr IR -> Expr IR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  adsr_     :: Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  madsr     :: Expr IR -> Expr IR -> Expr IR -> Expr IR
-                       -> InstBuilder (Expr rate)
-
-  madsr_    :: Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  xadsr     :: Expr IR -> Expr IR -> Expr IR -> Expr IR
-                       -> InstBuilder (Expr rate)
-
-  xadsr_    :: Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  mxadsr    :: Expr IR -> Expr IR -> Expr IR -> Expr IR
-                       -> InstBuilder (Expr rate)
-
-  mxadsr_   :: Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-instance CAdsr KR where
-  adsr ia idec isl ir = 
+adsr :: KA_Rate rate
+     => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+adsr ia idec isl ir = 
     opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
 
-  adsr_ ia idec isl ir idel = 
+
+adsr_ :: KA_Rate rate
+      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
+      -> InstBuilder (Expr rate)
+adsr_ ia idec isl ir idel = 
     opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl
                   , getExpr ir, getExpr idel ]
 
-  madsr ia idec isl ir = 
+
+madsr :: KA_Rate rate
+      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+madsr ia idec isl ir = 
     opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
 
-  madsr_ ia idec isl ir idel = 
+
+madsr_ :: KA_Rate rate
+       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
+       -> InstBuilder (Expr rate)
+madsr_ ia idec isl ir idel = 
     opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl
                    , getExpr ir, getExpr idel ]
 
-  xadsr ia idec isl ir = 
+
+xadsr :: KA_Rate rate
+      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+xadsr ia idec isl ir = 
     opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
 
-  xadsr_ ia idec isl ir idel = 
+
+xadsr_ :: KA_Rate rate
+       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
+       -> InstBuilder (Expr rate)
+xadsr_ ia idec isl ir idel = 
     opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl
                    , getExpr ir, getExpr idel ]
 
-  mxadsr ia idec isl ir = 
+mxadsr :: KA_Rate rate
+       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+mxadsr ia idec isl ir = 
     opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
 
-  mxadsr_ ia idec isl ir idel = 
-    opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl
-                    , getExpr ir, getExpr idel ]
-
-instance CAdsr AR where
-  adsr ia idec isl ir = 
-    opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
-
-  adsr_ ia idec isl ir idel = 
-    opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl
-                  , getExpr ir, getExpr idel ]
-
-  madsr ia idec isl ir = 
-    opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
-
-  madsr_ ia idec isl ir idel = 
-    opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl
-                   , getExpr ir, getExpr idel ]
-
-  xadsr ia idec isl ir = 
-    opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
-
-  xadsr_ ia idec isl ir idel = 
-    opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl
-                   , getExpr ir, getExpr idel ]
-
-  mxadsr ia idec isl ir = 
-    opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
-
-  mxadsr_ ia idec isl ir idel = 
+mxadsr_ :: KA_Rate rate
+        => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
+        -> InstBuilder (Expr rate)
+mxadsr_ ia idec isl ir idel = 
     opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl
                     , getExpr ir, getExpr idel ]
 
@@ -323,34 +290,29 @@ osciln kamp ifrq ifn itimes =
 --------------------------------------------------------------------------------
 -- Phasors
 
-class CPhasor rate where
-  phasor      :: Expr rate -> InstBuilder (Expr rate)
-  phasor_     :: Expr rate -> Expr IR -> InstBuilder (Expr rate)
-
-  phasorbnk   :: Expr rate -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
-  phasorbnk_  :: Expr rate -> Expr KR -> Expr IR -> Expr IR 
-                           -> InstBuilder (Expr rate)
- 
-instance CPhasor KR where
-  phasor cps = opcode "phasor" [getExpr cps]
-  phasor_ cps iphs = opcode "phasor" [getExpr cps, getExpr iphs]
-   
-  phasorbnk cps kindx icnt = 
-    opcode "phasorbnk" [ getExpr cps, getExpr kindx, getExpr icnt ]
-
-  phasorbnk_ cps kindx icnt iphs = 
-    opcode "phasorbnk" [ getExpr cps, getExpr kindx
-                       , getExpr icnt, getExpr iphs ]
+-- class CPhasor rate where
 
  
-instance CPhasor AR where
-  phasor cps = opcode "phasor" [getExpr cps]
-  phasor_ cps iphs = opcode "phasor" [getExpr cps, getExpr iphs]
+phasor :: KA_Rate rate
+       => Expr rate -> InstBuilder (Expr rate)
+phasor cps = opcode "phasor" [getExpr cps]
+
+
+phasor_ :: KA_Rate rate
+        => Expr rate -> Expr IR -> InstBuilder (Expr rate)
+phasor_ cps iphs = opcode "phasor" [getExpr cps, getExpr iphs]
    
-  phasorbnk cps kindx icnt = 
+
+phasorbnk :: KA_Rate rate
+          => Expr rate -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+phasorbnk cps kindx icnt = 
     opcode "phasorbnk" [ getExpr cps, getExpr kindx, getExpr icnt ]
 
-  phasorbnk_ cps kindx icnt iphs = 
+
+phasorbnk_  :: KA_Rate rate
+            => Expr rate -> Expr KR -> Expr IR -> Expr IR 
+            -> InstBuilder (Expr rate)
+phasorbnk_ cps kindx icnt iphs = 
     opcode "phasorbnk" [ getExpr cps, getExpr kindx
                        , getExpr icnt, getExpr iphs ]
 
@@ -358,105 +320,69 @@ instance CPhasor AR where
 --------------------------------------------------------------------------------
 -- Basic oscillators
 
-class COscil rate where
-  oscil     :: Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
 
-  oscil_    :: Expr rate -> Expr rate -> Expr IR -> Expr IR 
-                         -> InstBuilder (Expr rate)
-
-  oscili    :: Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
-  oscili_   :: Expr rate -> Expr rate -> Expr IR -> Expr IR 
-                         -> InstBuilder (Expr rate)
-
-  oscil3    :: Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
-  oscil3_   :: Expr rate -> Expr rate -> Expr IR -> Expr IR 
-                         -> InstBuilder (Expr rate)
-
-  poscil    :: Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
-  poscil_   :: Expr KR -> Expr KR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  poscil3   :: Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
-  poscil3_  :: Expr KR -> Expr KR -> Expr IR -> Expr IR 
-                       -> InstBuilder (Expr rate)
-
-  lfo       :: Expr KR -> Expr KR -> InstBuilder (Expr rate)
-  lfo_      :: Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
-
-instance COscil KR where
-  oscil amp cps ifn  = 
+oscil :: KA_Rate rate
+      => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+oscil amp cps ifn  = 
     opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn]
 
-  oscil_ amp cps ifn iphs = 
+oscil_ :: KA_Rate rate
+       => Expr rate -> Expr rate -> Expr IR -> Expr IR 
+       -> InstBuilder (Expr rate)
+oscil_ amp cps ifn iphs = 
     opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
 
-  oscili amp cps ifn = 
+oscili :: KA_Rate rate
+       => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+oscili amp cps ifn = 
     opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn]
 
-  oscili_ amp cps ifn iphs = 
+oscili_ :: KA_Rate rate
+        => Expr rate -> Expr rate -> Expr IR -> Expr IR 
+        -> InstBuilder (Expr rate)
+oscili_ amp cps ifn iphs = 
     opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
 
-  oscil3 amp cps ifn = 
+oscil3 :: KA_Rate rate
+       => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+oscil3 amp cps ifn = 
     opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn]
 
-  oscil3_ amp cps ifn iphs = 
+oscil3_ :: KA_Rate rate
+        => Expr rate -> Expr rate -> Expr IR -> Expr IR 
+        -> InstBuilder (Expr rate)
+oscil3_ amp cps ifn iphs = 
     opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
 
-  poscil amp cps ift = 
+poscil :: KA_Rate rate
+       => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+poscil amp cps ift = 
     opcode "poscil" [getExpr amp, getExpr cps, getExpr ift]
 
-  poscil_ amp cps ift iphs = 
+poscil_ :: KA_Rate rate
+        => Expr KR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+poscil_ amp cps ift iphs = 
     opcode "poscil" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
 
-  poscil3 amp cps ift = 
+poscil3 :: KA_Rate rate 
+        => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+poscil3 amp cps ift = 
     opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift]
 
-  poscil3_ amp cps ift iphs = 
+poscil3_  :: KA_Rate rate
+          => Expr KR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+poscil3_ amp cps ift iphs = 
     opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
 
-  lfo amp cps = 
-    opcode "lfo" [getExpr amp, getExpr cps]
-
-  lfo_ amp cps itype = 
-    opcode "lfo" [getExpr amp, getExpr cps, getExpr itype]
+lfo :: KA_Rate rate 
+    => Expr KR -> Expr KR -> InstBuilder (Expr rate)
+lfo amp cps = opcode "lfo" [getExpr amp, getExpr cps]
 
 
-instance COscil AR where
-  oscil amp cps ifn = 
-    opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn]
+lfo_ :: KA_Rate rate
+     => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+lfo_ amp cps itype = opcode "lfo" [getExpr amp, getExpr cps, getExpr itype]
 
-  oscil_ amp cps ifn iphs = 
-    opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
-
-  oscili amp cps ifn = 
-    opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn]
-
-  oscili_ amp cps ifn iphs = 
-    opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
-
-  oscil3 amp cps ifn = 
-    opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn]
-
-  oscil3_ amp cps ifn iphs = 
-    opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
-
-  poscil amp cps ift = 
-    opcode "poscil" [getExpr amp, getExpr cps, getExpr ift]
-
-  poscil_ amp cps ift iphs = 
-    opcode "poscil" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
-
-  poscil3 amp cps ift = 
-    opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift]
-
-  poscil3_ amp cps ift iphs = 
-    opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
-
-  lfo amp cps = 
-    opcode "lfo" [getExpr amp, getExpr cps]
-
-  lfo_ amp cps itype = 
-    opcode "lfo" [getExpr amp, getExpr cps, getExpr itype]
 
 
 --------------------------------------------------------------------------------
@@ -642,14 +568,79 @@ fmpercfl kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn =
 -- the mandatory args...
 
 
-
-loscil :: Expr a -> Expr KR -> Expr IR -> Expr IR 
+-- | Note - use 1 for ibase and kcps if the frequency is not known.
+--
+loscil :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
        -> InstBuilder (Expr AR)
-loscil xamp kcps ifn ibase = 
-    opcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn, getExpr ibase]
+loscil xamp kcps ifn ibase imod1 = 
+    opcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
+                    , getExpr ibase, getExpr imod1 ]
 
 
-biloscil :: Expr a -> Expr KR -> Expr IR -> Expr IR 
+-- | Stereo version of 'loscil'.
+-- 
+--Note - use 1 for ibase and kcps if the frequency is not known.
+--
+biloscil :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
        -> InstBuilder (Expr AR, Expr AR)
-biloscil xamp kcps ifn ibase = 
-    biopcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn, getExpr ibase]
+biloscil xamp kcps ifn ibase imod1 = 
+    biopcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
+                      , getExpr ibase, getExpr imod1 ]
+
+-- | Note - use 1 for ibase and kcps if the frequency is not known.
+--
+loscil3 :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
+       -> InstBuilder (Expr AR)
+loscil3 xamp kcps ifn ibase imod1 = 
+    opcode "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
+                     , getExpr ibase, getExpr imod1 ]
+
+
+-- | Stereo version of 'loscil3'.
+-- 
+--Note - use 1 for ibase and kcps if the frequency is not known.
+--
+biloscil3 :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
+          -> InstBuilder (Expr AR, Expr AR)
+biloscil3 xamp kcps ifn ibase imod1 = 
+    biopcode "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
+                       , getExpr ibase, getExpr $ imod1 ]
+
+
+lposcil :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
+        -> InstBuilder (Expr AR)
+lposcil kamp kfreqrat kloop kend ift = 
+    opcode "lposcil" [ getExpr kamp, getExpr kfreqrat, getExpr kloop
+                     , getExpr kend, getExpr ift ]
+
+lposcil3 :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
+         -> InstBuilder (Expr AR)
+lposcil3 kamp kfreqrat kloop kend ift = 
+    opcode "lposcil3" [ getExpr kamp, getExpr kfreqrat, getExpr kloop
+                      , getExpr kend, getExpr ift ]
+
+
+
+
+--------------------------------------------------------------------------------
+
+rand :: KA_Rate rate 
+     => Expr rate -> InstBuilder (Expr rate)
+rand amp = opcode "rand" [getExpr amp]
+
+linrand :: Opcode rate 
+        => Expr KR -> InstBuilder (Expr rate)
+linrand krange = opcode "linrand" [getExpr krange]
+
+trirand :: Opcode rate 
+        => Expr KR -> InstBuilder (Expr rate)
+trirand krange = opcode "trirand" [getExpr krange]
+
+exprand :: Opcode rate 
+        => Expr KR -> InstBuilder (Expr rate)
+exprand krange = opcode "exprand" [getExpr krange]
+
+
+unirand :: Opcode rate 
+        => Expr KR -> InstBuilder (Expr rate)
+unirand krange = opcode "unirand" [getExpr krange]

@@ -38,6 +38,9 @@ module ZSnd.Core.CsoundInst
   , var
   , opcode
   , biopcode
+
+  , KA_Rate     -- opaque typeclass
+  , IK_Rate     -- opaque typeclass
   , ivar
   , kvar
   , avar
@@ -270,6 +273,21 @@ instance Opcode AR where
                      freshAVar >>= \v2 -> 
                      tellStmt (Opcode [v1, v2] opcd es) >>
                      return (Expr $ VarE v1, Expr $ VarE v2)
+
+
+
+class Opcode rate => KA_Rate rate 
+
+instance KA_Rate KR
+
+instance KA_Rate AR
+
+
+class Opcode rate => IK_Rate rate 
+
+instance IK_Rate IR
+
+instance IK_Rate KR
 
 
 -- Explicitly typed versions
