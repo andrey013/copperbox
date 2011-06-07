@@ -34,13 +34,13 @@ module ZSnd.Core.CsoundInst
 
   , runInstBuilder
 
+  , Opcode
+  , var
   , opcode
+  , biopcode
   , ivar
-  , iopcode
   , kvar
-  , kopcode
   , avar
-  , aopcode
 
   , pfield
   , out
@@ -113,21 +113,31 @@ data CsValue = CsInt Int
              | CsDouble Double
   deriving (Eq,Ord,Show)
 
-data Stmt = Vardef  SVar DExpr
-          | Opcode  SVar String [DExpr]
-          | Outs    [DExpr]
-  deriving (Eq,Ord,Show)
 
-
--- | Synthesized variable
+-- | Note with this formulation all arities of opcode result -
+-- mono, stereo (quad?) - need to be enumerated /ahead of time/.
 --
-data SVar = SVar RateVar Int
+-- Csound itself just has an implicit list.
+--
+data Stmt = Vardef      TagVar DExpr
+          | Opcode      [TagVar] String [DExpr]
+          | Outs        [DExpr]
   deriving (Eq,Ord,Show)
 
+
+-- | Type tagged variable
+-- 
+-- The type is tagged in the constructor (not at the type level)
+-- this is to allow DExpr to account for all types.
+--
+data TagVar = TagVar RateVar Int
+  deriving (Eq,Ord,Show)
+
+-- newtype Var rate = Var { getVar :: TagVar }
 
 -- | Dynamically typed expr
 -- 
-data DExpr = Var     SVar
+data DExpr = VarE    TagVar
            | PField  Int
            | Const   CsValue
            | ZeroOp  String
@@ -195,49 +205,83 @@ runInstBuilder n ma = post $ getBuild ma (IntSupply 1 1 1)
 tellStmt :: Stmt -> InstBuilder ()
 tellStmt e = Build $ \s -> ((), wrapH e, s)
 
-freshIVar :: InstBuilder SVar
-freshIVar = Build $ \s -> 
-    let n = i_int s in (SVar I n, emptyH, s { i_int = n + 1 })
-
-freshKVar :: InstBuilder SVar
-freshKVar = Build $ \s -> 
-    let n = k_int s in (SVar K n, emptyH, s { k_int = n + 1 })
-
-freshAVar :: InstBuilder SVar
-freshAVar = Build $ \s -> 
-    let n = a_int s in (SVar A n, emptyH, s { a_int = n + 1 })
 
 
-mkVar :: SVar -> DExpr -> InstBuilder DExpr
-mkVar v expr = tellStmt (Vardef v expr) >> return (Var v)
+freshIVar :: InstBuilder TagVar
+freshIVar = Build $ \s -> let n = i_int s 
+                          in (TagVar I n, emptyH, s { i_int = n + 1 })
+
+freshKVar :: InstBuilder TagVar 
+freshKVar = Build $ \s -> let n = k_int s 
+                          in (TagVar K n, emptyH, s { k_int = n + 1 })
+
+freshAVar :: InstBuilder TagVar
+freshAVar = Build $ \s -> let n = a_int s 
+                          in (TagVar A n, emptyH, s { a_int = n + 1 })
 
 
--- | Note some opcodes return pairs...
---
-mkOpcode :: SVar -> String -> [DExpr] -> InstBuilder DExpr
-mkOpcode v opcd es = tellStmt (Opcode v opcd es) >> return (Var v)
 
 
-opcode :: String -> [DExpr] -> InstBuilder (Expr a)
-opcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
+class Opcode rate where
+  var      :: DExpr -> InstBuilder (Expr rate)
+  opcode   :: String -> [DExpr] -> InstBuilder (Expr rate)
+  biopcode :: String -> [DExpr] -> InstBuilder (Expr rate, Expr rate)
 
+instance Opcode IR where
+  var expr       = freshIVar >>= \v -> 
+                   tellStmt (Vardef v expr) >> 
+                   return (Expr $ VarE v)
+
+  opcode opcd es = freshIVar >>= \v -> 
+                   tellStmt (Opcode [v] opcd es) >>
+                   return (Expr $ VarE v)
+
+  biopcode opcd es = freshIVar >>= \v1 -> 
+                     freshIVar >>= \v2 -> 
+                     tellStmt (Opcode [v1, v2] opcd es) >>
+                     return (Expr $ VarE v1, Expr $ VarE v2)
+
+
+instance Opcode KR where
+  var expr       = freshKVar >>= \v -> 
+                   tellStmt (Vardef v expr) >> 
+                   return (Expr $ VarE v)
+
+  opcode opcd es = freshKVar >>= \v -> 
+                   tellStmt (Opcode [v] opcd es) >>
+                   return (Expr $ VarE v)
+
+  biopcode opcd es = freshKVar >>= \v1 -> 
+                     freshKVar >>= \v2 -> 
+                     tellStmt (Opcode [v1, v2] opcd es) >>
+                     return (Expr $ VarE v1, Expr $ VarE v2)
+
+instance Opcode AR where
+  var expr       = freshAVar >>= \v -> 
+                   tellStmt (Vardef v expr) >> 
+                   return (Expr $ VarE v)
+
+  opcode opcd es = freshAVar >>= \v -> 
+                   tellStmt (Opcode [v] opcd es) >>
+                   return (Expr $ VarE v)
+
+
+  biopcode opcd es = freshAVar >>= \v1 -> 
+                     freshAVar >>= \v2 -> 
+                     tellStmt (Opcode [v1, v2] opcd es) >>
+                     return (Expr $ VarE v1, Expr $ VarE v2)
+
+
+-- Explicitly typed versions
+                   
 ivar :: DExpr -> InstBuilder (Expr IR)
-ivar expr = freshIVar >>= \v -> fmap Expr $ mkVar v expr
-
-iopcode :: String -> [DExpr] -> InstBuilder (Expr IR)
-iopcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
+ivar = var
 
 kvar :: DExpr -> InstBuilder (Expr KR)
-kvar expr = freshKVar >>= \v -> fmap Expr $ mkVar v expr
-
-kopcode :: String -> [DExpr] -> InstBuilder (Expr KR)
-kopcode opcd es = freshKVar >>= \v -> fmap Expr $ mkOpcode v opcd es
+kvar = var
 
 avar :: DExpr -> InstBuilder (Expr AR)
-avar expr = freshAVar >>= \v -> fmap Expr $ mkVar v expr
-
-aopcode :: String -> [DExpr] -> InstBuilder (Expr AR)
-aopcode opcd es = freshAVar >>= \v -> fmap Expr $ mkOpcode v opcd es
+avar = var
 
 
 -- | Declare a p-field.
@@ -283,13 +327,16 @@ instance Format Inst where
 
 
 instance Format Stmt where
-  format (Vardef var val)    = 
-    indent 8 (padr 11 $ format var) <+> char '=' <+> format val
+  format (Vardef v1 val)    = 
+    indent 8 (padr 11 $ format v1) <+> char '=' <+> format val
 
-  format (Opcode var name xs) = 
-    padr 7 (format var) <+> padr 11 (text name) 
-                        <+> punctuate (text ", ") (map format xs)
-  
+  format (Opcode vs name xs) = 
+    padr 7 (dlist $ map format vs) <+> padr 11 (text name) 
+                                   <+> dlist (map format xs)
+      where
+        dlist = punctuate (text ", ")
+
+
   format (Outs [x])           = 
     indent 8 (padr 11 (text "out") <+> format x)
   
@@ -300,7 +347,7 @@ instance Format (Expr a) where
   format = format . getExpr
 
 instance Format DExpr where
-  format (Var s)        = format s
+  format (VarE s)       = format s
   format (PField i)     = char 'p' <> int i 
   format (Const val)    = format val
   format (ZeroOp ss)    = text ss
@@ -308,8 +355,8 @@ instance Format DExpr where
   format (BinOp ss a b) = format a <> text ss <> format b
   format (Funcall ss a) = text ss <> parens (format a)
 
-instance Format SVar where
-  format (SVar rv i) = format rv <> int i
+instance Format TagVar where
+  format (TagVar rv i) = format rv <> int i
 
 
 instance Format CsValue where

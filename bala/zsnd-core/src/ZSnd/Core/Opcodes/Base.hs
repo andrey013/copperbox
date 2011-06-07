@@ -10,26 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Csound opcodes.
--- 
--- Unlike Haskell, Csound allows optional arguments in opcode 
--- signatures. ZSnd models this by defining two versions of 
--- such opcodes:
--- 
--- a) The short version with no optional args uses the regular 
--- Csound name.
--- 
--- b) The fully specified version, which includes all optional
--- args, suffixes the Csound name with an underscore.
---
--- Note, there are many name clashes with Prelude. 
---
--- Also note, some opcodes are actually class methods to support 
--- rate overloading. However, whilst the class methods are 
--- exported, the class isn'\t. This is because the set of 
--- instances is finite - one or more of @IRate@, @KRate@ or
--- @ARate@.
--- 
+-- Basic opcodes and function.
 --
 --------------------------------------------------------------------------------
 
@@ -116,7 +97,8 @@ init (Expr a) = Expr a
 tival :: Expr IR
 tival = Expr $ ZeroOp "tival"
 
-divz :: Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr a)
+divz :: Opcode rate
+     => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
 divz ia ib isubst = 
     opcode "divz" [ getExpr ia, getExpr ib, getExpr isubst ]
 
@@ -272,25 +254,27 @@ instance CRnd KR where
 -- Opcode equivalents of functions
 
 sum :: [Expr AR] -> InstBuilder (Expr AR)
-sum = aopcode "sum" . map getExpr
+sum = opcode "sum" . map getExpr
 
 product :: [Expr AR] -> InstBuilder (Expr AR)
-product = aopcode "product" . map getExpr
+product = opcode "product" . map getExpr
 
-pow :: Expr a -> Expr a -> InstBuilder (Expr a)
+pow :: Opcode rate
+    => Expr rate -> Expr rate -> InstBuilder (Expr rate)
 pow a b = opcode "pow" [ getExpr a, getExpr b ]
 
 
-taninv2 :: Expr a -> Expr a -> InstBuilder (Expr a)
+taninv2 :: Opcode rate
+        => Expr rate -> Expr rate -> InstBuilder (Expr rate)
 taninv2 a b = opcode "taninv2" [ getExpr a, getExpr b ]
 
 mac :: [(Expr AR, Expr KR)] -> InstBuilder (Expr AR)
-mac = aopcode "mac" . concatMap fn
+mac = opcode "mac" . concatMap fn
   where
     fn (a,b) = [ getExpr a, getExpr b ]
 
 maca :: [Expr AR] -> InstBuilder (Expr AR)
-maca = aopcode "maca" . map getExpr
+maca = opcode "maca" . map getExpr
 
 --------------------------------------------------------------------------------
 -- Pitch conversion
@@ -337,11 +321,11 @@ cpsoct    = Expr . Funcall "cpsoct" . getExpr
 
 cps2pch :: Expr IR -> Expr IR -> InstBuilder (Expr IR)
 cps2pch ipch ieq = 
-    iopcode "cps2pch" [ getExpr ipch, getExpr ieq ]
+    opcode "cps2pch" [ getExpr ipch, getExpr ieq ]
 
 
 cpsxpch :: Expr IR -> Expr IR -> Expr IR -> Expr IR 
         -> InstBuilder (Expr IR)
 cpsxpch ipch ieq irep ibase = 
-    iopcode "cps2pch" [ getExpr ipch, getExpr ieq, getExpr irep, getExpr ibase ]
+    opcode "cps2pch" [ getExpr ipch, getExpr ieq, getExpr irep, getExpr ibase ]
 
