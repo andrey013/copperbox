@@ -33,6 +33,8 @@ library
     ZSnd.Core.CsoundScore,
     ZSnd.Core.GenRoutines,
     ZSnd.Core.Opcodes,
+    ZSnd.Core.Opcodes.Base,
+    ZSnd.Core.Opcodes.SignalGenerators,
     ZSnd.Core.OutputCsound
 
   other-modules:

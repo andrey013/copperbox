@@ -28,9 +28,9 @@ module ZSnd.Core.CsoundInst
   , Expr(..)
   , DExpr(..)
 
-  , IRate
-  , KRate
-  , ARate
+  , IR
+  , KR
+  , AR
 
   , runInstBuilder
 
@@ -141,9 +141,9 @@ newtype Expr rate = Expr { getExpr :: DExpr }
   deriving (Eq,Ord,Show)
 
 
-data IRate
-data KRate
-data ARate
+data IR
+data KR
+data AR
 
 -- | CSB page22.
 --
@@ -221,22 +221,22 @@ mkOpcode v opcd es = tellStmt (Opcode v opcd es) >> return (Var v)
 opcode :: String -> [DExpr] -> InstBuilder (Expr a)
 opcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
-ivar :: Expr IRate -> InstBuilder (Expr IRate)
-ivar expr = freshIVar >>= \v -> fmap Expr $ mkVar v (getExpr expr)
+ivar :: DExpr -> InstBuilder (Expr IR)
+ivar expr = freshIVar >>= \v -> fmap Expr $ mkVar v expr
 
-iopcode :: String -> [DExpr] -> InstBuilder (Expr IRate)
+iopcode :: String -> [DExpr] -> InstBuilder (Expr IR)
 iopcode opcd es = freshIVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
-kvar :: DExpr -> InstBuilder (Expr KRate)
+kvar :: DExpr -> InstBuilder (Expr KR)
 kvar expr = freshKVar >>= \v -> fmap Expr $ mkVar v expr
 
-kopcode :: String -> [DExpr] -> InstBuilder (Expr KRate)
+kopcode :: String -> [DExpr] -> InstBuilder (Expr KR)
 kopcode opcd es = freshKVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
-avar :: DExpr -> InstBuilder (Expr ARate)
+avar :: DExpr -> InstBuilder (Expr AR)
 avar expr = freshAVar >>= \v -> fmap Expr $ mkVar v expr
 
-aopcode :: String -> [DExpr] -> InstBuilder (Expr ARate)
+aopcode :: String -> [DExpr] -> InstBuilder (Expr AR)
 aopcode opcd es = freshAVar >>= \v -> fmap Expr $ mkOpcode v opcd es
 
 
@@ -246,10 +246,10 @@ pfield    :: Int -> Expr a
 pfield i  = Expr $ PField i
 
 
-out :: Expr ARate -> InstBuilder ()
+out :: Expr AR -> InstBuilder ()
 out e = tellStmt $ Outs [getExpr e]
 
-outs :: [Expr ARate] -> InstBuilder ()
+outs :: [Expr AR] -> InstBuilder ()
 outs = tellStmt . Outs . map getExpr
 
 
