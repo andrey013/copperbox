@@ -21,7 +21,8 @@ module ZSnd.Core.CsoundInst
     Orch(..)
   , OrchHeader(..)
   , Inst
-  , default_orch_header
+  , default_mono_header
+  , default_stereo_header
 
   , InstBuilder
   , Stmt
@@ -32,16 +33,26 @@ module ZSnd.Core.CsoundInst
   , KR
   , AR
 
+  , Ir
+  , Kr
+  , Ar
+
   , runInstBuilder
 
   , Opcode
   , var
   , opcode
   , opcode2
+  , opcode4
   , opcode0
 
   , KA_Rate     -- opaque typeclass
   , IK_Rate     -- opaque typeclass
+
+  , castIR
+  , castKR
+  , castAR
+
   , ivar
   , kvar
   , avar
@@ -87,13 +98,23 @@ data OrchHeader = OrchHeader
   deriving (Eq,Ord,Show)
 
       
-default_orch_header :: OrchHeader 
-default_orch_header =  
+default_mono_header :: OrchHeader 
+default_mono_header =  
     OrchHeader { zero_dbfs                = 32767
                , kr_ctrl_rate             = 4410
                , sr_aud_sample_rate       = 44100
                , ksmps_ctrl_period_samps  = 32
                , nchnls_num_chans         = 1
+               , seed_gbl_random          = Nothing
+               }
+
+default_stereo_header :: OrchHeader 
+default_stereo_header =  
+    OrchHeader { zero_dbfs                = 32767
+               , kr_ctrl_rate             = 4410
+               , sr_aud_sample_rate       = 44100
+               , ksmps_ctrl_period_samps  = 32
+               , nchnls_num_chans         = 2
                , seed_gbl_random          = Nothing
                }
 
@@ -142,6 +163,7 @@ data TagVar = TagVar RateVar Int
 -- | Dynamically typed expr
 -- 
 data DExpr = VarE    TagVar
+           | ParenE  DExpr
            | PField  Int
            | Const   CsValue
            | ZeroOp  String
@@ -158,6 +180,13 @@ newtype Expr rate = Expr { getExpr :: DExpr }
 data IR
 data KR
 data AR
+
+-- | Synonyms - useful for asserting types in do-notation.
+type Ir = Expr IR
+type Kr = Expr KR
+type Ar = Expr AR
+
+
 
 -- | CSB page22.
 --
@@ -227,9 +256,11 @@ freshAVar = Build $ \s -> let n = a_int s
 
 
 class Opcode rate where
-  var      :: DExpr -> InstBuilder (Expr rate)
-  opcode   :: String -> [DExpr] -> InstBuilder (Expr rate)
+  var     :: DExpr -> InstBuilder (Expr rate)
+  opcode  :: String -> [DExpr] -> InstBuilder (Expr rate)
   opcode2 :: String -> [DExpr] -> InstBuilder (Expr rate, Expr rate)
+  opcode4 :: String -> [DExpr] 
+                    -> InstBuilder (Expr rate, Expr rate, Expr rate, Expr rate)
 
 opcode0  :: String -> [DExpr] -> InstBuilder ()
 opcode0 opcd es = tellStmt (Opcode [] opcd es) >> return ()
@@ -250,6 +281,14 @@ instance Opcode IR where
                     tellStmt (Opcode [v1, v2] opcd es) >>
                     return (Expr $ VarE v1, Expr $ VarE v2)
 
+  opcode4 opcd es = freshIVar >>= \v1 -> 
+                    freshIVar >>= \v2 -> 
+                    freshIVar >>= \v3 ->
+                    freshIVar >>= \v4 ->
+                    tellStmt (Opcode [v1, v2, v3, v4] opcd es) >>
+                    return ( Expr $ VarE v1, Expr $ VarE v2
+                           , Expr $ VarE v3, Expr $ VarE v4 )
+
 
 instance Opcode KR where
   var expr       = freshKVar >>= \v -> 
@@ -265,6 +304,15 @@ instance Opcode KR where
                     tellStmt (Opcode [v1, v2] opcd es) >>
                     return (Expr $ VarE v1, Expr $ VarE v2)
 
+  opcode4 opcd es = freshKVar >>= \v1 -> 
+                    freshKVar >>= \v2 -> 
+                    freshKVar >>= \v3 ->
+                    freshKVar >>= \v4 ->
+                    tellStmt (Opcode [v1, v2, v3, v4] opcd es) >>
+                    return ( Expr $ VarE v1, Expr $ VarE v2
+                           , Expr $ VarE v3, Expr $ VarE v4 )
+
+
 instance Opcode AR where
   var expr       = freshAVar >>= \v -> 
                    tellStmt (Vardef v expr) >> 
@@ -279,6 +327,14 @@ instance Opcode AR where
                     freshAVar >>= \v2 -> 
                     tellStmt (Opcode [v1, v2] opcd es) >>
                     return (Expr $ VarE v1, Expr $ VarE v2)
+
+  opcode4 opcd es = freshAVar >>= \v1 -> 
+                    freshAVar >>= \v2 -> 
+                    freshAVar >>= \v3 ->
+                    freshAVar >>= \v4 ->
+                    tellStmt (Opcode [v1, v2, v3, v4] opcd es) >>
+                    return ( Expr $ VarE v1, Expr $ VarE v2
+                           , Expr $ VarE v3, Expr $ VarE v4 )
 
 
 
@@ -296,16 +352,32 @@ instance IK_Rate IR
 instance IK_Rate KR
 
 
+-- | Dynamic typecast - no residual Csound code is generated.
+--
+castIR :: Expr rate -> Expr IR
+castIR = Expr . getExpr
+
+-- | Dynamic typecast - no residual Csound code is generated.
+--
+castKR :: Expr rate -> Expr KR
+castKR = Expr . getExpr
+
+-- | Dynamic typecast - no residual Csound code is generated.
+--
+castAR :: Expr rate -> Expr AR
+castAR = Expr . getExpr
+
+
 -- Explicitly typed versions
                    
-ivar :: DExpr -> InstBuilder (Expr IR)
-ivar = var
+ivar :: Expr IR -> InstBuilder (Expr IR)
+ivar = var . getExpr
 
-kvar :: DExpr -> InstBuilder (Expr KR)
-kvar = var
+kvar :: Expr KR -> InstBuilder (Expr KR)
+kvar = var . getExpr
 
-avar :: DExpr -> InstBuilder (Expr AR)
-avar = var
+avar :: Expr AR -> InstBuilder (Expr AR)
+avar = var . getExpr
 
 
 -- | Declare a p-field.
@@ -352,7 +424,7 @@ instance Format Inst where
 
 instance Format Stmt where
   format (Vardef v1 val)    = 
-    indent 8 (padr 11 $ format v1) <+> char '=' <+> format val
+    padr 7 (format v1) <+> char '=' <+> format val
 
   format (Opcode vs name xs) = 
     padr 7 (dlist $ map format vs) <+> padr 11 (text name) 
@@ -372,6 +444,7 @@ instance Format (Expr a) where
 
 instance Format DExpr where
   format (VarE s)       = format s
+  format (ParenE e)     = parens $ format e
   format (PField i)     = char 'p' <> int i 
   format (Const val)    = format val
   format (ZeroOp ss)    = text ss

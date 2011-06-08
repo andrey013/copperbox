@@ -233,7 +233,8 @@ char = Doc1 . showChar
 -- > int  = text . show
 --
 int :: Int -> Doc
-int  = Doc1 . showInt
+int i | i < 0  = Doc1 $ ('-':) . showInt (abs i)
+int i          = Doc1 $ showInt i 
 
 -- | Show the Integer as a Doc.
 --
@@ -276,7 +277,8 @@ truncateDouble d | abs d < 0.0001  = "0"
     tx :: Double
     tx = (realToFrac (roundi (d*1000000.0))) / 1000000.0
 
-    fn v = let (a,b) = properFractioni v in if b == 0.0 then show a else show v
+    fn v = let (a,b) = properFractioni v 
+           in if b == 0.0 then show a else ($ "") $ showFFloat Nothing v
 
 roundi :: RealFrac a => a -> Integer
 roundi = round

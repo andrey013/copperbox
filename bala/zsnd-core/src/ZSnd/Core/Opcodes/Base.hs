@@ -17,8 +17,11 @@
 module ZSnd.Core.Opcodes.Base
   (
 
+  -- * Manual parenthesis
+    parens
+
   -- * Variable initialization
-    init
+  , init
   , tival
   , divz
 
@@ -90,6 +93,10 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
                       , sum, product 
                       )
 
+-- | parenthesize an expression.
+--
+parens :: Expr a -> Expr a
+parens (Expr a) = Expr (ParenE a)
 
 init :: Expr IR -> Expr a
 init (Expr a) = Expr a

@@ -67,6 +67,28 @@ module ZSnd.Core.Opcodes.SignalModifiers
   , delayw
   , delay
   , delay1
+  , deltap
+  , deltapi
+  , deltapn
+  , deltap3
+  , multitap
+  , vdelay
+  , vdelay3
+
+  -- * Reverbaration
+  , reverb
+  , reverb2
+  , nreverb
+  , comb
+  , alpass
+  , nestedap
+  
+
+  -- * Panning ans spatialization
+  , pan
+  , pan2
+  , locsig
+  , locsig2
 
   ) where
 
@@ -254,13 +276,120 @@ limit sig low high =
 -- Delay
 
 delayr :: Expr IR -> InstBuilder (Expr AR)
-delayr idlt = opcode "delayr" [ getExpr idlt ]
+delayr idlt = 
+    opcode "delayr" [ getExpr idlt ]
 
 delayw :: Expr AR -> InstBuilder ()
-delayw asigar = opcode0 "delayw" [ getExpr asigar ]
+delayw asigar = 
+    opcode0 "delayw" [ getExpr asigar ]
 
 delay :: Expr AR -> Expr IR -> InstBuilder ()
-delay asig idlt = opcode0 "delay" [ getExpr asig, getExpr idlt ]
+delay asig idlt = 
+    opcode0 "delay" [ getExpr asig, getExpr idlt ]
 
 delay1 :: Expr AR -> InstBuilder (Expr AR)
-delay1 asig = opcode "delay" [ getExpr asig ]
+delay1 asig = 
+    opcode "delay1" [ getExpr asig ]
+
+
+deltap :: Expr KR -> InstBuilder (Expr AR)
+deltap kdlt = 
+    opcode "deltap" [ getExpr kdlt ]
+
+-- | xdlt is seconds...
+--
+deltapi :: Expr a -> InstBuilder (Expr AR)
+deltapi xdlt = 
+    opcode "deltapi" [ getExpr xdlt ]
+
+-- | xnumsamps is presumably an integer...
+--
+deltapn :: Expr a -> InstBuilder (Expr AR)
+deltapn xnumsamps = 
+    opcode "deltapn" [ getExpr xnumsamps ]
+
+
+-- | xdlt is seconds...
+--
+deltap3 :: Expr a -> InstBuilder (Expr AR)
+deltap3 xdlt = 
+    opcode "deltap3" [ getExpr xdlt ]
+
+
+multitap :: Expr AR -> [(Expr IR, Expr IR)] -> InstBuilder (Expr AR)
+multitap asig xs = 
+    opcode "multitap" (getExpr asig : concatMap fn xs)
+  where
+    fn (a,b) = [ getExpr a, getExpr b ]
+
+
+vdelay :: Expr AR -> Expr AR -> Expr IR -> InstBuilder (Expr AR)
+vdelay asig adel imaxdel = 
+    opcode "vdelay" [ getExpr asig, getExpr adel, getExpr imaxdel ]
+
+vdelay3 :: Expr AR -> Expr AR -> Expr IR -> InstBuilder (Expr AR)
+vdelay3 asig adel imaxdel = 
+    opcode "vdelay3" [ getExpr asig, getExpr adel, getExpr imaxdel ]
+
+--------------------------------------------------------------------------------
+-- Reverberation
+
+reverb :: Expr AR -> Expr KR -> InstBuilder (Expr AR)
+reverb asig kvrt = 
+    opcode "reverb" [ getExpr asig, getExpr kvrt ]
+
+reverb2 :: Expr AR -> Expr KR -> Expr KR -> InstBuilder (Expr AR)
+reverb2 asig ktime khdif = 
+    opcode "reverb2" [ getExpr asig, getExpr ktime, getExpr khdif ]
+
+nreverb :: Expr AR -> Expr KR -> Expr KR -> InstBuilder (Expr AR)
+nreverb asig ktime khdif = 
+    opcode "nreverb" [ getExpr asig, getExpr ktime, getExpr khdif ]
+
+comb :: Expr AR -> Expr KR -> Expr IR -> InstBuilder (Expr AR)
+comb asig kvrt ilpt = 
+    opcode "comb" [ getExpr asig, getExpr kvrt, getExpr ilpt ]
+
+alpass :: Expr AR -> Expr KR -> Expr IR -> InstBuilder (Expr AR)
+alpass asig kvrt ilpt = 
+    opcode "alpass" [ getExpr asig, getExpr kvrt, getExpr ilpt ]
+
+nestedap :: Expr AR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
+         -> InstBuilder (Expr AR)
+nestedap asig imode imaxdel idel1 igain1 = 
+    opcode "nestedap" [ getExpr asig, getExpr imode, getExpr imaxdel
+                      , getExpr idel1, getExpr igain1 ]
+
+
+--------------------------------------------------------------------------------
+-- Panning and spatialization
+
+-- Note - name /priority/ is given to the 4 channel versions.
+
+pan :: Expr AR -> Expr KR -> Expr KR -> Expr IR 
+    -> InstBuilder (Expr AR, Expr AR, Expr AR, Expr AR)
+pan asig kx ky ifn = 
+    opcode4 "pan" [ getExpr asig, getExpr kx, getExpr ky, getExpr ifn ]
+
+pan2 :: Expr AR -> Expr KR -> Expr KR -> Expr IR 
+     -> InstBuilder (Expr AR, Expr AR)
+pan2 asig kx ky ifn = 
+    opcode2 "pan2" [ getExpr asig, getExpr kx, getExpr ky, getExpr ifn ]
+
+-- | 4 channel version of locsig.
+--
+locsig :: Expr AR -> Expr KR -> Expr KR -> Expr KR 
+       -> InstBuilder (Expr AR, Expr AR, Expr AR, Expr AR)
+locsig asig kdegree kdistance kreverbsend = 
+    opcode4 "locsig" [ getExpr asig, getExpr kdegree
+                     , getExpr kdistance, getExpr kreverbsend ]
+
+
+-- | This is the 2 channel version of 'locsig'
+--
+locsig2 :: Expr AR -> Expr KR -> Expr KR -> Expr KR 
+       -> InstBuilder (Expr AR, Expr AR)
+locsig2 asig kdegree kdistance kreverbsend = 
+    opcode2 "locsig" [ getExpr asig, getExpr kdegree
+                     , getExpr kdistance, getExpr kreverbsend ]
+

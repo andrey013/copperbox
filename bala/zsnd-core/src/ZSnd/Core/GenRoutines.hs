@@ -47,7 +47,7 @@ module ZSnd.Core.GenRoutines
   -- * Window functions
   , Gen20Window(..)
   , gen20
-  , ngen20
+  , gen20_
 
   -- * Random functions
   , Gen21Dist(..)
@@ -62,6 +62,7 @@ module ZSnd.Core.GenRoutines
   -- * Amplitude scaling
   , gen4
   , gen12
+  , gen12_
 
   ) where
 
@@ -320,8 +321,8 @@ gen20 t sz wt mx = dyngen 20 t sz (gen20Opts wt mx)
 -- 
 -- > f1       0       1024    -20     2       456
 --
-ngen20 :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
-ngen20 t sz wt mx = dyngen (-20) t sz (gen20Opts wt mx)
+gen20_ :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
+gen20_ t sz wt mx = dyngen (-20) t sz (gen20Opts wt mx)
 
 --------------------------------------------------------------------------------
 -- Random functions 
@@ -412,7 +413,7 @@ gen15 t sz x1 x2 xs = dyngen 15 t sz (CsInt x1 : CsInt x2 : double2 xs)
 -- @size@ must be a power-of-2 plus 1.
 --
 gen4 :: Double -> Int -> Int -> Int -> ScoBuilder ()
-gen4 t sz src src_mode = dyngen 12 t sz [CsInt src, CsInt src_mode]
+gen4 t sz src src_mode = dyngen 4 t sz [CsInt src, CsInt src_mode]
 
 
 -- | Generate a normalizing function.
@@ -422,7 +423,15 @@ gen4 t sz src src_mode = dyngen 12 t sz [CsInt src, CsInt src_mode]
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen12 :: Double -> Int -> Int -> ScoBuilder ()
-gen12 t sz xint = dyngen 4 t sz [CsInt xint]
+gen12 t sz xint = dyngen 12 t sz [CsInt xint]
+
+-- | Negative version of 'gen12'.
+--
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+gen12_ :: Double -> Int -> Int -> ScoBuilder ()
+gen12_ t sz xint = dyngen (-12) t sz [CsInt xint]
+
 
 
 --------------------------------------------------------------------------------

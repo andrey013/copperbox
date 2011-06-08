@@ -329,9 +329,10 @@ phasorbnk_ cps kindx icnt iphs =
 --------------------------------------------------------------------------------
 -- Basic oscillators
 
-
+-- | Note for A rate, cps can seemingly be any type.
+-- 
 oscil :: KA_Rate rate
-      => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+      => Expr rare -> Expr a -> Expr IR -> InstBuilder (Expr rate)
 oscil amp cps ifn  = 
     opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn]
 
