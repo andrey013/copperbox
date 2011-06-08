@@ -101,14 +101,23 @@ module ZSnd.Core.Opcodes.SignalGenerators
   , lposcil
   , lposcil3
 
+  -- * Models and emulations
+  , moog
 
   -- * Random noise generators
   , rand
-
+  , randh
+  , randi
   , linrand
   , trirand
   , exprand
-
+  , bexprand
+  , cauchy
+  , pcauchy
+  , poisson
+  , gauss
+  , weibull
+  , betarand
   , unirand
 
   ) where
@@ -584,8 +593,8 @@ loscil xamp kcps ifn ibase imod1 =
 biloscil :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
        -> InstBuilder (Expr AR, Expr AR)
 biloscil xamp kcps ifn ibase imod1 = 
-    biopcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
-                      , getExpr ibase, getExpr imod1 ]
+    opcode2 "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
+                     , getExpr ibase, getExpr imod1 ]
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
@@ -603,8 +612,8 @@ loscil3 xamp kcps ifn ibase imod1 =
 biloscil3 :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
           -> InstBuilder (Expr AR, Expr AR)
 biloscil3 xamp kcps ifn ibase imod1 = 
-    biopcode "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
-                       , getExpr ibase, getExpr $ imod1 ]
+    opcode2 "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
+                      , getExpr ibase, getExpr $ imod1 ]
 
 
 lposcil :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
@@ -621,12 +630,31 @@ lposcil3 kamp kfreqrat kloop kend ift =
 
 
 
-
 --------------------------------------------------------------------------------
+-- Models and emulations
+
+moog :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
+     -> Expr IR -> Expr IR -> Expr IR
+     -> InstBuilder (Expr AR)
+moog kamp kfreq kfiltq kfiltrate kvibf kvamp iafn iwfn ivfn = 
+    opcode "moog" [ getExpr kamp, getExpr kfreq, getExpr kfiltq
+                  , getExpr kfiltrate, getExpr kvibf, getExpr kvamp 
+                  , getExpr iafn, getExpr iwfn, getExpr ivfn ]
+--------------------------------------------------------------------------------
+-- Random noise generators
+
 
 rand :: KA_Rate rate 
      => Expr rate -> InstBuilder (Expr rate)
 rand amp = opcode "rand" [getExpr amp]
+
+randh :: KA_Rate rate 
+      => Expr rate -> Expr rate -> InstBuilder (Expr rate)
+randh amp cps = opcode "rand" [getExpr amp, getExpr cps]
+
+randi :: KA_Rate rate 
+      => Expr rate -> Expr rate -> InstBuilder (Expr rate)
+randi amp cps = opcode "rand" [getExpr amp, getExpr cps]
 
 linrand :: Opcode rate 
         => Expr KR -> InstBuilder (Expr rate)
@@ -640,6 +668,34 @@ exprand :: Opcode rate
         => Expr KR -> InstBuilder (Expr rate)
 exprand krange = opcode "exprand" [getExpr krange]
 
+bexprand :: Opcode rate 
+         => Expr KR -> InstBuilder (Expr rate)
+bexprand krange = opcode "bexprand" [getExpr krange]
+
+cauchy :: Opcode rate  
+       => Expr KR -> InstBuilder (Expr rate)
+cauchy kalpha = opcode "cauchy" [getExpr kalpha]
+
+pcauchy :: Opcode rate  
+        => Expr KR -> InstBuilder (Expr rate)
+pcauchy kalpha = opcode "pcauchy" [getExpr kalpha]
+
+poisson :: Opcode rate  
+       => Expr KR -> InstBuilder (Expr rate)
+poisson klambda = opcode "poisson" [getExpr klambda]
+
+gauss :: Opcode rate 
+      => Expr KR -> InstBuilder (Expr rate)
+gauss krange = opcode "gauss" [getExpr krange]
+
+weibull :: Opcode rate 
+        => Expr KR -> Expr KR -> InstBuilder (Expr rate)
+weibull ksigma ktau = opcode "weibull" [getExpr ksigma, getExpr ktau]
+
+betarand :: Opcode rate 
+         => Expr KR -> Expr KR -> Expr KR -> InstBuilder (Expr rate)
+betarand krange kalpha kbeta = 
+    opcode "betarand" [getExpr krange, getExpr kalpha, getExpr kbeta]
 
 unirand :: Opcode rate 
         => Expr KR -> InstBuilder (Expr rate)

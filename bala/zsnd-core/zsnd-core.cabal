@@ -6,7 +6,7 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Generate Csound.
+synopsis:         Generate Csound
 description:
   Generate Csound - both scores and orchestras.
   . 
@@ -35,6 +35,7 @@ library
     ZSnd.Core.Opcodes,
     ZSnd.Core.Opcodes.Base,
     ZSnd.Core.Opcodes.SignalGenerators,
+    ZSnd.Core.Opcodes.SignalModifiers,
     ZSnd.Core.OutputCsound
 
   other-modules:

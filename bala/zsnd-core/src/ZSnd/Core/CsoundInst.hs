@@ -37,7 +37,8 @@ module ZSnd.Core.CsoundInst
   , Opcode
   , var
   , opcode
-  , biopcode
+  , opcode2
+  , opcode0
 
   , KA_Rate     -- opaque typeclass
   , IK_Rate     -- opaque typeclass
@@ -228,7 +229,11 @@ freshAVar = Build $ \s -> let n = a_int s
 class Opcode rate where
   var      :: DExpr -> InstBuilder (Expr rate)
   opcode   :: String -> [DExpr] -> InstBuilder (Expr rate)
-  biopcode :: String -> [DExpr] -> InstBuilder (Expr rate, Expr rate)
+  opcode2 :: String -> [DExpr] -> InstBuilder (Expr rate, Expr rate)
+
+opcode0  :: String -> [DExpr] -> InstBuilder ()
+opcode0 opcd es = tellStmt (Opcode [] opcd es) >> return ()
+
 
 instance Opcode IR where
   var expr       = freshIVar >>= \v -> 
@@ -239,10 +244,11 @@ instance Opcode IR where
                    tellStmt (Opcode [v] opcd es) >>
                    return (Expr $ VarE v)
 
-  biopcode opcd es = freshIVar >>= \v1 -> 
-                     freshIVar >>= \v2 -> 
-                     tellStmt (Opcode [v1, v2] opcd es) >>
-                     return (Expr $ VarE v1, Expr $ VarE v2)
+
+  opcode2 opcd es = freshIVar >>= \v1 -> 
+                    freshIVar >>= \v2 -> 
+                    tellStmt (Opcode [v1, v2] opcd es) >>
+                    return (Expr $ VarE v1, Expr $ VarE v2)
 
 
 instance Opcode KR where
@@ -254,10 +260,10 @@ instance Opcode KR where
                    tellStmt (Opcode [v] opcd es) >>
                    return (Expr $ VarE v)
 
-  biopcode opcd es = freshKVar >>= \v1 -> 
-                     freshKVar >>= \v2 -> 
-                     tellStmt (Opcode [v1, v2] opcd es) >>
-                     return (Expr $ VarE v1, Expr $ VarE v2)
+  opcode2 opcd es = freshKVar >>= \v1 -> 
+                    freshKVar >>= \v2 -> 
+                    tellStmt (Opcode [v1, v2] opcd es) >>
+                    return (Expr $ VarE v1, Expr $ VarE v2)
 
 instance Opcode AR where
   var expr       = freshAVar >>= \v -> 
@@ -269,10 +275,10 @@ instance Opcode AR where
                    return (Expr $ VarE v)
 
 
-  biopcode opcd es = freshAVar >>= \v1 -> 
-                     freshAVar >>= \v2 -> 
-                     tellStmt (Opcode [v1, v2] opcd es) >>
-                     return (Expr $ VarE v1, Expr $ VarE v2)
+  opcode2 opcd es = freshAVar >>= \v1 -> 
+                    freshAVar >>= \v2 -> 
+                    tellStmt (Opcode [v1, v2] opcd es) >>
+                    return (Expr $ VarE v1, Expr $ VarE v2)
 
 
 
