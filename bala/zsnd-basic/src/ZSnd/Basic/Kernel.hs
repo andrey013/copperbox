@@ -24,6 +24,7 @@ module ZSnd.Basic.Kernel
   , module ZSnd.Basic.Kernel.Base.WrappedPrimitive
   , module ZSnd.Basic.Kernel.Objects.Basis
   , module ZSnd.Basic.Kernel.Objects.LocEvent
+  , module ZSnd.Basic.Kernel.Objects.TraceNotelist
   ) where
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
@@ -31,3 +32,6 @@ import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
 import ZSnd.Basic.Kernel.Objects.Basis
 import ZSnd.Basic.Kernel.Objects.LocEvent
+import ZSnd.Basic.Kernel.Objects.TraceNotelist
+
+

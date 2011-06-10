@@ -1,0 +1,53 @@
+name:             zsnd-basic
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Generate Csound
+description:
+  Generate Csound - higher level layer onto of zsnd-core.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Xanadu.hs,
+  demo/XanaduInst.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      zsnd-core         == 0.1.0
+
+  exposed-modules:
+    ZSnd.Basic.Kernel,
+    ZSnd.Basic.Kernel.Base.BaseDefs,
+    ZSnd.Basic.Kernel.Base.Context,
+    ZSnd.Basic.Kernel.Base.WrappedPrimitive,
+    ZSnd.Basic.Kernel.Objects.Basis,
+    ZSnd.Basic.Kernel.Objects.LocEvent,
+    ZSnd.Basic.Kernel.Objects.TraceNotelist,
+    ZSnd.Basic.Utils.HList,
+
+    ZSnd.Basic.Utils.JoinList
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

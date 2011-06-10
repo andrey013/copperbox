@@ -21,6 +21,7 @@ module ZSnd.Basic.Kernel.Objects.LocEvent
 
      LocEvent
    , DLocEvent
+   , ULocEvent
 
    , runLocEvent
 
@@ -69,7 +70,11 @@ type instance Ctx (LocEvent ctx u) = ctx
 
 -- | Type specialized version of 'LocImage'.
 --
-type DLocEvent a        = LocEvent Double a
+type DLocEvent ctx a        = LocEvent ctx Double a
+
+
+type ULocEvent ctx u        = LocEvent ctx u (UNil u)
+
 
 
 -- Functor
