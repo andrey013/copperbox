@@ -33,6 +33,7 @@ library
     ZSnd.Basic.Kernel.Base.Context,
     ZSnd.Basic.Kernel.Base.WrappedPrimitive,
     ZSnd.Basic.Kernel.Objects.Basis,
+    ZSnd.Basic.Kernel.Objects.GenRoutines,
     ZSnd.Basic.Kernel.Objects.LocEvent,
     ZSnd.Basic.Kernel.Objects.TraceNotelist,
     ZSnd.Basic.Utils.HList,
