@@ -25,6 +25,7 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base              <  5,
+                      vector-space      >= 0.6     && <  1.0,
                       zsnd-core         == 0.1.0
 
   exposed-modules:
@@ -32,12 +33,16 @@ library
     ZSnd.Basic.Kernel.Base.BaseDefs,
     ZSnd.Basic.Kernel.Base.Context,
     ZSnd.Basic.Kernel.Base.WrappedPrimitive,
+    ZSnd.Basic.Kernel.Objects.AdvObject,
     ZSnd.Basic.Kernel.Objects.Basis,
+    ZSnd.Basic.Kernel.Objects.Connector,
     ZSnd.Basic.Kernel.Objects.GenRoutines,
     ZSnd.Basic.Kernel.Objects.LocEvent,
+    ZSnd.Basic.Kernel.Objects.TraceLoc,
     ZSnd.Basic.Kernel.Objects.TraceNotelist,
+    ZSnd.Basic.Symbolic.Pitch,
+    ZSnd.Basic.Symbolic.Z12,
     ZSnd.Basic.Utils.HList,
-
     ZSnd.Basic.Utils.JoinList
 
   other-modules:

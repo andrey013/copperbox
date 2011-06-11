@@ -121,14 +121,12 @@ instance Functor (Event ctx u) where
   fmap f ma = Event $ \ctx -> fmap f $ getEvent ma ctx
 
 
-
 -- Applicative
 
 instance Applicative (Event ctx u) where
   pure a    = Event $ \_   -> pure a
   mf <*> ma = Event $ \ctx -> 
                 getEvent mf ctx <*> getEvent ma ctx
-
 
 -- Monad
 
@@ -201,8 +199,8 @@ emptyEvent = mempty
 
 -- | Ignore an answer changing it to @()@.
 --
-ignoreAns :: Functor f => f a -> f ()
-ignoreAns = fmap (const ())
+ignoreAns :: Functor f => f a -> f (UNil u)
+ignoreAns = fmap (const UNil)
 
 -- | Replace the answer produced by a graphic object.
 --

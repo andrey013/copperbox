@@ -9,7 +9,10 @@ import XanaduInst
 
 
 import ZSnd.Basic.Kernel
-import ZSnd.Core
+import ZSnd.Basic.Symbolic.Pitch
+
+import ZSnd.Core                                -- package: zsnd-core
+
 
 import System.Process
 import System.Directory

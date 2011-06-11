@@ -42,7 +42,29 @@ module ZSnd.Basic.Kernel.Objects.GenRoutines
   , fgen17
 
 
-  -- Window and random to do...
+  -- * Window generation
+  , fgen20_hamming
+  , fgen20_hanning
+  , fgen20_bartlett
+  , fgen20_blackman
+  , fgen20_blackman_harris
+  , fgen20_gaussian
+  , fgen20_kaiser
+  , fgen20_rectangle
+  , fgen20_sync
+
+  -- * Random functions
+  , fgen21_uniform
+  , fgen21_linear
+  , fgen21_triangular
+  , fgen21_expon
+  , fgen21_biexpon
+  , fgen21_gaussian
+  , fgen21_cauchy
+  , fgen21_positive_cauchy
+  , fgen21_beta
+  , fgen21_weibull
+  , fgen21_poisson
 
   -- * Waveshaping
   , fgen3
@@ -69,6 +91,11 @@ import ZSnd.Basic.Kernel.Objects.LocEvent
 
 import ZSnd.Core                                -- package: zsnd-core
 
+
+-- | Helper.
+--
+-- All note statemets have duration, even when it is irrelevent...
+--
 mkGen :: (CtxTempo ctx, InterpretUnit u) 
       => (OnsetDbl -> ScoBuilder ()) ->  ULocEvent ctx u
 mkGen fn = promoteLoc $ \u -> 
@@ -332,8 +359,227 @@ fgen17 :: (CtxTempo ctx, InterpretUnit u)
 fgen17 sz xs = mkGen (\ot -> gen17 ot sz xs) 
 
 
+--------------------------------------------------------------------------------
+-- Window generation
+
+-- | Generate a Hamming window.
+--
+-- > fgen20_hamming :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_hamming :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Int -> ULocEvent ctx u
+fgen20_hamming sz mx = mkGen (\ot -> gen20 ot sz HAMMING mx) 
 
 
+-- | Generate a Hanning window.
+--
+-- > fgen20_hanning :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_hanning :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Int -> ULocEvent ctx u
+fgen20_hanning sz mx = mkGen (\ot -> gen20 ot sz HANNING mx) 
+
+
+-- | Generate a Bartlett window.
+--
+-- > fgen20_bartlett :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_bartlett :: (CtxTempo ctx, InterpretUnit u) 
+                => Int -> Int -> ULocEvent ctx u
+fgen20_bartlett sz mx = mkGen (\ot -> gen20 ot sz BARTLETT mx) 
+
+-- | Generate a Blackman window.
+--
+-- > fgen20_blackman :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_blackman :: (CtxTempo ctx, InterpretUnit u) 
+                => Int -> Int -> ULocEvent ctx u
+fgen20_blackman sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN mx) 
+
+
+-- | Generate a Blackman-Harris window.
+--
+-- > fgen20_blackman_harris :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_blackman_harris :: (CtxTempo ctx, InterpretUnit u) 
+                       => Int -> Int -> ULocEvent ctx u
+fgen20_blackman_harris sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN_HARRIS mx) 
+
+
+-- | Generate a Gaussian window.
+--
+-- > fgen20_gaussian :: size * maximum * openness
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_gaussian :: (CtxTempo ctx, InterpretUnit u) 
+                => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_gaussian sz mx opn = mkGen (\ot -> gen20 ot sz (GAUSSIAN opn) mx) 
+
+-- | Generate a Kaiser window.
+--
+-- > fgen20_kaiser :: size * maximum * broadness
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_kaiser :: (CtxTempo ctx, InterpretUnit u) 
+              => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_kaiser sz mx broad = mkGen (\ot -> gen20 ot sz (KAISER broad) mx) 
+
+
+-- | Generate a rectangle window.
+--
+-- > fgen20_rectangle :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_rectangle :: (CtxTempo ctx, InterpretUnit u) 
+                 => Int -> Int -> ULocEvent ctx u
+fgen20_rectangle sz mx = mkGen (\ot -> gen20 ot sz RECTANGLE mx) 
+
+
+-- | Generate a sync window.
+--
+-- > fgen20_sync :: size * maximum
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen20_sync :: (CtxTempo ctx, InterpretUnit u) 
+                 => Int -> Int -> ULocEvent ctx u
+fgen20_sync sz mx = mkGen (\ot -> gen20 ot sz SYNC mx) 
+
+--------------------------------------------------------------------------------
+-- Random functions
+
+
+-- | Generate a uniform random distribution.
+--
+-- > fgen21_uniform :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_uniform :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Double -> ULocEvent ctx u
+fgen21_uniform sz lv = mkGen (\ot -> gen21 ot sz UNIFORM lv) 
+
+
+-- | Generate a uniform linear distribution.
+--
+-- > fgen21_linear :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_linear :: (CtxTempo ctx, InterpretUnit u) 
+              => Int -> Double -> ULocEvent ctx u
+fgen21_linear sz lv = mkGen (\ot -> gen21 ot sz LINEAR lv) 
+
+
+-- | Generate a triangular distribution.
+--
+-- > fgen21_triangular :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_triangular :: (CtxTempo ctx, InterpretUnit u) 
+                  => Int -> Double -> ULocEvent ctx u
+fgen21_triangular sz lv = mkGen (\ot -> gen21 ot sz TRIANGULAR lv) 
+
+
+-- | Generate an exponential distribution.
+--
+-- > fgen21_expon :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_expon :: (CtxTempo ctx, InterpretUnit u) 
+                   => Int -> Double -> ULocEvent ctx u
+fgen21_expon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
+
+
+-- | Generate a biexponential distribution.
+--
+-- > fgen21_biexpon :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_biexpon :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Double -> ULocEvent ctx u
+fgen21_biexpon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
+
+
+-- | Generate a Gaussian distribution.
+--
+-- > fgen21_gaussian :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_gaussian :: (CtxTempo ctx, InterpretUnit u) 
+                => Int -> Double -> ULocEvent ctx u
+fgen21_gaussian sz lv = mkGen (\ot -> gen21 ot sz DIST_GAUSSIAN lv) 
+
+
+-- | Generate a Cauchy distribution.
+--
+-- > fgen21_cauchy :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_cauchy :: (CtxTempo ctx, InterpretUnit u) 
+              => Int -> Double -> ULocEvent ctx u
+fgen21_cauchy sz lv = mkGen (\ot -> gen21 ot sz CAUCHY lv) 
+
+
+-- | Generate a positive Cauchy distribution.
+--
+-- > fgen21_positive_cauchy :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_positive_cauchy :: (CtxTempo ctx, InterpretUnit u) 
+                       => Int -> Double -> ULocEvent ctx u
+fgen21_positive_cauchy sz lv = mkGen (\ot -> gen21 ot sz POSITIVE_CAUCHY lv) 
+
+-- | Generate a beta distribution.
+--
+-- > fgen21_beta :: size * level * a * b
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_beta :: (CtxTempo ctx, InterpretUnit u) 
+              => Int -> Double -> Int -> Int -> ULocEvent ctx u
+fgen21_beta sz lv a b = mkGen (\ot -> gen21 ot sz (BETA a b) lv) 
+
+
+-- | Generate a Weibull distribution.
+--
+-- > fgen21_weibull :: size * level * a
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_weibull :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Double -> Int -> ULocEvent ctx u
+fgen21_weibull sz lv a = mkGen (\ot -> gen21 ot sz (WEIBULL a) lv) 
+
+
+-- | Generate a poisson distribution.
+--
+-- > fgen21_poisson :: size * level
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgen21_poisson :: (CtxTempo ctx, InterpretUnit u) 
+               => Int -> Double -> ULocEvent ctx u
+fgen21_poisson sz lv = mkGen (\ot -> gen21 ot sz POISSON lv) 
 
 --------------------------------------------------------------------------------
 -- Amplitude scaling
