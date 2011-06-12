@@ -82,7 +82,7 @@ type AdvDraw u = u -> CatPrim
 -- advance (width) vector as each character is drawn.
 --
 newtype AdvObject ctx u = AdvObject 
-          { getAdvObject :: Event ctx u (AdvanceVec u, AdvDraw u) }
+          { getAdvObject :: Query ctx u (AdvanceVec u, AdvDraw u) }
 
 type instance DUnit (AdvObject ctx u) = u
 type instance Ctx (AdvObject ctx) = ctx
@@ -108,7 +108,7 @@ runAdvObject :: (CtxTempo ctx, InterpretUnit u)
              => AdvObject ctx u -> LocEvent ctx u (AdvanceVec u)
 runAdvObject (AdvObject mf) = promoteLoc $ \ot -> 
    askCtx >>= \ctx -> 
-   let (PrimW _ (v1,df)) = runEvent ctx mf
+   let (v1,df) = runQuery ctx mf
    in replaceAns v1 $ primEvent (df ot)
 
 
@@ -182,8 +182,8 @@ advplus :: Num u
 advplus a b = AdvObject body
   where 
     body = askCtx >>= \ctx ->
-           let (PrimW _ a1) = runEvent ctx (getAdvObject a)
-               (PrimW _ a2) = runEvent ctx (getAdvObject b)
+           let a1 = runQuery ctx (getAdvObject a)
+               a2 = runQuery ctx (getAdvObject b)
            in return (appendW a1 a2)
 
 
@@ -272,7 +272,7 @@ advfill :: InterpretUnit u
 advfill sv a = AdvObject body
   where 
     body = askCtx >>= \ctx ->
-           let (PrimW _ (_,df)) = runEvent ctx (getAdvObject a)
+           let (_,df) = runQuery ctx (getAdvObject a)
            in return (sv,df)
 
 

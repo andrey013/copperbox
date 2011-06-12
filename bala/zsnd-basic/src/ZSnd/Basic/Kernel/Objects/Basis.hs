@@ -23,7 +23,11 @@ module ZSnd.Basic.Kernel.Objects.Basis
   , DEvent
   , UEvent
 
+  , Query
+
   , runEvent
+  , runQuery
+  , zapQuery
 
   , primEvent
 
@@ -88,10 +92,6 @@ szconvPrimZ _ (PrimW c a) = PrimW c a
 
 
 
--- primAnswer :: PrimW u a -> a
--- primAnswer (PrimW _ a) = a
-
-
 
 
 -- | For the moment the second fun is type preserving...
@@ -114,11 +114,18 @@ type DEvent ctx a = Event ctx Double a
 type UEvent ctx u = Event ctx u (UNil u)
 
 
+newtype Query ctx u a =  Query { getQuery :: ctx -> a }
+
+type instance DUnit (Query ctx u a) = u
+type instance Ctx (Query ctx u) = ctx
 
 -- Functor
 
 instance Functor (Event ctx u) where
   fmap f ma = Event $ \ctx -> fmap f $ getEvent ma ctx
+
+instance Functor (Query ctx u) where
+  fmap f ma = Query $ \ctx -> f $ getQuery ma ctx
 
 
 -- Applicative
@@ -128,11 +135,23 @@ instance Applicative (Event ctx u) where
   mf <*> ma = Event $ \ctx -> 
                 getEvent mf ctx <*> getEvent ma ctx
 
+instance Applicative (Query ctx u) where
+  pure a    = Query $ \_   -> a
+  mf <*> ma = Query $ \ctx -> let f = getQuery mf ctx 
+                                  a = getQuery ma ctx
+                              in f a
+
 -- Monad
 
 instance Monad (Event ctx u) where
   return a = Event $ \_   -> return a
   ma >>= k = Event $ \ctx -> getEvent ma ctx >>= \ans -> getEvent (k ans) ctx
+
+instance Monad (Query ctx u) where
+  return a = Query $ \_   -> a
+  ma >>= k = Query $ \ctx -> let a = getQuery ma ctx 
+                             in getQuery (k a) ctx
+
 
 -- Monoid
 
@@ -140,6 +159,11 @@ instance Monoid a => Monoid (Event ctx u a) where
   mempty          = Event $ \_   -> mempty
   ma `mappend` mb = Event $ \ctx -> 
                       getEvent ma ctx `mappend` getEvent mb ctx
+
+instance Monoid a => Monoid (Query ctx u a) where
+  mempty          = Query $ \_   -> mempty
+  ma `mappend` mb = Query $ \ctx -> 
+                      getQuery ma ctx `mappend` getQuery mb ctx
 
 
 -- RenderCtxM
@@ -150,10 +174,22 @@ instance ContextM (Event ctx u) where
   asksCtx fn      = Event $ \ctx -> return (fn ctx)
   localize upd ma = Event $ \ctx -> getEvent ma (upd ctx)
 
+instance ContextM (Query ctx u) where
+  askCtx          = Query $ \ctx -> ctx
+  asksCtx fn      = Query $ \ctx -> fn ctx
+  localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
+
 
 runEvent :: ctx -> Event ctx u a -> PrimW u a
 runEvent ctx mf = getEvent mf ctx
 
+
+runQuery :: ctx -> Query ctx u a -> a
+runQuery ctx mf = getQuery mf ctx
+
+
+zapQuery :: Query ctx u a -> Event ctx u a
+zapQuery mq = askCtx >>= \ctx -> let a = runQuery ctx mq in return a
 
 
 -- | Constructor for Primtive graphics.

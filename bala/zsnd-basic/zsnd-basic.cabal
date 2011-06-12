@@ -35,6 +35,7 @@ library
     ZSnd.Basic.Kernel.Base.WrappedPrimitive,
     ZSnd.Basic.Kernel.Objects.AdvObject,
     ZSnd.Basic.Kernel.Objects.Basis,
+    ZSnd.Basic.Kernel.Objects.Concat,
     ZSnd.Basic.Kernel.Objects.Connector,
     ZSnd.Basic.Kernel.Objects.GenRoutines,
     ZSnd.Basic.Kernel.Objects.LocEvent,

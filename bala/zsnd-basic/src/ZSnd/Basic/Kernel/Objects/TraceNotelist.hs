@@ -67,6 +67,9 @@ import Data.Monoid
 --------------------------------------------------------------------------------
 
 
+-- Note - it would be good to compose scores, this would need
+-- something like the affine frame in Wumpus-Core.
+--
 
 newtype Score = Score { getScore :: ScoBuilder () }
 
@@ -316,11 +319,8 @@ eventli ot gf = askCtx >>= \ctx ->
 --
 -- Design note
 --
--- Currently there is no analogue to @Connector@ in Wumpus-Basic, 
--- but an interpolate object might have real value.
---
--- Conversely there doesn\'t seem to be much merit to providing an 
--- analogue to grid in Wumpus-Basic. An analogue could likely be
--- achieved just by using a different unit for onset time.
+-- There doesn\'t seem to be much merit to providing an analogue 
+-- to grid in Wumpus-Basic. An analogue could likely be achieved 
+-- just by using a different unit for onset time.
 --  
 
