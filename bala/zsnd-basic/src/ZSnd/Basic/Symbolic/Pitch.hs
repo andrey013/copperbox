@@ -32,7 +32,6 @@ module ZSnd.Basic.Symbolic.Pitch
 
 import ZSnd.Basic.Symbolic.Z12
 
-import Data.AdditiveGroup                       -- package: vector-space
 
 -- | Pitch-class representation - octave and pitch-class
 -- 

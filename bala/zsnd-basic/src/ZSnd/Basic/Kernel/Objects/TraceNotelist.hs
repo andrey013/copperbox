@@ -25,8 +25,6 @@ module ZSnd.Basic.Kernel.Objects.TraceNotelist
   -- * Collect primitives (writer monad) 
     TraceM(..)
 
-  , Score
-  , execScore
 
   , Notelist
   , DNotelist
@@ -66,7 +64,7 @@ import Data.Monoid
 
 --------------------------------------------------------------------------------
 
-
+{-
 -- Note - it would be good to compose scores, this would need
 -- something like the affine frame in Wumpus-Core.
 --
@@ -77,10 +75,10 @@ newtype Score = Score { getScore :: ScoBuilder () }
 instance Monoid Score where
   mempty        = Score $ return ()
   a `mappend` b = Score $ getScore a >> getScore b
+-}
 
-
-execScore :: Score -> Section
-execScore = runScoBuilder . getScore
+-- execScore :: Score -> Section
+-- execScore = runScoBuilder . getScore
 
 
 -- | Collect elementary events as part of a larger score.
@@ -197,15 +195,13 @@ instance Monad m => ContextM (NotelistT ctx u m) where
 
 
 
-runNotelist :: ctx -> Notelist ctx u a -> (a, Score)
-runNotelist ctx ma = post $ getNotelist ma ctx
-  where
-    post (a,hf) = (a, liftToScore hf)
+runNotelist :: ctx -> Notelist ctx u a -> (a, HPrim u)
+runNotelist ctx ma = getNotelist ma ctx
 
 -- | Run the notelist returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execNotelist :: ctx -> Notelist ctx u a -> Score
+execNotelist :: ctx -> Notelist ctx u a -> HPrim u
 execNotelist ctx ma = snd $ runNotelist ctx ma
 
 -- | Run the notelist ignoring the output it produces, return the 
@@ -221,13 +217,11 @@ evalNotelist ctx ma = fst $ runNotelist ctx ma
 
 
 runNotelistT :: Monad m 
-             => ctx -> NotelistT ctx u m a -> m (a, Score) 
-runNotelistT ctx ma = liftM post $ getNotelistT ma ctx
-  where
-    post (a,hf) = (a, liftToScore hf)
+             => ctx -> NotelistT ctx u m a -> m (a, HPrim u) 
+runNotelistT ctx ma = getNotelistT ma ctx
 
 execNotelistT :: Monad m 
-              => ctx -> NotelistT ctx u m a -> m Score
+              => ctx -> NotelistT ctx u m a -> m (HPrim u)
 execNotelistT ctx ma = liftM snd $ runNotelistT ctx ma
 
 
@@ -236,18 +230,6 @@ evalNotelistT :: Monad m
 evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
 
 
-
-
--- Note unlike Wumpus, empty note lists pose no problem for ZSnd.
-
-
-
--- | /Unsafe/ promotion of @HPrim@ to @Picture@.
---
--- If the HPrim is empty, a run-time error is thrown.
--- 
-liftToScore :: HPrim u -> Score
-liftToScore = Score . outputNotes . hprimToList
 
 
 

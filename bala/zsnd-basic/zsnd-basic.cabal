@@ -39,6 +39,7 @@ library
     ZSnd.Basic.Kernel.Objects.Connector,
     ZSnd.Basic.Kernel.Objects.GenRoutines,
     ZSnd.Basic.Kernel.Objects.LocEvent,
+    ZSnd.Basic.Kernel.Objects.Score,
     ZSnd.Basic.Kernel.Objects.TraceLoc,
     ZSnd.Basic.Kernel.Objects.TraceNotelist,
     ZSnd.Basic.Symbolic.Pitch,

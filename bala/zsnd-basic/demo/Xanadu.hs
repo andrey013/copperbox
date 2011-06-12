@@ -20,7 +20,7 @@ import System.Directory
 main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/" 
-    writeUnifiedFile "out/xanadu.csd" flags xanadu_orc [sco01]
+    writeUnifiedFile "out/xanadu.csd" flags xanadu_orc [runScore sco01]
     _ <- system "csound out/xanadu.csd"
     return ()
   where
@@ -28,8 +28,8 @@ main = do
 
 
 
-sco01 :: Section
-sco01 = execScore $ execNotelist ctx_zero notelist1
+sco01 :: Score
+sco01 = traceNotelist ctx_zero notelist1
 
 notelist1 :: Notelist X3Ctx Double ()
 notelist1 = do 

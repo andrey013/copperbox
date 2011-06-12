@@ -31,7 +31,7 @@ module ZSnd.Basic.Kernel.Base.BaseDefs
   , uconvertF
 
   , NoteStmt(..)
-  , outputNotes
+  , orderNote
   
   ) where
 
@@ -155,6 +155,20 @@ uconvertF bpm = fmap (uconvert1 bpm)
 
 
 
+data Score = Score 
+      { score_duration   :: Double
+      , score_sequence   :: OnsetDbl -> ScoBuilder ()
+      }
+
+genScore :: [NoteStmt] -> Score
+genScore xs = Score { score_duration = d
+                    , score_sequence = f }
+  where
+    (d,f) = foldl' fn (0, mf0) $ sortBy orderNote xs
+  
+    fn (d0,f) (NoteStmt t d mf) = (max d0 (t+d), (\t0 -> f t0 >> mf (t0 + t) d))
+
+    mf0 _ = return ()
 
 -- Onset time should always be positive.
 --
@@ -163,6 +177,7 @@ data NoteStmt = NoteStmt
       , event_dur   :: Double
       , event_gen   :: OnsetDbl -> Double -> ScoBuilder ()
       }
+
 
 outputNotes :: [NoteStmt] -> ScoBuilder ()
 outputNotes = mapM_ fn . sortBy orderNote
