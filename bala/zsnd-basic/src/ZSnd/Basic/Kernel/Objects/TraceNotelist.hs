@@ -22,10 +22,10 @@
 module ZSnd.Basic.Kernel.Objects.TraceNotelist
   (
 
-  -- * Collect primitives (writer monad) 
+  -- * Collect primitives (output class) 
     TraceM(..)
 
-
+  -- * Note list
   , Notelist
   , DNotelist
   , NotelistT
@@ -55,7 +55,6 @@ import ZSnd.Basic.Kernel.Objects.Basis
 import ZSnd.Basic.Kernel.Objects.LocEvent
 
 
-import ZSnd.Core                                -- package: zsnd-core
 
 import Control.Applicative
 import Control.Monad
@@ -64,21 +63,7 @@ import Data.Monoid
 
 --------------------------------------------------------------------------------
 
-{-
--- Note - it would be good to compose scores, this would need
--- something like the affine frame in Wumpus-Core.
---
 
-newtype Score = Score { getScore :: ScoBuilder () }
-
-
-instance Monoid Score where
-  mempty        = Score $ return ()
-  a `mappend` b = Score $ getScore a >> getScore b
--}
-
--- execScore :: Score -> Section
--- execScore = runScoBuilder . getScore
 
 
 -- | Collect elementary events as part of a larger score.

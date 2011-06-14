@@ -21,7 +21,7 @@ main = do
     flags = flags_wav_file_out "out/cs101.wav"
 
 orch01 :: Orch
-orch01 = Orch default_orch_header [inst1]
+orch01 = Orch default_mono_header [inst1]
   where
     inst1 = runInstBuilder 1 $ do 
       a1   <- oscil 10000 440 1

@@ -19,10 +19,10 @@ module ZSnd.Basic.Kernel.Objects.GenRoutines
    (
 
   -- * Sine cosine generators
-     fgen9
-   , fgen10
-   , fgen19
-   , fgen11
+    fgen9
+  , fgen10
+  , fgen19
+  , fgen11
 
   -- * Line / exponential segment generators
   , fgen5
@@ -39,6 +39,7 @@ module ZSnd.Basic.Kernel.Objects.GenRoutines
 
   -- * Numeric value access
   , fgen2
+  , fgenN2
   , fgen17
 
 
@@ -348,6 +349,15 @@ fgen2 sz xs = mkGen (\ot -> gen2 ot sz xs)
 
 
 
+-- | Negative version of 'gen12'.
+--
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+fgenN2 :: (CtxTempo ctx, InterpretUnit u) 
+       => Int -> [Int] -> ULocEvent ctx u
+fgenN2 sz xs = mkGen (\ot -> genN2 ot sz xs) 
+
+
 -- | Generate a step table from the supplied pairs.
 --
 -- > fgen17 :: size * [(ordinate,y_value)] 
@@ -611,4 +621,4 @@ fgen12 sz xint = mkGen (\ot -> gen12 ot sz xint)
 --
 fgenN12 :: (CtxTempo ctx, InterpretUnit u) 
         => Int -> Int -> ULocEvent ctx u
-fgenN12 sz xint = mkGen (\ot -> gen12_ ot sz xint)
+fgenN12 sz xint = mkGen (\ot -> genN12 ot sz xint)

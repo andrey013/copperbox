@@ -21,7 +21,7 @@ module ZSnd.Core.GenRoutines
   (
    
 
-  -- * Sine cosine genarators
+  -- * Sine cosine generators
     gen9
   , gen10
   , gen19
@@ -42,12 +42,13 @@ module ZSnd.Core.GenRoutines
 
   -- * Numeric value access
   , gen2
+  , genN2
   , gen17
 
   -- * Window functions
   , Gen20Window(..)
   , gen20
-  , gen20_
+  , genN20
 
   -- * Random functions
   , Gen21Dist(..)
@@ -62,7 +63,7 @@ module ZSnd.Core.GenRoutines
   -- * Amplitude scaling
   , gen4
   , gen12
-  , gen12_
+  , genN12
 
   ) where
 
@@ -266,6 +267,14 @@ gen28 t file_name = dyngen 28 t 0 [CsString file_name]
 gen2 :: Double -> Int -> [Int] -> ScoBuilder ()
 gen2 t sz xs = dyngen 2 t sz (map CsInt xs)
 
+-- | /Negative/ version of gen2.
+--
+-- > genN2 :: time * size * [value] 
+-- 
+-- @size@ must be a power of 2 or power-of-2 plus 1.
+--
+genN2 :: Double -> Int -> [Int] -> ScoBuilder ()
+genN2 t sz xs = dyngen (-2) t sz (map CsInt xs)
 
 
 -- | Generate a step table from the supplied pairs.
@@ -321,8 +330,8 @@ gen20 t sz wt mx = dyngen 20 t sz (gen20Opts wt mx)
 -- 
 -- > f1       0       1024    -20     2       456
 --
-gen20_ :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
-gen20_ t sz wt mx = dyngen (-20) t sz (gen20Opts wt mx)
+genN20 :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
+genN20 t sz wt mx = dyngen (-20) t sz (gen20Opts wt mx)
 
 --------------------------------------------------------------------------------
 -- Random functions 
@@ -429,8 +438,8 @@ gen12 t sz xint = dyngen 12 t sz [CsInt xint]
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen12_ :: Double -> Int -> Int -> ScoBuilder ()
-gen12_ t sz xint = dyngen (-12) t sz [CsInt xint]
+genN12 :: Double -> Int -> Int -> ScoBuilder ()
+genN12 t sz xint = dyngen (-12) t sz [CsInt xint]
 
 
 
