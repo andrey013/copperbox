@@ -1,7 +1,6 @@
 {-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
--- 101 instrument from the Csound book...
 
 module NewInst where
 
@@ -127,9 +126,12 @@ data DExpr = PField  Int
            | Funcall String DExpr
   deriving (Eq,Ord,Show) 
 
-data CsValue = CsInt Int
+data CsValue = CsInt    Int
              | CsDouble Double
+             | CsString String
   deriving (Eq,Ord,Show)
+
+-- Files are sometimes hardcoded in inst defns
 
 newtype Expr rate = Expr { getExpr :: DExpr }
   deriving (Eq,Ord,Show)
@@ -168,4 +170,5 @@ instance Format DExpr where
 
 instance Format CsValue where
   format (CsInt i)    = int i
-  format (CsDouble d) = dtrunc d
+  format (CsDouble d) = dtruncd 
+  format (CsString s) = dqoutes (text s)

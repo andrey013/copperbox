@@ -33,11 +33,12 @@ module ZSnd.Core.CsoundInst
   , KR
   , AR
 
-  , Ir
-  , Kr
-  , Ar
+  , ISig
+  , KSig
+  , ASig
 
   , runInstBuilder
+  , printInst
 
   , Opcode
   , var
@@ -69,6 +70,11 @@ import ZSnd.Core.Utils.FormatCombinators
 import ZSnd.Core.Utils.HList
 
 import Control.Applicative hiding ( Const, empty )
+
+
+
+--------------------------------------------------------------------------------
+-- Orchestra - collections of Inst
 
 
 data Orch = Orch
@@ -119,23 +125,11 @@ default_stereo_header =
                }
 
 
+--------------------------------------------------------------------------------
+-- Inst
+
+
 data Inst = Inst { inst_num :: Int, inst_body :: [Stmt] }
-  deriving (Eq,Ord,Show)
-
-
-newtype InstBuilder a = Build { 
-          getBuild :: IntSupply -> (a, H Stmt, IntSupply) }
-
-
-data IntSupply = IntSupply
-      { i_int   :: Int
-      , k_int   :: Int
-      , a_int   :: Int
-      }
-
-
-data CsValue = CsInt Int
-             | CsDouble Double
   deriving (Eq,Ord,Show)
 
 
@@ -150,6 +144,27 @@ data Stmt = Vardef      TagVar DExpr
   deriving (Eq,Ord,Show)
 
 
+
+
+-- | Dynamically typed expr
+-- 
+data DExpr = VarE    TagVar
+           | ParenE  DExpr
+           | PField  Int
+           | Literal CsValue
+           | ZeroOp  String
+           | UnOp    String DExpr
+           | BinOp   String DExpr DExpr
+           | Funcall String DExpr
+  deriving (Eq,Ord,Show)
+
+
+data CsValue = CsInt    Int
+             | CsDouble Double
+             | CsString String          -- for file names
+  deriving (Eq,Ord,Show)
+
+
 -- | Type tagged variable
 -- 
 -- The type is tagged in the constructor (not at the type level)
@@ -158,19 +173,29 @@ data Stmt = Vardef      TagVar DExpr
 data TagVar = TagVar RateVar Int
   deriving (Eq,Ord,Show)
 
--- newtype Var rate = Var { getVar :: TagVar }
 
--- | Dynamically typed expr
--- 
-data DExpr = VarE    TagVar
-           | ParenE  DExpr
-           | PField  Int
-           | Const   CsValue
-           | ZeroOp  String
-           | UnOp    String DExpr
-           | BinOp   String DExpr DExpr
-           | Funcall String DExpr
+
+-- | CSB page22.
+--
+data RateVar = I | K | A 
   deriving (Eq,Ord,Show)
+
+--------------------------------------------------------------------------------
+-- Construction
+
+newtype InstBuilder a = Build { 
+          getBuild :: IntSupply -> (a, H Stmt, IntSupply) }
+
+
+data IntSupply = IntSupply
+      { i_int   :: Int
+      , k_int   :: Int
+      , a_int   :: Int
+      }
+
+
+
+
 
 
 newtype Expr rate = Expr { getExpr :: DExpr }
@@ -182,16 +207,12 @@ data KR
 data AR
 
 -- | Synonyms - useful for asserting types in do-notation.
-type Ir = Expr IR
-type Kr = Expr KR
-type Ar = Expr AR
+type ISig = Expr IR
+type KSig = Expr KR
+type ASig = Expr AR
 
 
 
--- | CSB page22.
---
-data RateVar = I | K | A 
-  deriving (Eq,Ord,Show)
 
 
 binop :: String -> Expr a -> Expr a -> Expr a
@@ -204,12 +225,12 @@ instance Num (Expr a) where
   abs    = Expr . UnOp "abs" . getExpr
   negate = Expr . UnOp "-"   . getExpr
   signum _      = error "signum - no interpretation of signum in Csound."
-  fromInteger i = Expr $ Const $ CsInt $ fromInteger i
+  fromInteger i = Expr $ Literal $ CsInt $ fromInteger i
 
 instance Fractional (Expr a) where
   (/) = binop "/"  
   recip _        = error "recip - no interpretation of recip in Csound."  
-  fromRational i = Expr $ Const $ CsDouble $ fromRational i
+  fromRational i = Expr $ Literal $ CsDouble $ fromRational i
 
 
 
@@ -233,6 +254,9 @@ runInstBuilder n ma = post $ getBuild ma (IntSupply 1 1 1)
   where
     post (_,w,_) = Inst { inst_num = n, inst_body = toListH w }
 
+
+printInst :: Inst -> IO () 
+printInst = print . format
 
 
 tellStmt :: Stmt -> InstBuilder ()
@@ -354,29 +378,31 @@ instance IK_Rate KR
 
 -- | Dynamic typecast - no residual Csound code is generated.
 --
-castIR :: Expr rate -> Expr IR
+castIR :: Expr rate -> ISig
 castIR = Expr . getExpr
 
 -- | Dynamic typecast - no residual Csound code is generated.
 --
-castKR :: Expr rate -> Expr KR
+castKR :: Expr rate -> KSig
 castKR = Expr . getExpr
 
 -- | Dynamic typecast - no residual Csound code is generated.
 --
-castAR :: Expr rate -> Expr AR
+castAR :: Expr rate -> ASig
 castAR = Expr . getExpr
+
+
 
 
 -- Explicitly typed versions
                    
-ivar :: Expr IR -> InstBuilder (Expr IR)
+ivar :: ISig -> InstBuilder ISig
 ivar = var . getExpr
 
-kvar :: Expr KR -> InstBuilder (Expr KR)
+kvar :: KSig -> InstBuilder KSig
 kvar = var . getExpr
 
-avar :: Expr AR -> InstBuilder (Expr AR)
+avar :: ASig -> InstBuilder ASig
 avar = var . getExpr
 
 
@@ -386,10 +412,10 @@ pfield    :: Int -> Expr a
 pfield i  = Expr $ PField i
 
 
-out :: Expr AR -> InstBuilder ()
+out :: ASig -> InstBuilder ()
 out e = tellStmt $ Outs [getExpr e]
 
-outs :: [Expr AR] -> InstBuilder ()
+outs :: [ASig] -> InstBuilder ()
 outs = tellStmt . Outs . map getExpr
 
 
@@ -446,7 +472,7 @@ instance Format DExpr where
   format (VarE s)       = format s
   format (ParenE e)     = parens $ format e
   format (PField i)     = char 'p' <> int i 
-  format (Const val)    = format val
+  format (Literal val)  = format val
   format (ZeroOp ss)    = text ss
   format (UnOp ss a)    = text ss <> format a
   format (BinOp ss a b) = format a <> text ss <> format b
@@ -459,6 +485,7 @@ instance Format TagVar where
 instance Format CsValue where
   format (CsInt i)    = int i
   format (CsDouble d) = dtrunc d
+  format (CsString s) = dquotes $ text s
 
 
 
