@@ -6,9 +6,10 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Generate Csound
+synopsis:         Basic objects built on ZSnd-Core.
 description:
-  Generate Csound - higher level layer onto of zsnd-core.
+  Generate Csound - kernel code for higher level music built on 
+  zsnd-core.
   .
   (c) Stephen Tetley 2011
   .
@@ -42,8 +43,6 @@ library
     ZSnd.Basic.Kernel.Objects.Score,
     ZSnd.Basic.Kernel.Objects.TraceLoc,
     ZSnd.Basic.Kernel.Objects.TraceNotelist,
-    ZSnd.Basic.Symbolic.Pitch,
-    ZSnd.Basic.Symbolic.Z12,
     ZSnd.Basic.Utils.HList,
     ZSnd.Basic.Utils.JoinList
 

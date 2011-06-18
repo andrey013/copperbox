@@ -9,7 +9,6 @@ import XanaduInst
 
 
 import ZSnd.Basic.Kernel
-import ZSnd.Basic.Symbolic.Pitch
 
 import ZSnd.Core                                -- package: zsnd-core
 
@@ -38,21 +37,15 @@ notelist1 = do
     eventl 0 $ fgen11  8192 1
     eventl 0 $ fgenN12 8192 20
 
-    eventl 0 $ note fsharp3 15
-    eventl 0 $ note (fsharp3 .+^ 7) 15
-    eventl 0 $ note (pitchC 8 06) 15
-    eventl 0 $ note (pitchC 8 10) 15
-    eventl 0 $ note (pitchC 8 11) 15
-    eventl 0 $ note (pitchC 9 04) 15
-  where
-    fsharp3 = pitchC 7 06
+    eventl 0 $ note 7.06 15
+    eventl 0 $ note 8.01 15
+    eventl 0 $ note 8.06 15
+    eventl 0 $ note 8.10 15
+    eventl 0 $ note 8.11 15
+    eventl 0 $ note 9.04 15
 
 
 
-
--- Gen21 probably makes sense as a family of LocEvents.
-
---    dyninst 1 3 3 []
 
 -- xan3
 -- 
@@ -84,7 +77,7 @@ instance CtxTempo X3Ctx where
   set_tempo i s = s { x3_tempo = i }
 
 
-note :: InterpretUnit u => PC -> Double -> ULocEvent X3Ctx u
+note :: InterpretUnit u => Double -> Double -> ULocEvent X3Ctx u
 note pch drn = promoteLoc $ \u -> 
     askCtx >>= \ctx -> 
     let du = normalize (tempo ctx) u
@@ -92,5 +85,5 @@ note pch drn = promoteLoc $ \u ->
                                    , event_dur  = drn
                                    , event_gen  = mk ctx })
   where
-    mk ctx = \ot dx -> dyninst 3 ot dx [0, pcPC pch, (line_start ctx), (line_end ctx)]
+    mk ctx = \ot dx -> dyninst 3 ot dx [0, pch, (line_start ctx), (line_end ctx)]
   

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Basic.Symbolic.Z12
+-- Module      :  ZSnd.Symbolic.Basis.Z12
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Basic.Symbolic.Z12
+module ZSnd.Symbolic.Basis.Z12
   ( 
   -- * Datatype
     Z12
@@ -25,8 +25,6 @@ module ZSnd.Basic.Symbolic.Z12
 
   ) where
 
-
--- import Tonos.Base
 
 import Data.AdditiveGroup               -- package: vector-space
 

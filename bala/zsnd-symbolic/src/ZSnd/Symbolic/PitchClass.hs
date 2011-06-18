@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Basic.Symbolic.Pitch
+-- Module      :  ZSnd.Symbolic.PitchClass
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Basic.Symbolic.Pitch
+module ZSnd.Symbolic.PitchClass
   ( 
 
     PC
@@ -33,7 +33,7 @@ module ZSnd.Basic.Symbolic.Pitch
 -- as we are only generating numerical values...
 
 
-import ZSnd.Basic.Symbolic.Z12
+import ZSnd.Symbolic.Basis.Z12
 
 import Data.AffineSpace
 import Data.VectorSpace

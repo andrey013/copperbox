@@ -1,0 +1,47 @@
+name:             zsnd-symbolic
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         High-level music objects built on ZSnd-Basic
+description:
+  Generate Csound - higher level stuff.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Xanadu.hs
+  demo/XanaduInst.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      vector-space      >= 0.6     && <  1.0,
+                      zsnd-core         == 0.1.0,
+                      zsnd-basic        == 0.1.0
+
+  exposed-modules:
+    ZSnd.Symbolic.Basis.Z12,
+    ZSnd.Symbolic.PitchClass
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
