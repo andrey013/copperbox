@@ -93,8 +93,8 @@ type instance Ctx (Notelist ctx u) = ctx
 type instance Ctx (NotelistT ctx u m) = ctx
 
 
-type DNotelist a    = Notelist Double a
-type DNotelistT m a = NotelistT Double m a
+type DNotelist ctx a    = Notelist ctx Double a
+type DNotelistT ctx m a = NotelistT ctx Double m a
 
 
 

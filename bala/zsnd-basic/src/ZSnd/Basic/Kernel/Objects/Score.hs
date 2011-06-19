@@ -29,7 +29,9 @@ import ZSnd.Basic.Kernel.Base.BaseDefs
 import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
 import ZSnd.Basic.Kernel.Objects.AdvNotelist
+import ZSnd.Basic.Kernel.Objects.Basis
 import ZSnd.Basic.Kernel.Objects.Concat
+import ZSnd.Basic.Kernel.Objects.LocEvent
 import ZSnd.Basic.Kernel.Objects.TraceNotelist
 
 import ZSnd.Core                                -- package: zsnd-core
@@ -59,7 +61,10 @@ traceNotelist ctx mf = liftToScore $ execNotelist ctx mf
 
 traceAdvNotelist :: (CtxTempo ctx, InterpretUnit u) 
                  => ctx -> AdvNotelist ctx u a -> Score
-traceAdvNotelist ctx mf = traceNotelist ctx (eventl 0 $ execAdvNotelist mf)
+traceAdvNotelist ctx mf = 
+    let (PrimW ca _) = runLocEvent 0 ctx $ execAdvNotelist ctx mf
+    in liftToScore $ singleH ca
+
 
 
 -- Note unlike Wumpus, empty note lists pose no problem for ZSnd.
