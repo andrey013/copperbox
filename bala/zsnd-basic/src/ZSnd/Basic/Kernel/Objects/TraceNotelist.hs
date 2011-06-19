@@ -17,6 +17,10 @@
 -- intermediate events - and /context/ - a reader monad of 
 -- attributes - amplitude or whatever.
 --
+-- The note list a timeline - events can be freely placed on the 
+-- timeline, they do not have to be sequential (the timeline is 
+-- sorted before rendering).
+-- 
 --------------------------------------------------------------------------------
 
 module ZSnd.Basic.Kernel.Objects.TraceNotelist

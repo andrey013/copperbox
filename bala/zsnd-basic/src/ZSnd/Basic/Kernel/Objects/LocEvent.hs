@@ -35,7 +35,7 @@ module ZSnd.Basic.Kernel.Objects.LocEvent
    , at
 
 
-   -- * Composing LocImages
+   -- * Composing LocEvents
    , distrib
    , duplicate
 

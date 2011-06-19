@@ -11,13 +11,16 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Extended Graphic object - a rectangular /positionable/ Image.
+-- Extended Event object.
+--
+-- Note - this object does not be seem to have a valuable 
+-- use-case, and if one isn\'t found it will be removed.
+--
+-- In Wumpus, some objects are obviously drawn from different 
+-- start positions (circles - center, direction-zero text - 
+-- baseline left). However, there don\'t seem to be any valuable 
+-- events that have \"start\" positions different to actual start.
 -- 
--- This graphic object has a more flexible API for positioning 
--- than other graphic objects. Rather than a LocGraphic which 
--- supports a single method of positioning at some start-point,
--- a @PosGraphic@ can be drawn at its center or locations on its 
--- outer rectangle.
 --
 --------------------------------------------------------------------------------
 

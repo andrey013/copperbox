@@ -101,8 +101,6 @@ instance Applicative (TraceLoc ctx u) where
                 in (f a, v2, o1 `mappend` o2)
 
 
-
-
 instance Monad m => Applicative (TraceLocT ctx u m) where
   pure a    = TraceLocT $ \v0 -> return (a, v0, mempty)
   mf <*> ma = TraceLocT $ \v0 -> 
@@ -127,6 +125,24 @@ instance Monad m => Monad (TraceLocT ctx u m) where
                 getTraceLocT ma v0 >>= \(a,v1,o1) ->
                 (getTraceLocT . k) a v1 >>= \(b,v2,o2) -> 
                 return (b, v2, o1 `mappend` o2)
+
+
+
+-- Monoid
+
+instance Monoid a => Monoid (TraceLoc ctx u a) where
+  mempty          = TraceLoc $ \v0 -> (mempty, v0, mempty)
+  ma `mappend` mb = TraceLoc $ \v0 -> let (a,v1,w1) = getTraceLoc ma v0
+                                          (b,v2,w2) = getTraceLoc mb v1
+                                      in (a `mappend` b, v2, w1 `mappend` w2)
+
+instance (Monad m, Monoid a) => Monoid (TraceLocT ctx u m a) where
+  mempty          = TraceLocT $ \v0 -> return (mempty, v0, mempty)
+  ma `mappend` mb = TraceLocT $ \v0 -> 
+                      getTraceLocT ma v0 >>= \(a,v1,w1) ->
+                      getTraceLocT mb v1 >>= \(b,v2,w2) ->
+                      return (a `mappend` b, v2, w1 `mappend` w2)
+
 
 
 

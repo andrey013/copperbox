@@ -22,7 +22,8 @@ module ZSnd.Basic.Kernel
     module ZSnd.Basic.Kernel.Base.BaseDefs
   , module ZSnd.Basic.Kernel.Base.Context
   , module ZSnd.Basic.Kernel.Base.WrappedPrimitive
-  , module ZSnd.Basic.Kernel.Objects.AdvObject
+  , module ZSnd.Basic.Kernel.Objects.AdvEvent
+  , module ZSnd.Basic.Kernel.Objects.AdvNotelist
   , module ZSnd.Basic.Kernel.Objects.Basis
   , module ZSnd.Basic.Kernel.Objects.Concat
   , module ZSnd.Basic.Kernel.Objects.Connector
@@ -37,7 +38,8 @@ module ZSnd.Basic.Kernel
 import ZSnd.Basic.Kernel.Base.BaseDefs
 import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
-import ZSnd.Basic.Kernel.Objects.AdvObject
+import ZSnd.Basic.Kernel.Objects.AdvEvent
+import ZSnd.Basic.Kernel.Objects.AdvNotelist
 import ZSnd.Basic.Kernel.Objects.Basis
 import ZSnd.Basic.Kernel.Objects.Concat
 import ZSnd.Basic.Kernel.Objects.Connector

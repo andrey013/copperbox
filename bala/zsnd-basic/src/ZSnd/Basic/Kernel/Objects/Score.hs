@@ -19,13 +19,16 @@ module ZSnd.Basic.Kernel.Objects.Score
     Score
   , runScore
   , traceNotelist
+  , traceAdvNotelist
 
     
   ) where
 
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
+import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
+import ZSnd.Basic.Kernel.Objects.AdvNotelist
 import ZSnd.Basic.Kernel.Objects.Concat
 import ZSnd.Basic.Kernel.Objects.TraceNotelist
 
@@ -54,13 +57,16 @@ runScore sco = runScoBuilder (score_sequence sco $ 0)
 traceNotelist :: ctx -> Notelist ctx u a -> Score
 traceNotelist ctx mf = liftToScore $ execNotelist ctx mf
 
+traceAdvNotelist :: (CtxTempo ctx, InterpretUnit u) 
+                 => ctx -> AdvNotelist ctx u a -> Score
+traceAdvNotelist ctx mf = traceNotelist ctx (eventl 0 $ execAdvNotelist mf)
 
 
 -- Note unlike Wumpus, empty note lists pose no problem for ZSnd.
 
 
 
--- | /Unsafe/ promotion of @HPrim@ to @Picture@.
+-- | Promotion of @HPrim@ to @Picture@.
 --
 -- 
 liftToScore :: HPrim u -> Score
