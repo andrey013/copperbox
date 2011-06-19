@@ -103,10 +103,9 @@ szconvPrimZ _ (PrimW c a) = PrimW c a
 
 
 newtype Event ctx u a = Event { 
-          getEvent :: ctx -> PrimW u a }
+          getEvent :: Context ctx -> PrimW u a }
 
 type instance DUnit (Event ctx u a) = u
-type instance Ctx (Event ctx u) = ctx
 
 
 type DEvent ctx a = Event ctx Double a
@@ -114,10 +113,9 @@ type DEvent ctx a = Event ctx Double a
 type UEvent ctx u = Event ctx u (UNil u)
 
 
-newtype Query ctx u a =  Query { getQuery :: ctx -> a }
+newtype Query ctx u a =  Query { getQuery :: Context ctx -> a }
 
 type instance DUnit (Query ctx u a) = u
-type instance Ctx (Query ctx u) = ctx
 
 -- Functor
 
@@ -169,22 +167,24 @@ instance Monoid a => Monoid (Query ctx u a) where
 -- RenderCtxM
 
 
-instance ContextM (Event ctx u) where
+instance ContextM (Event uctx u) where
+  type UCtx (Event uctx u) = uctx
   askCtx          = Event $ \ctx -> return ctx
   asksCtx fn      = Event $ \ctx -> return (fn ctx)
   localize upd ma = Event $ \ctx -> getEvent ma (upd ctx)
 
-instance ContextM (Query ctx u) where
+instance ContextM (Query uctx u) where
+  type UCtx (Query uctx u) = uctx
   askCtx          = Query $ \ctx -> ctx
   asksCtx fn      = Query $ \ctx -> fn ctx
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
-runEvent :: ctx -> Event ctx u a -> PrimW u a
+runEvent :: Context ctx -> Event ctx u a -> PrimW u a
 runEvent ctx mf = getEvent mf ctx
 
 
-runQuery :: ctx -> Query ctx u a -> a
+runQuery :: Context ctx -> Query ctx u a -> a
 runQuery ctx mf = getQuery mf ctx
 
 
@@ -200,10 +200,10 @@ primEvent ca = Event $ \_ -> PrimW ca UNil
 
 
 class UConvert (f :: * -> * -> * -> *) where
-  uconvF :: (CtxTempo ctx, Functor t, InterpretUnit u, InterpretUnit u1) 
+  uconvF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
          => f ctx u (t u) -> f ctx u1 (t u1)
 
-  uconvZ :: (CtxTempo ctx, InterpretUnit u, InterpretUnit u1) 
+  uconvZ :: (InterpretUnit u, InterpretUnit u1) 
          => f ctx u a -> f ctx u1 a
 
 instance UConvert Event where
@@ -211,17 +211,17 @@ instance UConvert Event where
   uconvF = uconvEventF
 
 
-uconvEventF :: (CtxTempo ctx, Functor t, InterpretUnit u, InterpretUnit u1) 
+uconvEventF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
              => Event ctx u (t u) -> Event ctx u1 (t u1)
 uconvEventF ma = Event $ \ctx -> 
-    szconvPrimF (tempo ctx) $ getEvent ma ctx
+    szconvPrimF (ctx_tempo ctx) $ getEvent ma ctx
 
 
 
-uconvEventZ :: (CtxTempo ctx, InterpretUnit u, InterpretUnit u1) 
+uconvEventZ :: (InterpretUnit u, InterpretUnit u1) 
              => Event ctx u a -> Event ctx u1 a
 uconvEventZ ma = Event $ \ctx -> 
-    szconvPrimZ (tempo ctx) $ getEvent ma ctx
+    szconvPrimZ (ctx_tempo ctx) $ getEvent ma ctx
 
 
 

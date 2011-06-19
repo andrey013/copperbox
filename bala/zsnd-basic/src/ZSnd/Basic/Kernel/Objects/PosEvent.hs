@@ -150,7 +150,7 @@ appendW (s0,pf0) (s1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
 -- argument (start-point is implicit). The corresponding answer is 
 -- an /arity one/ Graphic that needs drawing with the start-point.
 --
-runPosEvent :: (Fractional u, InterpretUnit u, CtxTempo ctx) 
+runPosEvent :: (Fractional u, InterpretUnit u) 
             => PosEvent ctx u -> LocEvent ctx u (Bounds u)
 runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
    askCtx >>= \ctx -> 
@@ -164,7 +164,7 @@ runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
 --
 -- Create a 'PosEvent' from its length and 'LocEvent'.
 --
-makePosEvent :: (InterpretUnit u, CtxTempo ctx)
+makePosEvent :: InterpretUnit u
              => Query ctx u (Span u) -> ULocEvent ctx u -> PosEvent ctx u
 makePosEvent qortt gf = PosEvent body
   where
@@ -190,7 +190,7 @@ emptyPosEvent = PosEvent $ pure (0, const mempty)
 
 -- | Apply a context update to a 'PosEvent'.
 --
-localPosEvent :: (ctx -> ctx) -> PosEvent ctx u -> PosEvent ctx u
+localPosEvent :: ContextF ctx -> PosEvent ctx u -> PosEvent ctx u
 localPosEvent upd = PosEvent . localize upd . getPosEvent
 
 
@@ -205,7 +205,7 @@ localPosEvent upd = PosEvent . localize upd . getPosEvent
 -- | Note the decoration does not modify the span (duration)
 -- even if it may sound for longer.
 --
-elaboratePosEvent :: (InterpretUnit u, CtxTempo ctx) 
+elaboratePosEvent :: InterpretUnit u
                   => (Span u -> ULocEvent ctx u) -> PosEvent ctx u 
                   -> PosEvent ctx u
 elaboratePosEvent fn po = PosEvent body
@@ -222,7 +222,7 @@ elaboratePosEvent fn po = PosEvent body
 
 -- | Extend the orientation.
 --
-extendPosEvent :: Num u 
+extendPosEvent :: InterpretUnit u 
                => u -> u -> PosEvent ctx u -> PosEvent ctx u
 extendPosEvent t0 t1 po = PosEvent body
   where
@@ -260,11 +260,11 @@ appendPE pe0 pe1 = PosEvent body
           in return (s0 + s1, pf)
 
 
-instance (InterpretUnit u, CtxTempo ctx) => Space (PosEvent ctx u) where
+instance InterpretUnit u => Space (PosEvent ctx u) where
   space = spacePE
 
 
-spacePE :: (InterpretUnit u, CtxTempo ctx)
+spacePE :: InterpretUnit u
         => u -> PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
 spacePE u a b = a `append` blank `append` b
   where

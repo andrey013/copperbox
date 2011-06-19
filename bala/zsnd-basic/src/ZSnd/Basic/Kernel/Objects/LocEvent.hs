@@ -64,7 +64,6 @@ newtype LocEvent ctx u a = LocEvent {
 
 
 type instance DUnit (LocEvent ctx u a) = u
-type instance Ctx (LocEvent ctx u) = ctx
 
 
 
@@ -110,6 +109,7 @@ instance Monoid a => Monoid (LocEvent ctx u a) where
 -- DrawingCtxM
 
 instance ContextM (LocEvent ctx u) where
+  type UCtx (LocEvent ctx u) = ctx
   askCtx          = LocEvent $ \_  -> askCtx
   asksCtx fn      = LocEvent $ \_  -> asksCtx fn
   localize upd ma = LocEvent $ \ot -> localize upd (getLocEvent ma ot)
@@ -131,20 +131,20 @@ instance Decorate LocEvent where
 -- tempo in the Context.
 -- 
 
-runLocEvent :: (CtxTempo ctx, InterpretUnit u)
-            => u -> ctx -> LocEvent ctx u a -> PrimW u a
+runLocEvent :: InterpretUnit u
+            => u -> Context ctx -> LocEvent ctx u a -> PrimW u a
 runLocEvent start ctx mf = 
-    let dzero = normalize (tempo ctx) start 
+    let dzero = normalize (ctx_tempo ctx) start 
     in runEvent ctx (getLocEvent mf dzero)
 
 
 
-promoteLoc :: (CtxTempo ctx, InterpretUnit u) 
+promoteLoc :: InterpretUnit u
            => (u -> Event ctx u a) -> LocEvent ctx u a
 promoteLoc k = LocEvent $ \ot -> dinterpCtx ot >>= \uot -> k uot
 
 
-applyLoc :: (CtxTempo ctx, InterpretUnit u) 
+applyLoc :: InterpretUnit u
          => LocEvent ctx u a -> u -> Event ctx u a
 applyLoc mq ot = normalizeCtx ot >>= \dot -> getLocEvent mq dot
 
@@ -160,7 +160,7 @@ instance UConvert LocEvent where
 -- | Use this to convert 'LocGraphic' or 'LocEvent' with Functor 
 -- answer.
 --
-uconvLocEventF :: (CtxTempo ctx, InterpretUnit u, InterpretUnit u1, Functor t) 
+uconvLocEventF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                => LocEvent ctx u (t u) -> LocEvent ctx u1 (t u1)
 uconvLocEventF ma = LocEvent $ \ot -> uconvF $ getLocEvent ma ot
 
@@ -168,7 +168,7 @@ uconvLocEventF ma = LocEvent $ \ot -> uconvF $ getLocEvent ma ot
 
 -- | Use this to convert 'LocEvent' with unit-less answer.
 --
-uconvLocEventZ :: (CtxTempo ctx, InterpretUnit u, InterpretUnit u1) 
+uconvLocEventZ :: (InterpretUnit u, InterpretUnit u1) 
                => LocEvent ctx u a -> LocEvent ctx u1 a
 uconvLocEventZ ma = LocEvent $ \ot -> uconvZ $ getLocEvent ma ot
 
@@ -185,7 +185,7 @@ emptyLocEvent = mempty
 -- Note - maybe this should just be an operator on LocEvent...
 --
 
-moveStart :: (CtxTempo ctx, InterpretUnit u)
+moveStart :: InterpretUnit u
           => u -> LocEvent ctx u a -> LocEvent ctx u a
 moveStart dt ma = LocEvent $ \t1 -> 
     normalizeCtx dt >>= \ddt -> getLocEvent ma (t1 + ddt) 
@@ -198,7 +198,7 @@ infixr 1 `at`
 -- | Downcast a 'LocEvent' function by applying it to the supplied 
 -- point, making an 'Event'. 
 -- 
-at :: (CtxTempo ctx, InterpretUnit u) 
+at :: InterpretUnit u
    => LocEvent ctx u a -> u -> Event ctx u a
 at mf t1 = normalizeCtx t1 >>= \dt1 -> getLocEvent mf dt1
 
@@ -216,7 +216,7 @@ at mf t1 = normalizeCtx t1 >>= \dt1 -> getLocEvent mf dt1
 
 
 
-distrib :: (Monoid a, CtxTempo ctx, InterpretUnit u) 
+distrib :: (Monoid a, InterpretUnit u) 
         => u -> [LocEvent ctx u a]  -> LocEvent ctx u a
 distrib _  []     = mempty
 distrib dt (x:xs) = promoteLoc $ \ot -> 
@@ -228,7 +228,7 @@ distrib dt (x:xs) = promoteLoc $ \ot ->
 
 -- | This is analogue to @replicate@ in the Prelude.
 --
-duplicate :: (Monoid a, CtxTempo ctx, InterpretUnit u) 
+duplicate :: (Monoid a, InterpretUnit u) 
           => Int -> u -> LocEvent ctx u a -> LocEvent ctx u a
 duplicate n _  _   | n < 1 = mempty
 duplicate n dt evt         = go evt dt (n-1)

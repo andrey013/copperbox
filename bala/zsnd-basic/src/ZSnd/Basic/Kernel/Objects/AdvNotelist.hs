@@ -59,9 +59,6 @@ newtype AdvNotelistT ctx u m a = AdvNotelistT
 type instance DUnit (AdvNotelist ctx u a) = u
 type instance DUnit (AdvNotelistT ctx u m a) = u
 
-type instance Ctx (AdvNotelist ctx u) = ctx
-type instance Ctx (AdvNotelistT ctx u m) = ctx
-
 type DAdvNotelist ctx a    = AdvNotelist ctx Double a
 type DAdvNotelistT ctx m a = AdvNotelistT ctx Double m a
 
@@ -112,12 +109,14 @@ instance Monad m => Monad (AdvNotelistT ctx u m) where
 -- ContextM
 
 instance ContextM (AdvNotelist ctx u) where
+  type UCtx (AdvNotelist ctx u) = ctx
   askCtx          = AdvNotelist $ \_ -> askCtx 
   asksCtx f       = AdvNotelist $ \_ -> asksCtx f
   localize upd ma = AdvNotelist $ \r -> localize upd (getAdvNotelist ma r)
 
 
 instance Monad m => ContextM (AdvNotelistT ctx u m) where
+  type UCtx (AdvNotelistT ctx u m) = ctx
   askCtx          = AdvNotelistT $ \_ -> askCtx
   asksCtx f       = AdvNotelistT $ \_ -> asksCtx f
   localize upd ma = AdvNotelistT $ \r -> localize upd (getAdvNotelistT ma r)
@@ -137,27 +136,27 @@ instance (Monad m, Monoid a) => Monoid (AdvNotelistT ctx u m a) where
                        getAdvNotelistT ma r `mappend` getAdvNotelistT mb r
 
 
-runAdvNotelist :: (CtxTempo ctx, InterpretUnit u)
-               => ctx -> AdvNotelist ctx u a -> (a, ULocEvent ctx u)
+runAdvNotelist :: InterpretUnit u
+               => Context ctx -> AdvNotelist ctx u a -> (a, ULocEvent ctx u)
 runAdvNotelist ctx mf = runTraceLoc ctx (getAdvNotelist mf envZero)
 
 
-execAdvNotelist :: (CtxTempo ctx, InterpretUnit u)
-               => ctx -> AdvNotelist ctx u a -> ULocEvent ctx u
+execAdvNotelist :: InterpretUnit u
+               => Context ctx -> AdvNotelist ctx u a -> ULocEvent ctx u
 execAdvNotelist ctx mf = snd $ runAdvNotelist ctx mf
 
-runAdvNotelistT :: (Monad m, CtxTempo ctx, InterpretUnit u)
-                => ctx -> AdvNotelistT ctx u m a -> m (a, ULocEvent ctx u)
+runAdvNotelistT :: (Monad m, InterpretUnit u)
+                => Context ctx -> AdvNotelistT ctx u m a -> m (a, ULocEvent ctx u)
 runAdvNotelistT ctx mf = runTraceLocT ctx (getAdvNotelistT mf envZero)
 
 
-execAdvNotelistT :: (Monad m, CtxTempo ctx, InterpretUnit u)
-                 => ctx -> AdvNotelistT ctx u m a -> m (ULocEvent ctx u)
+execAdvNotelistT :: (Monad m, InterpretUnit u)
+                 => Context ctx -> AdvNotelistT ctx u m a -> m (ULocEvent ctx u)
 execAdvNotelistT ctx mf = liftM snd $ runAdvNotelistT ctx mf
 
 
 class AEventM (m :: * -> *) where
-  aevent    :: (u ~ DUnit (m ()), ctx ~ Ctx m) 
+  aevent    :: (u ~ DUnit (m ()), ctx ~ UCtx m) 
             => (u -> ULocEvent ctx u) -> u -> m ()
 
   staccato  :: Double -> m a -> m a
@@ -167,7 +166,7 @@ class AEventM (m :: * -> *) where
 -- staccato factor and moves the cursor by the full duration.
 --
 
-instance (CtxTempo ctx, InterpretUnit u, VectorSpace u, Fractional (Scalar u)) 
+instance (InterpretUnit u, VectorSpace u, Fractional (Scalar u)) 
     => AEventM (AdvNotelist ctx u) where
   aevent mf d = AdvNotelist $ \r -> 
                   let d1 = d ^* (realToFrac $ staccato_factor r)
@@ -177,7 +176,7 @@ instance (CtxTempo ctx, InterpretUnit u, VectorSpace u, Fractional (Scalar u))
                     getAdvNotelist ma (r { staccato_factor = d})
 
 
-instance ( Monad m, CtxTempo ctx, InterpretUnit u, VectorSpace u
+instance ( Monad m, InterpretUnit u, VectorSpace u
          , Fractional (Scalar u)) 
     => AEventM (AdvNotelistT ctx u m) where
   aevent mf d = AdvNotelistT $ \r -> 

@@ -29,7 +29,7 @@ main = do
 
 
 sco01 :: Score
-sco01 = traceNotelist ctx_zero notelist1
+sco01 = traceNotelist (initialContext ctx_zero) notelist1
 
 notelist1 :: Notelist X3Ctx Double ()
 notelist1 = do 
@@ -72,18 +72,14 @@ ctx_zero = X3Ctx { x3_tempo        = 120
                  }
 
 
-instance CtxTempo X3Ctx where
-  tempo         = x3_tempo
-  set_tempo i s = s { x3_tempo = i }
-
 
 note :: InterpretUnit u => Double -> Double -> ULocEvent X3Ctx u
 note pch drn = promoteLoc $ \u -> 
     askCtx >>= \ctx -> 
-    let du = normalize (tempo ctx) u
+    let du = normalize (ctx_tempo ctx) u
     in primEvent (prim1 $ NoteStmt { onset_time = du
                                    , event_dur  = drn
-                                   , event_gen  = mk ctx })
+                                   , event_gen  = mk (ctx_user_context ctx) })
   where
     mk ctx = \ot dx -> dyninst 3 ot dx [0, pch, (line_start ctx), (line_end ctx)]
   

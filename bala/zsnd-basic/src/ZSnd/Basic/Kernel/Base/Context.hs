@@ -17,11 +17,15 @@
 
 module ZSnd.Basic.Kernel.Base.Context
   (
-    Ctx 
+    Context(..)
   , ContextM(..)
 
-  , CtxTempo(..)
+  , ContextF
+
+  , initialContext
+
   , get_tempo
+  , set_tempo
 
   , normalizeCtx
   , dinterpCtx
@@ -33,8 +37,16 @@ import ZSnd.Basic.Kernel.Base.BaseDefs
 import Control.Applicative
 
 
-type family Ctx ctx :: *
+data Context uctx = Context
+      { ctx_tempo               :: Tempo
+      , ctx_staccato_factor     :: Double   -- range 0 .. 1.0
+      , ctx_user_context        :: uctx
+      }
 
+-- type family Ctx ctx :: *
+
+
+type ContextF uctx = Context uctx -> Context uctx
 
 -- | 'ContextM' is equivalent to the @MonadReader@ class.
 --
@@ -46,11 +58,22 @@ type family Ctx ctx :: *
 --
 
 class (Applicative m, Monad m) => ContextM (m :: * -> *) where
-  askCtx    :: r ~ Ctx m => m r
-  asksCtx   :: r ~ Ctx m => (r -> a) -> m a
-  localize  :: r ~ Ctx m => (r -> r) -> m a -> m a
+  type UCtx m :: *
+  askCtx    :: r ~ UCtx m  => m (Context r)
+  asksCtx   :: r ~ UCtx m => (Context r -> a) -> m a
+  localize  :: r ~ UCtx m => ContextF r -> m a -> m a
 
   asksCtx f  = f <$> askCtx
+
+
+initialContext :: uctx -> Context uctx
+initialContext uc = Context
+      { ctx_tempo               = 120
+      , ctx_staccato_factor     = 1.0
+      , ctx_user_context        = uc
+      }
+
+
 
 --
 -- Design Note
@@ -66,21 +89,24 @@ class (Applicative m, Monad m) => ContextM (m :: * -> *) where
 -- useful component this module can provide is the typeclass
 -- @ContextM@.
 --
-
-class CtxTempo r where
-  tempo     :: r -> Tempo
-  set_tempo :: Tempo -> r -> r
-
-get_tempo :: (CtxTempo r, ContextM m, r ~ Ctx m)  => m Tempo
-get_tempo = asksCtx tempo
+-- Update: there is a design option to have a parameteric context 
+-- though: 
+-- 
+-- data Ctx uc = Ctx { ctx_tempo :: Tempo, user_ctx :: uc }
+--
 
 
+get_tempo :: ContextM m => m Tempo
+get_tempo = asksCtx ctx_tempo
 
-normalizeCtx :: (ContextM m, CtxTempo r, InterpretUnit u, r ~ Ctx m)
+set_tempo :: ContextM m => Tempo -> m a -> m a
+set_tempo bpm ma = localize (\s -> s { ctx_tempo = bpm}) ma
+
+normalizeCtx :: (ContextM m, InterpretUnit u)
              => u -> m Double
 normalizeCtx du = (\bpm -> normalize bpm du) <$> get_tempo
 
-dinterpCtx :: (ContextM m, CtxTempo r, InterpretUnit u, r ~ Ctx m)
+dinterpCtx :: (ContextM m, InterpretUnit u)
            => Double -> m u
 dinterpCtx u = (\bpm -> dinterp bpm u) <$> get_tempo
 

@@ -88,7 +88,6 @@ newtype AdvEvent ctx u = AdvEvent
           { getAdvEvent :: Query ctx u (AdvanceVec u, AdvDraw u) }
 
 type instance DUnit (AdvEvent ctx u) = u
-type instance Ctx (AdvEvent ctx) = ctx
 
 
 type DAdvEvent     = AdvEvent Double
@@ -105,10 +104,10 @@ instance (InterpretUnit u) => Monoid (AdvEvent ctx u) where
   mappend = advplus
 
 
--- | Run an 'AdvEvent' turning it into an 'LocIEvent'.
+-- | Run an 'AdvEvent' turning it into an 'LocEvent'.
 --
-runAdvEvent :: (CtxTempo ctx, InterpretUnit u)
-             => AdvEvent ctx u -> LocEvent ctx u (AdvanceVec u)
+runAdvEvent :: InterpretUnit u
+            => AdvEvent ctx u -> LocEvent ctx u (AdvanceVec u)
 runAdvEvent (AdvEvent mf) = promoteLoc $ \ot -> 
    askCtx >>= \ctx -> 
    let (v1,df) = runQuery ctx mf
@@ -118,9 +117,9 @@ runAdvEvent (AdvEvent mf) = promoteLoc $ \ot ->
 -- | Build an 'AdvEvent' from a query that generates the answer 
 -- advance vector and a 'LocEvent' that generates the event.
 --
-makeAdvEvent :: (CtxTempo ctx, InterpretUnit u )
-              => Query ctx u (AdvanceVec u) -> ULocEvent ctx u 
-              -> AdvEvent ctx u
+makeAdvEvent :: InterpretUnit u
+             => Query ctx u (AdvanceVec u) -> ULocEvent ctx u 
+             -> AdvEvent ctx u
 makeAdvEvent mq gf = AdvEvent body
   where
     body = askCtx >>= \ctx -> 

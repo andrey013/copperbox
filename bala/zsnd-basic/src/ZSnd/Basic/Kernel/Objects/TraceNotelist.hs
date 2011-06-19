@@ -81,17 +81,13 @@ class TraceM (m :: * -> *) where
 
 
 newtype Notelist ctx u a   = Notelist { 
-          getNotelist :: ctx -> (a, HPrim u) }
+          getNotelist :: Context ctx -> (a, HPrim u) }
 
 newtype NotelistT ctx u m a = NotelistT { 
-          getNotelistT :: ctx -> m (a, HPrim u) }
+          getNotelistT :: Context ctx -> m (a, HPrim u) }
 
 type instance DUnit (Notelist ctx u a) = u
 type instance DUnit (NotelistT ctx u m a) = u
-
-type instance Ctx (Notelist ctx u) = ctx
-type instance Ctx (NotelistT ctx u m) = ctx
-
 
 type DNotelist ctx a    = Notelist ctx Double a
 type DNotelistT ctx m a = NotelistT ctx Double m a
@@ -170,6 +166,7 @@ instance Monad m => TraceM (NotelistT ctx u m) where
 -- ContextM
 
 instance ContextM (Notelist ctx u) where
+  type UCtx (Notelist ctx u) = ctx
   askCtx          = Notelist $ \ctx -> (ctx, mempty)
   asksCtx f       = Notelist $ \ctx -> (f ctx, mempty)
   localize upd ma = Notelist $ \ctx -> getNotelist ma (upd ctx)
@@ -177,6 +174,7 @@ instance ContextM (Notelist ctx u) where
 
 
 instance Monad m => ContextM (NotelistT ctx u m) where
+  type UCtx (NotelistT ctx u m) = ctx
   askCtx          = NotelistT $ \ctx -> return (ctx, mempty)
   asksCtx f       = NotelistT $ \ctx -> return (f ctx, mempty)
   localize upd ma = NotelistT $ \ctx -> getNotelistT ma (upd ctx)
@@ -184,13 +182,13 @@ instance Monad m => ContextM (NotelistT ctx u m) where
 
 
 
-runNotelist :: ctx -> Notelist ctx u a -> (a, HPrim u)
+runNotelist :: Context ctx -> Notelist ctx u a -> (a, HPrim u)
 runNotelist ctx ma = getNotelist ma ctx
 
 -- | Run the notelist returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execNotelist :: ctx -> Notelist ctx u a -> HPrim u
+execNotelist :: Context ctx -> Notelist ctx u a -> HPrim u
 execNotelist ctx ma = snd $ runNotelist ctx ma
 
 -- | Run the notelist ignoring the output it produces, return the 
@@ -200,22 +198,22 @@ execNotelist ctx ma = snd $ runNotelist ctx ma
 -- opposite behaviour (return the notelist, ignore than the 
 -- answer).
 -- 
-evalNotelist :: ctx -> Notelist ctx u a -> a
+evalNotelist :: Context ctx -> Notelist ctx u a -> a
 evalNotelist ctx ma = fst $ runNotelist ctx ma
 
 
 
 runNotelistT :: Monad m 
-             => ctx -> NotelistT ctx u m a -> m (a, HPrim u) 
+             => Context ctx -> NotelistT ctx u m a -> m (a, HPrim u) 
 runNotelistT ctx ma = getNotelistT ma ctx
 
 execNotelistT :: Monad m 
-              => ctx -> NotelistT ctx u m a -> m (HPrim u)
+              => Context ctx -> NotelistT ctx u m a -> m (HPrim u)
 execNotelistT ctx ma = liftM snd $ runNotelistT ctx ma
 
 
 evalNotelistT :: Monad m 
-              => ctx -> NotelistT ctx u m a -> m a
+              => Context ctx -> NotelistT ctx u m a -> m a
 evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
 
 
@@ -236,7 +234,7 @@ evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
 -- Commonly, it is used to add 'UEvent' objects which 
 -- have no /answer/.
 -- 
-event :: (TraceM m, ContextM m, u ~ DUnit (m ()), ctx ~ Ctx m ) 
+event :: (TraceM m, ContextM m, ctx ~ UCtx m, u ~ DUnit (m ())) 
      => Event ctx u a -> m ()
 event gf = askCtx >>= \ctx -> 
            let (PrimW o _) = runEvent ctx gf
@@ -251,7 +249,7 @@ event gf = askCtx >>= \ctx ->
 -- The event is logged in the Trace monad, and the result is 
 -- returned.
 -- 
-eventi :: (TraceM m, ContextM m, u ~ DUnit (m ()), ctx ~ Ctx m ) 
+eventi :: (TraceM m, ContextM m, ctx ~ UCtx m, u ~ DUnit (m ())) 
        => Event ctx u a -> m a
 eventi gf = askCtx >>= \ctx -> 
             let (PrimW o a) = runEvent ctx gf 
@@ -266,8 +264,8 @@ eventi gf = askCtx >>= \ctx ->
 -- Commonly, it is used to add 'ULocEvent' objects which 
 -- have no /answer/.
 -- 
-eventl :: ( TraceM m, InterpretUnit u, ContextM m, CtxTempo ctx
-         , u ~ DUnit (m ()), ctx ~ Ctx m ) 
+eventl :: ( TraceM m, InterpretUnit u, ContextM m
+          , ctx ~ UCtx m, u ~ DUnit (m ())) 
       => u -> LocEvent ctx u a -> m ()
 eventl ot evt = eventli ot evt >> return ()
 
@@ -279,8 +277,8 @@ eventl ot evt = eventli ot evt >> return ()
 -- The event is logged in the Trace monad, and the result is 
 -- returned.
 -- 
-eventli :: ( TraceM m, InterpretUnit u, ContextM m, CtxTempo ctx
-          , u ~ DUnit (m ()), ctx ~ Ctx m ) 
+eventli :: ( TraceM m, InterpretUnit u, ContextM m
+           , ctx ~ UCtx m, u ~ DUnit (m ())) 
         => u -> LocEvent ctx u a -> m a
 eventli ot gf = askCtx >>= \ctx -> 
                 let (PrimW o a) = runLocEvent ot ctx gf

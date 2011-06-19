@@ -51,7 +51,6 @@ newtype Connector ctx u a = Connector {
 
 
 type instance DUnit (Connector ctx u a) = u
-type instance Ctx (Connector ctx u) = ctx
 
 -- | Type specialized version of 'Connector'.
 --
@@ -97,6 +96,7 @@ instance Monoid a => Monoid (Connector ctx u a) where
 -- DrawingCtxM
 
 instance ContextM (Connector ctx u) where
+  type UCtx (Connector ctx u) = ctx
   askCtx          = Connector $ \_  _  -> askCtx
   asksCtx f       = Connector $ \_  _  -> asksCtx f
   localize upd ma = Connector $ \t0 t1 -> 
@@ -117,15 +117,15 @@ instance Decorate Connector where
 
 
 
-runConnector :: (InterpretUnit u, CtxTempo ctx) 
-             => u -> u -> ctx -> Connector ctx u a -> PrimW u a
+runConnector :: InterpretUnit u
+             => u -> u -> Context ctx -> Connector ctx u a -> PrimW u a
 runConnector t0 t1 ctx mf = 
-    let dt0 = normalize (tempo ctx) t0
-        dt1 = normalize (tempo ctx) t1 
+    let dt0 = normalize (ctx_tempo ctx) t0
+        dt1 = normalize (ctx_tempo ctx) t1 
     in runEvent ctx (getConnector mf dt0 dt1)
 
 
-connect :: (InterpretUnit u, CtxTempo ctx)
+connect :: InterpretUnit u
         => u -> u -> Connector ctx u a -> Event ctx u a
 connect t0 t1 mf = 
     normalizeCtx t0 >>= \dt0 -> 
@@ -135,13 +135,13 @@ connect t0 t1 mf =
 
 
 
-promoteConn :: (InterpretUnit u, CtxTempo ctx) 
+promoteConn :: InterpretUnit u
             => (u -> u -> Event ctx u a) -> Connector ctx u a
 promoteConn k = Connector $ \t0 t1 ->
     dinterpCtx t0 >>= \ut0 -> dinterpCtx t1 >>= \ut1 -> k ut0 ut1
 
 
-applyConn :: (InterpretUnit u, CtxTempo ctx) 
+applyConn :: InterpretUnit u 
           => Connector ctx u a -> u -> u -> Event ctx u a
 applyConn mf t0 t1 = connect t0 t1 mf
 
@@ -156,7 +156,7 @@ instance UConvert Connector where
 -- | Use this to convert 'ConnectorGraphic' or 'Connector' 
 -- with Functor answer.
 --
-uconvConnectorF :: (InterpretUnit u, InterpretUnit u1, CtxTempo ctx, Functor t) 
+uconvConnectorF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                 => Connector ctx u (t u) -> Connector ctx u1 (t u1)
 uconvConnectorF ma = Connector $ \t0 t1 -> 
     uconvF $ getConnector ma t0 t1
@@ -166,7 +166,7 @@ uconvConnectorF ma = Connector $ \t0 t1 ->
 
 -- | Use this to convert 'Connector' with unit-less answer.
 --
-uconvConnectorZ :: (CtxTempo ctx, InterpretUnit u, InterpretUnit u1) 
+uconvConnectorZ :: (InterpretUnit u, InterpretUnit u1) 
                 => Connector ctx u a -> Connector ctx u1 a
 uconvConnectorZ ma = Connector $ \t0 t1 -> 
     uconvZ $ getConnector ma t0 t1

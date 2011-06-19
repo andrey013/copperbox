@@ -56,11 +56,11 @@ type instance DUnit Score = Double
 runScore :: Score -> Section
 runScore sco = runScoBuilder (score_sequence sco $ 0)
 
-traceNotelist :: ctx -> Notelist ctx u a -> Score
+traceNotelist :: Context ctx -> Notelist ctx u a -> Score
 traceNotelist ctx mf = liftToScore $ execNotelist ctx mf
 
-traceAdvNotelist :: (CtxTempo ctx, InterpretUnit u) 
-                 => ctx -> AdvNotelist ctx u a -> Score
+traceAdvNotelist :: InterpretUnit u
+                 => Context ctx -> AdvNotelist ctx u a -> Score
 traceAdvNotelist ctx mf = 
     let (PrimW ca _) = runLocEvent 0 ctx $ execAdvNotelist ctx mf
     in liftToScore $ singleH ca

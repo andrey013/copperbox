@@ -97,11 +97,11 @@ import ZSnd.Core                                -- package: zsnd-core
 --
 -- All note statemets have duration, even when it is irrelevent...
 --
-mkGen :: (CtxTempo ctx, InterpretUnit u) 
+mkGen :: InterpretUnit u
       => (OnsetDbl -> ScoBuilder ()) ->  ULocEvent ctx u
 mkGen fn = promoteLoc $ \u -> 
     askCtx >>= \ctx -> 
-    primEvent $ prim1 $ NoteStmt { onset_time = normalize (tempo ctx) u
+    primEvent $ prim1 $ NoteStmt { onset_time = normalize (ctx_tempo ctx) u
                                  , event_dur  = 0
                                  , event_gen  = (\ot _ -> fn ot) }
 
@@ -111,7 +111,7 @@ mkGen fn = promoteLoc $ \u ->
 -- 
 -- > fgen9 :: size * [(partial_num, strength, inital_phase)]
 -- 
-fgen9 :: (CtxTempo ctx, InterpretUnit u) 
+fgen9 :: InterpretUnit u
       => Int -> [(Double,Double,Double)] -> ULocEvent ctx u
 fgen9 sz ds = mkGen (\ot -> gen9 ot sz ds)
      
@@ -122,7 +122,7 @@ fgen9 sz ds = mkGen (\ot -> gen9 ot sz ds)
 --
 -- >  fgen10 :: size * [relative_strength]
 --
-fgen10 :: (CtxTempo ctx, InterpretUnit u) 
+fgen10 :: InterpretUnit u 
        => Int -> [Double] -> ULocEvent ctx u
 fgen10 sz ds = mkGen (\ot -> gen10 ot sz ds)
      
@@ -132,8 +132,8 @@ fgen10 sz ds = mkGen (\ot -> gen10 ot sz ds)
 -- 
 -- > fgen19 :: time * size * [(partial_num, strength, inital_phase, dc_offset)]
 --
-fgen19 :: (CtxTempo ctx, InterpretUnit u) 
-      => Int -> [(Double,Double,Double,Double)] -> ULocEvent ctx u
+fgen19 :: InterpretUnit u 
+       => Int -> [(Double,Double,Double,Double)] -> ULocEvent ctx u
 fgen19 sz ds = mkGen (\ot -> gen19 ot sz ds)
 
 
@@ -149,7 +149,7 @@ fgen19 sz ds = mkGen (\ot -> gen19 ot sz ds)
 -- 
 -- ZSnd needs extending to handle this optional cases... 
 --
-fgen11 :: (CtxTempo ctx, InterpretUnit u) 
+fgen11 :: InterpretUnit u 
        => Int -> Int -> ULocEvent ctx u
 fgen11 sz nh = mkGen (\ot -> gen11 ot sz nh)
 
@@ -168,7 +168,7 @@ fgen11 sz nh = mkGen (\ot -> gen11 ot sz nh)
 -- @ordinate_values@ cannot be zero, use 0.001 for a near zero 
 -- number.
 --
-fgen5 :: (CtxTempo ctx, InterpretUnit u) 
+fgen5 :: InterpretUnit u 
       => Int -> [(Double, Int) ] -> ULocEvent ctx u
 fgen5 sz xs = mkGen (\ot -> gen5 ot sz xs)
 
@@ -184,7 +184,7 @@ fgen5 sz xs = mkGen (\ot -> gen5 ot sz xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen6 :: (CtxTempo ctx, InterpretUnit u) 
+fgen6 :: InterpretUnit u 
       => Int -> Double -> [(Int,Double, Int,Double, Int,Double)] 
       -> ULocEvent ctx u
 fgen6 sz a xs = mkGen (\ot -> gen6 ot sz a xs)
@@ -199,7 +199,7 @@ fgen6 sz a xs = mkGen (\ot -> gen6 ot sz a xs)
 --
 -- @segment_length@ cannot be negative, though it can be zero.
 --
-fgen7 :: (CtxTempo ctx, InterpretUnit u) 
+fgen7 :: InterpretUnit u 
       => Int -> [(Double, Int)] -> ULocEvent ctx u
 fgen7 sz xs = mkGen (\ot -> gen7 ot sz xs)
 
@@ -216,7 +216,7 @@ fgen7 sz xs = mkGen (\ot -> gen7 ot sz xs)
 --
 -- Note - potentially the segment list should be three * two-tuples.
 --
-fgen8 :: (CtxTempo ctx, InterpretUnit u) 
+fgen8 :: InterpretUnit u 
       => Int -> Double -> [(Int,Double)] -> ULocEvent ctx u
 fgen8 sz a xs = mkGen (\ot -> gen8 ot sz a xs) 
 
@@ -227,7 +227,7 @@ fgen8 sz a xs = mkGen (\ot -> gen8 ot sz a xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen25 :: (CtxTempo ctx, InterpretUnit u) 
+fgen25 :: InterpretUnit u 
        => Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
 fgen25 sz a xs = mkGen (\ot -> gen25 ot sz a xs)
 
@@ -238,7 +238,7 @@ fgen25 sz a xs = mkGen (\ot -> gen25 ot sz a xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen27 :: (CtxTempo ctx, InterpretUnit u) 
+fgen27 :: InterpretUnit u 
        => Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
 fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs) 
 
@@ -259,7 +259,7 @@ fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs)
 -- anonymous numbered sound files, ZSyn needs all files to be 
 -- named.
 -- 
-fgen1 :: (CtxTempo ctx, InterpretUnit u) 
+fgen1 :: InterpretUnit u 
       => Int -> String -> Double -> Int -> ULocEvent ctx u
 fgen1 sz fc skip fmt = mkGen (\ot -> gen1 ot sz fc skip fmt) 
 
@@ -270,7 +270,7 @@ fgen1 sz fc skip fmt = mkGen (\ot -> gen1 ot sz fc skip fmt)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen23 :: (CtxTempo ctx, InterpretUnit u) 
+fgen23 :: InterpretUnit u 
        => Int -> String -> ULocEvent ctx u
 fgen23 sz file_path = mkGen (\ot -> gen23 ot sz file_path) 
 
@@ -282,7 +282,7 @@ fgen23 sz file_path = mkGen (\ot -> gen23 ot sz file_path)
 -- Note - size is automatically set to 0 in the generated Csound
 -- score. Csound itself handles the allocation size.
 -- 
-fgen28 :: (CtxTempo ctx, InterpretUnit u) 
+fgen28 :: InterpretUnit u 
        => String -> ULocEvent ctx u
 fgen28 file_name = mkGen (\ot -> gen28 ot file_name) 
 
@@ -296,7 +296,7 @@ fgen28 file_name = mkGen (\ot -> gen28 ot file_name)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen3 :: (CtxTempo ctx, InterpretUnit u) 
+fgen3 :: InterpretUnit u 
       => Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
 fgen3 sz x1 x2 xs = mkGen (\ot -> gen3 ot sz x1 x2 xs)
 
@@ -307,7 +307,7 @@ fgen3 sz x1 x2 xs = mkGen (\ot -> gen3 ot sz x1 x2 xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen13 :: (CtxTempo ctx, InterpretUnit u) 
+fgen13 :: InterpretUnit u 
        => Int -> Int -> Int -> [Double] -> ULocEvent ctx u
 fgen13 sz x1 x2 xs = mkGen (\ot -> gen13 ot sz x1 x2 xs)
 
@@ -318,7 +318,7 @@ fgen13 sz x1 x2 xs = mkGen (\ot -> gen13 ot sz x1 x2 xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen14 :: (CtxTempo ctx, InterpretUnit u) 
+fgen14 :: InterpretUnit u 
        => Int -> Int -> Int -> [Double] -> ULocEvent ctx u
 fgen14 sz x1 x2 xs = mkGen (\ot -> gen14 ot sz x1 x2 xs)
 
@@ -329,7 +329,7 @@ fgen14 sz x1 x2 xs = mkGen (\ot -> gen14 ot sz x1 x2 xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen15 :: (CtxTempo ctx, InterpretUnit u) 
+fgen15 :: InterpretUnit u 
        => Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
 fgen15 sz x1 x2 xs = mkGen (\ot -> gen15 ot sz x1 x2 xs)
 
@@ -343,7 +343,7 @@ fgen15 sz x1 x2 xs = mkGen (\ot -> gen15 ot sz x1 x2 xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen2 :: (CtxTempo ctx, InterpretUnit u) 
+fgen2 :: InterpretUnit u 
       => Int -> [Int] -> ULocEvent ctx u
 fgen2 sz xs = mkGen (\ot -> gen2 ot sz xs) 
 
@@ -353,7 +353,7 @@ fgen2 sz xs = mkGen (\ot -> gen2 ot sz xs)
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgenN2 :: (CtxTempo ctx, InterpretUnit u) 
+fgenN2 :: InterpretUnit u 
        => Int -> [Int] -> ULocEvent ctx u
 fgenN2 sz xs = mkGen (\ot -> genN2 ot sz xs) 
 
@@ -364,7 +364,7 @@ fgenN2 sz xs = mkGen (\ot -> genN2 ot sz xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen17 :: (CtxTempo ctx, InterpretUnit u) 
+fgen17 :: InterpretUnit u 
        => Int -> [(Int,Int)] -> ULocEvent ctx u
 fgen17 sz xs = mkGen (\ot -> gen17 ot sz xs) 
 
@@ -378,7 +378,7 @@ fgen17 sz xs = mkGen (\ot -> gen17 ot sz xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_hamming :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_hamming :: InterpretUnit u 
                => Int -> Int -> ULocEvent ctx u
 fgen20_hamming sz mx = mkGen (\ot -> gen20 ot sz HAMMING mx) 
 
@@ -389,7 +389,7 @@ fgen20_hamming sz mx = mkGen (\ot -> gen20 ot sz HAMMING mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_hanning :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_hanning :: InterpretUnit u 
                => Int -> Int -> ULocEvent ctx u
 fgen20_hanning sz mx = mkGen (\ot -> gen20 ot sz HANNING mx) 
 
@@ -400,7 +400,7 @@ fgen20_hanning sz mx = mkGen (\ot -> gen20 ot sz HANNING mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_bartlett :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_bartlett :: InterpretUnit u 
                 => Int -> Int -> ULocEvent ctx u
 fgen20_bartlett sz mx = mkGen (\ot -> gen20 ot sz BARTLETT mx) 
 
@@ -410,7 +410,7 @@ fgen20_bartlett sz mx = mkGen (\ot -> gen20 ot sz BARTLETT mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_blackman :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_blackman :: InterpretUnit u 
                 => Int -> Int -> ULocEvent ctx u
 fgen20_blackman sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN mx) 
 
@@ -421,7 +421,7 @@ fgen20_blackman sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_blackman_harris :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_blackman_harris :: InterpretUnit u 
                        => Int -> Int -> ULocEvent ctx u
 fgen20_blackman_harris sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN_HARRIS mx) 
 
@@ -432,7 +432,7 @@ fgen20_blackman_harris sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN_HARRIS mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_gaussian :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_gaussian :: InterpretUnit u 
                 => Int -> Int -> Int -> ULocEvent ctx u
 fgen20_gaussian sz mx opn = mkGen (\ot -> gen20 ot sz (GAUSSIAN opn) mx) 
 
@@ -442,7 +442,7 @@ fgen20_gaussian sz mx opn = mkGen (\ot -> gen20 ot sz (GAUSSIAN opn) mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_kaiser :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_kaiser :: InterpretUnit u 
               => Int -> Int -> Int -> ULocEvent ctx u
 fgen20_kaiser sz mx broad = mkGen (\ot -> gen20 ot sz (KAISER broad) mx) 
 
@@ -453,7 +453,7 @@ fgen20_kaiser sz mx broad = mkGen (\ot -> gen20 ot sz (KAISER broad) mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_rectangle :: (CtxTempo ctx, InterpretUnit u) 
+fgen20_rectangle :: InterpretUnit u 
                  => Int -> Int -> ULocEvent ctx u
 fgen20_rectangle sz mx = mkGen (\ot -> gen20 ot sz RECTANGLE mx) 
 
@@ -464,8 +464,8 @@ fgen20_rectangle sz mx = mkGen (\ot -> gen20 ot sz RECTANGLE mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen20_sync :: (CtxTempo ctx, InterpretUnit u) 
-                 => Int -> Int -> ULocEvent ctx u
+fgen20_sync :: InterpretUnit u 
+            => Int -> Int -> ULocEvent ctx u
 fgen20_sync sz mx = mkGen (\ot -> gen20 ot sz SYNC mx) 
 
 --------------------------------------------------------------------------------
@@ -478,7 +478,7 @@ fgen20_sync sz mx = mkGen (\ot -> gen20 ot sz SYNC mx)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_uniform :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_uniform :: InterpretUnit u 
                => Int -> Double -> ULocEvent ctx u
 fgen21_uniform sz lv = mkGen (\ot -> gen21 ot sz UNIFORM lv) 
 
@@ -489,7 +489,7 @@ fgen21_uniform sz lv = mkGen (\ot -> gen21 ot sz UNIFORM lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_linear :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_linear :: InterpretUnit u 
               => Int -> Double -> ULocEvent ctx u
 fgen21_linear sz lv = mkGen (\ot -> gen21 ot sz LINEAR lv) 
 
@@ -500,7 +500,7 @@ fgen21_linear sz lv = mkGen (\ot -> gen21 ot sz LINEAR lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_triangular :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_triangular :: InterpretUnit u 
                   => Int -> Double -> ULocEvent ctx u
 fgen21_triangular sz lv = mkGen (\ot -> gen21 ot sz TRIANGULAR lv) 
 
@@ -511,8 +511,8 @@ fgen21_triangular sz lv = mkGen (\ot -> gen21 ot sz TRIANGULAR lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_expon :: (CtxTempo ctx, InterpretUnit u) 
-                   => Int -> Double -> ULocEvent ctx u
+fgen21_expon :: InterpretUnit u 
+             => Int -> Double -> ULocEvent ctx u
 fgen21_expon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
 
 
@@ -522,7 +522,7 @@ fgen21_expon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_biexpon :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_biexpon :: InterpretUnit u 
                => Int -> Double -> ULocEvent ctx u
 fgen21_biexpon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
 
@@ -533,7 +533,7 @@ fgen21_biexpon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_gaussian :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_gaussian :: InterpretUnit u 
                 => Int -> Double -> ULocEvent ctx u
 fgen21_gaussian sz lv = mkGen (\ot -> gen21 ot sz DIST_GAUSSIAN lv) 
 
@@ -544,7 +544,7 @@ fgen21_gaussian sz lv = mkGen (\ot -> gen21 ot sz DIST_GAUSSIAN lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_cauchy :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_cauchy :: InterpretUnit u 
               => Int -> Double -> ULocEvent ctx u
 fgen21_cauchy sz lv = mkGen (\ot -> gen21 ot sz CAUCHY lv) 
 
@@ -555,7 +555,7 @@ fgen21_cauchy sz lv = mkGen (\ot -> gen21 ot sz CAUCHY lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_positive_cauchy :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_positive_cauchy :: InterpretUnit u 
                        => Int -> Double -> ULocEvent ctx u
 fgen21_positive_cauchy sz lv = mkGen (\ot -> gen21 ot sz POSITIVE_CAUCHY lv) 
 
@@ -565,7 +565,7 @@ fgen21_positive_cauchy sz lv = mkGen (\ot -> gen21 ot sz POSITIVE_CAUCHY lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_beta :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_beta :: InterpretUnit u 
               => Int -> Double -> Int -> Int -> ULocEvent ctx u
 fgen21_beta sz lv a b = mkGen (\ot -> gen21 ot sz (BETA a b) lv) 
 
@@ -576,7 +576,7 @@ fgen21_beta sz lv a b = mkGen (\ot -> gen21 ot sz (BETA a b) lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_weibull :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_weibull :: InterpretUnit u 
                => Int -> Double -> Int -> ULocEvent ctx u
 fgen21_weibull sz lv a = mkGen (\ot -> gen21 ot sz (WEIBULL a) lv) 
 
@@ -587,7 +587,7 @@ fgen21_weibull sz lv a = mkGen (\ot -> gen21 ot sz (WEIBULL a) lv)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen21_poisson :: (CtxTempo ctx, InterpretUnit u) 
+fgen21_poisson :: InterpretUnit u 
                => Int -> Double -> ULocEvent ctx u
 fgen21_poisson sz lv = mkGen (\ot -> gen21 ot sz POISSON lv) 
 
@@ -600,7 +600,7 @@ fgen21_poisson sz lv = mkGen (\ot -> gen21 ot sz POISSON lv)
 -- 
 -- @size@ must be a power-of-2 plus 1.
 --
-fgen4 :: (CtxTempo ctx, InterpretUnit u) 
+fgen4 :: InterpretUnit u 
       => Int -> Int -> Int -> ULocEvent ctx u
 fgen4 sz src src_mode = mkGen (\ot -> gen4 ot sz src src_mode)
 
@@ -611,7 +611,7 @@ fgen4 sz src src_mode = mkGen (\ot -> gen4 ot sz src src_mode)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgen12 :: (CtxTempo ctx, InterpretUnit u) 
+fgen12 :: InterpretUnit u 
        => Int -> Int -> ULocEvent ctx u
 fgen12 sz xint = mkGen (\ot -> gen12 ot sz xint)
 
@@ -619,6 +619,6 @@ fgen12 sz xint = mkGen (\ot -> gen12 ot sz xint)
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-fgenN12 :: (CtxTempo ctx, InterpretUnit u) 
+fgenN12 :: InterpretUnit u 
         => Int -> Int -> ULocEvent ctx u
 fgenN12 sz xint = mkGen (\ot -> genN12 ot sz xint)
