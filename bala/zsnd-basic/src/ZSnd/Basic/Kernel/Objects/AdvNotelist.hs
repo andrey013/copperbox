@@ -51,10 +51,10 @@ import Data.Monoid
 
 
 newtype AdvNotelist ctx u a = AdvNotelist 
-          { getAdvNotelist :: Env -> TraceLoc ctx u a }
+          { getAdvNotelist :: TraceLoc ctx u a }
 
 newtype AdvNotelistT ctx u m a = AdvNotelistT 
-          { getAdvNotelistT :: Env -> TraceLocT ctx u m a }
+          { getAdvNotelistT :: TraceLocT ctx u m a }
 
 type instance DUnit (AdvNotelist ctx u a) = u
 type instance DUnit (AdvNotelistT ctx u m a) = u
@@ -64,81 +64,73 @@ type DAdvNotelistT ctx m a = AdvNotelistT ctx Double m a
 
 -- Should staccato be in the original ctx (environment)?
 
-data Env = Env
-      { staccato_factor :: Double       -- should be [0.. 1.0]
-      } 
-
-envZero :: Env
-envZero = Env { staccato_factor = 1.0 }
 
 
 
 -- Functor 
 
 instance Functor (AdvNotelist ctx u) where
-  fmap f mf = AdvNotelist $ \r -> fmap f (getAdvNotelist mf r)
+  fmap f mf = AdvNotelist $ fmap f (getAdvNotelist mf)
 
 instance Monad m => Functor (AdvNotelistT ctx u m) where
-  fmap f mf = AdvNotelistT $ \r -> fmap f (getAdvNotelistT mf r)
+  fmap f mf = AdvNotelistT $ fmap f (getAdvNotelistT mf)
 
 
 -- Applicative
 
 instance Applicative (AdvNotelist ctx u) where
-  pure a    = AdvNotelist $ \_ -> pure a
-  mf <*> ma = AdvNotelist $ \r -> getAdvNotelist mf r <*> getAdvNotelist ma r
+  pure a    = AdvNotelist $ pure a
+  mf <*> ma = AdvNotelist $ getAdvNotelist mf <*> getAdvNotelist ma
 
 instance Monad m => Applicative (AdvNotelistT ctx u m) where
-  pure a    = AdvNotelistT $ \_ -> pure a
-  mf <*> ma = AdvNotelistT $ \r -> getAdvNotelistT mf r <*> getAdvNotelistT ma r
+  pure a    = AdvNotelistT $ pure a
+  mf <*> ma = AdvNotelistT $ getAdvNotelistT mf <*> getAdvNotelistT ma
 
 
 -- Monad
 
 instance Monad (AdvNotelist ctx u) where
-  return a  = AdvNotelist $ \_ -> return a
-  ma >>= k  = AdvNotelist $ \r -> getAdvNotelist ma r >>= \a -> 
-                                  getAdvNotelist (k a) r
+  return a  = AdvNotelist $ return a
+  ma >>= k  = AdvNotelist $ getAdvNotelist ma >>= \a -> getAdvNotelist (k a)
 
 instance Monad m => Monad (AdvNotelistT ctx u m) where
-  return a  = AdvNotelistT $ \_ -> return a
-  ma >>= k  = AdvNotelistT $ \r -> getAdvNotelistT ma r >>= \a -> 
-                                   getAdvNotelistT (k a) r
+  return a  = AdvNotelistT $ return a
+  ma >>= k  = AdvNotelistT $ getAdvNotelistT ma>>= \a -> getAdvNotelistT (k a)
 
 
 -- ContextM
 
 instance ContextM (AdvNotelist ctx u) where
   type UCtx (AdvNotelist ctx u) = ctx
-  askCtx          = AdvNotelist $ \_ -> askCtx 
-  asksCtx f       = AdvNotelist $ \_ -> asksCtx f
-  localize upd ma = AdvNotelist $ \r -> localize upd (getAdvNotelist ma r)
+  askCtx          = AdvNotelist $ askCtx 
+  asksCtx f       = AdvNotelist $ asksCtx f
+  localize upd ma = AdvNotelist $ localize upd (getAdvNotelist ma)
 
 
 instance Monad m => ContextM (AdvNotelistT ctx u m) where
   type UCtx (AdvNotelistT ctx u m) = ctx
-  askCtx          = AdvNotelistT $ \_ -> askCtx
-  asksCtx f       = AdvNotelistT $ \_ -> asksCtx f
-  localize upd ma = AdvNotelistT $ \r -> localize upd (getAdvNotelistT ma r)
+  askCtx          = AdvNotelistT $ askCtx
+  asksCtx f       = AdvNotelistT $ asksCtx f
+  localize upd ma = AdvNotelistT $ localize upd (getAdvNotelistT ma)
 
 
 -- Monoid
 
 instance Monoid a => Monoid (AdvNotelist ctx u a) where
-  mempty           = AdvNotelist $ \_ -> return mempty
-  ma `mappend` mb  = AdvNotelist $ \r -> 
-                       getAdvNotelist ma r `mappend` getAdvNotelist mb r
+  mempty           = AdvNotelist $ return mempty
+  ma `mappend` mb  = AdvNotelist $ 
+                       getAdvNotelist ma `mappend` getAdvNotelist mb
 
 
 instance (Monad m, Monoid a) => Monoid (AdvNotelistT ctx u m a) where
-  mempty           = AdvNotelistT $ \_ -> return mempty
-  ma `mappend` mb  = AdvNotelistT $ \r -> 
-                       getAdvNotelistT ma r `mappend` getAdvNotelistT mb r
+  mempty           = AdvNotelistT $ return mempty
+  ma `mappend` mb  = AdvNotelistT $ 
+                       getAdvNotelistT ma `mappend` getAdvNotelistT mb
 
 
 runAdvNotelist :: InterpretUnit u
                => Context ctx -> AdvNotelist ctx u a -> (a, ULocEvent ctx u)
-runAdvNotelist ctx mf = runTraceLoc ctx (getAdvNotelist mf envZero)
+runAdvNotelist ctx mf = runTraceLoc ctx (getAdvNotelist mf)
 
 
 execAdvNotelist :: InterpretUnit u
@@ -147,7 +139,7 @@ execAdvNotelist ctx mf = snd $ runAdvNotelist ctx mf
 
 runAdvNotelistT :: (Monad m, InterpretUnit u)
                 => Context ctx -> AdvNotelistT ctx u m a -> m (a, ULocEvent ctx u)
-runAdvNotelistT ctx mf = runTraceLocT ctx (getAdvNotelistT mf envZero)
+runAdvNotelistT ctx mf = runTraceLocT ctx (getAdvNotelistT mf)
 
 
 execAdvNotelistT :: (Monad m, InterpretUnit u)
@@ -159,7 +151,6 @@ class AEventM (m :: * -> *) where
   aevent    :: (u ~ DUnit (m ()), ctx ~ UCtx m) 
             => (u -> ULocEvent ctx u) -> u -> m ()
 
-  staccato  :: Double -> m a -> m a
  
 
 -- | @aevent@ scales the playing duration automatically by the 
@@ -168,21 +159,18 @@ class AEventM (m :: * -> *) where
 
 instance (InterpretUnit u, VectorSpace u, Fractional (Scalar u)) 
     => AEventM (AdvNotelist ctx u) where
-  aevent mf d = AdvNotelist $ \r -> 
-                  let d1 = d ^* (realToFrac $ staccato_factor r)
+  aevent mf d = AdvNotelist $ 
+                  get_staccato_factor >>= \sd -> 
+                  let d1 = d ^* (realToFrac sd)
                   in insertl (mf d1) >> moveBy d
-
-  staccato d ma = AdvNotelist $ \r -> 
-                    getAdvNotelist ma (r { staccato_factor = d})
 
 
 instance ( Monad m, InterpretUnit u, VectorSpace u
          , Fractional (Scalar u)) 
     => AEventM (AdvNotelistT ctx u m) where
-  aevent mf d = AdvNotelistT $ \r -> 
-                  let d1 = d ^* (realToFrac $ staccato_factor r)
+  aevent mf d = AdvNotelistT $  
+                  get_staccato_factor >>= \sd -> 
+                  let d1 = d ^* (realToFrac sd)
                   in insertl (mf d1) >> moveBy d
 
-  staccato d ma = AdvNotelistT $ \r -> 
-                    getAdvNotelistT ma (r { staccato_factor = d})
 

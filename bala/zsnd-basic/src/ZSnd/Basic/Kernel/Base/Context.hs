@@ -27,6 +27,9 @@ module ZSnd.Basic.Kernel.Base.Context
   , get_tempo
   , set_tempo
 
+  , get_staccato_factor
+  , set_staccato_factor
+
   , normalizeCtx
   , dinterpCtx
 
@@ -99,8 +102,18 @@ initialContext uc = Context
 get_tempo :: ContextM m => m Tempo
 get_tempo = asksCtx ctx_tempo
 
-set_tempo :: ContextM m => Tempo -> m a -> m a
-set_tempo bpm ma = localize (\s -> s { ctx_tempo = bpm}) ma
+set_tempo :: Tempo -> ContextF uctx
+set_tempo bpm = (\s -> s { ctx_tempo = bpm})
+
+
+
+get_staccato_factor :: ContextM m => m Double
+get_staccato_factor = asksCtx ctx_staccato_factor
+
+
+set_staccato_factor :: Double -> ContextF uctx
+set_staccato_factor sd = (\s -> s { ctx_staccato_factor = sd })
+
 
 normalizeCtx :: (ContextM m, InterpretUnit u)
              => u -> m Double
