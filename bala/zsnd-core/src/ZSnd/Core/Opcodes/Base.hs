@@ -98,8 +98,10 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
 parens :: Expr a -> Expr a
 parens (Expr a) = Expr (ParenE a)
 
-init :: Expr IR -> Expr a
-init (Expr a) = Expr a
+init :: Opcode rate
+     => Expr IR -> InstBuilder (Expr rate)
+init ia = 
+    opcode "init" [ getExpr ia ]
 
 tival :: Expr IR
 tival = Expr $ ZeroOp "tival"
