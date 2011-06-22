@@ -23,9 +23,10 @@ instr115 = LetE k1 linenX
          ( LetE k2 exponX 
          ( LetE a1 buzzX
          ( LetE o1 outX
-         ( Sequ [ (k2,0) :-> (a1,0)
-                , (a1,0) :-> (o1,0)
-                , (k2,0) :-> (o1,1)
+         ( Sequ [ (k1,0) :-> (o1,0)
+                , (k2,0) :-> (a1,0)
+                , (a1,0) :-> (o1,1)
+                , Out o1
                 ]))))
   where
     k1 = 1 
