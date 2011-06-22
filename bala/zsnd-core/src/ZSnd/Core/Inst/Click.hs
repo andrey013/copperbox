@@ -35,7 +35,8 @@ import ZSnd.Core.Utils.FormatCombinators
 
 
 import Control.Applicative
-import qualified Data.IntMap as IM
+import qualified Data.IntMap    as IM
+import qualified Data.Map       as M
 import Data.Monoid
 
 import Prelude hiding ( lookup )
@@ -59,9 +60,10 @@ instance Show VarName where
 type Port  = Int
 
 
-data CExpr = LetE VarName Element CExpr
-           | (VarName, Port) :-> (VarName, Port)
-           | Sequ [CExpr]
+-- Connection is actually another Let...
+
+data CExpr = LetD VarName Element CExpr
+           | LetC (VarName, Port) (VarName, Port) CExpr
            | Out VarName
   deriving (Eq,Ord,Show)
 
@@ -85,9 +87,10 @@ data InConf = SLiteral String              -- file names
             | DLiteral Double
             | ILiteral Int
             | CPfield  Int
-            | CVar     VarName
             | CBinOp   String InConf InConf
+            | ClkPort  Int
   deriving (Eq,Ord,Show)
+
 
 
 -- | It is assumed no opcodes actually generate multiple
@@ -120,7 +123,6 @@ newtype TransMonad a = TM {
 
 type FailMsg = String
 type W       = StmtAcc
-type Env     = DeclEnv
 
 data St = St
       { i_num  :: Int
@@ -159,9 +161,6 @@ runTransMonad ma = fmap post $ getTM ma envZero (St 0 0 0)
     post (a,_,w) = (a, map snd $ getStmtAcc w)
 
 
-reportFail :: String -> TransMonad a
-reportFail msg = TM $ \_ _ -> Left msg
-
 newLocVar :: DataRate -> TransMonad TagVar
 newLocVar rt = TM $ \_ s -> Right $ step rt s
   where
@@ -171,18 +170,43 @@ newLocVar rt = TM $ \_ s -> Right $ step rt s
 
 -- | This is local of the reader monad.
 --
-localBinding :: VarName -> Element -> TransMonad a -> TransMonad a
-localBinding vn elt ma = TM $ \r s -> 
-    case insert vn elt r of
+localBindDecl :: VarName -> Element -> TransMonad a -> TransMonad a
+localBindDecl vn elt ma = TM $ \r s -> 
+    case insertDecl vn elt r of
+      Left err -> Left err
+      Right r1 -> getTM ma r1 s
+
+
+localBindPorts :: VarName -> [TagVar]  -> TransMonad a -> TransMonad a
+localBindPorts vn vs ma = TM $ \r s -> step r s $ zip [0..] vs
+  where
+    step r s [] = getTM ma r s
+    step r s ((i,tv):zs) = case insertPortAssignment (vn,i) tv r of
+                             Left err -> Left err
+                             Right r1 -> step r1 s zs
+
+
+localBindConn :: (VarName,Int) -> (VarName,Int) -> TransMonad a -> TransMonad a
+localBindConn keyfr keyto ma = TM $ \r s ->
+    case insertPortConn keyfr keyto r of
       Left err -> Left err
       Right r1 -> getTM ma r1 s
 
 
 lookupElem :: VarName -> TransMonad Element
 lookupElem vn = TM $ \r s -> 
-    case lookup vn r of
+    case lookupDecl vn r of
       Nothing -> Left $ "error - missing declaration."
       Just elt -> Right (elt, s, mempty)
+
+
+lookupPort :: VarName -> Int -> TransMonad TagVar
+lookupPort vn i = TM $ \r s -> 
+    case lookupPortRef (vn,i) r of
+      Nothing -> Left $ "error - uninstantiated port."
+      Just tv -> Right (tv, s, mempty)
+ 
+
 
 tellStmt :: VarName -> Stmt -> TransMonad ()
 tellStmt vn stmt = TM $ \_ s -> Right ((), s, wrapSA vn stmt )
@@ -193,36 +217,37 @@ tellStmt vn stmt = TM $ \_ s -> Right ((), s, wrapSA vn stmt )
 -- if it is fresh...
 --
 transStep :: CExpr -> TransMonad ()
-transStep (LetE vn elt body)  = 
-    localBinding vn elt (transStep body)
+transStep (LetD vn elt body)  = 
+    localBindDecl vn elt (transStep body)
 
-transStep ((vn,_) :-> _b)     = do
-    elt <- lookupElem vn
-    invokeOpcode vn elt    
-
-transStep (Sequ es)           = mapM_ transStep es
-
+transStep (LetC a@(vno,_) b body)     = do
+    elt  <- lookupElem vno
+    outs <- invokeOpcode vno elt
+    localBindPorts vno outs $ localBindConn a b $ transStep body
+  
 transStep (Out vn)            = do
-    elt <- lookupElem vn
-    invokeOpcode vn elt    
+    elt  <- lookupElem vn
+    _    <- invokeOpcode vn elt
+    return ()
+    
 
-
-invokeOpcode :: VarName -> Element -> TransMonad ()
+invokeOpcode :: VarName -> Element -> TransMonad [TagVar]
 invokeOpcode vn (Element name inspec outspec) = do
-    inps  <- mapM inpExpr inspec
+    inps  <- mapM (inpExpr vn) inspec
     ovars <- outVars outspec
     tellStmt vn (Opcode ovars name inps) 
+    return ovars
 
 
+inpExpr :: VarName -> InConf -> TransMonad Expr
+inpExpr _  (SLiteral s)      = pure $ Literal $ CsString s
+inpExpr _  (DLiteral d)      = pure $ Literal $ CsDouble d
+inpExpr _  (ILiteral i)      = pure $ Literal $ CsInt i
+inpExpr _  (CPfield i)       = pure $ PField i
+inpExpr vn (CBinOp op e1 e2) = 
+    (\a b -> BinOp op a b) <$> inpExpr vn e1 <*> inpExpr vn e2
 
-inpExpr ::InConf -> TransMonad Expr
-inpExpr (SLiteral s)      = pure $ Literal $ CsString s
-inpExpr (DLiteral d)      = pure $ Literal $ CsDouble d
-inpExpr (ILiteral i)      = pure $ Literal $ CsInt i
-inpExpr (CPfield i)       = pure $ PField i
-inpExpr (CVar _v)         = pure $ Literal $ CsString "varFAIL"
-inpExpr (CBinOp op e1 e2) = 
-    (\a b -> BinOp op a b) <$> inpExpr e1 <*> inpExpr e2
+inpExpr vn (ClkPort i)       = (\tv -> VarE tv) <$> lookupPort vn i
 
 outVars :: OutConf -> TransMonad [TagVar]
 outVars Out0        = pure []
@@ -239,13 +264,17 @@ countA i ma          = (:) <$> ma <*> countA (i-1) ma
 --------------------------------------------------------------------------------
 -- Env for decls
 
-newtype DeclEnv = DeclEnv { getDeclEnv :: IM.IntMap Element }
+data Env = Env 
+      { _env_decls       :: IM.IntMap Element 
+      , _env_port_assigs :: M.Map (VarName,Int) TagVar
+      , _env_port_conns  :: M.Map (VarName,Int) (VarName,Int)
+      }
 
-envZero :: DeclEnv
-envZero = DeclEnv mempty
+envZero :: Env
+envZero = Env mempty mempty mempty
 
-lookup :: VarName -> DeclEnv -> Maybe Element
-lookup vn  = IM.lookup (getVarName vn) . getDeclEnv
+lookupDecl :: VarName -> Env -> Maybe Element
+lookupDecl vn  = IM.lookup (getVarName vn) . _env_decls
 
 
 -- | Note - insert of the same name causes failure.
@@ -254,13 +283,37 @@ lookup vn  = IM.lookup (getVarName vn) . getDeclEnv
 -- in-Haskell implementation could avoid this at it gets scoping
 -- for free. 
 -- 
-insert :: VarName -> Element -> DeclEnv -> Either FailMsg DeclEnv
-insert vn elt env = case lookup vn env of
-   Nothing -> Right $ DeclEnv $ IM.insert (getVarName vn) elt (getDeclEnv env)
-   Just _  -> Left  $ "error - mulitple variable declaration."
+insertDecl :: VarName -> Element -> Env -> Either FailMsg Env
+insertDecl vn elt env@(Env decls passns pconns) = 
+    case lookupDecl vn env of
+      Nothing -> let decls1 = IM.insert (getVarName vn) elt decls
+                 in Right $ Env decls1 passns pconns
+      Just _  -> Left  $ "error - multiple variable declaration."
 
 
--- Note - we well need an operation to @fill-in@ ports...
+lookupPortRef :: (VarName,Int) -> Env -> Maybe TagVar
+lookupPortRef key (Env _ passns pconns) = 
+    case M.lookup key pconns of
+      Nothing -> Nothing 
+      Just pkey -> M.lookup pkey passns
+
+insertPortAssignment :: (VarName,Int) -> TagVar -> Env -> Either FailMsg Env
+insertPortAssignment key var (Env decls passns pconns) = 
+    case M.lookup key passns of 
+      Nothing -> let passns1 = M.insert key var passns
+                 in Right $ Env decls passns1 pconns
+      Just _  -> Left  $ "error - mulitple port assignment."
+
+
+
+-- | Implementation note - map is @ to => from @ so keys are flipped.
+--
+insertPortConn :: (VarName,Int) -> (VarName,Int) -> Env -> Either FailMsg Env
+insertPortConn keyfrom keyto (Env decls passns pconns) = 
+    case M.lookup keyto pconns of 
+      Nothing -> let pconns1 = M.insert keyto keyfrom pconns
+                 in Right $ Env decls passns pconns1
+      Just _  -> Left  $ "error - mulitple port assignment."
 
 
 
@@ -302,15 +355,15 @@ instance Monoid StmtAcc where
 -- Format instances (useful for debugging)
 
 instance Format CExpr where
-   format (LetE name elt expr)  = 
+   format (LetD name elt expr)  = 
       format name <+> text "::" <+> format elt <> char ';'
         `vconcat` format expr
 
-   format ((v1,i1) :-> (v2,i2))           = 
+   format (LetC (v1,i1) (v2,i2) expr)           = 
      format v1 <> brackets (int i1) <+> text "->" 
                <+> brackets (int i2) <> format v2 <> char ';'
+               `vconcat` format expr
 
-   format (Sequ xs)             = vcat (map format xs)
    format (Out v1)              = text "==>" <+>  format v1 <> char ';'
      
 
@@ -322,7 +375,7 @@ instance Format InConf where
   format (DLiteral d)           = dtrunc d
   format (ILiteral i)           = int i
   format (CPfield i)            = char 'p' <> int i
-  format (CVar v)               = format v
+  format (ClkPort v)            = format v
   format (CBinOp ss a b)        = format a <> text ss <> format b
 
 instance Format VarName where

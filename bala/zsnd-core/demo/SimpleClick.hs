@@ -11,7 +11,9 @@ import ZSnd.Core.Inst.Prim
 import ZSnd.Core.Utils.FormatCombinators
 
 
--- Note - Click declares Out, so we do too
+-- Note - Click declares Out, so we do too (even though we have 
+-- special syntax for it as well).
+--
 
 -- Ports in the Click lang do not necessarily correspond to
 -- Ports in the Prim lang...
@@ -19,15 +21,15 @@ import ZSnd.Core.Utils.FormatCombinators
 -- figure 1.23 CSB
 
 instr115 :: CExpr
-instr115 = LetE k1 linenX 
-         ( LetE k2 exponX 
-         ( LetE a1 buzzX
-         ( LetE o1 outX
-         ( Sequ [ (k1,0) :-> (o1,0)
-                , (k2,0) :-> (a1,0)
-                , (a1,0) :-> (o1,1)
-                , Out o1
-                ]))))
+instr115 = LetD k1 linenX 
+         ( LetD k2 exponX 
+         ( LetD a1 buzzX
+         ( LetD o1 outX
+         ( LetC (k1,0) (o1,0)
+         ( LetC (k2,0) (a1,0)
+         ( LetC (a1,0) (o1,1)
+                (Out o1) ))))))
+               
   where
     k1 = 1 
     k2 = 2
@@ -43,12 +45,12 @@ exponX = Element "expon" [CPfield 9, CPfield 3, CPfield 10]
                          (Out1 K)
 
 buzzX :: Element
-buzzX = Element "buzz" [DLiteral 1, CPfield 5, CVar 1, CPfield 6 ]
+buzzX = Element "buzz" [DLiteral 1, CPfield 5, ClkPort 0, CPfield 6 ]
                        (Out1 A)
 
 
 outX :: Element 
-outX = Element "out" [ CVar 1 .*.  CVar 1 ]
+outX = Element "out" [ ClkPort 0 .*.  ClkPort 1 ]
                      Out0
 
 
