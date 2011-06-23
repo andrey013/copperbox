@@ -15,8 +15,6 @@ import ZSnd.Core.Utils.FormatCombinators
 -- special syntax for it as well).
 --
 
--- Ports in the Click lang do not necessarily correspond to
--- Ports in the Prim lang...
 
 -- figure 1.23 CSB
 
@@ -50,14 +48,11 @@ buzzX = Element "buzz" [DLiteral 1, CPfield 5, ClkPort 0, CPfield 6 ]
 
 
 outX :: Element 
-outX = Element "out" [ ClkPort 0 .*.  ClkPort 1 ]
+outX = Element "outs" [ ClkPort 0,  ClkPort 1 ]
                      Out0
 
 
 demo01 = format instr115
-
-(.*.) :: InConf -> InConf -> InConf
-(.*.) = CBinOp "*"
 
 
 demo02 = either text format $ translateDesc 115 instr115
