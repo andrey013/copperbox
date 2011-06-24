@@ -44,7 +44,7 @@ import ZSnd.Core.Utils.FormatExpr
 -- Inst
 
 
-data PrimInst = Inst 
+data PrimInst = PrimInst 
       { inst_num    :: Int
       , inst_body   :: [Stmt]
       }
@@ -111,7 +111,7 @@ data DataRate = I | K | A
 
 
 instance Format PrimInst where
-  format (Inst n ds) = 
+  format (PrimInst n ds) = 
       (text "instr" <+> int n) `vconcat` body `vconcat` text "endin"
     where
       body = vcat $ map format ds

@@ -1,4 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,7 +21,7 @@ module ZSnd.Core.Inst.Click
 
     DeclRef
   , CStmt(..)
-  , Element(..)
+  , UElement(..)
   , InConf(..)
   , OutConf(..)
   , TagVar(..)
@@ -60,25 +61,9 @@ instance Show DeclRef where
 type Port  = Int
 
 
--- Connection is actually another Let...
--- 
--- Remember the TagVar of out is the name of the /element/ -
--- it is not the name of the out port.
-
--- Is shoe-horning a let syntax necessary?
--- 
--- As we have one level of scope - statements could instead 
--- change the state for the rest of the computation.
---
--- Also note - assignment to gloabls is:
---
--- >   | GAssign DeclRef InConfig 
---
 
 
-
-
-data CStmt = Decl DeclRef Element
+data CStmt = Decl DeclRef UElement
            | Conn (DeclRef, Port) (DeclRef, Port)
            | Out  DeclRef
   deriving (Eq,Ord,Show)
@@ -101,11 +86,12 @@ data CStmt = Decl DeclRef Element
 -- data GExpr = GVar TagVar | GUnOp String GExpr | ..
 --
 
+-- newtype Element rate = Element { getElement :: UElement }
+--   deriving (Eq,Ord,Show)
 
-
--- | Element is a UGen.
+-- | UElement - universally typed element. This is a UGen.
 --
-data Element = Element
+data UElement = UElement
        { elt_name   :: String
        , elt_inputs :: [InConf]
        , elt_out    :: OutConf
@@ -164,7 +150,7 @@ instance Fractional InConf where
 translateDesc :: Int -> [CStmt] -> Either FailMsg PrimInst
 translateDesc i stmts = case runTransMonad $ mapM transStmt stmts of
   Left err -> Left err
-  Right xs -> Right $ Inst i xs
+  Right xs -> Right $ PrimInst i xs
 
 
 
@@ -220,7 +206,7 @@ newLocVar rt = TM $ \s ac -> let (a,s1) = step rt s in Right (a,s1,ac)
 
 
 
-bindDecl :: DeclRef -> Element -> [TagVar] -> TransMonad ()
+bindDecl :: DeclRef -> UElement -> [TagVar] -> TransMonad ()
 bindDecl dref elt outs = TM $ \s ac -> 
     let ac1 = updateDecl dref (EStmt (pa_count s) elt outs) ac
     in Right ((),s,ac1)
@@ -280,8 +266,8 @@ countA i _  | i <= 0 = pure []
 countA i ma          = (:) <$> ma <*> countA (i-1) ma
 
 
-transElement :: (Element,[TagVar]) -> Either FailMsg Stmt
-transElement (Element name ins _, outs) = fmap sk $ mapM fn ins
+transElement :: (UElement,[TagVar]) -> Either FailMsg Stmt
+transElement (UElement name ins _, outs) = fmap sk $ mapM fn ins
   where
     sk xs                = Opcode outs name xs
     fn (SLiteral s)      = Right $ Literal $ CsString s
@@ -309,7 +295,7 @@ data AccDecls = AccDecls
 --
 data EStmt = EStmt 
       { _last_port_assignment    :: Int 
-      , _estmt_element           :: Element
+      , _estmt_element           :: UElement
       , _estmt_outs              :: [TagVar]
       }
 
@@ -318,7 +304,7 @@ accdZero = AccDecls mempty mempty
 
 -- This actually needs [TagVar] as well...
 --
-extractDecls :: AccDecls -> [(Element, [TagVar])]
+extractDecls :: AccDecls -> [(UElement, [TagVar])]
 extractDecls = 
     map unPa . sortBy cmp . M.elems . acc_decls
   where
@@ -344,8 +330,8 @@ updateDecl key estmt (AccDecls decls passns) = AccDecls decls1 passns
     
 -- This doesn\'t work on a ClkPort deeply embedded in an expr...
 --
-updatePort :: Int -> TagVar -> Element -> Either FailMsg Element
-updatePort pnum tv (Element name cfgs out) = 
+updatePort :: Int -> TagVar -> UElement -> Either FailMsg UElement
+updatePort pnum tv (UElement name cfgs out) = 
     step id cfgs
   where
     step _  []              = Left $ "error - update port, missing port - "
@@ -353,7 +339,7 @@ updatePort pnum tv (Element name cfgs out) =
     step ac (x:xs)  = case single x of
                        (_,False) -> step (ac . (x:)) xs
                        (e,True) -> let cfgs' = ac $ e : xs
-                                   in Right $ Element name cfgs' out
+                                   in Right $ UElement name cfgs' out
 
 
     single (ClkPort i) 
@@ -384,8 +370,8 @@ instance Format CStmt where
   format (Out v1)               = text "==>" <+> format v1 <> char ';'
      
 
-instance Format Element where
-  format (Element name _ins _outs) = text name
+instance Format UElement where
+  format (UElement name _ins _outs) = text name
 
 instance Format InConf where
   format = unparse . buildExpr
