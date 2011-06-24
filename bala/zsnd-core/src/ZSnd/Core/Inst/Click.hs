@@ -19,7 +19,7 @@ module ZSnd.Core.Inst.Click
   (
 
     DeclRef
-  , CExpr(..)
+  , CStmt(..)
   , Element(..)
   , InConf(..)
   , OutConf(..)
@@ -65,9 +65,21 @@ type Port  = Int
 -- Remember the TagVar of out is the name of the /element/ -
 -- it is not the name of the out port.
 
+-- Is shoe-horning a let syntax necessary?
+-- 
+-- As we have one level of scope - statements could instead 
+-- change the state for the rest of the computation.
+--
+-- Also note - assignment to gloabls is:
+--
+-- >   | GAssign DeclRef InConfig 
+--
 
-data CExpr = LetD DeclRef Element CExpr
-           | LetC (DeclRef, Port) (DeclRef, Port) CExpr
+
+
+
+data CStmt = Decl DeclRef Element
+           | Conn (DeclRef, Port) (DeclRef, Port)
            | Out  DeclRef
   deriving (Eq,Ord,Show)
 
@@ -149,8 +161,8 @@ instance Fractional InConf where
 
 -- | Translate a Click instrument.
 --
-translateDesc :: Int -> CExpr -> Either FailMsg PrimInst
-translateDesc i cexp = case runTransMonad $ transStep cexp of
+translateDesc :: Int -> [CStmt] -> Either FailMsg PrimInst
+translateDesc i stmts = case runTransMonad $ mapM transStmt stmts of
   Left err -> Left err
   Right xs -> Right $ Inst i xs
 
@@ -241,22 +253,19 @@ assignPort pfrom (dref,pnum) = TM $ \s ac ->
 
 
 
-transStep :: CExpr -> TransMonad ()
-
--- LetD generates an opcode Stmt - it may have unassigned ports
+-- Decl generates an opcode Stmt - it may have unassigned ports
 -- which need filling in.
 --
-transStep (LetD dref elt body)  = do
+
+transStmt :: CStmt -> TransMonad ()
+transStmt (Decl dref elt)  = do
     ovars <- outVars $ elt_out elt
     bindDecl dref elt ovars 
     bindPorts dref ovars
-    transStep body
 
-transStep (LetC a b body)       = do
-    assignPort a b
-    transStep body
-  
-transStep (Out _)               = return ()
+transStmt (Conn a b)       = assignPort a b  
+
+transStmt (Out _)          = return ()
     
 
 outVars :: OutConf -> TransMonad [TagVar]
@@ -362,17 +371,17 @@ updatePort pnum tv (Element name cfgs out) =
 --------------------------------------------------------------------------------
 -- Format instances (useful for debugging)
 
-instance Format CExpr where
-   format (LetD name elt expr)  = 
+instance Format CStmt where
+  format (Decl name elt)        = 
       format name <+> text "::" <+> format elt <> char ';'
-        `vconcat` format expr
+    
 
-   format (LetC (v1,i1) (v2,i2) expr)           = 
-     format v1 <> brackets (int i1) <+> text "->" 
+  format (Conn (v1,i1) (v2,i2)) = 
+      format v1 <> brackets (int i1) <+> text "->" 
                <+> brackets (int i2) <> format v2 <> char ';'
-               `vconcat` format expr
+               
 
-   format (Out v1)               = text "==>" <+> format v1 <> char ';'
+  format (Out v1)               = text "==>" <+> format v1 <> char ';'
      
 
 instance Format Element where

@@ -18,16 +18,17 @@ import ZSnd.Core.Utils.FormatCombinators
 
 -- figure 1.23 CSB
 
-instr115 :: CExpr
-instr115 = LetD k1 linenX 
-         ( LetD k2 exponX 
-         ( LetD a1 buzzX
-         ( LetD o1 outX
-         ( LetC (k1,0) (o1,0)
-         ( LetC (k2,0) (a1,0)
-         ( LetC (a1,0) (o1,1)
-                (Out o1) ))))))
-               
+instr115 :: [CStmt]
+instr115 =  
+    [ Decl k1 linenX 
+    , Decl k2 exponX 
+    , Decl a1 buzzX
+    , Decl o1 outX
+    , Conn (k1,0) (o1,0)
+    , Conn (k2,0) (a1,0)
+    , Conn (a1,0) (o1,1)
+    , Out o1
+    ]          
   where
     k1 = 1 
     k2 = 2
@@ -52,7 +53,7 @@ outX = Element "outs" [ (1 + ClkPort 0) * ClkPort 1 ]
                       Out0
 
 
-demo01 = format instr115
+demo01 = vcat $ map format instr115
 
 
 demo02 = either text format $ translateDesc 115 instr115
