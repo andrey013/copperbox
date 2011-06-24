@@ -33,6 +33,7 @@ module ZSnd.Core.Inst.Click
 
 import ZSnd.Core.Inst.Prim
 import ZSnd.Core.Utils.FormatCombinators
+import ZSnd.Core.Utils.FormatExpr
 
 
 import Control.Applicative
@@ -108,8 +109,8 @@ data InConf = SLiteral String              -- file names
             | ILiteral Int
             | CPfield  Int
             | CFuncall String InConf
-            | CUnOp    String InConf
-            | CBinOp   String InConf InConf
+            | CUnOp    Rator InConf
+            | CBinOp   Rator InConf InConf
             | ClkPort  Int
             | SatPort  TagVar
   deriving (Eq,Ord,Show)
@@ -128,17 +129,17 @@ data OutConf = Out0
 
 
 instance Num InConf where
-  (+)    = CBinOp "+"
-  (-)    = CBinOp "-"
-  (*)    = CBinOp "*"
-  abs    = CUnOp "abs"
-  negate = CUnOp "-"
+  (+)    = CBinOp $ infixL 6 "+"
+  (-)    = CBinOp $ infixL 6 "-"
+  (*)    = CBinOp $ infixL 7 "*"
+  abs    = CFuncall "abs"
+  negate = CUnOp  $ prefix 9 "-"
   signum _      = error "signum - no interpretation of signum in Csound."
   fromInteger i = ILiteral (fromInteger i)
 
 
 instance Fractional InConf where
-  (/)            = CBinOp "/"  
+  (/)            = CBinOp $ infixL 7 "/"  
   recip _        = error "recip - no interpretation of recip in Csound."  
   fromRational d = DLiteral $ fromRational d
 
@@ -245,17 +246,17 @@ transStep :: CExpr -> TransMonad ()
 -- LetD generates an opcode Stmt - it may have unassigned ports
 -- which need filling in.
 --
-transStep (LetD dref elt body)        = do
+transStep (LetD dref elt body)  = do
     ovars <- outVars $ elt_out elt
     bindDecl dref elt ovars 
     bindPorts dref ovars
     transStep body
 
-transStep (LetC a b body)   = do
+transStep (LetC a b body)       = do
     assignPort a b
     transStep body
   
-transStep (Out vn)                  = return ()
+transStep (Out _)               = return ()
     
 
 outVars :: OutConf -> TransMonad [TagVar]
@@ -282,7 +283,7 @@ transElement (Element name ins _, outs) = fmap sk $ mapM fn ins
     fn (CUnOp op e1)     = (\a -> UnOp op a) <$> fn e1
     fn (CBinOp op e1 e2) = (BinOp op) <$> fn e1 <*> fn e2
     fn (SatPort tv)      = Right $ VarE tv
-    fn (ClkPort i)       = Left $ "error - unassigned port."
+    fn (ClkPort _)       = Left $ "error - unassigned port."
 
 
 --------------------------------------------------------------------------------
@@ -297,12 +298,10 @@ data AccDecls = AccDecls
 
 -- | Statement under evaluation...
 --
--- 
---
 data EStmt = EStmt 
-      { last_port_assignment    :: Int 
-      , estmt_element           :: Element
-      , estmt_outs              :: [TagVar]
+      { _last_port_assignment    :: Int 
+      , _estmt_element           :: Element
+      , _estmt_outs              :: [TagVar]
       }
 
 accdZero :: AccDecls
@@ -315,7 +314,7 @@ extractDecls =
     map unPa . sortBy cmp . M.elems . acc_decls
   where
     cmp (EStmt pa1 _ _) (EStmt pa2 _ _) = compare pa1 pa2
-    unPa (EStmt _ elem outs)            = (elem,outs)
+    unPa (EStmt _ elt outs)             = (elt,outs)
 
 addPortAssignment :: (DeclRef,Int) -> TagVar -> AccDecls 
                   -> Either FailMsg AccDecls
@@ -342,11 +341,22 @@ updatePort pnum tv (Element name cfgs out) =
   where
     step _  []              = Left $ "error - update port, missing port - "
                                       ++ name ++ show [pnum]
-    step ac (ClkPort i:xs) 
-        | i == pnum         = let cfgs' = ac $ (SatPort tv) : xs
-                              in Right $ Element name cfgs' out
-    step ac (x:xs)          = step (ac . (x:)) xs
+    step ac (x:xs)  = case single x of
+                       (_,False) -> step (ac . (x:)) xs
+                       (e,True) -> let cfgs' = ac $ e : xs
+                                   in Right $ Element name cfgs' out
 
+
+    single (ClkPort i) 
+        | i == pnum          = (SatPort tv,True)
+        | otherwise          = (ClkPort i, False)
+
+    single (CFuncall s e1)   = let (e2,bl) = single e1 in (CFuncall s e2,bl)
+    single (CUnOp op e1)     = let (e2,bl) = single e1 in (CUnOp op e2,bl)
+    single (CBinOp op e1 e2) = let (e3,b1) = single e1 
+                                   (e4,b2) = single e2
+                               in (CBinOp op e3 e4, b1 || b2)
+    single e1                = (e1, False)
 
 
 --------------------------------------------------------------------------------
@@ -369,15 +379,18 @@ instance Format Element where
   format (Element name _ins _outs) = text name
 
 instance Format InConf where
-  format (SLiteral s)           = dquotes $ text s
-  format (DLiteral d)           = dtrunc d
-  format (ILiteral i)           = int i
-  format (CFuncall ss a)        = text ss <> parens (format a)
-  format (CPfield i)            = char 'p' <> int i
-  format (CUnOp ss a)           = text ss <> format a
-  format (CBinOp ss a b)        = format a <> text ss <> format b
-  format (ClkPort v)            = format v
-  format (SatPort v)            = format v
+  format = unparse . buildExpr
+
+buildExpr :: InConf -> DocExpr
+buildExpr (SLiteral s)          = Atom $ dquotes $ text s
+buildExpr (DLiteral d)          = Atom $ dtrunc d
+buildExpr (ILiteral i)          = Atom $ int i
+buildExpr (CFuncall ss a)       = Atom $ text ss <> parens (format a)
+buildExpr (CPfield i)           = Atom $ char 'p' <> int i
+buildExpr (CUnOp op a)          = Unary op (buildExpr a)
+buildExpr (CBinOp op a b)       = Binary (buildExpr a) op (buildExpr b)
+buildExpr (ClkPort v)           = Atom $ format v
+buildExpr (SatPort v)           = Atom $ format v
 
 instance Format DeclRef where
   format (DeclRef i) = text "var" <> int i 

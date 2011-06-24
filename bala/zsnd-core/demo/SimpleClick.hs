@@ -48,8 +48,8 @@ buzzX = Element "buzz" [DLiteral 1, CPfield 5, ClkPort 0, CPfield 6 ]
 
 
 outX :: Element 
-outX = Element "outs" [ ClkPort 0,  ClkPort 1 ]
-                     Out0
+outX = Element "outs" [ (1 + ClkPort 0) * ClkPort 1 ]
+                      Out0
 
 
 demo01 = format instr115

@@ -18,6 +18,7 @@
 module ZSnd.Core.Inst.Prim
   (
 
+  -- * Data types
     PrimInst(..)
   , Stmt(..)
   , Expr(..)
@@ -25,10 +26,18 @@ module ZSnd.Core.Inst.Prim
   , TagVar(..)
   , DataRate(..)
 
+  -- * Re-exports for expressions
+  , Rator
+  , prefix
+  , postfix
+  , infixL
+  , infixR
+
   ) where
 
 
 import ZSnd.Core.Utils.FormatCombinators
+import ZSnd.Core.Utils.FormatExpr
 
 
 --------------------------------------------------------------------------------
@@ -64,12 +73,11 @@ data Stmt = Vardef      TagVar Expr
 -- | Dynamically typed expr
 -- 
 data Expr = VarE    TagVar
-          | ParenE  Expr
           | PField  Int
           | Literal CsValue
           | ZeroOp  String
-          | UnOp    String Expr
-          | BinOp   String Expr Expr
+          | UnOp    Rator Expr
+          | BinOp   Rator Expr Expr
           | Funcall String Expr
   deriving (Eq,Ord,Show)
 
@@ -129,14 +137,18 @@ instance Format Stmt where
                       
 
 instance Format Expr where
-  format (VarE s)       = format s
-  format (ParenE e)     = parens $ format e
-  format (PField i)     = char 'p' <> int i 
-  format (Literal val)  = format val
-  format (ZeroOp ss)    = text ss
-  format (UnOp ss a)    = text ss <> format a
-  format (BinOp ss a b) = format a <> text ss <> format b
-  format (Funcall ss a) = text ss <> parens (format a)
+  format = unparse . buildExpr
+
+buildExpr :: Expr -> DocExpr
+buildExpr (VarE s)       = Atom $ format s
+buildExpr (PField i)     = Atom $ char 'p' <> int i 
+buildExpr (Literal val)  = Atom $ format val
+buildExpr (ZeroOp ss)    = Atom $ text ss
+buildExpr (UnOp op a)    = Unary op (buildExpr a)
+buildExpr (BinOp op a b) = Binary (buildExpr a) op (buildExpr b)
+buildExpr (Funcall ss a) = Atom $ text ss <> parens (format a)
+
+
 
 instance Format TagVar where
   format (GblVar rt i)  = char 'g' <> format rt <> int i
