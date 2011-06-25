@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -124,6 +125,7 @@ module ZSnd.Core.Opcodes.SignalGenerators
 
 
 import ZSnd.Core.CsoundInst
+import ZSnd.Core.Inst.Click
 
 --------------------------------------------------------------------------------
 -- Linear and Exponential generators
@@ -132,198 +134,282 @@ import ZSnd.Core.CsoundInst
 
 
 
-line :: KA_Rate rate
-     => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
-line ia idur ib = opcode "line" [ getExpr ia, getExpr idur, getExpr ib ]
+line :: forall rate . (KA_Rate rate)
+     => Conf IRate -> Conf IRate -> Conf IRate -> Element rate
+line ia idur ib = 
+    mkElement "line" [ getConfI ia, getConfI idur, getConfI ib ]
+                     (Out1 $ dataRate (undefined :: rate))
+    
 
 
-expon :: KA_Rate rate
-      => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
-expon ia idur ib = opcode "expon" [ getExpr ia, getExpr idur, getExpr ib ]
 
+expon :: forall rate. (KA_Rate rate)
+      => Conf IRate -> Conf IRate -> Conf IRate 
+      -> Element rate
+expon ia idur ib = 
+    mkElement "expon" [ getConfI ia, getConfI idur
+                      , getConfI ib ]
+                      (Out1 $ dataRate (undefined :: rate))
 
-linseg :: KA_Rate rate
-       => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-       -> InstBuilder (Expr rate)
+linseg :: forall rate. (KA_Rate rate)
+       => Conf IRate -> Conf IRate 
+       -> Conf IRate -> [(Conf IRate, Conf IRate)]
+       -> Element rate
 linseg ia idur ib xs = 
-    opcode "linseg" (getExpr ia : getExpr idur : getExpr ib : rest)
+    mkElement "linseg" (getConfI ia : getConfI idur : getConfI ib : rest)
+                       (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
 
 
-linsegr :: KA_Rate rate
-        => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-        -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr rate)
+linsegr :: forall rate. (KA_Rate rate)
+        => Conf IRate -> Conf IRate 
+        -> Conf IRate -> [(Conf IRate, Conf IRate)]
+        -> Conf IRate -> Conf IRate 
+        -> Element rate
 linsegr ia idur ib xs irel iz = 
-    opcode "linsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
+    mkElement "linsegr" (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
+                        (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-    end  = [getExpr irel, getExpr iz]
+    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+    end  = [getConfI irel, getConfI iz]
 
-expseg :: KA_Rate rate 
-       => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-       -> InstBuilder (Expr rate)
+
+expseg :: forall rate. (KA_Rate rate )
+       => Conf IRate -> Conf IRate 
+       -> Conf IRate -> [(Conf IRate, Conf IRate)]
+       -> Element rate
 expseg ia idur ib xs = 
-    opcode "expseg" (getExpr ia : getExpr idur : getExpr ib : rest)
+    mkElement "expseg" (getConfI ia : getConfI idur : getConfI ib : rest)
+                       (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
 
-expsegr :: KA_Rate rate
-        => Expr IR -> Expr IR -> Expr IR -> [(Expr IR, Expr IR)]
-        -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr rate)
+
+expsegr :: forall rate. (KA_Rate rate)
+        => Conf IRate -> Conf IRate 
+        -> Conf IRate -> [(Conf IRate, Conf IRate)]
+        -> Conf IRate -> Conf IRate 
+        -> Element rate
 expsegr ia idur ib xs irel iz = 
-    opcode "linsegr" (getExpr ia : getExpr idur : getExpr ib : rest ++ end)
+    mkElement "linsegr" (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
+                        (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
-    end  = [getExpr irel, getExpr iz]
+    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+    end  = [getConfI irel, getConfI iz]
 
 
 
-expsega   :: Expr IR -> Expr IR -> Expr IR 
-                        -> [(Expr IR, Expr IR)]
-                        -> InstBuilder (Expr AR)
+expsega   :: Conf IRate -> Conf IRate -> Conf IRate 
+          -> [(Conf IRate, Conf IRate)]
+          -> Element ARate
 expsega ia idur ib xs = 
-    opcode "expsega" (getExpr ia : getExpr idur : getExpr ib : rest)
+    mkElement "expsega" (getConfI ia : getConfI idur : getConfI ib : rest)
+                        (Out1 A)
   where
-    rest = concatMap (\(a,b) -> [getExpr a, getExpr b]) xs
+    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
 
 
-adsr :: KA_Rate rate
-     => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+adsr :: forall rate. (KA_Rate rate)
+     => Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
+     -> Element rate
 adsr ia idec isl ir = 
-    opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
+    mkElement "adsr" [ getConfI ia,   getConfI idec
+                     , getConfI isl,  getConfI ir ]
+                     (Out1 $ dataRate (undefined :: rate))
 
-
-adsr_ :: KA_Rate rate
-      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-      -> InstBuilder (Expr rate)
+adsr_ :: forall rate. (KA_Rate rate)
+      => Conf IRate -> Conf IRate -> Conf IRate 
+      -> Conf IRate -> Conf IRate 
+      -> Element rate
 adsr_ ia idec isl ir idel = 
-    opcode "adsr" [ getExpr ia, getExpr idec, getExpr isl
-                  , getExpr ir, getExpr idel ]
+    mkElement "adsr" [ getConfI ia,   getConfI idec
+                     , getConfI isl,  getConfI ir
+                     , getConfI idel ]
+                     (Out1 $ dataRate (undefined :: rate))
 
-
-madsr :: KA_Rate rate
-      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+madsr :: forall rate. (KA_Rate rate)
+      => Conf IRate -> Conf IRate 
+      -> Conf IRate -> Conf IRate 
+      -> Element rate
 madsr ia idec isl ir = 
-    opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
+    mkElement "madsr" [ getConfI ia,    getConfI idec
+                      , getConfI isl,   getConfI ir ]
+                      (Out1 $ dataRate (undefined :: rate))
 
 
-madsr_ :: KA_Rate rate
-       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-       -> InstBuilder (Expr rate)
+madsr_ :: forall rate. (KA_Rate rate)
+       => Conf IRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate 
+       -> Conf IRate 
+       -> Element rate
 madsr_ ia idec isl ir idel = 
-    opcode "madsr" [ getExpr ia, getExpr idec, getExpr isl
-                   , getExpr ir, getExpr idel ]
+    mkElement "madsr" [ getConfI ia,  getConfI idec
+                      , getConfI isl, getConfI ir
+                      , getConfI idel ]
+                      (Out1 $ dataRate (undefined :: rate))
 
 
-xadsr :: KA_Rate rate
-      => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+xadsr :: forall rate. (KA_Rate rate)
+      => Conf IRate -> Conf IRate 
+      -> Conf IRate -> Conf IRate 
+      -> Element rate
 xadsr ia idec isl ir = 
-    opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
+    mkElement "xadsr" [ getConfI ia,    getConfI idec
+                      , getConfI isl,   getConfI ir ]
+                      (Out1 $ dataRate (undefined :: rate))
 
 
-xadsr_ :: KA_Rate rate
-       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-       -> InstBuilder (Expr rate)
+xadsr_ :: forall rate. (KA_Rate rate)
+       => Conf IRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate 
+       -> Conf IRate 
+       -> Element rate
 xadsr_ ia idec isl ir idel = 
-    opcode "xadsr" [ getExpr ia, getExpr idec, getExpr isl
-                   , getExpr ir, getExpr idel ]
+    mkElement "xadsr" [ getConfI ia,    getConfI idec
+                      , getConfI isl,   getConfI ir
+                      , getConfI idel ]
+                      (Out1 $ dataRate (undefined :: rate))
 
-mxadsr :: KA_Rate rate
-       => Expr IR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+mxadsr :: forall rate. (KA_Rate rate)
+       => Conf IRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate 
+       -> Element rate
 mxadsr ia idec isl ir = 
-    opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl, getExpr ir ]
+    mkElement "mxadsr" [ getConfI ia,   getConfI idec
+                       , getConfI isl,  getConfI ir ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-mxadsr_ :: KA_Rate rate
-        => Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr rate)
+mxadsr_ :: forall rate. (KA_Rate rate)
+        => Conf IRate -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate 
+        -> Element rate
 mxadsr_ ia idec isl ir idel = 
-    opcode "mxadsr" [ getExpr ia, getExpr idec, getExpr isl
-                    , getExpr ir, getExpr idel ]
+    mkElement "mxadsr" [ getConfI ia,   getConfI idec
+                       , getConfI isl,  getConfI ir
+                       , getConfI idel ]
+                       (Out1 $ dataRate (undefined :: rate))
+
 
 --------------------------------------------------------------------------------
 -- Table access
 
-table :: Opcode rate 
-      => Expr rate -> Expr IR -> InstBuilder (Expr rate)
-table ndx ifn = opcode "table" [ getExpr ndx, getExpr ifn ]
+table :: forall rate1 rate. (Rate rate)
+      => Conf rate1 -> Conf IRate 
+      -> Element rate
+table ndx ifn = 
+    mkElement "table" [ getConfUniv ndx, getConfI ifn ]
+                      (Out1 $ dataRate (undefined :: rate))
 
-table_ :: Opcode rate
-       => Expr rate -> Expr IR -> Expr rate -> Expr IR -> Expr IR    
-       -> InstBuilder (Expr rate)
+table_ :: forall rate1 rate. (Rate rate)
+       => Conf rate1 -> Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate    
+       -> Element rate
 table_ ndx ifn ixmode ixoff ixwrap = 
-    opcode "table" [ getExpr ndx, getExpr ifn, getExpr ixmode
-                   , getExpr ixoff, getExpr ixwrap ]
+    mkElement "table" [ getConfUniv ndx,    getConfI ifn
+                      , getConfI ixmode,    getConfI ixoff
+                      , getConfI ixwrap ]
+                      (Out1 $ dataRate (undefined :: rate))
 
 
-tablei :: Opcode rate
-       => Expr rate -> Expr IR -> InstBuilder (Expr rate)
-tablei ndx ifn = opcode "tablei" [ getExpr ndx, getExpr ifn ]
+tablei :: forall rate1 rate. (Rate rate)
+       => Conf rate1 -> Conf IRate 
+       -> Element rate
+tablei ndx ifn = 
+    mkElement "tablei" [ getConfUniv ndx, getConfI ifn ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-tablei_ :: Opcode rate
-        => Expr rate -> Expr IR -> Expr rate -> Expr IR -> Expr IR
-       -> InstBuilder (Expr rate)
+tablei_ :: forall rate1 rate. (Rate rate)
+        => Conf rate1 -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate
+       -> Element rate
 tablei_ ndx ifn ixmode ixoff ixwrap = 
-    opcode "tablei" [ getExpr ndx, getExpr ifn, getExpr ixmode
-                    , getExpr ixoff, getExpr ixwrap ]
+    mkElement "tablei" [ getConfUniv ndx,   getConfI ifn
+                       , getConfI ixmode,   getConfI ixoff
+                       , getConfI ixwrap ]
+                       (Out1 $ dataRate (undefined :: rate))
 
 
 
-table3 :: Opcode rate
-       => Expr rate -> Expr IR -> InstBuilder (Expr rate)
-table3 ndx ifn = opcode "table" [ getExpr ndx, getExpr ifn ]
+table3 :: forall rate1 rate. (Rate rate)
+       => Conf rate1 -> Conf IRate 
+       -> Element rate
+table3 ndx ifn = 
+    mkElement "table" [ getConfUniv ndx, getConfI ifn ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-table3_ :: Opcode rate
-        => Expr rate -> Expr IR -> Expr rate -> Expr IR -> Expr IR
-        -> InstBuilder (Expr rate)
+table3_ :: forall rate1 rate. (Rate rate)
+        => Conf rate1 -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate
+        -> Element rate
 table3_ ndx ifn ixmode ixoff ixwrap = 
-    opcode "table3" [ getExpr ndx, getExpr ifn, getExpr ixmode
-                    , getExpr ixoff, getExpr ixwrap ]
+    mkElement "table3" [ getConfUniv ndx,   getConfI ifn
+                       , getConfI ixmode,   getConfI ixoff
+                       , getConfI ixwrap ]
+                       (Out1 $ dataRate (undefined :: rate))
 
 
-oscil1 :: Expr IR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr KR)
+oscil1 :: Conf IRate -> Conf KRate 
+       -> Conf IRate -> Conf IRate 
+       -> Element KRate
 oscil1 idel kamp idur ifn = 
-    opcode "oscil1" [ getExpr idel, getExpr kamp, getExpr idur, getExpr ifn ]
+    mkElement "oscil1" [ getConfI idel,   getConfK kamp
+                       , getConfI idur,   getConfI ifn ]
+                       (Out1 K)
 
-
-oscil1i :: Expr IR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr KR)
+oscil1i :: Conf IRate -> Conf KRate 
+        -> Conf IRate -> Conf IRate 
+        -> Element KRate
 oscil1i idel kamp idur ifn = 
-    opcode "oscil1i" [ getExpr idel, getExpr kamp, getExpr idur, getExpr ifn ]
+    mkElement "oscil1i" [ getConfI idel,  getConfK kamp
+                        , getConfI idur,  getConfI ifn ]
+                        (Out1 K)
 
-osciln :: Expr KR -> Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr KR)
+osciln :: Conf KRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate 
+       -> Element KRate
 osciln kamp ifrq ifn itimes = 
-    opcode "osciln" [ getExpr kamp, getExpr ifrq, getExpr ifn, getExpr itimes ]
-
+    mkElement "osciln" [ getConfK kamp,   getConfI ifrq
+                       , getConfI ifn,    getConfI itimes ]
+                       (Out1 K)
 --------------------------------------------------------------------------------
 -- Phasors
 
 -- class CPhasor rate where
 
  
-phasor :: KA_Rate rate
-       => Expr rate -> InstBuilder (Expr rate)
-phasor cps = opcode "phasor" [getExpr cps]
+phasor :: forall rate1 rate. (KA_Rate rate)
+       => Conf rate1 
+       -> Element rate
+phasor cps = 
+    mkElement "phasor" [getConfUniv cps]
+                       (Out1 $ dataRate (undefined :: rate))
 
 
-phasor_ :: KA_Rate rate
-        => Expr rate -> Expr IR -> InstBuilder (Expr rate)
-phasor_ cps iphs = opcode "phasor" [getExpr cps, getExpr iphs]
+phasor_ :: forall rate1 rate. (KA_Rate rate)
+        => Conf rate1 -> Conf IRate 
+        -> Element rate
+phasor_ cps iphs = 
+    mkElement "phasor" [getConfUniv cps, getConfI iphs]
+                       (Out1 $ dataRate (undefined :: rate))
    
 
-phasorbnk :: KA_Rate rate
-          => Expr rate -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+phasorbnk :: forall rate1 rate. (KA_Rate rate)
+          => Conf rate1 -> Conf KRate -> Conf IRate 
+          -> Element rate
 phasorbnk cps kindx icnt = 
-    opcode "phasorbnk" [ getExpr cps, getExpr kindx, getExpr icnt ]
+    mkElement "phasorbnk" [ getConfUniv cps,  getConfK kindx
+                          , getConfI icnt ]
+                          (Out1 $ dataRate (undefined :: rate))
 
 
-phasorbnk_  :: KA_Rate rate
-            => Expr rate -> Expr KR -> Expr IR -> Expr IR 
-            -> InstBuilder (Expr rate)
+phasorbnk_  :: forall rate1 rate. (KA_Rate rate)
+            => Conf rate1 -> Conf KRate 
+            -> Conf IRate -> Conf IRate 
+            -> Element rate
 phasorbnk_ cps kindx icnt iphs = 
-    opcode "phasorbnk" [ getExpr cps, getExpr kindx
-                       , getExpr icnt, getExpr iphs ]
+    mkElement "phasorbnk" [ getConfUniv cps,  getConfK kindx
+                          , getConfI icnt, getConfI iphs ]
+                          (Out1 $ dataRate (undefined :: rate))
 
 
 --------------------------------------------------------------------------------
@@ -331,67 +417,108 @@ phasorbnk_ cps kindx icnt iphs =
 
 -- | Note for A rate, cps can seemingly be any type.
 -- 
-oscil :: KA_Rate rate
-      => Expr rare -> Expr a -> Expr IR -> InstBuilder (Expr rate)
+oscil :: forall r1 r2 rate. (KA_Rate rate)
+      => Conf r1 -> Conf r2 -> Conf IRate 
+      -> Element rate
 oscil amp cps ifn  = 
-    opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn]
+    mkElement "oscil" [ getConfUniv amp,  getConfUniv cps
+                      , getConfI ifn ]
+                      (Out1 $ dataRate (undefined :: rate))
 
-oscil_ :: KA_Rate rate
-       => Expr rate -> Expr rate -> Expr IR -> Expr IR 
-       -> InstBuilder (Expr rate)
+oscil_ :: forall r1 r2 rate. (KA_Rate rate)
+       => Conf r1  -> Conf r2
+       -> Conf IRate -> Conf IRate 
+       -> Element rate
 oscil_ amp cps ifn iphs = 
-    opcode "oscil" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
+    mkElement "oscil" [ getConfUniv amp,  getConfUniv cps
+                      , getConfI ifn,     getConfI iphs ]
+                      (Out1 $ dataRate (undefined :: rate))
 
-oscili :: KA_Rate rate
-       => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+oscili :: forall r1 r2 rate. (KA_Rate rate)
+       => Conf r1 -> Conf r2 -> Conf IRate 
+       -> Element rate
 oscili amp cps ifn = 
-    opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn]
+    mkElement "oscili" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ifn]
+                       (Out1 $ dataRate (undefined :: rate))
 
-oscili_ :: KA_Rate rate
-        => Expr rate -> Expr rate -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr rate)
+oscili_ :: forall r1 r2 rate. (KA_Rate rate)
+        => Conf r1 -> Conf r2 
+        -> Conf IRate -> Conf IRate 
+        -> Element rate
 oscili_ amp cps ifn iphs = 
-    opcode "oscili" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
+    mkElement "oscili" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ifn,      getConfI iphs ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-oscil3 :: KA_Rate rate
-       => Expr rate -> Expr rate -> Expr IR -> InstBuilder (Expr rate)
+oscil3 :: forall r1 r2 rate. (KA_Rate rate)
+       => Conf r1 -> Conf r2 -> Conf IRate 
+       -> Element rate
 oscil3 amp cps ifn = 
-    opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn]
+    mkElement "oscil3" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ifn ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-oscil3_ :: KA_Rate rate
-        => Expr rate -> Expr rate -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr rate)
+oscil3_ :: forall r1 r2 rate. (KA_Rate rate)
+        => Conf r1 -> Conf r2
+        -> Conf IRate -> Conf IRate 
+        -> Element rate
 oscil3_ amp cps ifn iphs = 
-    opcode "oscil3" [getExpr amp, getExpr cps, getExpr ifn, getExpr iphs]
+    mkElement "oscil3" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ifn,      getConfI iphs ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-poscil :: KA_Rate rate
-       => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+poscil :: forall r1 r2 rate. (KA_Rate rate)
+       => Conf r1 -> Conf r2 -> Conf IRate 
+       -> Element rate
 poscil amp cps ift = 
-    opcode "poscil" [getExpr amp, getExpr cps, getExpr ift]
+    mkElement "poscil" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ift ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-poscil_ :: KA_Rate rate
-        => Expr KR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+poscil_ :: forall r1 r2 rate. (KA_Rate rate)
+        => Conf r1 -> Conf r2 -> Conf IRate -> Conf IRate 
+        -> Element rate
 poscil_ amp cps ift iphs = 
-    opcode "poscil" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
+    mkElement "poscil" [ getConfUniv amp,   getConfUniv cps
+                       , getConfI ift,      getConfI iphs ]
+                       (Out1 $ dataRate (undefined :: rate))
 
-poscil3 :: KA_Rate rate 
-        => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
+
+poscil3 :: forall r1 r2 rate. (KA_Rate rate)
+        => Conf r1 -> Conf r2 -> Conf IRate 
+        -> Element rate
 poscil3 amp cps ift = 
-    opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift]
+    mkElement "poscil3" [ getConfUniv amp,  getConfUniv cps
+                        , getConfI ift ]
+                        (Out1 $ dataRate (undefined :: rate))
 
-poscil3_  :: KA_Rate rate
-          => Expr KR -> Expr KR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+
+poscil3_  :: forall r1 r2 rate. (KA_Rate rate)
+          => Conf r1 -> Conf r2 
+          -> Conf IRate -> Conf IRate 
+          -> Element rate
 poscil3_ amp cps ift iphs = 
-    opcode "poscil3" [getExpr amp, getExpr cps, getExpr ift, getExpr iphs]
-
-lfo :: KA_Rate rate 
-    => Expr KR -> Expr KR -> InstBuilder (Expr rate)
-lfo amp cps = opcode "lfo" [getExpr amp, getExpr cps]
+    mkElement "poscil3" [ getConfUniv amp,  getConfUniv cps
+                        , getConfI ift,     getConfI iphs ]
+                        (Out1 $ dataRate (undefined :: rate))
 
 
-lfo_ :: KA_Rate rate
-     => Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr rate)
-lfo_ amp cps itype = opcode "lfo" [getExpr amp, getExpr cps, getExpr itype]
+lfo :: forall r1 r2 rate. (KA_Rate rate)
+    => Conf r1 -> Conf r2
+    -> Element rate
+lfo amp cps = 
+    mkElement "lfo" [ getConfUniv amp,  getConfUniv cps]
+                    (Out1 $ dataRate (undefined :: rate))
+
+
+lfo_ :: forall r1 r2 rate. (KA_Rate rate)
+     => Conf r1 -> Conf r2 -> Conf IRate 
+     -> Element rate
+lfo_ amp cps itype = 
+    mkElement "lfo" [ getConfUniv amp,  getConfUniv cps
+                    , getConfI itype ]
+                    (Out1 $ dataRate (undefined :: rate))
 
 
 
@@ -402,174 +529,274 @@ lfo_ amp cps itype = opcode "lfo" [getExpr amp, getExpr cps, getExpr itype]
 -- Above we have interpreted it as audio rate, but is this 
 -- correct?
 
-buzz :: Expr a -> Expr a -> Expr KR -> Expr IR -> InstBuilder (Expr AR)
+buzz :: Conf r1 -> Conf r2
+     -> Conf KRate -> Conf IRate 
+     -> Element ARate
 buzz xamp xcps knh ifn = 
-    opcode "buzz" [getExpr xamp, getExpr xcps, getExpr knh, getExpr ifn]
+    mkElement "buzz" [ getConfUniv xamp,  getConfUniv xcps
+                     , getConfK knh,      getConfI ifn ]
+                     (Out1 A)
 
-buzz_ :: Expr a -> Expr a -> Expr KR -> Expr IR -> Expr IR 
-      -> InstBuilder (Expr AR)
+buzz_ :: Conf r1 -> Conf r2 -> Conf KRate 
+      -> Conf IRate -> Conf IRate 
+      -> Element ARate
 buzz_ xamp xcps knh ifn iphs = 
-    opcode "buzz" [ getExpr xamp, getExpr xcps, getExpr knh
-                  , getExpr ifn, getExpr iphs ]
+    mkElement "buzz" [ getConfUniv xamp,  getConfUniv xcps
+                     , getConfK knh,      getConfI ifn
+                     , getConfI iphs ]
+                     (Out1 A)
 
 
-gbuzz :: Expr a -> Expr a -> Expr KR -> Expr IR -> Expr KR -> Expr KR 
-      -> InstBuilder (Expr AR)
+gbuzz :: Conf r1 -> Conf r2
+      -> Conf KRate -> Conf KRate 
+      -> Conf KRate -> Conf IRate 
+      -> Element ARate
 gbuzz xamp xcps knh klh kr ifn = 
-    opcode "gbuzz" [ getExpr xamp, getExpr xcps, getExpr knh
-                   , getExpr klh,  getExpr kr,   getExpr ifn ]
+    mkElement "gbuzz" [ getConfUniv xamp,   getConfUniv xcps
+                      , getConfK knh,       getConfK klh
+                      , getConfK kr,        getConfI ifn ]
+                      (Out1 A)
 
-gbuzz_ :: Expr a -> Expr a -> Expr KR -> Expr IR 
-       -> Expr KR -> Expr KR -> Expr IR
-       -> InstBuilder (Expr AR)
+gbuzz_ :: Conf r1 -> Conf r2
+       -> Conf KRate -> Conf KRate -> Conf KRate 
+       -> Conf IRate -> Conf IRate
+       -> Element ARate
 gbuzz_ xamp xcps knh klh kr ifn iphs = 
-    opcode "gbuzz" [ getExpr xamp, getExpr xcps, getExpr knh
-                   , getExpr klh,  getExpr kr,   getExpr ifn, getExpr iphs ]
+    mkElement "gbuzz" [ getConfUniv xamp,   getConfUniv xcps
+                      , getConfK knh,       getConfK klh
+                      , getConfK kr,        getConfI ifn
+                      , getConfI iphs ]
+                      (Out1 A)
 
-
-vco :: Expr KR -> Expr KR -> Expr IR -> Expr KR -> Expr IR -> Expr IR 
-    -> InstBuilder (Expr AR)
+vco :: Conf KRate -> Conf KRate 
+    -> Conf IRate -> Conf KRate 
+    -> Conf IRate -> Conf IRate 
+    -> Element ARate
 vco kamp kfqc iwave kpw ifn imaxd = 
-    opcode "gbuzz" [ getExpr kamp, getExpr kfqc, getExpr iwave
-                   , getExpr kpw,  getExpr ifn,  getExpr imaxd ]
+    mkElement "gbuzz" [ getConfK kamp,    getConfK kfqc
+                      , getConfI iwave,   getConfK kpw
+                      , getConfI ifn,     getConfI imaxd ]
+                      (Out1 A)
 
 --------------------------------------------------------------------------------
 -- Additive synthesis / resynthesis
 
-adsyn :: Expr KR -> Expr KR -> Expr KR -> Expr IR -> InstBuilder (Expr AR)
+adsyn :: Conf KRate -> Conf KRate 
+      -> Conf KRate -> Conf IRate 
+      -> Element ARate
 adsyn kamod kfmod ksmod ifilcod = 
-    opcode "adsyn" [ getExpr kamod, getExpr kfmod, getExpr ksmod
-                    , getExpr ifilcod ]
+    mkElement "adsyn" [ getConfK kamod,   getConfK kfmod
+                      , getConfK ksmod,   getConfI ifilcod ]
+                      (Out1 A)
 
 
-adsynt :: Expr KR -> Expr KR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-       -> InstBuilder (Expr AR)
+adsynt :: Conf KRate -> Conf KRate 
+       -> Conf IRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate
+       -> Element ARate
 adsynt kamp kcps iwfn ifreqfn iampfn icnt = 
-    opcode "adsynt" [ getExpr kamp, getExpr kcps, getExpr iwfn
-                     , getExpr ifreqfn, getExpr iampfn, getExpr icnt ]
+    mkElement "adsynt" [ getConfK kamp,     getConfK kcps
+                       , getConfI iwfn,     getConfI ifreqfn
+                       , getConfI iampfn,   getConfI icnt ]
+                       (Out1 A)
 
-adsynt_ :: Expr KR -> Expr KR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> Expr IR
-        -> InstBuilder (Expr AR)
+adsynt_ :: Conf KRate -> Conf KRate 
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate
+        -> Conf IRate
+        -> Element ARate
 adsynt_ kamp kcps iwfn ifreqfn iampfn icnt iphs = 
-    opcode "adsynt" [ getExpr kamp, getExpr kcps, getExpr iwfn
-                     , getExpr ifreqfn, getExpr iampfn, getExpr icnt
-                     , getExpr iphs ]
+    mkElement "adsynt" [ getConfK kamp,     getConfK kcps
+                       , getConfI iwfn,     getConfI ifreqfn
+                       , getConfI iampfn,   getConfI icnt
+                       , getConfI iphs ]
+                       (Out1 A)
 
 
-hsboscil :: Expr KR -> Expr KR -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-         -> InstBuilder (Expr AR)
+hsboscil :: Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf IRate 
+         -> Conf IRate -> Conf IRate
+         -> Element ARate
 hsboscil kamp ktone kbrite ibasfreq iwfn ioctfn = 
-    opcode "hsboscil" [ getExpr kamp, getExpr ktone, getExpr kbrite
-                      , getExpr ibasfreq, getExpr iwfn, getExpr ioctfn ]
+    mkElement "hsboscil" [ getConfK kamp,     getConfK ktone
+                         , getConfK kbrite,   getConfI ibasfreq
+                         , getConfI iwfn,     getConfI ioctfn ]
+                         (Out1 A)
 
-hsboscil_ :: Expr KR -> Expr KR -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-          -> Expr IR
-          -> InstBuilder (Expr AR)
+hsboscil_ :: Conf KRate -> Conf KRate 
+          -> Conf KRate -> Conf IRate 
+          -> Conf IRate -> Conf IRate
+          -> Conf IRate
+          -> Element ARate
 hsboscil_ kamp ktone kbrite ibasfreq iwfn ioctfn iphs = 
-    opcode "hsboscil" [ getExpr kamp, getExpr ktone, getExpr kbrite
-                      , getExpr ibasfreq, getExpr iwfn, getExpr ioctfn
-                      , getExpr iphs ]
+    mkElement "hsboscil" [ getConfK kamp,     getConfK ktone
+                         , getConfK kbrite,   getConfI ibasfreq
+                         , getConfI iwfn,     getConfI ioctfn
+                         , getConfI iphs ]
+                         (Out1 A)
 
 --------------------------------------------------------------------------------
 -- FM Synthesis
 
-foscil :: Expr a -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
-       -> InstBuilder (Expr AR)
+foscil :: Conf rate -> Conf KRate 
+       -> Conf KRate -> Conf KRate 
+       -> Conf KRate -> Conf IRate
+       -> Element ARate
 foscil xamp kcps kcar kmod kndx ifn = 
-    opcode "foscil" [ getExpr xamp, getExpr kcps, getExpr kcar
-                    , getExpr kmod, getExpr kndx, getExpr ifn ]
+    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
+                       , getConfK kcar,     getConfK kmod
+                       , getConfK kndx,     getConfI ifn ]
+                       (Out1 A)
 
-
-foscil_ :: Expr a -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR 
-        -> Expr IR
-        -> InstBuilder (Expr AR)
+foscil_ :: Conf rate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf IRate 
+        -> Conf IRate
+        -> Element ARate
 foscil_ xamp kcps kcar kmod kndx ifn iphs = 
-    opcode "foscil" [ getExpr xamp, getExpr kcps, getExpr kcar
-                    , getExpr kmod, getExpr kndx, getExpr ifn
-                    , getExpr iphs ]
+    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
+                       , getConfK kcar,     getConfK kmod
+                       , getConfK kndx,     getConfI ifn
+                       , getConfI iphs ]
+                       (Out1 A)
 
-foscili :: Expr a -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
-        -> InstBuilder (Expr AR)
+foscili :: Conf rate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf IRate
+        -> Element ARate
 foscili xamp kcps kcar kmod kndx ifn = 
-    opcode "foscili" [ getExpr xamp, getExpr kcps, getExpr kcar
-                     , getExpr kmod, getExpr kndx, getExpr ifn ]
+    mkElement "foscili" [ getConfUniv xamp,   getConfK kcps
+                        , getConfK kcar,      getConfK kmod
+                        , getConfK kndx,      getConfI ifn ]
+                        (Out1 A)
 
 
-
-foscili_ :: Expr a -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR 
-         -> Expr IR
-         -> InstBuilder (Expr AR)
+foscili_ :: Conf rate -> Conf KRate 
+         -> Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf IRate 
+         -> Conf IRate
+         -> Element ARate
 foscili_ xamp kcps kcar kmod kndx ifn iphs = 
-    opcode "foscil" [ getExpr xamp, getExpr kcps, getExpr kcar
-                    , getExpr kmod, getExpr kndx, getExpr ifn
-                    , getExpr iphs ]
+    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
+                       , getConfK kcar,     getConfK kmod
+                       , getConfK kndx,     getConfI ifn
+                       , getConfI iphs ]
+                       (Out1 A)
 
 
-fmvoice :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-        -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> InstBuilder (Expr AR)
+fmvoice :: Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate
+        -> Element ARate
 fmvoice kamp kfreq kvowel ktilt kvibamt kvibrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmvoice" [ getExpr kamp, getExpr kfreq, getExpr kvowel
-                     , getExpr ktilt, getExpr kvibamt, getExpr kvibrate
-                     , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                     , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmvoice" [ getConfK kamp,      getConfK kfreq
+                        , getConfK kvowel,    getConfK ktilt
+                        , getConfK kvibamt,   getConfK kvibrate
+                        , getConfI ifn1,      getConfI ifn2
+                        , getConfI ifn3,      getConfI ifn4
+                        , getConfI ivibfn ]
+                        (Out1 A)
 
-fmbell :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-       -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-       -> InstBuilder (Expr AR)
+fmbell :: Conf KRate -> Conf KRate 
+       -> Conf KRate -> Conf KRate 
+       -> Conf KRate -> Conf KRate
+       -> Conf IRate -> Conf IRate 
+       -> Conf IRate -> Conf IRate 
+       -> Conf IRate
+       -> Element ARate
 fmbell kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmbell" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                     , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                     , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                     , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmbell" [ getConfK kamp,     getConfK kfreq
+                       , getConfK kc1,      getConfK kc2
+                       , getConfK kvdepth,  getConfK kvrate
+                       , getConfI ifn1,     getConfI ifn2
+                       , getConfI ifn3,     getConfI ifn4
+                       , getConfI ivibfn ]
+                       (Out1 A)
 
-fmrhode :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-        -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> InstBuilder (Expr AR)
+fmrhode :: Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate
+        -> Element ARate
 fmrhode kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmrhode" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                     , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                     , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                     , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmrhode" [ getConfK kamp,      getConfK kfreq
+                        , getConfK kc1,       getConfK kc2
+                        , getConfK kvdepth,   getConfK kvrate
+                        , getConfI ifn1,      getConfI ifn2
+                        , getConfI ifn3,      getConfI ifn4
+                        , getConfI ivibfn ]
+                        (Out1 A)
 
-fmwurlie :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-        -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> InstBuilder (Expr AR)
+
+fmwurlie :: Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf KRate
+         -> Conf IRate -> Conf IRate 
+         -> Conf IRate -> Conf IRate 
+         -> Conf IRate
+         -> Element ARate
 fmwurlie kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmwurlie" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                      , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                      , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                      , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmwurlie" [ getConfK kamp,     getConfK kfreq
+                         , getConfK kc1,      getConfK kc2
+                         , getConfK kvdepth,  getConfK kvrate
+                         , getConfI ifn1,     getConfI ifn2
+                         , getConfI ifn3,     getConfI ifn4
+                         , getConfI ivibfn ]
+                         (Out1 A)
 
-fmmetal :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-        -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> InstBuilder (Expr AR)
+fmmetal :: Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate -> Conf IRate 
+        -> Conf IRate
+        -> Element ARate
 fmmetal kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmmetal" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                     , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                     , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                     , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmmetal" [ getConfK kamp,      getConfK kfreq
+                        , getConfK kc1,       getConfK kc2
+                        , getConfK kvdepth,   getConfK kvrate
+                        , getConfI ifn1,      getConfI ifn2
+                        , getConfI ifn3,      getConfI ifn4
+                        , getConfI ivibfn ]
+                        (Out1 A)
 
-
-fmb3 :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-        -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-        -> InstBuilder (Expr AR)
+fmb3 :: Conf KRate -> Conf KRate 
+     -> Conf KRate -> Conf KRate 
+     -> Conf KRate -> Conf KRate
+     -> Conf IRate -> Conf IRate 
+     -> Conf IRate -> Conf IRate 
+     -> Conf IRate
+     -> Element ARate
 fmb3 kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmb3" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                  , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                  , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                  , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmb3" [ getConfK kamp,     getConfK kfreq
+                     , getConfK kc1,      getConfK kc2
+                     , getConfK kvdepth,  getConfK kvrate
+                     , getConfI ifn1,     getConfI ifn2
+                     , getConfI ifn3,     getConfI ifn4
+                     , getConfI ivibfn ]
+                     (Out1 A)
 
 
-fmpercfl :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-         -> Expr IR -> Expr IR -> Expr IR -> Expr IR -> Expr IR
-         -> InstBuilder (Expr AR)
+fmpercfl :: Conf KRate -> Conf KRate
+         -> Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf KRate
+         -> Conf IRate -> Conf IRate 
+         -> Conf IRate -> Conf IRate 
+         -> Conf IRate
+         -> Element ARate
 fmpercfl kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    opcode "fmpercfl" [ getExpr kamp, getExpr kfreq, getExpr kc1
-                      , getExpr kc2, getExpr kvdepth, getExpr kvrate
-                      , getExpr ifn1, getExpr ifn2, getExpr ifn3
-                      , getExpr ifn4, getExpr ivibfn ]
+    mkElement "fmpercfl" [ getConfK kamp,     getConfK kfreq
+                         , getConfK kc1,      getConfK kc2
+                         , getConfK kvdepth,  getConfK kvrate
+                         , getConfI ifn1,     getConfI ifn2
+                         , getConfI ifn3,     getConfI ifn4
+                         , getConfI ivibfn ]
+                         (Out1 A)
 
 --------------------------------------------------------------------------------
 -- Sample playback
@@ -580,124 +807,173 @@ fmpercfl kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn =
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-       -> InstBuilder (Expr AR)
+loscil :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
+       -> Element ARate
 loscil xamp kcps ifn ibase imod1 = 
-    opcode "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
-                    , getExpr ibase, getExpr imod1 ]
+    mkElement "loscil" [ getConfUniv xamp,  getConfK kcps
+                       , getConfI ifn,      getConfI ibase
+                       , getConfI imod1 ]
+                       (Out1 A)
 
 
 -- | Stereo version of 'loscil'.
 -- 
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-       -> InstBuilder (Expr AR, Expr AR)
+biloscil :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
+       -> Element ARate
 biloscil xamp kcps ifn ibase imod1 = 
-    opcode2 "loscil" [ getExpr xamp, getExpr kcps, getExpr ifn
-                     , getExpr ibase, getExpr imod1 ]
+    mkElement "loscil" [ getConfUniv xamp,  getConfK kcps
+                       , getConfI ifn,      getConfI ibase
+                       , getConfI imod1 ]
+                       (Out2 A)
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil3 :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-       -> InstBuilder (Expr AR)
+loscil3 :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
+       -> Element ARate
 loscil3 xamp kcps ifn ibase imod1 = 
-    opcode "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
-                     , getExpr ibase, getExpr imod1 ]
+    mkElement "loscil3" [ getConfUniv xamp,   getConfK kcps
+                        , getConfI ifn,       getConfI ibase
+                        , getConfI imod1 ]
+                        (Out1 A)
 
 
 -- | Stereo version of 'loscil3'.
 -- 
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil3 :: Expr a -> Expr KR -> Expr IR -> Expr IR -> Expr IR
-          -> InstBuilder (Expr AR, Expr AR)
+biloscil3 :: Conf rate -> Conf KRate 
+          -> Conf IRate -> Conf IRate 
+          -> Conf IRate
+          -> Element ARate
 biloscil3 xamp kcps ifn ibase imod1 = 
-    opcode2 "loscil3" [ getExpr xamp, getExpr kcps, getExpr ifn
-                      , getExpr ibase, getExpr $ imod1 ]
+    mkElement "loscil3" [ getConfUniv xamp,  getConfK kcps
+                        , getConfI ifn,      getConfI ibase
+                        , getConfI  imod1 ]
+                        (Out2 A)
 
-
-lposcil :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
-        -> InstBuilder (Expr AR)
+lposcil :: Conf KRate -> Conf KRate 
+        -> Conf KRate -> Conf KRate 
+        -> Conf IRate
+        -> Element ARate
 lposcil kamp kfreqrat kloop kend ift = 
-    opcode "lposcil" [ getExpr kamp, getExpr kfreqrat, getExpr kloop
-                     , getExpr kend, getExpr ift ]
+    mkElement "lposcil" [ getConfK kamp,    getConfK kfreqrat
+                        , getConfK kloop,   getConfK kend
+                        , getConfI ift ]
+                        (Out1 A)
 
-lposcil3 :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr IR
-         -> InstBuilder (Expr AR)
+lposcil3 :: Conf KRate -> Conf KRate -> Conf KRate 
+         -> Conf KRate -> Conf IRate
+         -> Element ARate
 lposcil3 kamp kfreqrat kloop kend ift = 
-    opcode "lposcil3" [ getExpr kamp, getExpr kfreqrat, getExpr kloop
-                      , getExpr kend, getExpr ift ]
+    mkElement "lposcil3" [ getConfK kamp,   getConfK kfreqrat
+                         , getConfK kloop,  getConfK kend
+                         , getConfI ift ]
+                         (Out1 A)
 
 
 
 --------------------------------------------------------------------------------
 -- Models and emulations
 
-moog :: Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR -> Expr KR
-     -> Expr IR -> Expr IR -> Expr IR
-     -> InstBuilder (Expr AR)
+moog :: Conf KRate -> Conf KRate -> Conf KRate 
+     -> Conf KRate -> Conf KRate -> Conf KRate
+     -> Conf IRate -> Conf IRate -> Conf IRate
+     -> Element ARate
 moog kamp kfreq kfiltq kfiltrate kvibf kvamp iafn iwfn ivfn = 
-    opcode "moog" [ getExpr kamp, getExpr kfreq, getExpr kfiltq
-                  , getExpr kfiltrate, getExpr kvibf, getExpr kvamp 
-                  , getExpr iafn, getExpr iwfn, getExpr ivfn ]
+    mkElement "moog" [ getConfK kamp,     getConfK kfreq
+                     , getConfK kfiltq,   getConfK kfiltrate
+                     , getConfK kvibf,    getConfK kvamp 
+                     , getConfI iafn,     getConfI iwfn
+                     , getConfI ivfn ]
+                     (Out1 A)
 --------------------------------------------------------------------------------
 -- Random noise generators
 
 
-rand :: KA_Rate rate 
-     => Expr rate -> InstBuilder (Expr rate)
-rand amp = opcode "rand" [getExpr amp]
+rand :: forall rate. (KA_Rate rate)
+     => Conf rate -> Element rate
+rand amp = 
+    mkElement "rand" [getConfUniv amp]
+                     (Out1 $ dataRate (undefined :: rate))
 
-randh :: KA_Rate rate 
-      => Expr rate -> Expr rate -> InstBuilder (Expr rate)
-randh amp cps = opcode "rand" [getExpr amp, getExpr cps]
+randh :: forall rate. (KA_Rate rate)
+      => Conf rate -> Conf rate -> Element rate
+randh amp cps = 
+    mkElement "rand" [getConfUniv amp, getConfUniv cps]
+                     (Out1 $ dataRate (undefined :: rate))
 
-randi :: KA_Rate rate 
-      => Expr rate -> Expr rate -> InstBuilder (Expr rate)
-randi amp cps = opcode "rand" [getExpr amp, getExpr cps]
+randi :: forall rate. (KA_Rate rate)
+      => Conf rate -> Conf rate -> Element rate
+randi amp cps = 
+    mkElement "rand" [getConfUniv amp, getConfUniv cps]
+                     (Out1 $ dataRate (undefined :: rate))
 
-linrand :: Opcode rate 
-        => Expr KR -> InstBuilder (Expr rate)
-linrand krange = opcode "linrand" [getExpr krange]
+linrand :: forall rate. (Rate rate)
+        => Conf KRate -> Element rate
+linrand krange = 
+    mkElement "linrand" [getConfK krange]
+                        (Out1 $ dataRate (undefined :: rate))
 
-trirand :: Opcode rate 
-        => Expr KR -> InstBuilder (Expr rate)
-trirand krange = opcode "trirand" [getExpr krange]
+trirand :: forall rate. (Rate rate)
+        => Conf KRate -> Element rate
+trirand krange = 
+    mkElement "trirand" [getConfK krange]
+                        (Out1 $ dataRate (undefined :: rate))
 
-exprand :: Opcode rate 
-        => Expr KR -> InstBuilder (Expr rate)
-exprand krange = opcode "exprand" [getExpr krange]
+exprand :: forall rate. (Rate rate)
+        => Conf KRate -> Element rate
+exprand krange = 
+    mkElement "exprand" [getConfK krange]
+                        (Out1 $ dataRate (undefined :: rate))
 
-bexprand :: Opcode rate 
-         => Expr KR -> InstBuilder (Expr rate)
-bexprand krange = opcode "bexprand" [getExpr krange]
+bexprand :: forall rate. (Rate rate)
+         => Conf KRate -> Element rate
+bexprand krange = 
+    mkElement "bexprand" [getConfK krange]
+                        (Out1 $ dataRate (undefined :: rate))
 
-cauchy :: Opcode rate  
-       => Expr KR -> InstBuilder (Expr rate)
-cauchy kalpha = opcode "cauchy" [getExpr kalpha]
+cauchy :: forall rate. (Rate rate)
+       => Conf KRate -> Element rate
+cauchy kalpha = 
+    mkElement "cauchy" [getConfK kalpha]
+                        (Out1 $ dataRate (undefined :: rate))
 
-pcauchy :: Opcode rate  
-        => Expr KR -> InstBuilder (Expr rate)
-pcauchy kalpha = opcode "pcauchy" [getExpr kalpha]
 
-poisson :: Opcode rate  
-       => Expr KR -> InstBuilder (Expr rate)
-poisson klambda = opcode "poisson" [getExpr klambda]
+pcauchy :: forall rate. (Rate rate)
+        => Conf KRate -> Element rate
+pcauchy kalpha = 
+    mkElement "pcauchy" [getConfK kalpha]
+                        (Out1 $ dataRate (undefined :: rate))
 
-gauss :: Opcode rate 
-      => Expr KR -> InstBuilder (Expr rate)
-gauss krange = opcode "gauss" [getExpr krange]
+poisson :: forall rate. (Rate rate)
+       => Conf KRate -> Element rate
+poisson klambda = 
+    mkElement "poisson" [getConfK klambda]
+                        (Out1 $ dataRate (undefined :: rate))
 
-weibull :: Opcode rate 
-        => Expr KR -> Expr KR -> InstBuilder (Expr rate)
-weibull ksigma ktau = opcode "weibull" [getExpr ksigma, getExpr ktau]
+gauss :: forall rate. (Rate rate)
+      => Conf KRate -> Element rate
+gauss krange = 
+    mkElement "gauss" [getConfK krange]
+                      (Out1 $ dataRate (undefined :: rate))
 
-betarand :: Opcode rate 
-         => Expr KR -> Expr KR -> Expr KR -> InstBuilder (Expr rate)
+weibull :: forall rate. (Rate rate)
+        => Conf KRate -> Conf KRate -> Element rate
+weibull ksigma ktau = 
+    mkElement "weibull" [getConfK ksigma, getConfK ktau]
+                        (Out1 $ dataRate (undefined :: rate))
+
+betarand :: forall rate. (Rate rate)
+         => Conf KRate -> Conf KRate -> Conf KRate -> Element rate
 betarand krange kalpha kbeta = 
-    opcode "betarand" [getExpr krange, getExpr kalpha, getExpr kbeta]
+    mkElement "betarand" [getConfK krange, getConfK kalpha, getConfK kbeta]
+                         (Out1 $ dataRate (undefined :: rate))
 
-unirand :: Opcode rate 
-        => Expr KR -> InstBuilder (Expr rate)
-unirand krange = opcode "unirand" [getExpr krange]
+unirand :: forall rate. (Rate rate)
+        => Conf KRate -> Element rate
+unirand krange = 
+    mkElement "unirand" [getConfK krange]
+                        (Out1 $ dataRate (undefined :: rate))
+

@@ -23,12 +23,14 @@ main = do
 orch01 :: Orch
 orch01 = Orch default_mono_header [inst1]
   where
-    inst1 = runInstBuilder 1 $ do 
-      a1   <- oscil 10000 440 1
-      out a1
-
+    inst1 = runInstU 101 $ do 
+      a1   <- alet $ oscil 10000 440 1
+      o1   <- alet $ out1 (port 0)
+      a1   =>= o1
+      out o1
+  
 sco01 :: Section
 sco01 = runScoBuilder $ do 
     gen10   0 4096 [1]  
-    dyninst 1 0 3 []
---    dyninst 1 3 3 []
+    dyninst 101 0 3 []
+--    dyninst 101 3 3 []

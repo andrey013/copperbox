@@ -25,13 +25,16 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base              <  5
-  
+  build-depends:      base              <  5,
+                      containers        >= 0.3      && <= 0.6
+
   exposed-modules:
     ZSnd.Core,
     ZSnd.Core.CsoundInst,
     ZSnd.Core.CsoundScore,
     ZSnd.Core.GenRoutines,
+    ZSnd.Core.Inst.Click,
+    ZSnd.Core.Inst.Prim,
     ZSnd.Core.Opcodes,
     ZSnd.Core.Opcodes.Base,
     ZSnd.Core.Opcodes.SignalGenerators,

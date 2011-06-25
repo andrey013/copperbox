@@ -6,8 +6,9 @@
 module SimpleClick where
 
 
-import ZSnd.Core.Inst
+import ZSnd.Core.CsoundInst
 import ZSnd.Core.Inst.Click
+import ZSnd.Core.Opcodes
 import ZSnd.Core.Utils.FormatCombinators
 
 
@@ -42,21 +43,21 @@ type ASig = Element ARate
 
 
 linenX :: forall rate. (KA_Rate rate) => Element rate
-linenX = mkElement $ UElement "linen" [CPfield 4, CPfield 7, CPfield 3, CPfield 8]
-                                      (Out1 $ dataRate (undefined :: rate))
+linenX = mkElement "linen" [CPfield 4, CPfield 7, CPfield 3, CPfield 8]
+                           (Out1 $ dataRate (undefined :: rate))
 
 exponX :: forall rate. (KA_Rate rate) => Element rate
-exponX = mkElement $ UElement "expon" [CPfield 9, CPfield 3, CPfield 10]
-                                      (Out1 $ dataRate (undefined :: rate))
+exponX = mkElement "expon" [CPfield 9, CPfield 3, CPfield 10]
+                           (Out1 $ dataRate (undefined :: rate))
  
 buzzX :: forall rate. (KA_Rate rate) => Element rate
-buzzX = mkElement $ UElement "buzz" [DLiteral 1, CPfield 5, ClkPort 0, CPfield 6 ]
-                                    (Out1 $ dataRate (undefined :: rate))
+buzzX = mkElement "buzz" [DLiteral 1, CPfield 5, ClkPort 0, CPfield 6 ]
+                         (Out1 $ dataRate (undefined :: rate))
 
 
 outX :: forall rate. (KA_Rate rate) => Element rate
-outX = mkElement $ UElement "outs" [ (1 + ClkPort 0) * ClkPort 1 ]
-                                   Out0
+outX = mkElement "outs" [ (1 + ClkPort 0) * ClkPort 1 ]
+                        Out0
 
 
 demo01 = vcat $ map format instr115

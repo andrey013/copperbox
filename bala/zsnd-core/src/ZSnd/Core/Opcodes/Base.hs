@@ -1,3 +1,4 @@
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -17,16 +18,14 @@
 module ZSnd.Core.Opcodes.Base
   (
 
-  -- * Manual parenthesis
-    parens
+   -- Output
+    out1
 
   -- * Variable initialization
   , init
-  , tival
   , divz
 
   -- * Arithmetic and logical operators
-  , negate
   , (&&)
   , (||) 
   , (^)
@@ -86,6 +85,9 @@ module ZSnd.Core.Opcodes.Base
 
 
 import ZSnd.Core.CsoundInst
+import ZSnd.Core.Inst.Click
+import ZSnd.Core.Utils.FormatExpr
+
 
 import Prelude hiding ( init, negate, (&&), (||), (^)
                       , abs, exp, log, sqrt
@@ -93,29 +95,47 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
                       , sum, product 
                       )
 
--- | parenthesize an expression.
---
-parens :: Expr a -> Expr a
-parens (Expr a) = Expr (ParenE a)
 
-init :: Opcode rate
-     => Expr IR -> InstBuilder (Expr rate)
+
+
+binop :: Rator -> Conf rate -> Conf rate -> Conf rate
+binop op a b = mkConf $ CBinOp op (getConfI $ cast a) (getConfI $ cast b)
+
+-- unop :: Rator -> Conf rate -> Conf rate
+-- unop op a = mkConf $ CUnOp op (getConfI $ cast a)
+
+
+out1 :: Conf ARate -> Element rate
+out1 ain = mkElement "out" [ getConfA ain ]
+                           Out0
+
+
+
+init :: forall rate. (Rate rate) 
+     => Conf IRate -> Element rate
 init ia = 
-    opcode "init" [ getExpr ia ]
+    mkElement "init" [ getConfI ia ] 
+                     (Out1 $ dataRate (undefined :: rate))
+    
 
-tival :: Expr IR
-tival = Expr $ ZeroOp "tival"
 
-divz :: Opcode rate
-     => Expr IR -> Expr IR -> Expr IR -> InstBuilder (Expr rate)
+
+
+-- tival :: Expr IR
+-- tival = Expr $ ZeroOp "tival"
+
+divz :: forall rate. (Rate rate) 
+     => Conf IRate -> Conf IRate -> Conf IRate -> Element rate
 divz ia ib isubst = 
-    opcode "divz" [ getExpr ia, getExpr ib, getExpr isubst ]
+    mkElement "divz" [ getConfI ia, getConfI ib, getConfI isubst ]
+                     (Out1 $ dataRate (undefined :: rate))
+    
+
 
 --------------------------------------------------------------------------------
 -- Arithmetic and logical operators
 
-negate :: Expr a -> Expr a
-negate = Expr . Funcall "-" . getExpr
+
 
 infixr 8 ^
 infixr 3 &&
@@ -123,22 +143,23 @@ infixr 2 ||
 
 
 (&&) :: IK_Rate rate
-     => Expr rate -> Expr rate -> Expr rate
-(&&) a b = Expr $ BinOp "&&" (getExpr a) (getExpr b)
+     => Conf rate -> Conf rate -> Conf rate
+(&&) = binop (infixL 3 "&&")
 
 (||) :: IK_Rate rate 
-     => Expr rate -> Expr rate -> Expr rate
-(||) a b = Expr $ BinOp "||" (getExpr a) (getExpr b)
+     => Conf rate -> Conf rate -> Conf rate
+(||) = binop (infixL 2 "||")
 
 (^)  :: IK_Rate rate
-     => Expr rate -> Expr rate -> Expr rate
-(^)  a b = Expr $ BinOp "^"  (getExpr a) (getExpr b)
+     => Conf rate -> Conf rate -> Conf rate
+(^)  = binop (infixL 4 "^")
 
 
 infixl 7 %
 
-(%) :: Expr a -> Expr a -> Expr a
-(%) a b = Expr $ BinOp "%" (getExpr a) (getExpr b)
+(%) :: Conf rate -> Conf rate -> Conf rate
+(%) = binop (infixL 7 "%")
+
 
 --------------------------------------------------------------------------------
 -- Math functions
@@ -146,132 +167,149 @@ infixl 7 %
 
 -- | I or K rate only.
 --
-int       :: IK_Rate rate => Expr rate -> Expr rate
-int       = Expr . Funcall "int" . getExpr
+int       :: IK_Rate rate
+          => Conf rate -> Conf rate
+int       = funcall "int"
   
 
 -- | I or K rate only.
 --
-frac      :: IK_Rate rate => Expr rate -> Expr rate
-frac      = Expr . Funcall "frac" . getExpr
+frac      :: IK_Rate rate 
+          => Conf rate -> Conf rate
+frac      = funcall "frac"
 
 
 -- | I or K rate only.
 --
-powoftwo  :: IK_Rate rate => Expr rate -> Expr rate   
-powoftwo  = Expr . Funcall "powoftwo" . getExpr
+powoftwo  :: IK_Rate rate 
+          => Conf rate -> Conf rate   
+powoftwo  = funcall "powoftwo"
+
 
 -- | I or K rate only.
 --
-logbtwo   :: IK_Rate rate => Expr rate -> Expr rate
-logbtwo   = Expr . Funcall "logbtwo" . getExpr
+logbtwo   :: IK_Rate rate => Conf rate -> Conf rate
+logbtwo   = funcall "logbtwo"
 
 
 -- | This is @i@ in Csound.
 --
-icast :: Expr KR -> Expr IR
-icast (Expr a) = Expr a
+icast     :: Conf KRate -> Conf IRate
+icast     = cast
 
 
-abs :: Expr rate -> Expr rate
-abs = Expr . Funcall "abs" . getExpr
+abs       :: Conf rate -> Conf rate
+abs       = funcall "abs"
 
-exp :: Expr rate -> Expr rate
-exp = Expr . Funcall "exp" . getExpr
+exp       :: Conf rate -> Conf rate
+exp       = funcall "exp"
 
-log :: Expr rate -> Expr rate
-log = Expr . Funcall "log" . getExpr
+log       :: Conf rate -> Conf rate
+log       = funcall "log"
 
-log10 :: Expr rate -> Expr rate
-log10 = Expr . Funcall "log10" . getExpr
+log10     :: Conf rate -> Conf rate
+log10     = funcall "log10"
 
-sqrt :: Expr rate -> Expr rate
-sqrt = Expr . Funcall "sqrt" . getExpr
+sqrt      :: Conf rate -> Conf rate
+sqrt      = funcall "sqrt"
 
 
 --------------------------------------------------------------------------------
 -- Trig functions
 
-sin :: Expr rate -> Expr rate
-sin = Expr . Funcall "sin" . getExpr
+sin       :: Conf rate -> Conf rate
+sin       = funcall "sin"
 
-cos :: Expr rate -> Expr rate
-cos = Expr . Funcall "cos" . getExpr
+cos       :: Conf rate -> Conf rate
+cos       = funcall "cos"
 
-tan :: Expr rate -> Expr rate
-tan = Expr . Funcall "tan" . getExpr
+tan       :: Conf rate -> Conf rate
+tan       = funcall "tan"
 
 
-sininv :: Expr rate -> Expr rate
-sininv = Expr . Funcall "sininv" . getExpr
+sininv    :: Conf rate -> Conf rate
+sininv    = funcall "sininv"
 
-cosinv :: Expr rate -> Expr rate
-cosinv = Expr . Funcall "cosinv" . getExpr
+cosinv    :: Conf rate -> Conf rate
+cosinv    = funcall "cosinv"
 
-taninv :: Expr rate -> Expr rate
-taninv = Expr . Funcall "taninv" . getExpr
+taninv    :: Conf rate -> Conf rate
+taninv    = funcall "taninv"
 
-sinh :: Expr rate -> Expr rate
-sinh = Expr . Funcall "sinh" . getExpr
+sinh      :: Conf rate -> Conf rate
+sinh      = funcall "sinh"
 
-cosh :: Expr rate -> Expr rate
-cosh = Expr . Funcall "cosh" . getExpr
+cosh      :: Conf rate -> Conf rate
+cosh      = funcall "cosh"
 
-tanh :: Expr rate -> Expr rate
-tanh = Expr . Funcall "tanh" . getExpr
+tanh      :: Conf rate -> Conf rate
+tanh      = funcall "tanh"
 
 --------------------------------------------------------------------------------
 -- Amplitude functions
 
 -- | I or K rate only.
 --
-dbamp     :: IK_Rate rate => Expr rate -> Expr rate
-dbamp     = Expr . Funcall "dbamp" . getExpr
+dbamp     :: IK_Rate rate 
+          => Conf rate -> Conf rate
+dbamp     = funcall "dbamp"
 
 
 -- | 
-ampdb     :: Expr a -> Expr a
-ampdb     = Expr . Funcall "ampdb" . getExpr
+ampdb     :: Conf rate -> Conf rate
+ampdb     = funcall "ampdb"
 
 --------------------------------------------------------------------------------
 -- Random functions
 
 -- | I or K rate only.
 --
-rnd       :: IK_Rate rate => Expr rate -> Expr rate
-rnd       = Expr . Funcall "rnd" . getExpr
+rnd       :: IK_Rate rate 
+          => Conf rate -> Conf rate
+rnd       = funcall "rnd"
  
 -- | I or K rate only.
 --
-birnd     :: IK_Rate rate => Expr rate -> Expr rate
-birnd     = Expr . Funcall "birnd" . getExpr
+birnd     :: IK_Rate rate 
+          => Conf rate -> Conf rate
+birnd     = funcall "birnd"
 
 
 --------------------------------------------------------------------------------
 -- Opcode equivalents of functions
 
-sum :: [Expr AR] -> InstBuilder (Expr AR)
-sum = opcode "sum" . map getExpr
-
-product :: [Expr AR] -> InstBuilder (Expr AR)
-product = opcode "product" . map getExpr
-
-pow :: Opcode rate
-    => Expr rate -> Expr rate -> InstBuilder (Expr rate)
-pow a b = opcode "pow" [ getExpr a, getExpr b ]
+sum :: [Conf ARate] -> Element ARate
+sum xs = 
+    mkElement "sum" (map getConfA xs) (Out1 A)
 
 
-taninv2 :: Opcode rate
-        => Expr rate -> Expr rate -> InstBuilder (Expr rate)
-taninv2 a b = opcode "taninv2" [ getExpr a, getExpr b ]
+product :: [Conf ARate] -> Element ARate
+product xs = 
+    mkElement "product" (map getConfA xs) (Out1 A)
 
-mac :: [(Expr AR, Expr KR)] -> InstBuilder (Expr AR)
-mac = opcode "mac" . concatMap fn
+pow :: forall rate. (Rate rate) 
+    => Conf rate -> Conf rate -> Element rate
+pow a b = 
+    mkElement "pow" [ getConfUniv a, getConfUniv b ]
+                    (Out1 $ dataRate (undefined::rate))
+
+
+taninv2 :: forall rate. (Rate rate) 
+        => Conf rate -> Conf rate -> Element rate
+taninv2 a b = 
+    mkElement "taninv2" [ getConfUniv a, getConfUniv b ]
+                        (Out1 $ dataRate (undefined::rate))
+
+
+mac :: [(Conf ARate, Conf KRate)] -> Element ARate
+mac xs = 
+    mkElement "mac" (concatMap fn xs) (Out1 A)
   where
-    fn (a,b) = [ getExpr a, getExpr b ]
+    fn (a,b) = [ getConfA a, getConfK b ]
 
-maca :: [Expr AR] -> InstBuilder (Expr AR)
-maca = opcode "maca" . map getExpr
+maca :: [Conf ARate] -> Element ARate
+maca xs = 
+    mkElement "maca" (map getConfA xs) (Out1 A)
 
 --------------------------------------------------------------------------------
 -- Pitch conversion
@@ -281,42 +319,47 @@ maca = opcode "maca" . map getExpr
 -- 
 -- I or K rate only.
 --
-octpch :: IK_Rate rate => Expr rate -> Expr rate
-octpch = Expr . Funcall "octpch" . getExpr
+octpch :: IK_Rate rate 
+       => Conf rate -> Conf rate
+octpch = funcall "octpch"
 
 
 -- | I or K rate only.
 --
-cpspch :: IK_Rate rate => Expr rate -> Expr rate
-cpspch = Expr . Funcall "cpspch" . getExpr
+cpspch :: IK_Rate rate 
+       => Conf rate -> Conf rate
+cpspch = funcall "cpspch"
 
 -- | I or K rate only.
 --
-pchoct :: IK_Rate rate => Expr rate -> Expr rate
-pchoct = Expr . Funcall "pchoct" . getExpr
+pchoct :: IK_Rate rate 
+       => Conf rate -> Conf rate
+pchoct = funcall "pchoct"
 
 
 -- | I or K rate only.
-octcps :: IK_Rate rate => Expr rate -> Expr rate
-octcps = Expr . Funcall "octcps" . getExpr
+octcps :: IK_Rate rate 
+       => Conf rate -> Conf rate
+octcps = funcall "octcps"
 
 
 
 -- | No rate restriction.
 --
-cpsoct    :: Expr a -> Expr a
-cpsoct    = Expr . Funcall "cpsoct" . getExpr
+cpsoct    :: Conf rate -> Conf rate
+cpsoct    = funcall "cpsoct"
+
 
 -- Design note - here Csound uses @x@ for the version with more 
 -- args. Is this a convention used elsewhere?
 
-cps2pch :: Expr IR -> Expr IR -> InstBuilder (Expr IR)
+cps2pch :: Conf IRate -> Conf IRate -> Element IRate
 cps2pch ipch ieq = 
-    opcode "cps2pch" [ getExpr ipch, getExpr ieq ]
+    mkElement "cps2pch" [ getConfI ipch, getConfI ieq ] (Out1 I)
 
-
-cpsxpch :: Expr IR -> Expr IR -> Expr IR -> Expr IR 
-        -> InstBuilder (Expr IR)
+cpsxpch :: Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
+        -> Element IRate
 cpsxpch ipch ieq irep ibase = 
-    opcode "cps2pch" [ getExpr ipch, getExpr ieq, getExpr irep, getExpr ibase ]
-
+    mkElement "cps2pch" [ getConfI ipch, getConfI ieq
+                        , getConfI irep, getConfI ibase ]
+                        (Out1 I)
