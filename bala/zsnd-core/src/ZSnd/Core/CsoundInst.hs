@@ -25,6 +25,7 @@ module ZSnd.Core.CsoundInst
   , default_stereo_header
 
   , Inst
+  , PrimInst    -- * re-export
   , runInst
   , runInstU
 
@@ -185,37 +186,37 @@ mkElement ss ins outspec = Element $ UElement ss ins outspec
 
 -- | configuration let
 --
-clet :: Element rate -> Inst DeclRef
+clet :: Element rate -> Inst ElemRef
 clet elt = Inst $ \s -> 
-    let v1 = fromIntegral s
-    in (v1, s+1, wrapH $ Decl (fromIntegral s) (getElement elt))
+    let v1 = mkElemRef s
+    in (v1, s+1, wrapH $ Decl v1 (getElement elt))
 
 
-ilet :: Element IRate -> Inst DeclRef
+ilet :: Element IRate -> Inst ElemRef
 ilet = clet
 
-klet :: Element KRate -> Inst DeclRef
+klet :: Element KRate -> Inst ElemRef
 klet = clet
 
-alet :: Element ARate -> Inst DeclRef
+alet :: Element ARate -> Inst ElemRef
 alet = clet
 
 
 
-out :: DeclRef -> Inst ()
+out :: ElemRef -> Inst ()
 out v = Inst $ \s -> ((),s, wrapH $ Out v)
 
 
-(->-) :: (DeclRef,Int) -> (DeclRef,Int) -> Inst ()
+(->-) :: (ElemRef,Int) -> (ElemRef,Int) -> Inst ()
 (->-) p1 p2 = Inst $ \s -> ((),s, wrapH $ Conn p1 p2)
 
-(=>=) :: DeclRef -> DeclRef -> Inst ()
+(=>=) :: ElemRef -> ElemRef -> Inst ()
 (=>=) v1 v2 = (v1,0) ->- (v2,0)
 
-(=>-) :: DeclRef -> (DeclRef,Int) -> Inst ()
+(=>-) :: ElemRef -> (ElemRef,Int) -> Inst ()
 (=>-) v1 p2 = (v1,0) ->- p2 
 
-(->=) :: (DeclRef,Int) -> DeclRef -> Inst ()
+(->=) :: (ElemRef,Int) -> ElemRef -> Inst ()
 (->=) p1 v2 = p1 ->- (v2,0)
 
 

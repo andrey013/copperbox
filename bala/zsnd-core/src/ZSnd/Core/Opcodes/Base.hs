@@ -20,6 +20,7 @@ module ZSnd.Core.Opcodes.Base
 
    -- Output
     out1
+  , out2
 
   -- * Variable initialization
   , init
@@ -106,9 +107,10 @@ binop op a b = mkConf $ CBinOp op (getConfI $ cast a) (getConfI $ cast b)
 
 
 out1 :: Conf ARate -> Element rate
-out1 ain = mkElement "out" [ getConfA ain ]
-                           Out0
+out1 ain = mkElement "out" [ getConfA ain ] Out0
 
+out2 :: Conf ARate -> Conf ARate -> Element rate
+out2 ain bin = mkElement "outs" [ getConfA ain, getConfA bin ] Out0
 
 
 init :: forall rate. (Rate rate) 

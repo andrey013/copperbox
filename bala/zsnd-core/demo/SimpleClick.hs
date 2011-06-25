@@ -12,29 +12,32 @@ import ZSnd.Core.Opcodes
 import ZSnd.Core.Utils.FormatCombinators
 
 
--- Note - Click declares Out, so we do too (even though we have 
--- special syntax for it as well).
---
-
+-- Note - the final stmt Out should force the @out@ opcode 
+-- invocation to be printed last. It does not actually invoke
+-- the printing of @out@ - all declared invocations will be
+-- printed provided they are saturated.
+-- 
+-- If there are unsaturated invocations an error is thrown.
+-- 
 
 -- figure 1.23 CSB
 
 instr115 :: [CStmt]
 instr115 =  
-    [ Decl k1 (getElementK linenX)
+    [ Decl o1 (getElementA outX)
+    , Decl k1 (getElementK linenX)
     , Decl k2 (getElementK exponX)
     , Decl a1 (getElementA buzzX)
-    , Decl o1 (getElementA outX)
     , Conn (k1,0) (o1,0)
     , Conn (k2,0) (a1,0)
     , Conn (a1,0) (o1,1)
     , Out o1
     ]          
   where
-    k1 = 1 
-    k2 = 2
-    a1 = 3
-    o1 = 4
+    k1 = mkElemRef 1 
+    k2 = mkElemRef 2
+    a1 = mkElemRef 3
+    o1 = mkElemRef 4
 
 type ISig = Element IRate
 type KSig = Element KRate
