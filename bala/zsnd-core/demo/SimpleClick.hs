@@ -24,10 +24,11 @@ import ZSnd.Core.Utils.FormatCombinators
 
 instr115 :: [CStmt]
 instr115 =  
-    [ Decl o1 (getElementA outX)
-    , Decl k1 (getElementK linenX)
-    , Decl k2 (getElementK exponX)
-    , Decl a1 (getElementA buzzX)
+    [ DeclE o1 (getElementA outX)
+    , DeclE k1 (getElementK linenX)
+    , DeclE k2 (getElementK exponX)
+    , DeclE a1 (getElementA buzzX)
+    , DeclV a2 (UBinding (CPfield 4) A)
     , Conn (k1,0) (o1,0)
     , Conn (k2,0) (a1,0)
     , Conn (a1,0) (o1,1)
@@ -38,6 +39,8 @@ instr115 =
     k2 = mkElemRef 2
     a1 = mkElemRef 3
     o1 = mkElemRef 4
+    a2 = mkElemRef 5
+
 
 type ISig = Element IRate
 type KSig = Element KRate

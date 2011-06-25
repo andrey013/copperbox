@@ -38,7 +38,16 @@ module ZSnd.Core.CsoundInst
   , ilet
   , klet
   , alet
+
+  , Binding
+  , mkBinding
+  , ilocal
+  , klocal
+  , alocal
+
   , out
+  , assignv
+
   , (->-)
   , (=>=)
   , (=>-)
@@ -189,7 +198,7 @@ mkElement ss ins outspec = Element $ UElement ss ins outspec
 clet :: Element rate -> Inst ElemRef
 clet elt = Inst $ \s -> 
     let v1 = mkElemRef s
-    in (v1, s+1, wrapH $ Decl v1 (getElement elt))
+    in (v1, s+1, wrapH $ DeclE v1 (getElement elt))
 
 
 ilet :: Element IRate -> Inst ElemRef
@@ -202,9 +211,38 @@ alet :: Element ARate -> Inst ElemRef
 alet = clet
 
 
+newtype Binding rate = Binding { getBinding :: UBinding }
+  deriving (Eq,Ord,Show)
+
+
+mkBinding :: InConf -> DataRate -> Binding rate
+mkBinding ins outrate = Binding $ UBinding ins outrate
+ 
+-- | configuration local variable
+--
+clocal :: Binding rate -> Inst ElemRef
+clocal elt = Inst $ \s -> 
+    let v1 = mkElemRef s
+    in (v1, s+1, wrapH $ DeclV v1 (getBinding elt))
+
+
+ilocal :: Binding IRate -> Inst ElemRef
+ilocal = clocal
+
+klocal :: Binding KRate -> Inst ElemRef
+klocal = clocal
+
+alocal :: Binding ARate -> Inst ElemRef
+alocal = clocal
+
+
 
 out :: ElemRef -> Inst ()
 out v = Inst $ \s -> ((),s, wrapH $ Out v)
+
+
+assignv :: ElemRef -> Inst ()
+assignv = out 
 
 
 (->-) :: (ElemRef,Int) -> (ElemRef,Int) -> Inst ()
