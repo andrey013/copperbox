@@ -19,6 +19,7 @@
 module ZSnd.Core.Inst.Click
   (
 
+
     ElemRef
   , CStmt(..)
   , UElement(..)
@@ -47,6 +48,9 @@ import Data.Monoid
 
 import Prelude hiding ( lookup )
 
+
+
+
 --
 -- We want to keep the /Prim/ language and generate output by 
 -- pretty printing it.
@@ -61,14 +65,13 @@ newtype ElemRef = ElemRef { getElemRef :: Int }
 instance Show ElemRef where
   showsPrec p = showsPrec p . getElemRef
 
-type Port  = Int
-
+type PortNum  = Int
 
 
 
 data CStmt = DeclE ElemRef UElement
            | DeclV ElemRef UBinding
-           | Conn  (ElemRef, Port) (ElemRef, Port)
+           | Conn  (ElemRef, PortNum) (ElemRef, PortNum)
            | Out   ElemRef
   deriving (Eq,Ord,Show)
 
@@ -99,6 +102,7 @@ data UElement = UElement
        , elt_out    :: OutConf
        }
   deriving (Eq,Ord,Show)
+
 
 
 -- | UBinding - universally typed let binding.
@@ -382,6 +386,11 @@ extractDecls =
     unPa (EvVar _ bin out)    = Right (bin,out)
 
 
+-- | PortNum assignment is a backwards ref (key is the target port).
+-- 
+-- Key collisions in the map are an error - they indicate more 
+-- than one connection has been assigned to the port.
+--
 addPortAssignment :: (ElemRef,Int) -> TagVar -> AccDecls 
                   -> Either FailMsg AccDecls
 addPortAssignment key cstag (AccDecls decls passns) = 
@@ -391,7 +400,7 @@ addPortAssignment key cstag (AccDecls decls passns) =
       Just _  -> Left  $ "error - multiple port assignment."
 
 
--- | Note unlike port assignement, fail case should never happen.
+-- | Note unlike port assignment, fail case should never happen.
 --
 updateDecl :: ElemRef -> EvStmt -> AccDecls -> AccDecls
 updateDecl key estmt (AccDecls decls passns) = AccDecls decls1 passns
@@ -415,8 +424,8 @@ updatePortE pnum tv (UElement name cfgs out) =
 
 
 
--- | Finds the first match - there should only be one 
--- match, though this is not enforced.
+-- | Finds the first match. Ports should be serially numbered so 
+-- there should only be one match, though this is not enforced...
 --
 updatePortV :: Int -> TagVar -> UBinding -> Either FailMsg UBinding
 updatePortV pnum tv (UBinding cfg out) = 
