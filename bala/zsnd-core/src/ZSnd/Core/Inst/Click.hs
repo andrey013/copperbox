@@ -1,5 +1,3 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE RankNTypes                 #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,10 +19,10 @@ module ZSnd.Core.Inst.Click
 
 
     ElemRef
+  , PortDict
+  , InputConfig
   , CStmt(..)
   , UElement(..)
-  , UBinding(..)
-  , InConf(..)
   , OutConf(..)
   , TagVar(..)
   , DataRate(..)
@@ -38,16 +36,30 @@ module ZSnd.Core.Inst.Click
 
 import ZSnd.Core.Inst.Prim
 import ZSnd.Core.Utils.FormatCombinators
-import ZSnd.Core.Utils.FormatExpr
 
 
 import Control.Applicative
-import Data.List ( sortBy )
+import Data.List ( sortBy, union, nub )
 import qualified Data.Map       as M
 import Data.Monoid
 
 import Prelude hiding ( lookup )
 
+
+
+type FailMsg = String
+
+
+
+-- | map from port to TagVar of its parent.
+--
+type PortDict = M.Map (ElemRef,Int) TagVar
+
+
+-- | This is dynamic as the Exprs can be a result of 
+-- /port assignment/.
+--
+type InputConfig  = ElemRef -> PortDict ->  Either FailMsg [Expr]
 
 
 
@@ -65,69 +77,35 @@ newtype ElemRef = ElemRef { getElemRef :: Int }
 instance Show ElemRef where
   showsPrec p = showsPrec p . getElemRef
 
+
+
 type PortNum  = Int
 
 
-
+--
+-- Note - should only be one assignment per variable per 
+-- instrument but that would be difficult to enforce with this 
+-- grammar.
+--
 data CStmt = DeclE ElemRef UElement
-           | DeclV ElemRef UBinding
            | Conn  (ElemRef, PortNum) (ElemRef, PortNum)
            | Out   ElemRef
-  deriving (Eq,Ord,Show)
 
-
---
--- data Final = Out TagVar
---            | GAssign TagVar 
---
-
--- If we add in assignment to global vars, we lose the sense of
--- an expression language:
--- 
---         | Assign TagVar CExpr
---
--- Needs an analogue type to InConf:
---
---         | Assign TagVar GConf
---
--- data GExpr = GVar TagVar | GUnOp String GExpr | ..
---
+instance Show CStmt where
+  show = show . format
 
 
 -- | UElement - universally typed element. This is a UGen.
 --
 data UElement = UElement
        { elt_name   :: String           -- the opcode name
-       , elt_inputs :: [InConf]
+       , elt_inputs :: InputConfig
        , elt_out    :: OutConf
        }
-  deriving (Eq,Ord,Show)
 
+instance Show UElement where
+  show = show . format
 
-
--- | UBinding - universally typed let binding.
---
--- Potential this should include scope - local or global.
---
-data UBinding = UBinding
-      { bind_equation   :: InConf
-      , bind_out_rate   :: DataRate
-      }
-  deriving (Eq,Ord,Show)
-      
--- Conf looks as though it will need to handle expressions 
--- (functions, (+),(*), etc.)
-
-data InConf = SLiteral String              -- file names
-            | DLiteral Double
-            | ILiteral Int
-            | CPfield  Int
-            | CFuncall String InConf
-            | CUnOp    Rator InConf
-            | CBinOp   Rator InConf InConf
-            | ClkPort  Int
-            | SatPort  TagVar
-  deriving (Eq,Ord,Show)
 
 
 
@@ -141,25 +119,11 @@ data OutConf = Out0
   deriving (Eq,Ord,Show)
 
 
-
-instance Num InConf where
-  (+)    = CBinOp $ infixL 6 "+"
-  (-)    = CBinOp $ infixL 6 "-"
-  (*)    = CBinOp $ infixL 7 "*"
-  abs    = CFuncall "abs"
-  negate = CUnOp  $ prefix 9 "-"
-  signum _      = error "signum - no interpretation of signum in Csound."
-  fromInteger i = ILiteral (fromInteger i)
-
-
-instance Fractional InConf where
-  (/)            = CBinOp $ infixL 7 "/"  
-  recip _        = error "recip - no interpretation of recip in Csound."  
-  fromRational d = DLiteral $ fromRational d
-
-
 mkElemRef :: Int -> ElemRef
 mkElemRef = ElemRef
+
+
+
 
 --------------------------------------------------------------------------------
 -- Translation
@@ -175,10 +139,18 @@ translateDesc i stmts = case runTransMonad $ mapM transStmt stmts of
 
 
 
+unions :: Eq a => [[a]] -> [a]
+unions []       = []
+unions [xs]     = xs
+unions (xs:xss) = xs `union` (unions xss)
+
+elookup :: Ord key => FailMsg -> key -> M.Map key a -> Either FailMsg a
+elookup msg key m = maybe (Left msg) Right $ M.lookup key m
+
+
+
 newtype TransMonad a = TM { 
           getTM :: St -> AccDecls -> Either FailMsg (a, St, AccDecls) }
-
-type FailMsg = String
 
 
 data St = St
@@ -187,6 +159,28 @@ data St = St
       , a_num    :: Int
       , pa_count :: Int         -- count the port assignments
       }
+  deriving Show
+
+data AccDecls = AccDecls 
+      { acc_decls             :: M.Map ElemRef UElement
+      , acc_tagvars           :: M.Map ElemRef [TagVar]
+      , acc_port_assign_fwd   :: M.Map (ElemRef,Int) TagVar
+      , acc_port_assign_bwd   :: M.Map (ElemRef,Int) TagVar
+      , acc_last_assign       :: M.Map ElemRef Int
+      , acc_outs              :: LastList ElemRef
+      , acc_dependencies      :: M.Map ElemRef [ElemRef]
+      }
+  deriving Show
+
+accdZero :: AccDecls
+accdZero = AccDecls mempty mempty mempty mempty mempty emptyLL mempty
+
+addDep :: ElemRef -> ElemRef 
+       -> M.Map ElemRef [ElemRef] -> M.Map ElemRef [ElemRef]
+addDep key dep m = 
+    case M.lookup key m of
+      Nothing -> M.insert key [dep] m
+      Just xs -> M.insert key (nub $ dep:xs) m
 
 instance Functor TransMonad where
   fmap f ma = TM $ \s ac -> fmap post $ getTM ma s ac
@@ -209,12 +203,71 @@ instance Monad TransMonad where
       Left err -> Left err
       Right (a,s1,ac1) -> (getTM . k) a s1 ac1
 
-
 runTransMonad :: TransMonad a -> Either FailMsg [Stmt]
 runTransMonad ma = getTM ma (St 0 0 0 0) accdZero >>= sk
   where
-    sk (_,_,ac) = mapM (either transElement transBinding) $ extractDecls ac
+    sk (_,_,ac) =  buildResult ac
 
+
+--------------------------------------------------------------------------------
+-- Post processing to build a list of Stmts
+
+buildResult :: AccDecls -> Either FailMsg [Stmt]
+buildResult ac = extractPlan ac >>= mapM (makeStmt `flip` ac)
+
+
+-- Get a list of elemRefs reachable from the outputs
+-- ordered according to last_port_assignment.
+--
+extractPlan :: AccDecls -> Either FailMsg [ElemRef]
+extractPlan ac = orderByAssign deps ac
+  where
+    outs = unLast $ acc_outs ac
+    deps = unions $ map (dependencies `flip` ac) outs
+
+
+makeStmt :: ElemRef -> AccDecls -> Either FailMsg Stmt
+makeStmt eref ac = 
+    (\(name,exps) tvs -> Opcode tvs name exps)  
+        <$> (elookup fk1 eref (acc_decls ac) >>= sk1) 
+        <*> elookup fk2 eref (acc_tagvars ac)
+  where
+    fk1 = "error - could not find element in decls " ++ show [eref]
+    fk2 = "error - could not find tag vars for " ++ show [eref]
+    sk1 :: UElement -> Either FailMsg (String,[Expr])
+    sk1 ue =  let find = elt_inputs ue 
+                  name = elt_name ue
+              in fmap (\a -> (name,a)) $ find eref $ acc_port_assign_bwd ac
+
+
+orderByAssign :: [ElemRef] -> AccDecls -> Either FailMsg [ElemRef]
+orderByAssign xs (AccDecls { acc_last_assign = m }) = 
+    post <$> mapM (\dref -> fmap (sk dref) $ elookup fk dref m) xs
+  where
+    
+    fk        = "error - element with no recorded port assignment."
+    sk dref i = (i,dref)
+    post      = map snd . sortBy (\(a,_) (b,_) -> a `compare` b)
+
+-- | @dependencies@ enques the /element-in-question/.
+-- 
+-- Note - there is now cycle detection. Cycles should not cause
+-- a (Haskell) crash - if there is a cycle the fixpoint of the 
+-- list should still be reached, but cycles are passed to the 
+-- Csound output which is (probably) wrong.
+-- 
+dependencies :: ElemRef -> AccDecls -> [ElemRef]
+dependencies eref ac = step [eref] [eref]
+  where
+    lookupL x     = maybe [] id $ M.lookup x (acc_dependencies ac) 
+    step xs total = let news = unions $ map lookupL xs
+                        tot2 = total `union` news
+                    in if length total == length tot2 
+                         then total
+                         else step news tot2
+
+--------------------------------------------------------------------------------
+-- Traversing and building...
 
 newLocVar :: DataRate -> TransMonad TagVar
 newLocVar rt = TM $ \s ac -> let (a,s1) = step rt s in Right (a,s1,ac)
@@ -227,60 +280,66 @@ newLocVar rt = TM $ \s ac -> let (a,s1) = step rt s in Right (a,s1,ac)
 
 
 bindDeclE :: ElemRef -> UElement -> [TagVar] -> TransMonad ()
-bindDeclE dref elt outs = TM $ \s ac -> 
-    let ac1 = updateDecl dref (EvElem (pa_count s) elt outs) ac
-    in Right ((),s,ac1)
+bindDeclE eref elt outs = TM $ \s ac -> 
+    let decls1 = M.insert eref elt (acc_decls ac)
+        lasts1 = M.insert eref (pa_count s) (acc_last_assign ac)
+        tagvs1 = M.insert eref outs (acc_tagvars ac)
+        ports1 = foldr (\(tv,i) mac -> M.insert (eref,i) tv mac)
+                       (acc_port_assign_fwd ac)
+                       (zip outs [0..]) 
+    in Right ((), s, ac { acc_decls           = decls1
+                        , acc_last_assign     = lasts1
+                        , acc_tagvars         = tagvs1
+                        , acc_port_assign_fwd = ports1 } )
 
-bindDeclV :: ElemRef -> UBinding -> TagVar -> TransMonad ()
-bindDeclV dref bin out1 = TM $ \s ac ->
-    let ac1 = updateDecl dref (EvVar (pa_count s) bin out1) ac
-    in Right ((),s,ac1)
+
+addOut :: ElemRef -> TransMonad ()
+addOut eref = TM $ \s ac -> 
+    let outs1 = snocLL (acc_outs ac) eref
+    in Right ((),s, ac { acc_outs = outs1 })
 
 
-bindPorts :: ElemRef -> [TagVar] -> TransMonad ()
-bindPorts dref vs = TM $ \s ac -> step s ac $ zip [0..] vs
+-- | Assign ports...
+--
+-- > to-ElemRef gets updated with pa_count
+-- > pa_count is incremented
+-- > bwd port is assigned
+-- > dependency is added
+-- 
+assignPort :: (ElemRef, PortNum) -> (ElemRef, PortNum) -> TransMonad ()
+assignPort frwd@(eref_from,_) bkwd@(eref_to,_) = TM $ \s ac ->
+    case M.lookup frwd (acc_port_assign_fwd ac) of
+      Nothing -> fk1
+      Just tv -> let pa     = 1 + pa_count s 
+                     lasts1 = M.insert eref_to pa (acc_last_assign ac)
+                     backs1 = M.insert bkwd tv (acc_port_assign_bwd ac)
+                     deps1  = addDep eref_to eref_from (acc_dependencies ac)
+                 in Right ((), s  { pa_count = pa} 
+                             , ac { acc_last_assign     = lasts1
+                                  , acc_port_assign_bwd = backs1
+                                  , acc_dependencies    = deps1  }) 
   where
-    step s ac []          = Right ((),s,ac)
-    step s ac ((i,tv):zs) = 
-      addPortAssignment (dref,i) tv ac >>= \ac1 -> step s ac1 zs
+    fk1 = Left $ "error - could not find tag var for " ++ show frwd
 
 
-assignPort :: (ElemRef,Int) -> (ElemRef,Int) -> TransMonad ()
-assignPort pfrom (dref,pnum) = TM $ \s ac -> 
-    case M.lookup pfrom (acc_port_assigns ac) of
-      Nothing -> Left "error - missing port assignment."
-      Just tv -> case M.lookup dref (acc_decls ac) of 
-        Nothing -> Left "error - missing declaration ref."
-        Just estmt -> sk s ac tv estmt
-  where
-    sk s ac tv (EvElem _ elt outs) = updatePortE pnum tv elt >>= \elt1 -> 
-          let pa  = pa_count s 
-              ac1 = updateDecl dref (EvElem pa elt1 outs) ac
-          in Right ((),s { pa_count = pa + 1 }, ac1) 
-
-    sk s ac tv (EvVar _ bin out)   = updatePortV pnum tv bin >>= \bin1 -> 
-          let pa  = pa_count s 
-              ac1 = updateDecl dref (EvVar pa bin1 out) ac
-          in Right ((),s { pa_count = pa + 1 }, ac1) 
 
 
 -- | The @last_port_count@ on an object (principally an Out) can
 -- be forced so it will be printed later or last.
 --
+-- Note - this functions raises a fail if the ElemRef is not 
+-- already in the dict.
+-- 
 forcePortCount :: ElemRef -> TransMonad ()
 forcePortCount dref = TM $ \s ac -> 
-    case M.lookup dref (acc_decls ac) of 
-      Nothing -> Left "error - missing declaration ref."
+    elookup fk dref (acc_last_assign ac) >>= sk ac s
 
-      Just (EvElem _ elt outs) -> 
-         let pa  = pa_count s 
-             ac1 = updateDecl dref (EvElem pa elt outs) ac
-         in Right ((),s { pa_count = pa + 1 }, ac1) 
-
-      Just (EvVar _ bin out) -> 
-         let pa  = pa_count s 
-             ac1 = updateDecl dref (EvVar pa bin out) ac
-         in Right ((),s { pa_count = pa + 1 }, ac1) 
+  where
+    fk = "error - missing declaration ref."
+    sk ac s _ = let pa     = pa_count s
+                    lasts1 = M.insert dref (pa+1) (acc_last_assign ac)
+                in return ((), s { pa_count = pa+1}
+                             , ac { acc_last_assign = lasts1 })
 
 
 -- A Decl generates an opcode Stmt - it may have unassigned ports
@@ -296,17 +355,15 @@ transStmt :: CStmt -> TransMonad ()
 transStmt (DeclE dref elt)      = do
     ovars <- outVars $ elt_out elt
     bindDeclE dref elt ovars 
-    bindPorts dref ovars
 
-transStmt (DeclV dref bin)      = do
-    ov    <- newLocVar (bind_out_rate bin)
-    bindDeclV dref bin ov
-    bindPorts dref [ov]
 
 transStmt (Conn a b)            = assignPort a b  
 
-transStmt (Out dref)            = forcePortCount dref
-    
+transStmt (Out dref)            = do 
+   forcePortCount dref
+   addOut dref
+
+
 
 outVars :: OutConf -> TransMonad [TagVar]
 outVars Out0        = pure []
@@ -321,136 +378,23 @@ countA i _  | i <= 0 = pure []
 countA i ma          = (:) <$> ma <*> countA (i-1) ma
 
 
--- | All ports should be assigned by now...
--- 
--- Unassigned ports cause a failure.
---
-transElement :: (UElement,[TagVar]) -> Either FailMsg Stmt
-transElement (UElement name ins _, outs) = 
-    fmap sk $ mapM transInConf ins
-  where
-    sk xs                = Opcode outs name xs
-
-transBinding :: (UBinding,TagVar) -> Either FailMsg Stmt
-transBinding (UBinding inn _, out1) = 
-    fmap (\expr -> Vardef out1 expr) $ transInConf inn
- 
-
-transInConf :: InConf -> Either FailMsg Expr
-transInConf (SLiteral s)      = Right $ Literal $ CsString s
-transInConf (DLiteral d)      = Right $ Literal $ CsDouble d
-transInConf (ILiteral i)      = Right $ Literal $ CsInt i
-transInConf (CFuncall s e1)   = (\a -> Funcall s a) <$> transInConf e1
-transInConf (CPfield i)       = Right $ PField i
-transInConf (CUnOp op e1)     = (\a -> UnOp op a) <$> transInConf e1
-transInConf (CBinOp op e1 e2) = (BinOp op) <$> transInConf e1 <*> transInConf e2 
-transInConf (SatPort tv)      = Right $ VarE tv
-transInConf (ClkPort _)       = Left $ "error - unassigned port."
-
-
---------------------------------------------------------------------------------
--- Acummulate declarations
-
--- Maybe this is state - mutated rather than forked by @local@...
-
-data AccDecls = AccDecls 
-      { acc_decls           :: M.Map ElemRef EvStmt
-      , acc_port_assigns    :: M.Map (ElemRef,Int) TagVar
-      }
-
-accdZero :: AccDecls
-accdZero = AccDecls mempty mempty
-
-
--- | Statement under evaluation...
---
--- > EvElem :: last_port_assignment * element * outputs
--- >
---
-data EvStmt = EvElem Int UElement [TagVar]  
-            | EvVar  Int UBinding TagVar
-
-getEvPA :: EvStmt -> Int
-getEvPA (EvElem pa _ _) = pa
-getEvPA (EvVar pa _ _)  = pa
-
-
--- This actually needs [TagVar] as well...
---
-extractDecls :: AccDecls -> [Either (UElement, [TagVar]) (UBinding, TagVar)]
-extractDecls = 
-    map unPa . sortBy cmp . M.elems . acc_decls
-  where
-    cmp a b                   = compare (getEvPA a) (getEvPA b)
-    unPa (EvElem _ elt outs)  = Left (elt,outs)
-    unPa (EvVar _ bin out)    = Right (bin,out)
-
-
--- | PortNum assignment is a backwards ref (key is the target port).
--- 
--- Key collisions in the map are an error - they indicate more 
--- than one connection has been assigned to the port.
---
-addPortAssignment :: (ElemRef,Int) -> TagVar -> AccDecls 
-                  -> Either FailMsg AccDecls
-addPortAssignment key cstag (AccDecls decls passns) = 
-    case M.lookup key passns of
-      Nothing -> let passns1 = M.insert key cstag passns
-                 in Right $ AccDecls decls passns1
-      Just _  -> Left  $ "error - multiple port assignment."
-
-
--- | Note unlike port assignment, fail case should never happen.
---
-updateDecl :: ElemRef -> EvStmt -> AccDecls -> AccDecls
-updateDecl key estmt (AccDecls decls passns) = AccDecls decls1 passns
-  where
-    decls1 = M.insert key estmt decls
-     
-    
--- | Finds the first match - there should only be one 
--- match, though this is not enforced.
---
-updatePortE :: Int -> TagVar -> UElement -> Either FailMsg UElement
-updatePortE pnum tv (UElement name cfgs out) = 
-    step id cfgs
-  where
-    step _  []      = Left $ "error - update port, missing port - "
-                              ++ name ++ show [pnum]
-    step ac (x:xs)  = case updateSingle pnum tv x of
-                       (_,False) -> step (ac . (x:)) xs
-                       (e,True) -> let cfgs' = ac $ e : xs
-                                   in Right $ UElement name cfgs' out
 
 
 
--- | Finds the first match. Ports should be serially numbered so 
--- there should only be one match, though this is not enforced...
---
-updatePortV :: Int -> TagVar -> UBinding -> Either FailMsg UBinding
-updatePortV pnum tv (UBinding cfg out) = 
-    case updateSingle pnum tv cfg of
-      (_,False) -> Left $ "error - update port, missing port - "
-                              ++ show tv ++ show [pnum]
-      (e,True)  -> Right $ UBinding e out
+newtype LastList a = LL { getLL :: [a] }
 
+instance Show a => Show (LastList a) where
+  show = show . unLast
 
+emptyLL :: LastList a
+emptyLL = LL []
 
--- | Update a single occurrence of the numbered port.
---
-updateSingle :: Int -> TagVar -> InConf -> (InConf,Bool)
-updateSingle pnum tv incfg = go incfg
-  where
-    go (ClkPort i) 
-        | i == pnum          = (SatPort tv,True)
-        | otherwise          = (ClkPort i, False)
+snocLL :: Eq a => LastList a -> a -> LastList a
+snocLL ll a = LL $ a : filter (/=a) (getLL ll)
 
-    go (CFuncall s e1)   = let (e2,bl) = go e1 in (CFuncall s e2,bl)
-    go (CUnOp op e1)     = let (e2,bl) = go e1 in (CUnOp op e2,bl)
-    go (CBinOp op e1 e2) = let (e3,b1) = go e1 
-                               (e4,b2) = go e2
-                           in (CBinOp op e3 e4, b1 || b2)
-    go e1                = (e1, False)
+unLast :: LastList a -> [a]
+unLast = reverse . getLL
+
 
 
 --------------------------------------------------------------------------------
@@ -460,14 +404,9 @@ instance Format CStmt where
   format (DeclE name elt)       = 
       format name <+> text "::" <+> format elt <> char ';'
 
-  format (DeclV name bin)       = 
-      format name <+> text ":=" <+> format bin <> char ';'
-    
-
   format (Conn (v1,i1) (v2,i2)) = 
       format v1 <> brackets (int i1) <+> text "->" 
                <+> brackets (int i2) <> format v2 <> char ';'
-               
 
   format (Out v1)               = text "==>" <+> format v1 <> char ';'
      
@@ -475,22 +414,6 @@ instance Format CStmt where
 instance Format UElement where
   format (UElement name _ _)    = text name
 
-instance Format UBinding where
-  format (UBinding eqn _)       = format eqn
-
-instance Format InConf where
-  format = unparse . buildExpr
-
-buildExpr :: InConf -> DocExpr
-buildExpr (SLiteral s)          = Atom $ dquotes $ text s
-buildExpr (DLiteral d)          = Atom $ dtrunc d
-buildExpr (ILiteral i)          = Atom $ int i
-buildExpr (CFuncall ss a)       = Atom $ text ss <> parens (format a)
-buildExpr (CPfield i)           = Atom $ char 'p' <> int i
-buildExpr (CUnOp op a)          = Unary op (buildExpr a)
-buildExpr (CBinOp op a b)       = Binary (buildExpr a) op (buildExpr b)
-buildExpr (ClkPort v)           = Atom $ format v
-buildExpr (SatPort v)           = Atom $ format v
-
 instance Format ElemRef where
   format (ElemRef i) = text "var" <> int i 
+ 
