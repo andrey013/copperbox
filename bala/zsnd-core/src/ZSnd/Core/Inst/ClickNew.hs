@@ -42,7 +42,7 @@ import ZSnd.Core.Utils.FormatCombinators
 
 
 import Control.Applicative
-import Data.List ( sortBy, union )
+import Data.List ( sortBy, union, nub )
 import qualified Data.Map       as M
 import Data.Monoid
 
@@ -180,17 +180,25 @@ data St = St
   deriving Show
 
 data AccDecls = AccDecls 
-      { acc_decls           :: M.Map ElemRef UElement
-      , acc_tagvars         :: M.Map ElemRef [TagVar]
-      , acc_port_assigns    :: M.Map (ElemRef,Int) TagVar
-      , acc_last_assign     :: M.Map ElemRef Int
-      , acc_outs            :: LastList ElemRef
-      , acc_dependencies    :: M.Map ElemRef [ElemRef]
+      { acc_decls             :: M.Map ElemRef UElement
+      , acc_tagvars           :: M.Map ElemRef [TagVar]
+      , acc_port_assign_fwd   :: M.Map (ElemRef,Int) TagVar
+      , acc_port_assign_bwd   :: M.Map (ElemRef,Int) TagVar
+      , acc_last_assign       :: M.Map ElemRef Int
+      , acc_outs              :: LastList ElemRef
+      , acc_dependencies      :: M.Map ElemRef [ElemRef]
       }
   deriving Show
 
 accdZero :: AccDecls
-accdZero = AccDecls mempty mempty mempty mempty emptyLL mempty
+accdZero = AccDecls mempty mempty mempty mempty mempty emptyLL mempty
+
+addDep :: ElemRef -> ElemRef 
+       -> M.Map ElemRef [ElemRef] -> M.Map ElemRef [ElemRef]
+addDep key dep m = 
+    case M.lookup key m of
+      Nothing -> M.insert key [dep] m
+      Just xs -> M.insert key (nub $ dep:xs) m
 
 instance Functor TransMonad where
   fmap f ma = TM $ \s ac -> fmap post $ getTM ma s ac
@@ -216,7 +224,7 @@ instance Monad TransMonad where
 runTransMonad :: TransMonad a -> Either FailMsg [Stmt]
 runTransMonad ma = getTM ma (St 0 0 0 0) accdZero >>= sk
   where
-    sk (_,_,ac) = buildResult ac
+    sk (_,_,ac) =  buildResult ac
 
 
 --------------------------------------------------------------------------------
@@ -230,12 +238,10 @@ buildResult ac = extractPlan ac >>= mapM (makeStmt `flip` ac)
 -- ordered according to last_port_assignment.
 --
 extractPlan :: AccDecls -> Either FailMsg [ElemRef]
-extractPlan ac = findDeps outs >>= (orderByAssign `flip` ac)
+extractPlan ac = orderByAssign deps ac
   where
     outs = unLast $ acc_outs ac
-
-    findDeps :: [ElemRef] -> Either FailMsg [ElemRef]
-    findDeps xs = unions <$> mapM (dependencies `flip` ac) xs
+    deps = unions $ map (dependencies `flip` ac) outs
 
 
 makeStmt :: ElemRef -> AccDecls -> Either FailMsg Stmt
@@ -249,7 +255,7 @@ makeStmt eref ac =
     sk1 :: UElement -> Either FailMsg (String,[Expr])
     sk1 ue =  let find = elt_inputs ue 
                   name = elt_name ue
-              in fmap (\a -> (name,a)) $ find eref $ acc_port_assigns ac
+              in fmap (\a -> (name,a)) $ find eref $ acc_port_assign_bwd ac
 
 
 orderByAssign :: [ElemRef] -> AccDecls -> Either FailMsg [ElemRef]
@@ -261,37 +267,22 @@ orderByAssign xs (AccDecls { acc_last_assign = m }) =
     sk dref i = (i,dref)
     post      = map snd . sortBy (\(a,_) (b,_) -> a `compare` b)
 
--- | Note - answer list doesn\'t need to preserve order when 
--- merging, we get the order from last_assign timestamps.
+-- | @dependencies@ enques the /element-in-question/.
 -- 
-dependencies :: ElemRef -> AccDecls -> Either FailMsg [ElemRef]
-dependencies eref ac = step [eref] (dependencies1 eref [] ac)
+-- Note - there is now cycle detection. Cycles should not cause
+-- a (Haskell) crash - if there is a cycle the fixpoint of the 
+-- list should still be reached, but cycles are passed to the 
+-- Csound output which is (probably) wrong.
+-- 
+dependencies :: ElemRef -> AccDecls -> [ElemRef]
+dependencies eref ac = step [eref] [eref]
   where
-    step _  (Left err) = Left err 
-    step xs (Right []) = Right xs 
-    step xs (Right ys) = merge $ map (\y1 -> dependencies1 y1 xs ac) ys
-
-    merge []           = Right []
-    merge (Left err:_) = Left err
-    merge (Right xs:xss) = case merge xss of
-                             Right ys -> Right $ union xs ys
-                             Left err -> Left err
-                         
-
-
--- | Note - we detect cycles here.
---
-dependencies1 :: ElemRef -> [ElemRef] -> AccDecls -> Either FailMsg [ElemRef]
-dependencies1 eref prevs ac = 
-    case M.lookup eref (acc_dependencies ac) of
-      Nothing -> Right []
-      Just xs -> checkdups (eref:prevs) xs
-  where
-    checkdups _      [] = Right []      -- fast path! for empty case
-    checkdups []     ys = Right ys
-    checkdups (x:xs) ys | elem x ys = Left "error - cyclic port assignments."
-                        | otherwise = checkdups xs ys
-
+    lookupL x     = maybe [] id $ M.lookup x (acc_dependencies ac) 
+    step xs total = let news = unions $ map lookupL xs
+                        tot2 = total `union` news
+                    in if length total == length tot2 
+                         then total
+                         else step news tot2
 
 --------------------------------------------------------------------------------
 -- Traversing and building...
@@ -309,15 +300,15 @@ newLocVar rt = TM $ \s ac -> let (a,s1) = step rt s in Right (a,s1,ac)
 bindDeclE :: ElemRef -> UElement -> [TagVar] -> TransMonad ()
 bindDeclE eref elt outs = TM $ \s ac -> 
     let decls1 = M.insert eref elt (acc_decls ac)
-        ports1 = foldr (\(tv,i) mac -> M.insert (eref,i) tv mac)
-                       (acc_port_assigns ac)
-                       (zip outs [0..]) 
         lasts1 = M.insert eref (pa_count s) (acc_last_assign ac)
         tagvs1 = M.insert eref outs (acc_tagvars ac)
-    in Right ((), s, ac { acc_decls        = decls1
-                        , acc_port_assigns = ports1 
-                        , acc_last_assign  = lasts1
-                        , acc_tagvars      = tagvs1 } )
+        ports1 = foldr (\(tv,i) mac -> M.insert (eref,i) tv mac)
+                       (acc_port_assign_fwd ac)
+                       (zip outs [0..]) 
+    in Right ((), s, ac { acc_decls           = decls1
+                        , acc_last_assign     = lasts1
+                        , acc_tagvars         = tagvs1
+                        , acc_port_assign_fwd = ports1 } )
 
 
 addOut :: ElemRef -> TransMonad ()
@@ -330,13 +321,25 @@ addOut eref = TM $ \s ac ->
 --
 -- > to-ElemRef gets updated with pa_count
 -- > pa_count is incremented
+-- > bwd port is assigned
+-- > dependency is added
 -- 
 assignPort :: (ElemRef, PortNum) -> (ElemRef, PortNum) -> TransMonad ()
-assignPort a (eref_to,_) = TM $ \s ac ->
-    let pa = 1 + pa_count s 
-        lasts1 = M.insert eref_to pa (acc_last_assign ac)
-    in Right ((), s { pa_count = pa} 
-                , ac { acc_last_assign = lasts1 }) 
+assignPort frwd@(eref_from,_) bkwd@(eref_to,_) = TM $ \s ac ->
+    case M.lookup frwd (acc_port_assign_fwd ac) of
+      Nothing -> fk1
+      Just tv -> let pa     = 1 + pa_count s 
+                     lasts1 = M.insert eref_to pa (acc_last_assign ac)
+                     backs1 = M.insert bkwd tv (acc_port_assign_bwd ac)
+                     deps1  = addDep eref_to eref_from (acc_dependencies ac)
+                 in Right ((), s  { pa_count = pa} 
+                             , ac { acc_last_assign     = lasts1
+                                  , acc_port_assign_bwd = backs1
+                                  , acc_dependencies    = deps1  }) 
+  where
+    fk1 = Left $ "error - could not find tag var for " ++ show frwd
+
+
 
 
 -- | The @last_port_count@ on an object (principally an Out) can
