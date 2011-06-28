@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core
+-- Module      :  ZSnd.Core.Inst
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -11,29 +11,15 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Shim module
+-- Shim module for the instrument code.
 --
--- Note - to avoid Prelude name clashes the module 
--- @ZSnd.Core.Opcodes@ must be imported explicitly.
---
-
 --------------------------------------------------------------------------------
 
-module ZSnd.Core
+module ZSnd.Core.Inst
   (
-    module ZSnd.Core.GenRoutines
-  , module ZSnd.Core.Inst
-  , module ZSnd.Core.CsoundScore
-  , module ZSnd.Core.OutputCsound
-
-
+    module ZSnd.Core.Inst.Index
+  , module ZSnd.Core.Inst.MonadicDefn
   ) where
 
-
-import ZSnd.Core.GenRoutines
-import ZSnd.Core.Inst
-import ZSnd.Core.CsoundScore
-import ZSnd.Core.OutputCsound
-
-
-
+import ZSnd.Core.Inst.Index
+import ZSnd.Core.Inst.MonadicDefn

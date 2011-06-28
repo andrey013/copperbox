@@ -19,17 +19,42 @@ module ZSnd.Core.Inst.Index
   (
     Config1
   , Opcode1
+  , OpcodeList1
 
   , Config2
   , Opcode2
-  
+  , OpcodeList2
+
   , Config3
   , Opcode3
 
   , Config4
   , Opcode4
+
+  , Config5
+  , Opcode5
+
+  , Config6
+  , Opcode6
+
+  , Config7
+  , Opcode7
+
+  , Config8
+  , Opcode8
   
+  , Config9
+  , Opcode9
+
+  , Config10
+  , Opcode10
+
+  , Config11
+  , Opcode11
+
   , applyOpcode
+  , mapOpcode
+  , mapOpcode2
 
   -- * Port 1 (arity 1 - 1 input to the opcode)
   , port0_1
@@ -77,11 +102,17 @@ type Config1 rate1 = Conf rate1
 type Opcode1 rate1 = 
       ElemRef -> PortDict -> Either FailMsg (Config1 rate1)
 
+
+type OpcodeList1 rate1 = 
+      ElemRef -> PortDict -> Either FailMsg [Config1 rate1]
+
 type Config2 rate1 rate2 = (Conf rate1, Conf rate2)
 
 type Opcode2 rate1 rate2 = 
       ElemRef -> PortDict -> Either FailMsg (Config2 rate1 rate2)
 
+type OpcodeList2 rate1 rate2 = 
+      ElemRef -> PortDict -> Either FailMsg [Config2 rate1 rate2]
 
 type Config3 rate1 rate2 rate3 = (Conf rate1, Conf rate2, Conf rate3)
 
@@ -94,10 +125,92 @@ type Config4 rate1 rate2 rate3 rate4 =
 type Opcode4 rate1 rate2 rate3 rate4 = 
       ElemRef -> PortDict -> Either FailMsg (Config4 rate1 rate2 rate3 rate4)
 
+type Config5 rate1 rate2 rate3 rate4 rate5 = 
+      (Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5)
+
+type Opcode5 rate1 rate2 rate3 rate4 rate5 = 
+      ElemRef -> PortDict -> Either FailMsg (Config5 rate1 rate2 rate3 
+                                                     rate4 rate5)
+
+type Config6 rate1 rate2 rate3 rate4 rate5 rate6 = 
+      (Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5, Conf rate6)
+
+type Opcode6 rate1 rate2 rate3 rate4 rate5 rate6 = 
+      ElemRef -> PortDict -> Either FailMsg (Config6 rate1 rate2 rate3 
+                                                     rate4 rate5 rate6)
+
+type Config7 rate1 rate2 rate3 rate4 rate5 rate6 rate7 = 
+      ( Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5
+      , Conf rate6, Conf rate7)
+
+type Opcode7 rate1 rate2 rate3 rate4 rate5 rate6 rate7 = 
+      ElemRef -> PortDict -> Either FailMsg (Config7 rate1 rate2 rate3 
+                                                     rate4 rate5 rate6
+                                                     rate7)
+
+type Config8 rate1 rate2 rate3 rate4 rate5 rate6 rate7 rate8 = 
+      ( Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5
+      , Conf rate6, Conf rate7, Conf rate8)
+
+type Opcode8 rate1 rate2 rate3 rate4 rate5 rate6 rate7 rate8 = 
+      ElemRef -> PortDict -> Either FailMsg (Config8 rate1 rate2 rate3 
+                                                     rate4 rate5 rate6
+                                                     rate7 rate8)
+
+
+type Config9 rate1 rate2 rate3 rate4 rate5 rate6 rate7 rate8 rate9 = 
+      ( Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5
+      , Conf rate6, Conf rate7, Conf rate8, Conf rate9)
+
+type Opcode9 rate1 rate2 rate3 rate4 rate5 rate6 rate7 rate8 rate9 = 
+      ElemRef -> PortDict -> Either FailMsg (Config9 rate1 rate2 rate3 
+                                                     rate4 rate5 rate6
+                                                     rate7 rate8 rate9)
+
+
+type Config10 rate1 rate2 rate3 rate4 rate5 
+              rate6 rate7 rate8 rate9 rate10 = 
+      ( Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5
+      , Conf rate6, Conf rate7, Conf rate8, Conf rate9, Conf rate10)
+
+type Opcode10 rate1 rate2 rate3 rate4 rate5 
+              rate6 rate7 rate8 rate9 rate10 = 
+      ElemRef -> PortDict -> Either FailMsg (Config10 rate1 rate2 rate3 
+                                                      rate4 rate5 rate6
+                                                      rate7 rate8 rate9
+                                                      rate10)
+
+
+type Config11 rate1 rate2 rate3 rate4 rate5 
+              rate6 rate7 rate8 rate9 rate10 rate11 = 
+      ( Conf rate1, Conf rate2, Conf rate3, Conf rate4, Conf rate5
+      , Conf rate6, Conf rate7, Conf rate8, Conf rate9, Conf rate10
+      , Conf rate11)
+
+type Opcode11 rate1 rate2 rate3 rate4 rate5 
+              rate6 rate7 rate8 rate9 rate10 rate11 = 
+      ElemRef -> PortDict -> Either FailMsg (Config11 rate1 rate2 rate3 
+                                                      rate4 rate5 rate6
+                                                      rate7 rate8 rate9
+                                                      rate10 rate11)
+
+
 
 applyOpcode :: (ElemRef -> PortDict -> Either FailMsg a) -> (a -> b) 
             -> ElemRef -> PortDict -> Either FailMsg b
 applyOpcode opF f  = \eref dict -> opF eref dict >>= \ans -> return (f ans)
+
+
+mapOpcode :: (ElemRef -> PortDict -> Either FailMsg [a]) -> (a -> b) 
+          -> ElemRef -> PortDict -> Either FailMsg [b]
+mapOpcode opF f  = \eref dict -> opF eref dict >>= \ans -> return (map f ans)
+
+
+mapOpcode2 :: (ElemRef -> PortDict -> Either FailMsg [(a,b)]) 
+           -> ((a,b) -> [c])
+          -> ElemRef -> PortDict -> Either FailMsg [c]
+mapOpcode2 opF f = \eref dict -> opF eref dict >>= \ans -> 
+                                 return (concatMap f ans)
 
 
 --------------------------------------------------------------------------------

@@ -9,6 +9,7 @@ module NewPortSpec where
 import ZSnd.Core.Inst.Click
 import ZSnd.Core.Inst.HighLevel
 import ZSnd.Core.Inst.Index
+import ZSnd.Core.Inst.MonadicDefn hiding ( out )
 
 import ZSnd.Core.Utils.FormatCombinators hiding ( line )
 
@@ -43,6 +44,7 @@ instr115 =
     k2 = mkElemRef 2
     a1 = mkElemRef 3
     o1 = mkElemRef 4
+
 
 out :: Opcode1 ARate -> Element ARate
 out opF =  mkElement "out" inspec Out0

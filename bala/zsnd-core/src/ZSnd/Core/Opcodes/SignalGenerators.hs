@@ -20,12 +20,28 @@ module ZSnd.Core.Opcodes.SignalGenerators
 
   -- * Linear and exponential generators
     line
+
   , expon 
+  , LinesegConfig
+  , LinesegOpcode
   , linseg
+
+  , LinesegrConfig
+  , LinesegrOpcode
   , linsegr
+
+  , ExpsegConfig
+  , ExpsegOpcode
   , expseg
+
+  , ExpsegrConfig
+  , ExpsegrOpcode
   , expsegr
+
+  , ExpsegaConfig
+  , ExpsegaOpcode
   , expsega
+
   , adsr
   , adsr_
   , madsr
@@ -124,8 +140,9 @@ module ZSnd.Core.Opcodes.SignalGenerators
   ) where
 
 
-import ZSnd.Core.CsoundInst
 import ZSnd.Core.Inst.Click
+import ZSnd.Core.Inst.HighLevel
+import ZSnd.Core.Inst.Index
 
 --------------------------------------------------------------------------------
 -- Linear and Exponential generators
@@ -135,281 +152,314 @@ import ZSnd.Core.Inst.Click
 
 
 line :: forall rate . (KA_Rate rate)
-     => Conf IRate -> Conf IRate -> Conf IRate -> Element rate
-line ia idur ib = 
-    mkElement "line" [ getConfI ia, getConfI idur, getConfI ib ]
-                     (Out1 $ dataRate (undefined :: rate))
+     => Opcode3 IRate IRate IRate -> Element rate
+line opF = 
+    mkElement "line" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia, idur, ib) -> 
+                [ getConfI ia, getConfI idur, getConfI ib ] 
     
 
 
 
 expon :: forall rate. (KA_Rate rate)
-      => Conf IRate -> Conf IRate -> Conf IRate 
-      -> Element rate
-expon ia idur ib = 
-    mkElement "expon" [ getConfI ia, getConfI idur
-                      , getConfI ib ]
-                      (Out1 $ dataRate (undefined :: rate))
+      => Opcode3 IRate IRate IRate -> Element rate
+expon opF = 
+    mkElement "expon" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idur,ib) -> 
+                [ getConfI ia, getConfI idur, getConfI ib ]
+
+
+-- Complex input signatures are a pain...
+
+type LinesegConfig = ( Conf IRate, Conf IRate
+                     , Conf IRate, [(Conf IRate, Conf IRate)] )
+                      
+type LinesegOpcode = ElemRef -> PortDict -> Either FailMsg LinesegConfig
+
 
 linseg :: forall rate. (KA_Rate rate)
-       => Conf IRate -> Conf IRate 
-       -> Conf IRate -> [(Conf IRate, Conf IRate)]
-       -> Element rate
-linseg ia idur ib xs = 
-    mkElement "linseg" (getConfI ia : getConfI idur : getConfI ib : rest)
-                       (Out1 $ dataRate (undefined :: rate))
+       => LinesegOpcode -> Element rate
+linseg opF = 
+    mkElement "linseg" inspec (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+    inspec = applyOpcode opF $ \(ia, idur, ib, xs) -> 
+                let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+                in (getConfI ia : getConfI idur : getConfI ib : rest)
+    
+
+type LinesegrConfig = ( Conf IRate, Conf IRate
+                      , Conf IRate, [(Conf IRate, Conf IRate)]
+                      , Conf IRate, Conf IRate )
+                      
+type LinesegrOpcode = ElemRef -> PortDict -> Either FailMsg LinesegrConfig
 
 
 linsegr :: forall rate. (KA_Rate rate)
-        => Conf IRate -> Conf IRate 
-        -> Conf IRate -> [(Conf IRate, Conf IRate)]
-        -> Conf IRate -> Conf IRate 
-        -> Element rate
-linsegr ia idur ib xs irel iz = 
-    mkElement "linsegr" (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
-                        (Out1 $ dataRate (undefined :: rate))
+        => LinesegrOpcode -> Element rate
+linsegr opF = 
+    mkElement "linsegr" inspec (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
-    end  = [getConfI irel, getConfI iz]
+    inspec = applyOpcode opF $ \(ia, idur, ib, xs, irel, iz) ->
+                let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+                    end  = [getConfI irel, getConfI iz]
+                in (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
+
+
+type ExpsegConfig = ( Conf IRate, Conf IRate
+                    , Conf IRate, [(Conf IRate, Conf IRate)])
+                      
+type ExpsegOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegConfig
 
 
 expseg :: forall rate. (KA_Rate rate )
-       => Conf IRate -> Conf IRate 
-       -> Conf IRate -> [(Conf IRate, Conf IRate)]
-       -> Element rate
-expseg ia idur ib xs = 
-    mkElement "expseg" (getConfI ia : getConfI idur : getConfI ib : rest)
+       => ExpsegOpcode -> Element rate
+expseg opF = 
+    mkElement "expseg" inspec 
                        (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+    inspec = applyOpcode opF $ \(ia, idur, ib, xs) -> 
+                let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+                in (getConfI ia : getConfI idur : getConfI ib : rest)
 
+type ExpsegrConfig = ( Conf IRate, Conf IRate
+                     , Conf IRate, [(Conf IRate, Conf IRate)]
+                     , Conf IRate, Conf IRate )
+                      
+type ExpsegrOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegrConfig
 
 expsegr :: forall rate. (KA_Rate rate)
-        => Conf IRate -> Conf IRate 
-        -> Conf IRate -> [(Conf IRate, Conf IRate)]
-        -> Conf IRate -> Conf IRate 
-        -> Element rate
-expsegr ia idur ib xs irel iz = 
-    mkElement "linsegr" (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
-                        (Out1 $ dataRate (undefined :: rate))
+        => ExpsegrOpcode -> Element rate
+expsegr opF = 
+    mkElement "linsegr" inspec (Out1 $ dataRate (undefined :: rate))
   where
-    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
-    end  = [getConfI irel, getConfI iz]
+    inspec = applyOpcode opF $ \(ia, idur, ib, xs, irel, iz) -> 
+                let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+                    end  = [getConfI irel, getConfI iz]
+                in (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
 
 
+type ExpsegaConfig = ( Conf IRate, Conf IRate
+                     , Conf IRate, [(Conf IRate, Conf IRate)])
+                      
+type ExpsegaOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegaConfig
 
-expsega   :: Conf IRate -> Conf IRate -> Conf IRate 
-          -> [(Conf IRate, Conf IRate)]
-          -> Element ARate
-expsega ia idur ib xs = 
-    mkElement "expsega" (getConfI ia : getConfI idur : getConfI ib : rest)
-                        (Out1 A)
+
+expsega :: ExpsegaOpcode -> Element ARate
+expsega opF = 
+    mkElement "expsega" inspec (Out1 A)
   where
-    rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
-
+    inspec = applyOpcode opF $ \(ia,idur,ib,xs) -> 
+                let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
+                in (getConfI ia : getConfI idur : getConfI ib : rest)
 
 adsr :: forall rate. (KA_Rate rate)
-     => Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
-     -> Element rate
-adsr ia idec isl ir = 
-    mkElement "adsr" [ getConfI ia,   getConfI idec
-                     , getConfI isl,  getConfI ir ]
-                     (Out1 $ dataRate (undefined :: rate))
+     => Opcode4 IRate IRate IRate IRate -> Element rate
+adsr opF =
+    mkElement "adsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir) ->
+                [ getConfI ia,   getConfI idec
+                , getConfI isl,  getConfI ir ]
 
 adsr_ :: forall rate. (KA_Rate rate)
-      => Conf IRate -> Conf IRate -> Conf IRate 
-      -> Conf IRate -> Conf IRate 
-      -> Element rate
-adsr_ ia idec isl ir idel = 
-    mkElement "adsr" [ getConfI ia,   getConfI idec
-                     , getConfI isl,  getConfI ir
-                     , getConfI idel ]
-                     (Out1 $ dataRate (undefined :: rate))
+      => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+adsr_ opF =
+    mkElement "adsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir,idel) ->
+               [ getConfI ia,   getConfI idec
+               , getConfI isl,  getConfI ir
+               , getConfI idel ]
+
 
 madsr :: forall rate. (KA_Rate rate)
-      => Conf IRate -> Conf IRate 
-      -> Conf IRate -> Conf IRate 
-      -> Element rate
-madsr ia idec isl ir = 
-    mkElement "madsr" [ getConfI ia,    getConfI idec
-                      , getConfI isl,   getConfI ir ]
-                      (Out1 $ dataRate (undefined :: rate))
-
+      => Opcode4 IRate IRate IRate IRate -> Element rate
+madsr opF = 
+    mkElement "madsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir) ->
+                [ getConfI ia,    getConfI idec
+                , getConfI isl,   getConfI ir ]
 
 madsr_ :: forall rate. (KA_Rate rate)
-       => Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate 
-       -> Conf IRate 
-       -> Element rate
-madsr_ ia idec isl ir idel = 
-    mkElement "madsr" [ getConfI ia,  getConfI idec
-                      , getConfI isl, getConfI ir
-                      , getConfI idel ]
-                      (Out1 $ dataRate (undefined :: rate))
-
+       => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+madsr_ opF =
+    mkElement "madsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir,idel) -> 
+                [ getConfI ia,    getConfI idec
+                , getConfI isl,   getConfI ir
+                , getConfI idel ]
 
 xadsr :: forall rate. (KA_Rate rate)
-      => Conf IRate -> Conf IRate 
-      -> Conf IRate -> Conf IRate 
-      -> Element rate
-xadsr ia idec isl ir = 
-    mkElement "xadsr" [ getConfI ia,    getConfI idec
-                      , getConfI isl,   getConfI ir ]
-                      (Out1 $ dataRate (undefined :: rate))
+      => Opcode4 IRate IRate IRate IRate -> Element rate
+xadsr opF =
+    mkElement "xadsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir) ->
+                [ getConfI ia,    getConfI idec
+                , getConfI isl,   getConfI ir ]
 
 
 xadsr_ :: forall rate. (KA_Rate rate)
-       => Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate 
-       -> Conf IRate 
-       -> Element rate
-xadsr_ ia idec isl ir idel = 
-    mkElement "xadsr" [ getConfI ia,    getConfI idec
-                      , getConfI isl,   getConfI ir
-                      , getConfI idel ]
-                      (Out1 $ dataRate (undefined :: rate))
+       => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+xadsr_ opF =
+    mkElement "xadsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir,idel) ->
+                [ getConfI ia,    getConfI idec
+                , getConfI isl,   getConfI ir
+                , getConfI idel ]
 
 mxadsr :: forall rate. (KA_Rate rate)
-       => Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate 
-       -> Element rate
-mxadsr ia idec isl ir = 
-    mkElement "mxadsr" [ getConfI ia,   getConfI idec
-                       , getConfI isl,  getConfI ir ]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode4 IRate IRate IRate IRate -> Element rate
+mxadsr opF =
+    mkElement "mxadsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir) ->
+                [ getConfI ia,   getConfI idec
+                , getConfI isl,  getConfI ir ]
 
 mxadsr_ :: forall rate. (KA_Rate rate)
-        => Conf IRate -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate 
-        -> Element rate
-mxadsr_ ia idec isl ir idel = 
-    mkElement "mxadsr" [ getConfI ia,   getConfI idec
-                       , getConfI isl,  getConfI ir
-                       , getConfI idel ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+mxadsr_ opF =
+    mkElement "mxadsr" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ia,idec,isl,ir,idel) ->
+                [ getConfI ia,   getConfI idec
+                , getConfI isl,  getConfI ir
+                , getConfI idel ]
 
 
 --------------------------------------------------------------------------------
 -- Table access
 
 table :: forall rate1 rate. (Rate rate)
-      => Conf rate1 -> Conf IRate 
-      -> Element rate
-table ndx ifn = 
-    mkElement "table" [ getConfUniv ndx, getConfI ifn ]
-                      (Out1 $ dataRate (undefined :: rate))
+      => Opcode2 rate1 IRate -> Element rate
+table opF =
+    mkElement "table" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx, ifn) ->
+                [ getConfUniv ndx, getConfI ifn ]
 
 table_ :: forall rate1 rate. (Rate rate)
-       => Conf rate1 -> Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate    
-       -> Element rate
-table_ ndx ifn ixmode ixoff ixwrap = 
-    mkElement "table" [ getConfUniv ndx,    getConfI ifn
-                      , getConfI ixmode,    getConfI ixoff
-                      , getConfI ixwrap ]
-                      (Out1 $ dataRate (undefined :: rate))
-
+       => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+table_ opF =
+    mkElement "table" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx,ifn,ixmode,ixoff,ixwrap) ->
+                [ getConfUniv ndx,    getConfI ifn
+                , getConfI ixmode,    getConfI ixoff
+                , getConfI ixwrap ]
 
 tablei :: forall rate1 rate. (Rate rate)
-       => Conf rate1 -> Conf IRate 
-       -> Element rate
-tablei ndx ifn = 
-    mkElement "tablei" [ getConfUniv ndx, getConfI ifn ]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode2 rate1 IRate -> Element rate
+tablei opF =
+    mkElement "tablei" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx,ifn) ->
+                [ getConfUniv ndx, getConfI ifn ]
 
 tablei_ :: forall rate1 rate. (Rate rate)
-        => Conf rate1 -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate
-       -> Element rate
-tablei_ ndx ifn ixmode ixoff ixwrap = 
-    mkElement "tablei" [ getConfUniv ndx,   getConfI ifn
-                       , getConfI ixmode,   getConfI ixoff
-                       , getConfI ixwrap ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+tablei_ opF =
+    mkElement "tablei" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx,ifn,ixmode,ixoff,ixwrap) ->
+                [ getConfUniv ndx,   getConfI ifn
+                , getConfI ixmode,   getConfI ixoff
+                , getConfI ixwrap ]
 
 
 
 table3 :: forall rate1 rate. (Rate rate)
-       => Conf rate1 -> Conf IRate 
-       -> Element rate
-table3 ndx ifn = 
-    mkElement "table" [ getConfUniv ndx, getConfI ifn ]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode2 rate1 IRate -> Element rate
+table3 opF =
+    mkElement "table" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx,ifn) ->
+             [ getConfUniv ndx, getConfI ifn ]
+
 
 table3_ :: forall rate1 rate. (Rate rate)
-        => Conf rate1 -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate
-        -> Element rate
-table3_ ndx ifn ixmode ixoff ixwrap = 
-    mkElement "table3" [ getConfUniv ndx,   getConfI ifn
-                       , getConfI ixmode,   getConfI ixoff
-                       , getConfI ixwrap ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+table3_ opF =
+    mkElement "table3" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ndx,ifn,ixmode,ixoff,ixwrap) ->
+                [ getConfUniv ndx,   getConfI ifn
+                , getConfI ixmode,   getConfI ixoff
+                , getConfI ixwrap ]
 
 
-oscil1 :: Conf IRate -> Conf KRate 
-       -> Conf IRate -> Conf IRate 
-       -> Element KRate
-oscil1 idel kamp idur ifn = 
-    mkElement "oscil1" [ getConfI idel,   getConfK kamp
-                       , getConfI idur,   getConfI ifn ]
-                       (Out1 K)
+oscil1 :: Opcode4 IRate KRate IRate IRate -> Element KRate
+oscil1 opF =
+    mkElement "oscil1" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(idel,kamp,idur,ifn) ->
+               [ getConfI idel,   getConfK kamp
+               , getConfI idur,   getConfI ifn ]
 
-oscil1i :: Conf IRate -> Conf KRate 
-        -> Conf IRate -> Conf IRate 
-        -> Element KRate
-oscil1i idel kamp idur ifn = 
-    mkElement "oscil1i" [ getConfI idel,  getConfK kamp
-                        , getConfI idur,  getConfI ifn ]
-                        (Out1 K)
+oscil1i :: Opcode4 IRate KRate IRate IRate -> Element KRate
+oscil1i opF =
+    mkElement "oscil1i" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(idel,kamp,idur,ifn) ->
+                [ getConfI idel,  getConfK kamp
+                , getConfI idur,  getConfI ifn ]
 
-osciln :: Conf KRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate 
-       -> Element KRate
-osciln kamp ifrq ifn itimes = 
-    mkElement "osciln" [ getConfK kamp,   getConfI ifrq
-                       , getConfI ifn,    getConfI itimes ]
-                       (Out1 K)
+osciln :: Opcode4 KRate IRate IRate IRate -> Element KRate
+osciln opF =
+    mkElement "osciln" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(kamp,ifrq,ifn,itimes) -> 
+                [ getConfK kamp,   getConfI ifrq
+                , getConfI ifn,    getConfI itimes ]
+
 --------------------------------------------------------------------------------
 -- Phasors
 
 -- class CPhasor rate where
 
- 
+
 phasor :: forall rate1 rate. (KA_Rate rate)
-       => Conf rate1 
-       -> Element rate
-phasor cps = 
-    mkElement "phasor" [getConfUniv cps]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode1 rate1 -> Element rate
+phasor opF =
+    mkElement "phasor" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \cps ->
+                [ getConfUniv cps ]
 
 
 phasor_ :: forall rate1 rate. (KA_Rate rate)
-        => Conf rate1 -> Conf IRate 
-        -> Element rate
-phasor_ cps iphs = 
-    mkElement "phasor" [getConfUniv cps, getConfI iphs]
-                       (Out1 $ dataRate (undefined :: rate))
-   
+        => Opcode2 rate1 IRate -> Element rate
+phasor_ opF =
+    mkElement "phasor" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(cps,iphs) ->
+                [ getConfUniv cps, getConfI iphs ]
+
 
 phasorbnk :: forall rate1 rate. (KA_Rate rate)
-          => Conf rate1 -> Conf KRate -> Conf IRate 
-          -> Element rate
-phasorbnk cps kindx icnt = 
-    mkElement "phasorbnk" [ getConfUniv cps,  getConfK kindx
-                          , getConfI icnt ]
-                          (Out1 $ dataRate (undefined :: rate))
+          => Opcode3 rate1 KRate IRate -> Element rate
+phasorbnk opF =
+    mkElement "phasorbnk" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(cps,kindx,icnt) ->
+                [ getConfUniv cps,  getConfK kindx
+                , getConfI icnt ]
 
 
 phasorbnk_  :: forall rate1 rate. (KA_Rate rate)
-            => Conf rate1 -> Conf KRate 
-            -> Conf IRate -> Conf IRate 
-            -> Element rate
-phasorbnk_ cps kindx icnt iphs = 
-    mkElement "phasorbnk" [ getConfUniv cps,  getConfK kindx
-                          , getConfI icnt, getConfI iphs ]
-                          (Out1 $ dataRate (undefined :: rate))
+            => Opcode4 rate1 KRate IRate IRate -> Element rate
+phasorbnk_ opF = 
+    mkElement "phasorbnk" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(cps,kindx,icnt,iphs) ->
+                [ getConfUniv cps,  getConfK kindx
+                , getConfI icnt,    getConfI iphs ]
 
 
 --------------------------------------------------------------------------------
@@ -418,107 +468,116 @@ phasorbnk_ cps kindx icnt iphs =
 -- | Note for A rate, cps can seemingly be any type.
 -- 
 oscil :: forall r1 r2 rate. (KA_Rate rate)
-      => Conf r1 -> Conf r2 -> Conf IRate 
-      -> Element rate
-oscil amp cps ifn  = 
-    mkElement "oscil" [ getConfUniv amp,  getConfUniv cps
-                      , getConfI ifn ]
-                      (Out1 $ dataRate (undefined :: rate))
+      => Opcode3 r1 r2 IRate -> Element rate
+oscil opF = 
+    mkElement "oscil" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn) ->
+                [ getConfUniv amp,  getConfUniv cps
+                , getConfI ifn ]
+
 
 oscil_ :: forall r1 r2 rate. (KA_Rate rate)
-       => Conf r1  -> Conf r2
-       -> Conf IRate -> Conf IRate 
-       -> Element rate
-oscil_ amp cps ifn iphs = 
-    mkElement "oscil" [ getConfUniv amp,  getConfUniv cps
-                      , getConfI ifn,     getConfI iphs ]
-                      (Out1 $ dataRate (undefined :: rate))
+       => Opcode4 r1 r2 IRate  IRate -> Element rate
+oscil_ opF =
+    mkElement "oscil" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn,iphs) ->
+                [ getConfUniv amp,  getConfUniv cps
+                , getConfI ifn,     getConfI iphs ]
 
 oscili :: forall r1 r2 rate. (KA_Rate rate)
-       => Conf r1 -> Conf r2 -> Conf IRate 
-       -> Element rate
-oscili amp cps ifn = 
-    mkElement "oscili" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ifn]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode3 r1 r2 IRate -> Element rate
+oscili opF = 
+    mkElement "oscili" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ifn ]
 
 oscili_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Conf r1 -> Conf r2 
-        -> Conf IRate -> Conf IRate 
-        -> Element rate
-oscili_ amp cps ifn iphs = 
-    mkElement "oscili" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ifn,      getConfI iphs ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode4 r1 r2 IRate IRate -> Element rate
+oscili_ opF =
+    mkElement "oscili" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn,iphs) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ifn,      getConfI iphs ]
 
 oscil3 :: forall r1 r2 rate. (KA_Rate rate)
-       => Conf r1 -> Conf r2 -> Conf IRate 
-       -> Element rate
-oscil3 amp cps ifn = 
-    mkElement "oscil3" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ifn ]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode3 r1 r2 IRate -> Element rate
+oscil3 opF =
+    mkElement "oscil3" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ifn ]
 
 oscil3_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Conf r1 -> Conf r2
-        -> Conf IRate -> Conf IRate 
-        -> Element rate
-oscil3_ amp cps ifn iphs = 
-    mkElement "oscil3" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ifn,      getConfI iphs ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode4 r1 r2 IRate IRate -> Element rate
+oscil3_ opF = 
+    mkElement "oscil3" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ifn,iphs) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ifn,      getConfI iphs ]
 
 poscil :: forall r1 r2 rate. (KA_Rate rate)
-       => Conf r1 -> Conf r2 -> Conf IRate 
-       -> Element rate
-poscil amp cps ift = 
-    mkElement "poscil" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ift ]
-                       (Out1 $ dataRate (undefined :: rate))
+       => Opcode3 r1 r2 IRate -> Element rate
+poscil opF = 
+    mkElement "poscil" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ift) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ift ]
 
 poscil_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Conf r1 -> Conf r2 -> Conf IRate -> Conf IRate 
-        -> Element rate
-poscil_ amp cps ift iphs = 
-    mkElement "poscil" [ getConfUniv amp,   getConfUniv cps
-                       , getConfI ift,      getConfI iphs ]
-                       (Out1 $ dataRate (undefined :: rate))
+        => Opcode4 r1 r2 IRate IRate -> Element rate
+poscil_ opF = 
+    mkElement "poscil" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ift,iphs) ->
+                [ getConfUniv amp,   getConfUniv cps
+                , getConfI ift,      getConfI iphs ]
 
 
 poscil3 :: forall r1 r2 rate. (KA_Rate rate)
-        => Conf r1 -> Conf r2 -> Conf IRate 
-        -> Element rate
-poscil3 amp cps ift = 
-    mkElement "poscil3" [ getConfUniv amp,  getConfUniv cps
-                        , getConfI ift ]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode3 r1 r2 IRate -> Element rate
+poscil3 opF = 
+    mkElement "poscil3" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ift) ->
+                [ getConfUniv amp,  getConfUniv cps
+                , getConfI ift ]
 
 
 poscil3_  :: forall r1 r2 rate. (KA_Rate rate)
-          => Conf r1 -> Conf r2 
-          -> Conf IRate -> Conf IRate 
-          -> Element rate
-poscil3_ amp cps ift iphs = 
-    mkElement "poscil3" [ getConfUniv amp,  getConfUniv cps
-                        , getConfI ift,     getConfI iphs ]
-                        (Out1 $ dataRate (undefined :: rate))
+          => Opcode4 r1 r2 IRate IRate -> Element rate
+poscil3_ opF = 
+    mkElement "poscil3" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,ift,iphs) ->
+                [ getConfUniv amp,  getConfUniv cps
+                , getConfI ift,     getConfI iphs ]
 
 
 lfo :: forall r1 r2 rate. (KA_Rate rate)
-    => Conf r1 -> Conf r2
-    -> Element rate
-lfo amp cps = 
-    mkElement "lfo" [ getConfUniv amp,  getConfUniv cps]
-                    (Out1 $ dataRate (undefined :: rate))
+    => Opcode2 r1 r2 -> Element rate
+lfo opF = 
+    mkElement "lfo" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps) ->
+                [ getConfUniv amp,  getConfUniv cps]
 
 
 lfo_ :: forall r1 r2 rate. (KA_Rate rate)
-     => Conf r1 -> Conf r2 -> Conf IRate 
-     -> Element rate
-lfo_ amp cps itype = 
-    mkElement "lfo" [ getConfUniv amp,  getConfUniv cps
-                    , getConfI itype ]
-                    (Out1 $ dataRate (undefined :: rate))
+     => Opcode3 r1 r2 IRate -> Element rate
+lfo_ opF =
+    mkElement "lfo" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp,cps,itype) ->
+                [ getConfUniv amp,  getConfUniv cps
+                , getConfI itype ]
 
 
 
@@ -526,454 +585,478 @@ lfo_ amp cps itype =
 -- Dynamic spectrum oscillators
 
 -- TODO - what does the x prefix convention mean for Csound?
--- Above we have interpreted it as audio rate, but is this 
+-- Above we have interpreted it as audio rate, but is this
 -- correct?
 
-buzz :: Conf r1 -> Conf r2
-     -> Conf KRate -> Conf IRate 
-     -> Element ARate
-buzz xamp xcps knh ifn = 
-    mkElement "buzz" [ getConfUniv xamp,  getConfUniv xcps
-                     , getConfK knh,      getConfI ifn ]
-                     (Out1 A)
+buzz :: Opcode4 r1 r2 KRate IRate -> Element ARate
+buzz opF =
+    mkElement "buzz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,xcps,knh,ifn) ->
+                [ getConfUniv xamp,  getConfUniv xcps
+                , getConfK knh,      getConfI ifn ]
 
-buzz_ :: Conf r1 -> Conf r2 -> Conf KRate 
-      -> Conf IRate -> Conf IRate 
-      -> Element ARate
-buzz_ xamp xcps knh ifn iphs = 
-    mkElement "buzz" [ getConfUniv xamp,  getConfUniv xcps
-                     , getConfK knh,      getConfI ifn
-                     , getConfI iphs ]
-                     (Out1 A)
+buzz_ :: Opcode5 r1 r2 KRate IRate IRate -> Element ARate
+buzz_ opF =
+    mkElement "buzz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,xcps,knh,ifn,iphs) ->
+                [ getConfUniv xamp,  getConfUniv xcps
+                , getConfK knh,      getConfI ifn
+                , getConfI iphs ]
 
 
-gbuzz :: Conf r1 -> Conf r2
-      -> Conf KRate -> Conf KRate 
-      -> Conf KRate -> Conf IRate 
-      -> Element ARate
-gbuzz xamp xcps knh klh kr ifn = 
-    mkElement "gbuzz" [ getConfUniv xamp,   getConfUniv xcps
-                      , getConfK knh,       getConfK klh
-                      , getConfK kr,        getConfI ifn ]
-                      (Out1 A)
+gbuzz :: Opcode6 r1 r2 KRate KRate KRate IRate -> Element ARate
+gbuzz opF =
+    mkElement "gbuzz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,xcps,knh,klh,kr,ifn) ->
+                [ getConfUniv xamp,   getConfUniv xcps
+                , getConfK knh,       getConfK klh
+                , getConfK kr,        getConfI ifn ]
 
-gbuzz_ :: Conf r1 -> Conf r2
-       -> Conf KRate -> Conf KRate -> Conf KRate 
-       -> Conf IRate -> Conf IRate
-       -> Element ARate
-gbuzz_ xamp xcps knh klh kr ifn iphs = 
-    mkElement "gbuzz" [ getConfUniv xamp,   getConfUniv xcps
-                      , getConfK knh,       getConfK klh
-                      , getConfK kr,        getConfI ifn
-                      , getConfI iphs ]
-                      (Out1 A)
+gbuzz_ :: Opcode7 r1 r2 KRate KRate KRate IRate IRate -> Element ARate
+gbuzz_ opF = 
+    mkElement "gbuzz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,xcps,knh,klh,kr,ifn,iphs) ->
+                [ getConfUniv xamp,   getConfUniv xcps
+                , getConfK knh,       getConfK klh
+                , getConfK kr,        getConfI ifn
+                , getConfI iphs ]
 
-vco :: Conf KRate -> Conf KRate 
-    -> Conf IRate -> Conf KRate 
-    -> Conf IRate -> Conf IRate 
-    -> Element ARate
-vco kamp kfqc iwave kpw ifn imaxd = 
-    mkElement "gbuzz" [ getConfK kamp,    getConfK kfqc
-                      , getConfI iwave,   getConfK kpw
-                      , getConfI ifn,     getConfI imaxd ]
-                      (Out1 A)
+vco :: Opcode6 KRate KRate IRate KRate IRate IRate -> Element ARate
+vco opF =
+    mkElement "gbuzz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,kfqc,iwave,kpw,ifn,imaxd) ->
+                [ getConfK kamp,    getConfK kfqc
+                , getConfI iwave,   getConfK kpw
+                , getConfI ifn,     getConfI imaxd ]
 
 --------------------------------------------------------------------------------
 -- Additive synthesis / resynthesis
 
-adsyn :: Conf KRate -> Conf KRate 
-      -> Conf KRate -> Conf IRate 
-      -> Element ARate
-adsyn kamod kfmod ksmod ifilcod = 
-    mkElement "adsyn" [ getConfK kamod,   getConfK kfmod
-                      , getConfK ksmod,   getConfI ifilcod ]
-                      (Out1 A)
+adsyn :: Opcode4 KRate KRate KRate IRate -> Element ARate
+adsyn opF =
+    mkElement "adsyn" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamod,kfmod,ksmod,ifilcod) ->
+                [ getConfK kamod,   getConfK kfmod
+                , getConfK ksmod,   getConfI ifilcod ]
 
 
-adsynt :: Conf KRate -> Conf KRate 
-       -> Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate
-       -> Element ARate
-adsynt kamp kcps iwfn ifreqfn iampfn icnt = 
-    mkElement "adsynt" [ getConfK kamp,     getConfK kcps
-                       , getConfI iwfn,     getConfI ifreqfn
-                       , getConfI iampfn,   getConfI icnt ]
-                       (Out1 A)
-
-adsynt_ :: Conf KRate -> Conf KRate 
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate
-        -> Conf IRate
-        -> Element ARate
-adsynt_ kamp kcps iwfn ifreqfn iampfn icnt iphs = 
-    mkElement "adsynt" [ getConfK kamp,     getConfK kcps
-                       , getConfI iwfn,     getConfI ifreqfn
-                       , getConfI iampfn,   getConfI icnt
-                       , getConfI iphs ]
-                       (Out1 A)
+adsynt :: Opcode6 KRate KRate IRate IRate IRate IRate -> Element ARate
+adsynt opF =
+    mkElement "adsynt" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,kcps,iwfn,ifreqfn,iampfn,icnt) ->
+                [ getConfK kamp,     getConfK kcps
+                , getConfI iwfn,     getConfI ifreqfn
+                , getConfI iampfn,   getConfI icnt ]
 
 
-hsboscil :: Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf IRate 
-         -> Conf IRate -> Conf IRate
-         -> Element ARate
-hsboscil kamp ktone kbrite ibasfreq iwfn ioctfn = 
-    mkElement "hsboscil" [ getConfK kamp,     getConfK ktone
-                         , getConfK kbrite,   getConfI ibasfreq
-                         , getConfI iwfn,     getConfI ioctfn ]
-                         (Out1 A)
+adsynt_ :: Opcode7 KRate KRate IRate IRate IRate IRate IRate -> Element ARate
+adsynt_  opF = 
+    mkElement "adsynt" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,kcps,iwfn,ifreqfn,iampfn,icnt,iphs) ->
+                [ getConfK kamp,     getConfK kcps
+                , getConfI iwfn,     getConfI ifreqfn
+                , getConfI iampfn,   getConfI icnt
+                , getConfI iphs ]
 
-hsboscil_ :: Conf KRate -> Conf KRate 
-          -> Conf KRate -> Conf IRate 
-          -> Conf IRate -> Conf IRate
-          -> Conf IRate
-          -> Element ARate
-hsboscil_ kamp ktone kbrite ibasfreq iwfn ioctfn iphs = 
-    mkElement "hsboscil" [ getConfK kamp,     getConfK ktone
-                         , getConfK kbrite,   getConfI ibasfreq
-                         , getConfI iwfn,     getConfI ioctfn
-                         , getConfI iphs ]
-                         (Out1 A)
+
+hsboscil :: Opcode6 KRate KRate KRate IRate IRate IRate -> Element ARate
+hsboscil opF = 
+    mkElement "hsboscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,ktone,kbrite,ibasfreq,iwfn,ioctfn) ->
+                [ getConfK kamp,     getConfK ktone
+                , getConfK kbrite,   getConfI ibasfreq
+                , getConfI iwfn,     getConfI ioctfn ]
+
+hsboscil_ :: Opcode7 KRate KRate KRate IRate IRate IRate IRate -> Element ARate
+hsboscil_ opF = 
+    mkElement "hsboscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \(kamp,ktone,kbrite,ibasfreq,iwfn,ioctfn,iphs) ->
+                    [ getConfK kamp,     getConfK ktone
+                    , getConfK kbrite,   getConfI ibasfreq
+                    , getConfI iwfn,     getConfI ioctfn
+                    , getConfI iphs ]
+
 
 --------------------------------------------------------------------------------
 -- FM Synthesis
 
-foscil :: Conf rate -> Conf KRate 
-       -> Conf KRate -> Conf KRate 
-       -> Conf KRate -> Conf IRate
+foscil :: Opcode6 rate KRate KRate KRate KRate IRate -> Element ARate
+foscil opF =
+    mkElement "foscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,kcar,kmod,kndx,ifn) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfK kcar,     getConfK kmod
+                , getConfK kndx,     getConfI ifn ]
+
+foscil_ :: Opcode7 rate KRate KRate KRate KRate IRate IRate -> Element ARate
+foscil_ opF  =
+    mkElement "foscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,kcar,kmod,kndx,ifn,iphs) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfK kcar,     getConfK kmod
+                , getConfK kndx,     getConfI ifn
+                , getConfI iphs ]
+
+foscili :: Opcode6 rate KRate KRate KRate KRate IRate -> Element ARate
+foscili opF =
+    mkElement "foscili" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,kcar,kmod,kndx,ifn) ->
+                [ getConfUniv xamp,   getConfK kcps
+                , getConfK kcar,      getConfK kmod
+                , getConfK kndx,      getConfI ifn ]
+
+
+foscili_ :: Opcode7 rate KRate KRate KRate KRate IRate IRate -> Element ARate
+foscili_ opF =
+    mkElement "foscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,kcar,kmod,kndx,ifn,iphs) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfK kcar,     getConfK kmod
+                , getConfK kndx,     getConfI ifn
+                , getConfI iphs ]
+
+
+fmvoice :: Opcode11 KRate KRate KRate KRate KRate KRate
+                    IRate IRate IRate IRate IRate
+        -> Element ARate
+fmvoice opF =
+    mkElement "fmvoice" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kvowel, ktilt, kvibamt
+                 , kvibrate, ifn1, ifn2, ifn3, ifn4, ivibfn ) ->
+                      [ getConfK kamp,      getConfK kfreq
+                      , getConfK kvowel,    getConfK ktilt
+                      , getConfK kvibamt,   getConfK kvibrate
+                      , getConfI ifn1,      getConfI ifn2
+                      , getConfI ifn3,      getConfI ifn4
+                      , getConfI ivibfn ]
+
+fmbell :: Opcode11 KRate KRate KRate KRate KRate KRate
+                   IRate IRate IRate IRate IRate
        -> Element ARate
-foscil xamp kcps kcar kmod kndx ifn = 
-    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
-                       , getConfK kcar,     getConfK kmod
-                       , getConfK kndx,     getConfI ifn ]
-                       (Out1 A)
+fmbell opF =
+    mkElement "fmbell" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kc1,      getConfK kc2
+                      , getConfK kvdepth,  getConfK kvrate
+                      , getConfI ifn1,     getConfI ifn2
+                      , getConfI ifn3,     getConfI ifn4
+                      , getConfI ivibfn ]
 
-foscil_ :: Conf rate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf IRate 
-        -> Conf IRate
+fmrhode :: Opcode11 KRate KRate KRate KRate KRate KRate
+                    IRate IRate IRate IRate IRate
         -> Element ARate
-foscil_ xamp kcps kcar kmod kndx ifn iphs = 
-    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
-                       , getConfK kcar,     getConfK kmod
-                       , getConfK kndx,     getConfI ifn
-                       , getConfI iphs ]
-                       (Out1 A)
-
-foscili :: Conf rate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf IRate
-        -> Element ARate
-foscili xamp kcps kcar kmod kndx ifn = 
-    mkElement "foscili" [ getConfUniv xamp,   getConfK kcps
-                        , getConfK kcar,      getConfK kmod
-                        , getConfK kndx,      getConfI ifn ]
-                        (Out1 A)
+fmrhode opF =
+    mkElement "fmrhode" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn) ->
+                      [ getConfK kamp,      getConfK kfreq
+                      , getConfK kc1,       getConfK kc2
+                      , getConfK kvdepth,   getConfK kvrate
+                      , getConfI ifn1,      getConfI ifn2
+                      , getConfI ifn3,      getConfI ifn4
+                      , getConfI ivibfn ]
 
 
-foscili_ :: Conf rate -> Conf KRate 
-         -> Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf IRate 
-         -> Conf IRate
+fmwurlie :: Opcode11 KRate KRate KRate KRate KRate KRate
+                     IRate IRate IRate IRate IRate
          -> Element ARate
-foscili_ xamp kcps kcar kmod kndx ifn iphs = 
-    mkElement "foscil" [ getConfUniv xamp,  getConfK kcps
-                       , getConfK kcar,     getConfK kmod
-                       , getConfK kndx,     getConfI ifn
-                       , getConfI iphs ]
-                       (Out1 A)
+fmwurlie opF =
+    mkElement "fmwurlie" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate 
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kc1,      getConfK kc2
+                      , getConfK kvdepth,  getConfK kvrate
+                      , getConfI ifn1,     getConfI ifn2
+                      , getConfI ifn3,     getConfI ifn4
+                      , getConfI ivibfn ]
 
-
-fmvoice :: Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate
+fmmetal :: Opcode11 KRate KRate KRate KRate KRate KRate
+                    IRate IRate IRate IRate IRate
         -> Element ARate
-fmvoice kamp kfreq kvowel ktilt kvibamt kvibrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmvoice" [ getConfK kamp,      getConfK kfreq
-                        , getConfK kvowel,    getConfK ktilt
-                        , getConfK kvibamt,   getConfK kvibrate
-                        , getConfI ifn1,      getConfI ifn2
-                        , getConfI ifn3,      getConfI ifn4
-                        , getConfI ivibfn ]
-                        (Out1 A)
+fmmetal opF =
+    mkElement "fmmetal" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate 
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn) ->
+                      [ getConfK kamp,      getConfK kfreq
+                      , getConfK kc1,       getConfK kc2
+                      , getConfK kvdepth,   getConfK kvrate
+                      , getConfI ifn1,      getConfI ifn2
+                      , getConfI ifn3,      getConfI ifn4
+                      , getConfI ivibfn ]
 
-fmbell :: Conf KRate -> Conf KRate 
-       -> Conf KRate -> Conf KRate 
-       -> Conf KRate -> Conf KRate
-       -> Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate 
-       -> Conf IRate
-       -> Element ARate
-fmbell kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmbell" [ getConfK kamp,     getConfK kfreq
-                       , getConfK kc1,      getConfK kc2
-                       , getConfK kvdepth,  getConfK kvrate
-                       , getConfI ifn1,     getConfI ifn2
-                       , getConfI ifn3,     getConfI ifn4
-                       , getConfI ivibfn ]
-                       (Out1 A)
-
-fmrhode :: Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate
-        -> Element ARate
-fmrhode kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmrhode" [ getConfK kamp,      getConfK kfreq
-                        , getConfK kc1,       getConfK kc2
-                        , getConfK kvdepth,   getConfK kvrate
-                        , getConfI ifn1,      getConfI ifn2
-                        , getConfI ifn3,      getConfI ifn4
-                        , getConfI ivibfn ]
-                        (Out1 A)
-
-
-fmwurlie :: Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf KRate
-         -> Conf IRate -> Conf IRate 
-         -> Conf IRate -> Conf IRate 
-         -> Conf IRate
-         -> Element ARate
-fmwurlie kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmwurlie" [ getConfK kamp,     getConfK kfreq
-                         , getConfK kc1,      getConfK kc2
-                         , getConfK kvdepth,  getConfK kvrate
-                         , getConfI ifn1,     getConfI ifn2
-                         , getConfI ifn3,     getConfI ifn4
-                         , getConfI ivibfn ]
-                         (Out1 A)
-
-fmmetal :: Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate 
-        -> Conf IRate
-        -> Element ARate
-fmmetal kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmmetal" [ getConfK kamp,      getConfK kfreq
-                        , getConfK kc1,       getConfK kc2
-                        , getConfK kvdepth,   getConfK kvrate
-                        , getConfI ifn1,      getConfI ifn2
-                        , getConfI ifn3,      getConfI ifn4
-                        , getConfI ivibfn ]
-                        (Out1 A)
-
-fmb3 :: Conf KRate -> Conf KRate 
-     -> Conf KRate -> Conf KRate 
-     -> Conf KRate -> Conf KRate
-     -> Conf IRate -> Conf IRate 
-     -> Conf IRate -> Conf IRate 
-     -> Conf IRate
+fmb3 :: Opcode11 KRate KRate KRate KRate KRate KRate
+                 IRate IRate IRate IRate IRate
      -> Element ARate
-fmb3 kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmb3" [ getConfK kamp,     getConfK kfreq
-                     , getConfK kc1,      getConfK kc2
-                     , getConfK kvdepth,  getConfK kvrate
-                     , getConfI ifn1,     getConfI ifn2
-                     , getConfI ifn3,     getConfI ifn4
-                     , getConfI ivibfn ]
-                     (Out1 A)
+fmb3 opF =
+    mkElement "fmb3" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kc1,      getConfK kc2
+                      , getConfK kvdepth,  getConfK kvrate
+                      , getConfI ifn1,     getConfI ifn2
+                      , getConfI ifn3,     getConfI ifn4
+                      , getConfI ivibfn ]
 
 
-fmpercfl :: Conf KRate -> Conf KRate
-         -> Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf KRate
-         -> Conf IRate -> Conf IRate 
-         -> Conf IRate -> Conf IRate 
-         -> Conf IRate
+fmpercfl :: Opcode11 KRate KRate KRate KRate KRate KRate
+                     IRate IRate IRate IRate IRate
          -> Element ARate
-fmpercfl kamp kfreq kc1 kc2 kvdepth kvrate ifn1 ifn2 ifn3 ifn4 ivibfn = 
-    mkElement "fmpercfl" [ getConfK kamp,     getConfK kfreq
-                         , getConfK kc1,      getConfK kc2
-                         , getConfK kvdepth,  getConfK kvrate
-                         , getConfI ifn1,     getConfI ifn2
-                         , getConfI ifn3,     getConfI ifn4
-                         , getConfI ivibfn ]
-                         (Out1 A)
+fmpercfl opF = 
+    mkElement "fmpercfl" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kc1, kc2, kvdepth, kvrate
+                 , ifn1, ifn2, ifn3, ifn4, ivibfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kc1,      getConfK kc2
+                      , getConfK kvdepth,  getConfK kvrate
+                      , getConfI ifn1,     getConfI ifn2
+                      , getConfI ifn3,     getConfI ifn4
+                      , getConfI ivibfn ]
 
 --------------------------------------------------------------------------------
 -- Sample playback
 
--- Note - it seems idiomatic to want a stereo version will only 
+-- Note - it seems idiomatic to want a stereo version will only
 -- the mandatory args...
 
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
+loscil :: Opcode5 rate KRate IRate IRate IRate
        -> Element ARate
-loscil xamp kcps ifn ibase imod1 = 
-    mkElement "loscil" [ getConfUniv xamp,  getConfK kcps
-                       , getConfI ifn,      getConfI ibase
-                       , getConfI imod1 ]
-                       (Out1 A)
+loscil opF =
+    mkElement "loscil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,ifn,ibase,imod1) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfI ifn,      getConfI ibase
+                , getConfI imod1 ]
 
 
 -- | Stereo version of 'loscil'.
--- 
+--
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
-       -> Element ARate
-biloscil xamp kcps ifn ibase imod1 = 
-    mkElement "loscil" [ getConfUniv xamp,  getConfK kcps
-                       , getConfI ifn,      getConfI ibase
-                       , getConfI imod1 ]
-                       (Out2 A)
+biloscil :: Opcode5 rate KRate IRate IRate IRate
+         -> Element ARate
+biloscil opF =
+    mkElement "loscil" inspec (Out2 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,ifn,ibase,imod1) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfI ifn,      getConfI ibase
+                , getConfI imod1 ]
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil3 :: Conf a -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
-       -> Element ARate
-loscil3 xamp kcps ifn ibase imod1 = 
-    mkElement "loscil3" [ getConfUniv xamp,   getConfK kcps
-                        , getConfI ifn,       getConfI ibase
-                        , getConfI imod1 ]
-                        (Out1 A)
+loscil3 :: Opcode5 rate KRate IRate IRate IRate -> Element ARate
+loscil3 opF =
+    mkElement "loscil3" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,ifn,ibase,imod1) ->
+                [ getConfUniv xamp,   getConfK kcps
+                , getConfI ifn,       getConfI ibase
+                , getConfI imod1 ]
 
 
 -- | Stereo version of 'loscil3'.
--- 
+--
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil3 :: Conf rate -> Conf KRate 
-          -> Conf IRate -> Conf IRate 
-          -> Conf IRate
-          -> Element ARate
-biloscil3 xamp kcps ifn ibase imod1 = 
-    mkElement "loscil3" [ getConfUniv xamp,  getConfK kcps
-                        , getConfI ifn,      getConfI ibase
-                        , getConfI  imod1 ]
-                        (Out2 A)
+biloscil3 :: Opcode5 rate KRate IRate IRate IRate -> Element ARate
+biloscil3 opF =
+    mkElement "loscil3" inspec (Out2 A)
+  where
+    inspec = applyOpcode opF $ \(xamp,kcps,ifn,ibase,imod1) ->
+                [ getConfUniv xamp,  getConfK kcps
+                , getConfI ifn,      getConfI ibase
+                , getConfI  imod1 ]
 
-lposcil :: Conf KRate -> Conf KRate 
-        -> Conf KRate -> Conf KRate 
-        -> Conf IRate
-        -> Element ARate
-lposcil kamp kfreqrat kloop kend ift = 
-    mkElement "lposcil" [ getConfK kamp,    getConfK kfreqrat
-                        , getConfK kloop,   getConfK kend
-                        , getConfI ift ]
-                        (Out1 A)
+lposcil :: Opcode5 KRate KRate KRate KRate IRate -> Element ARate
+lposcil opF =
+    mkElement "lposcil" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,kfreqrat,kloop,kend,ift) ->
+                [ getConfK kamp,    getConfK kfreqrat
+                , getConfK kloop,   getConfK kend
+                , getConfI ift ]
 
-lposcil3 :: Conf KRate -> Conf KRate -> Conf KRate 
-         -> Conf KRate -> Conf IRate
-         -> Element ARate
-lposcil3 kamp kfreqrat kloop kend ift = 
-    mkElement "lposcil3" [ getConfK kamp,   getConfK kfreqrat
-                         , getConfK kloop,  getConfK kend
-                         , getConfI ift ]
-                         (Out1 A)
+lposcil3 :: Opcode5 KRate KRate KRate KRate IRate -> Element ARate
+lposcil3 opF =
+    mkElement "lposcil3" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(kamp,kfreqrat,kloop,kend,ift) ->
+                [ getConfK kamp,   getConfK kfreqrat
+                , getConfK kloop,  getConfK kend
+                , getConfI ift ]
 
 
 
 --------------------------------------------------------------------------------
 -- Models and emulations
 
-moog :: Conf KRate -> Conf KRate -> Conf KRate 
-     -> Conf KRate -> Conf KRate -> Conf KRate
-     -> Conf IRate -> Conf IRate -> Conf IRate
+moog :: Opcode9 KRate KRate KRate KRate KRate KRate IRate IRate IRate
      -> Element ARate
-moog kamp kfreq kfiltq kfiltrate kvibf kvamp iafn iwfn ivfn = 
-    mkElement "moog" [ getConfK kamp,     getConfK kfreq
-                     , getConfK kfiltq,   getConfK kfiltrate
-                     , getConfK kvibf,    getConfK kvamp 
-                     , getConfI iafn,     getConfI iwfn
-                     , getConfI ivfn ]
-                     (Out1 A)
+moog opF =
+    mkElement "moog" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kfiltq, kfiltrate, kvibf 
+                 , kvamp, iafn, iwfn, ivfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kfiltq,   getConfK kfiltrate
+                      , getConfK kvibf,    getConfK kvamp
+                      , getConfI iafn,     getConfI iwfn
+                      , getConfI ivfn ]
+
 --------------------------------------------------------------------------------
 -- Random noise generators
 
 
 rand :: forall rate. (KA_Rate rate)
-     => Conf rate -> Element rate
-rand amp = 
-    mkElement "rand" [getConfUniv amp]
-                     (Out1 $ dataRate (undefined :: rate))
+     => Opcode1 rate -> Element rate
+rand opF =
+    mkElement "rand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \amp ->
+                [ getConfUniv amp ]
 
 randh :: forall rate. (KA_Rate rate)
-      => Conf rate -> Conf rate -> Element rate
-randh amp cps = 
-    mkElement "rand" [getConfUniv amp, getConfUniv cps]
-                     (Out1 $ dataRate (undefined :: rate))
+      => Opcode2 rate rate -> Element rate
+randh opF =
+    mkElement "rand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp, cps) ->
+                [ getConfUniv amp, getConfUniv cps ]
 
 randi :: forall rate. (KA_Rate rate)
-      => Conf rate -> Conf rate -> Element rate
-randi amp cps = 
-    mkElement "rand" [getConfUniv amp, getConfUniv cps]
-                     (Out1 $ dataRate (undefined :: rate))
+      => Opcode2 rate rate -> Element rate
+randi opF =
+    mkElement "rand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(amp, cps) ->
+                [ getConfUniv amp, getConfUniv cps ]
 
 linrand :: forall rate. (Rate rate)
-        => Conf KRate -> Element rate
-linrand krange = 
-    mkElement "linrand" [getConfK krange]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode1 KRate -> Element rate
+linrand opF =
+    mkElement "linrand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+                [ getConfK krange ]
 
 trirand :: forall rate. (Rate rate)
-        => Conf KRate -> Element rate
-trirand krange = 
-    mkElement "trirand" [getConfK krange]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode1 KRate -> Element rate
+trirand opF =
+    mkElement "trirand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+                [ getConfK krange ]
 
 exprand :: forall rate. (Rate rate)
-        => Conf KRate -> Element rate
-exprand krange = 
-    mkElement "exprand" [getConfK krange]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode1 KRate -> Element rate
+exprand opF =
+    mkElement "exprand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+                [ getConfK krange ]
 
 bexprand :: forall rate. (Rate rate)
-         => Conf KRate -> Element rate
-bexprand krange = 
-    mkElement "bexprand" [getConfK krange]
-                        (Out1 $ dataRate (undefined :: rate))
+         => Opcode1 KRate -> Element rate
+bexprand opF =
+    mkElement "bexprand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+                [ getConfK krange ]
 
 cauchy :: forall rate. (Rate rate)
-       => Conf KRate -> Element rate
-cauchy kalpha = 
-    mkElement "cauchy" [getConfK kalpha]
-                        (Out1 $ dataRate (undefined :: rate))
+       => Opcode1 KRate -> Element rate
+cauchy opF =
+    mkElement "cauchy" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \kalpha ->
+                [ getConfK kalpha ]
 
 
 pcauchy :: forall rate. (Rate rate)
-        => Conf KRate -> Element rate
-pcauchy kalpha = 
-    mkElement "pcauchy" [getConfK kalpha]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode1 KRate -> Element rate
+pcauchy opF =
+    mkElement "pcauchy" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \kalpha ->
+                [ getConfK kalpha ]
 
 poisson :: forall rate. (Rate rate)
-       => Conf KRate -> Element rate
-poisson klambda = 
-    mkElement "poisson" [getConfK klambda]
-                        (Out1 $ dataRate (undefined :: rate))
+       => Opcode1 KRate -> Element rate
+poisson opF =
+    mkElement "poisson" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \klambda ->
+                  [ getConfK klambda ]
 
 gauss :: forall rate. (Rate rate)
-      => Conf KRate -> Element rate
-gauss krange = 
-    mkElement "gauss" [getConfK krange]
-                      (Out1 $ dataRate (undefined :: rate))
+      => Opcode1 KRate -> Element rate
+gauss opF =
+    mkElement "gauss" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+                [ getConfK krange ]
 
 weibull :: forall rate. (Rate rate)
-        => Conf KRate -> Conf KRate -> Element rate
-weibull ksigma ktau = 
-    mkElement "weibull" [getConfK ksigma, getConfK ktau]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode2 KRate KRate -> Element rate
+weibull opF =
+    mkElement "weibull" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(ksigma, ktau) ->
+                [ getConfK ksigma, getConfK ktau ]
 
 betarand :: forall rate. (Rate rate)
-         => Conf KRate -> Conf KRate -> Conf KRate -> Element rate
-betarand krange kalpha kbeta = 
-    mkElement "betarand" [getConfK krange, getConfK kalpha, getConfK kbeta]
-                         (Out1 $ dataRate (undefined :: rate))
+         => Opcode3 KRate KRate KRate -> Element rate
+betarand opF = 
+    mkElement "betarand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \(krange,kalpha,kbeta) ->
+                [ getConfK krange,  getConfK kalpha
+                , getConfK kbeta ]
 
 unirand :: forall rate. (Rate rate)
-        => Conf KRate -> Element rate
-unirand krange = 
-    mkElement "unirand" [getConfK krange]
-                        (Out1 $ dataRate (undefined :: rate))
+        => Opcode1 KRate -> Element rate
+unirand opF =
+    mkElement "unirand" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \krange ->
+               [ getConfK krange ]
+
 

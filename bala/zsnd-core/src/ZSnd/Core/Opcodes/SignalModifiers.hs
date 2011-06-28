@@ -71,6 +71,9 @@ module ZSnd.Core.Opcodes.SignalModifiers
   , deltapi
   , deltapn
   , deltap3
+
+  , MultitapConfig
+  , MultitapOpcode
   , multitap
   , vdelay
   , vdelay3
@@ -92,8 +95,10 @@ module ZSnd.Core.Opcodes.SignalModifiers
   ) where
 
 
-import ZSnd.Core.CsoundInst
 import ZSnd.Core.Inst.Click
+import ZSnd.Core.Inst.HighLevel
+import ZSnd.Core.Inst.Index
+
 
 --------------------------------------------------------------------------------
 -- Standard filters
@@ -102,316 +107,466 @@ import ZSnd.Core.Inst.Click
 --
 -- @port@ has special meaning in ZSnd, so it is not used here.
 --
-portmentok :: Conf KRate -> Conf KRate -> Element KRate
-portmentok ksig khtim = 
-    mkElement "portk" [ getConfK ksig, getConfK khtim ]
-                      (Out1 K)
+portmentok :: Opcode2 KRate KRate -> Element KRate
+portmentok opF =
+    mkElement "portk" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, khtim) -> 
+                [ getConfK ksig, getConfK khtim ]
+
 
 
 -- | Note this is @port@ in Csound.
 --
 -- @port@ has special meaning in ZSnd, so it is not used here.
 --
-portmento :: Conf KRate -> Conf IRate -> Element KRate
-portmento ksig ihtim = 
-    mkElement "port" [ getConfK ksig, getConfI ihtim ] (Out1 K)
+portmento :: Opcode2 KRate IRate -> Element KRate
+portmento opF = 
+    mkElement "port" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, ihtim) -> 
+                [ getConfK ksig, getConfI ihtim ]
 
-tonek :: Conf KRate -> Conf KRate -> Element KRate
-tonek ksig khp = 
-    mkElement "tonek" [ getConfK ksig, getConfK khp ] (Out1 K)
+tonek :: Opcode2 KRate KRate -> Element KRate
+tonek opF = 
+    mkElement "tonek" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, khp) -> 
+                [ getConfK ksig, getConfK khp ]
 
-tone :: Conf ARate -> Conf KRate -> Element ARate
-tone asig khp = 
-    mkElement "tone" [ getConfA asig, getConfK khp ] (Out1 A)
-
-
-atonek :: Conf KRate -> Conf KRate -> Element KRate
-atonek ksig khp = 
-    mkElement "atonek" [ getConfK ksig, getConfK khp ] (Out1 K)
-
-atone :: Conf ARate -> Conf KRate -> Element ARate
-atone asig khp = 
-    mkElement "atone" [ getConfA asig, getConfK khp ] (Out1 A)
-
-resonk :: Conf KRate -> Conf KRate -> Conf KRate -> Element KRate
-resonk ksig kcf kbw = 
-    mkElement "resonk" [ getConfK ksig, getConfK kcf, getConfK kbw ] (Out1 K)
-
-reson :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-reson asig kcf kbw = 
-    mkElement "reson" [ getConfA asig, getConfK kcf, getConfK kbw ] (Out1 A)
+tone :: Opcode2 ARate KRate -> Element ARate
+tone opF = 
+    mkElement "tone" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, khp) -> 
+                [ getConfA asig, getConfK khp ]
 
 
-aresonk :: Conf KRate -> Conf KRate -> Conf KRate -> Element KRate
-aresonk ksig kcf kbw = 
-    mkElement "aresonk" [ getConfK ksig, getConfK kcf, getConfK kbw ] (Out1 K)
+atonek :: Opcode2 KRate KRate -> Element KRate
+atonek opF = 
+    mkElement "atonek" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, khp) -> 
+                [ getConfK ksig, getConfK khp ]
 
-areson :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-areson asig kcf kbw = 
-    mkElement "areson" [ getConfA asig, getConfK kcf, getConfK kbw ] (Out1 A)
+atone :: Opcode2 ARate KRate -> Element ARate
+atone opF = 
+    mkElement "atone" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, khp) ->
+                [ getConfA asig, getConfK khp ]
+
+resonk :: Opcode3 KRate KRate KRate -> Element KRate
+resonk opF = 
+    mkElement "resonk" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, kcf, kbw) -> 
+                [ getConfK ksig, getConfK kcf
+                , getConfK kbw  ]
+
+reson :: Opcode3 ARate KRate KRate -> Element ARate
+reson opF =
+    mkElement "reson" inspec  (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf, getConfK kbw ]
 
 
-tonex :: Conf ARate -> Conf KRate -> Element ARate
-tonex asig khp = 
-    mkElement "tonex" [ getConfA asig, getConfK khp ] (Out1 A)
+aresonk :: Opcode3 KRate KRate KRate -> Element KRate
+aresonk opF =
+    mkElement "aresonk" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \(ksig, kcf, kbw) ->
+                [ getConfK ksig, getConfK kcf
+                , getConfK kbw ]
 
-atonex :: Conf ARate -> Conf KRate -> Element ARate
-atonex asig khp = 
-    mkElement "atonex" [ getConfA asig, getConfK khp ] (Out1 A)
+areson :: Opcode3 ARate KRate KRate -> Element ARate
+areson opF =
+    mkElement "areson" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf
+                , getConfK kbw ]
 
 
-resonx :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-resonx asig kcf kbw = 
-    mkElement "resonx" [ getConfA asig, getConfK kcf, getConfK kbw ] (Out1 A)
+tonex :: Opcode2 ARate KRate -> Element ARate
+tonex opF =
+    mkElement "tonex" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, khp) -> 
+                [ getConfA asig, getConfK khp ]
 
-resonr :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-resonr asig kcf kbw = 
-    mkElement "resonr" [ getConfA asig, getConfK kcf, getConfK kbw ] (Out1 A)
+atonex :: Opcode2 ARate KRate -> Element ARate
+atonex opF =
+    mkElement "atonex" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, khp) ->
+                [ getConfA asig, getConfK khp ]
 
-resonz :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-resonz asig kcf kbw = 
-    mkElement "resonz" [ getConfA asig, getConfK kcf, getConfK kbw ]
-                       (Out1 A)
 
-resony :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-resony asig kcf kbw = 
-    mkElement "resony" [ getConfA asig, getConfK kcf, getConfK kbw ]
-                       (Out1 A)
+resonx :: Opcode3 ARate KRate KRate -> Element ARate
+resonx opF =
+    mkElement "resonx" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf
+                , getConfK kbw ]
 
-lowres :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-lowres asig kcutoff kreson = 
-    mkElement "lowres" [ getConfA asig, getConfK kcutoff, getConfK kreson ]
-                       (Out1 A)
+resonr :: Opcode3 ARate KRate KRate -> Element ARate
+resonr opF = 
+    mkElement "resonr" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf
+                , getConfK kbw ]
 
-lowresx :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-lowresx asig kcutoff kreson = 
-    mkElement "lowresx" [ getConfA asig, getConfK kcutoff, getConfK kreson ]
-                        (Out1 A)
+resonz :: Opcode3 ARate KRate KRate -> Element ARate
+resonz opF = 
+    mkElement "resonz" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf
+                , getConfK kbw ]
 
-vlowres :: Conf ARate -> Conf KRate -> Conf KRate -> Conf IRate -> Conf KRate 
-        -> Element ARate
-vlowres asig kfco kres iord ksep = 
-    mkElement "vlowres" [ getConfA asig, getConfK kfco, getConfK kres
-                        , getConfI iord, getConfK ksep ]
-                        (Out1 A)
+resony :: Opcode3 ARate KRate KRate -> Element ARate
+resony opF = 
+    mkElement "resony" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcf, kbw) ->
+                [ getConfA asig, getConfK kcf
+                , getConfK kbw ]
+
+lowres :: Opcode3 ARate KRate KRate -> Element ARate
+lowres opF = 
+    mkElement "lowres" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcutoff, kreson) ->
+                [ getConfA asig, getConfK kcutoff
+                , getConfK kreson ]
+
+lowresx :: Opcode3 ARate KRate KRate -> Element ARate
+lowresx opF = 
+    mkElement "lowresx" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kcutoff, kreson) ->
+                [ getConfA asig, getConfK kcutoff
+                , getConfK kreson ]
+
+vlowres :: Opcode5 ARate KRate KRate IRate KRate -> Element ARate
+vlowres opF = 
+    mkElement "vlowres" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kfco, kres, iord, ksep) ->
+                [ getConfA asig,  getConfK kfco
+                , getConfK kres,  getConfI iord
+                , getConfK ksep ]
 
 
 --------------------------------------------------------------------------------
 -- Specialized filters
 
-nlfilt :: Conf ARate -> Conf KRate -> Conf KRate 
-       -> Conf KRate -> Conf KRate -> Conf KRate
-       -> Element ARate
-nlfilt ain ka kb kd kL kC = 
-    mkElement "nlfilt" [ getConfA ain, getConfK ka, getConfK kb
-                       , getConfK kd,  getConfK kL, getConfK kC ]
-                       (Out1 A)
+nlfilt :: Opcode6 ARate KRate KRate KRate KRate KRate -> Element ARate
+nlfilt opF = 
+    mkElement "nlfilt" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(ain, ka, kb, kd, kL, kC) ->
+                [ getConfA ain,  getConfK ka
+                , getConfK kb,   getConfK kd
+                , getConfK kL,   getConfK kC ]
 
 
-pareq :: Conf ARate -> Conf KRate -> Conf IRate -> Conf IRate -> Conf IRate
-      -> Element ARate
-pareq asig kc iv iq imode = 
-    mkElement "pareq" [ getConfA asig, getConfK kc, getConfI iv
-                      , getConfI iq,   getConfI imode ]
-                      (Out1 A)
+pareq :: Opcode5 ARate KRate IRate IRate IRate -> Element ARate
+pareq opF =
+    mkElement "pareq" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kc, iv, iq, imode) ->
+                [ getConfA asig,   getConfK kc
+                , getConfI iv,     getConfI iq
+                , getConfI imode ]
 
 
 
-dcblock :: Conf ARate -> Element ARate
-dcblock asig = 
-    mkElement "dcblock" [ getConfA asig ] (Out1 A)
+dcblock :: Opcode1 ARate -> Element ARate
+dcblock opF = 
+    mkElement "dcblock" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \asig ->
+                [ getConfA asig ]
 
-dcblock_ :: Conf ARate -> Conf IRate -> Element ARate
-dcblock_ asig ig = 
-    mkElement "dcblock" [ getConfA asig, getConfI ig ] (Out1 A)
+dcblock_ :: Opcode2 ARate IRate -> Element ARate
+dcblock_ opF = 
+    mkElement "dcblock" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, ig) ->
+                [ getConfA asig, getConfI ig ]
 
 
 --------------------------------------------------------------------------------
 -- Envelope modifiers
 
 linen :: forall rate. (KA_Rate rate)
-      => Conf rate -> Conf IRate -> Conf IRate -> Conf IRate 
-      -> Element rate
-linen amp irise idur idec = 
-    mkElement "linen" [ getConfUniv amp, getConfI irise
-                      , getConfI idur, getConfI idec ]
-                      (Out1 $ dataRate (undefined::rate))
+     => Opcode4 rate IRate IRate IRate -> Element rate
+linen opF = 
+    mkElement "linen" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(amp, irise, idur, idec) ->
+                [ getConfUniv amp,  getConfI irise
+                , getConfI idur,    getConfI idec ]
 
 linenr :: forall rate. (KA_Rate rate)
-       => Conf rate -> Conf IRate -> Conf IRate -> Conf IRate 
-       -> Element rate
-linenr amp irise idec iatdec = 
-    mkElement "linenr" [ getConfUniv amp, getConfI irise
-                       , getConfI idec, getConfI iatdec ]
-                       (Out1 $ dataRate (undefined::rate))
+      => Opcode4 rate IRate IRate IRate -> Element rate
+linenr opF =
+    mkElement "linenr" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(amp, irise, idec, iatdec) ->
+                [ getConfUniv amp,   getConfI irise
+                , getConfI idec,    getConfI iatdec ]
 
 envlpx :: forall rate. (KA_Rate rate)
-       => Conf rate -> Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
-       -> Conf IRate -> Conf IRate
-       -> Element rate
-envlpx amp irise idur idec ifn iatss iatdec = 
-    mkElement "envlpx" [ getConfUniv amp, getConfI irise, getConfI idur
-                       , getConfI idec, getConfI ifn, getConfI iatss
-                       , getConfI iatdec ]
-                       (Out1 $ dataRate (undefined::rate))
+       => Opcode7 rate IRate IRate IRate IRate IRate IRate -> Element rate
+envlpx opF = 
+    mkElement "envlpx" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(amp, irise, idur, idec, ifn, iatss, iatdec) -> 
+                [ getConfUniv amp,   getConfI irise
+                , getConfI idur,     getConfI idec
+                , getConfI ifn,      getConfI iatss
+                , getConfI iatdec ]
 
 envlpxr :: forall rate. (KA_Rate rate)
-        => Conf rate -> Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
-        -> Conf IRate -> Conf IRate
-        -> Element rate
-envlpxr amp irise idur idec ifn iatss iatdec = 
-    mkElement "envlpxr" [ getConfUniv amp, getConfI irise, getConfI idur
-                        , getConfI idec, getConfI ifn, getConfI iatss
-                        , getConfI iatdec ]
-                        (Out1 $ dataRate (undefined::rate))
+        => Opcode7 rate IRate IRate IRate IRate IRate IRate  -> Element rate
+envlpxr opF = 
+    mkElement "envlpxr" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(amp, irise, idur, idec, ifn, iatss, iatdec) ->
+                [ getConfUniv amp,  getConfI irise
+                , getConfI idur,    getConfI idec
+                , getConfI ifn,     getConfI iatss
+                , getConfI iatdec ]
 
 
 
 --------------------------------------------------------------------------------
 -- Amplitude modifiers
 
-rms :: Conf ARate -> Element KRate
-rms asig = 
-    mkElement "rms" [ getConfA asig ] (Out1 K)
+rms :: Opcode1 ARate -> Element KRate
+rms opF = 
+    mkElement "rms" inspec (Out1 K)
+  where
+    inspec = applyOpcode opF $ \asig ->
+                [ getConfA asig ]
 
-gain :: Conf ARate -> Conf KRate -> Element ARate
-gain asig krms = 
-    mkElement "gain" [ getConfA asig, getConfK krms ] (Out1 A)
+gain :: Opcode2 ARate KRate -> Element ARate
+gain opF = 
+    mkElement "gain" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, krms) ->
+                [ getConfA asig, getConfK krms ] 
 
-balance :: Conf ARate -> Conf ARate -> Element ARate
-balance asig acomp = 
-    mkElement "balance" [ getConfA asig, getConfA acomp ] (Out1 A)
+balance :: Opcode2 ARate ARate -> Element ARate
+balance opF = 
+    mkElement "balance" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, acomp) ->
+                [ getConfA asig, getConfA acomp ]
 
 
-dam :: Conf ARate -> Conf KRate -> Conf IRate 
-    -> Conf IRate -> Conf IRate -> Conf IRate
-    -> Element ARate
-dam asig kthreshold icomp1 icomp2 irtime iftime = 
-    mkElement "dam" [ getConfA asig, getConfK kthreshold
-                    , getConfI icomp1, getConfI icomp2
-                    , getConfI irtime, getConfI iftime ]
-                    (Out1 A)
+dam :: Opcode6 ARate KRate IRate IRate IRate IRate -> Element ARate
+dam opF = 
+    mkElement "dam" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \(asig, kthreshold, icomp1, icomp2, irtime, iftime) ->
+                   [ getConfA asig,    getConfK kthreshold
+                   , getConfI icomp1,  getConfI icomp2
+                   , getConfI irtime,  getConfI iftime ]
 
 --------------------------------------------------------------------------------
 -- Signal limiters
 
 wrap :: forall rate. (Rate rate)
-     => Conf rate -> Conf rate -> Conf rate -> Element rate
-wrap sig low high =
-    mkElement "wrap" [ getConfUniv sig, getConfUniv low, getConfUniv high ]
-                     (Out1 $ dataRate (undefined::rate))
+     => Opcode3 rate rate rate -> Element rate
+wrap opF =
+    mkElement "wrap" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(sig, low, high) ->
+                [ getConfUniv sig, getConfUniv low
+                , getConfUniv high ]
 
 
 mirror :: forall rate. (Rate rate)
-       => Conf rate -> Conf rate -> Conf rate -> Element rate
-mirror sig low high =
-    mkElement "mirror" [ getConfUniv sig, getConfUniv low, getConfUniv high ]
-                       (Out1 $ dataRate (undefined::rate))
+       => Opcode3 rate rate rate -> Element rate
+mirror opF =
+    mkElement "mirror" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(sig, low, high) ->
+                [ getConfUniv sig, getConfUniv low
+                , getConfUniv high ]
 
 limit :: forall rate. (Rate rate)
-      => Conf rate -> Conf rate -> Conf rate -> Element rate
-limit sig low high =
-    mkElement "limit" [ getConfUniv sig, getConfUniv low, getConfUniv high ]
-                      (Out1 $ dataRate (undefined::rate))
+      => Opcode3 rate rate rate -> Element rate
+limit opF =
+    mkElement "limit" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(sig, low, high) ->
+                [ getConfUniv sig, getConfUniv low
+                , getConfUniv high ]
 
 --------------------------------------------------------------------------------
 -- Delay
 
-delayr :: Conf IRate -> Element ARate
-delayr idlt = 
-    mkElement "delayr" [ getConfI idlt ] (Out1 A)
+delayr :: Opcode1 IRate -> Element ARate
+delayr opF = 
+    mkElement "delayr" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \idlt ->
+                [ getConfI idlt ]
 
 
 -- No answer ...
-delayw :: Conf ARate -> Element rate
-delayw asigar = 
-    mkElement "delayw" [ getConfA asigar ] Out0
+delayw :: Opcode1 ARate -> Element rate
+delayw opF = 
+    mkElement "delayw" inspec Out0
+  where
+    inspec = applyOpcode opF $ \asigar ->
+                 [ getConfA asigar ]
 
 
+delay :: Opcode2 ARate IRate -> Element ARate
+delay opF = 
+    mkElement "delay" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, idlt) ->
+                [ getConfA asig, getConfI idlt ]
 
-delay :: Conf ARate -> Conf IRate -> Element ARate
-delay asig idlt = 
-    mkElement "delay" [ getConfA asig, getConfI idlt ] (Out1 A)
+delay1 :: Opcode1 ARate -> Element ARate
+delay1 opF = 
+    mkElement "delay1" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \asig ->
+                [ getConfA asig ]
 
-delay1 :: Conf ARate -> Element ARate
-delay1 asig = 
-    mkElement "delay1" [ getConfA asig ] (Out1 A)
 
-
-deltap :: Conf KRate -> Element ARate
-deltap kdlt = 
-    mkElement "deltap" [ getConfK kdlt ] (Out1 A)
+deltap :: Opcode1 KRate -> Element ARate
+deltap opF = 
+    mkElement "deltap" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \kdlt ->
+                [ getConfK kdlt ]
 
 -- | xdlt is seconds...
 --
-deltapi :: Conf a -> Element ARate
-deltapi xdlt = 
-    mkElement "deltapi" [ getConfUniv xdlt ] (Out1 A)
+deltapi :: Opcode1 rate -> Element ARate
+deltapi opF = 
+    mkElement "deltapi" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \xdlt ->
+                [ getConfUniv xdlt ]
 
 -- | xnumsamps is presumably an integer...
 --
-deltapn :: Conf a -> Element ARate
-deltapn xnumsamps = 
-    mkElement "deltapn" [ getConfUniv xnumsamps ] (Out1 A)
+deltapn :: Opcode1 rate -> Element ARate
+deltapn opF = 
+    mkElement "deltapn" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \xnumsamps ->
+                [ getConfUniv xnumsamps ]
 
 
 -- | xdlt is seconds...
 --
-deltap3 :: Conf a -> Element ARate
-deltap3 xdlt = 
-    mkElement "deltap3" [ getConfUniv xdlt ] (Out1 A)
-
-
-multitap :: Conf ARate -> [(Conf IRate, Conf IRate)] -> Element ARate
-multitap asig xs = 
-    mkElement "multitap" (getConfA asig : concatMap fn xs) (Out1 A)
+deltap3 :: Opcode1 rate -> Element ARate
+deltap3 opF = 
+    mkElement "deltap3" inspec (Out1 A)
   where
-    fn (a,b) = [ getConfI a, getConfI b ]
+    inspec = applyOpcode opF $ \xdlt ->
+                [ getConfUniv xdlt ]
+
+                
+-- needs spcial typesig...
 
 
-vdelay :: Conf ARate -> Conf ARate -> Conf IRate -> Element ARate
-vdelay asig adel imaxdel = 
-    mkElement "vdelay" [ getConfA asig, getConfA adel, getConfI imaxdel ]
-                       (Out1 A)
+type MultitapConfig = ( Conf ARate, [(Conf IRate, Conf IRate)] )
+                      
+type MultitapOpcode = ElemRef -> PortDict -> Either FailMsg MultitapConfig
 
-vdelay3 :: Conf ARate -> Conf ARate -> Conf IRate -> Element ARate
-vdelay3 asig adel imaxdel = 
-    mkElement "vdelay3" [ getConfA asig, getConfA adel, getConfI imaxdel ]
-                        (Out1 A)
+
+multitap :: MultitapOpcode -> Element ARate
+multitap opF = 
+    mkElement "multitap" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, xs) ->
+                let fn (a,b) = [ getConfI a, getConfI b ]
+                in (getConfA asig : concatMap fn xs)
+
+
+vdelay :: Opcode3 ARate ARate IRate -> Element ARate
+vdelay opF = 
+    mkElement "vdelay" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, adel, imaxdel) ->
+                [ getConfA asig,    getConfA adel
+                , getConfI imaxdel ]
+
+vdelay3 :: Opcode3 ARate ARate IRate -> Element ARate
+vdelay3 opF = 
+    mkElement "vdelay3" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, adel, imaxdel) ->
+                [ getConfA asig,    getConfA adel
+                , getConfI imaxdel ]
 
 --------------------------------------------------------------------------------
 -- Reverberation
 
-reverb :: Conf ARate -> Conf KRate -> Element ARate
-reverb asig kvrt = 
-    mkElement "reverb" [ getConfA asig, getConfK kvrt ] (Out1 A)
+reverb :: Opcode2 ARate KRate -> Element ARate
+reverb opF = 
+    mkElement "reverb" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kvrt) ->
+                [ getConfA asig, getConfK kvrt ]
 
-reverb2 :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-reverb2 asig ktime khdif = 
-    mkElement "reverb2" [ getConfA asig, getConfK ktime, getConfK khdif ]
-                        (Out1 A)
+reverb2 :: Opcode3 ARate KRate KRate -> Element ARate
+reverb2 opF = 
+    mkElement "reverb2" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, ktime, khdif) ->
+                [ getConfA asig, getConfK ktime
+                , getConfK khdif ]
 
-nreverb :: Conf ARate -> Conf KRate -> Conf KRate -> Element ARate
-nreverb asig ktime khdif = 
-    mkElement "nreverb" [ getConfA asig, getConfK ktime, getConfK khdif ]
-                        (Out1 A)
+nreverb :: Opcode3 ARate KRate KRate -> Element ARate
+nreverb opF = 
+    mkElement "nreverb" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, ktime, khdif) ->
+                [ getConfA asig, getConfK ktime
+                , getConfK khdif ]
 
-comb :: Conf ARate -> Conf KRate -> Conf IRate -> Element ARate
-comb asig kvrt ilpt = 
-    mkElement "comb" [ getConfA asig, getConfK kvrt, getConfI ilpt ]
-                     (Out1 A)
+comb :: Opcode3 ARate KRate IRate -> Element ARate
+comb opF = 
+    mkElement "comb" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kvrt, ilpt) ->
+                [ getConfA asig, getConfK kvrt
+                , getConfI ilpt ]
 
-alpass :: Conf ARate -> Conf KRate -> Conf IRate -> Element ARate
-alpass asig kvrt ilpt = 
-    mkElement "alpass" [ getConfA asig, getConfK kvrt, getConfI ilpt ]
-                       (Out1 A)
-
-nestedap :: Conf ARate -> Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate
+alpass :: Opcode3 ARate KRate IRate -> Element ARate
+alpass opF = 
+    mkElement "alpass" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kvrt, ilpt) ->
+                [ getConfA asig, getConfK kvrt
+                , getConfI ilpt ]
+               
+nestedap :: Opcode5 ARate IRate IRate IRate IRate
          -> Element ARate
-nestedap asig imode imaxdel idel1 igain1 = 
-    mkElement "nestedap" [ getConfA asig, getConfI imode, getConfI imaxdel
-                         , getConfI idel1, getConfI igain1 ]
-                         (Out1 A)
+nestedap opF = 
+    mkElement "nestedap" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ \(asig, imode, imaxdel, idel1, igain1) ->
+                [ getConfA asig,    getConfI imode
+                , getConfI imaxdel, getConfI idel1
+                , getConfI igain1 ]
 
 --------------------------------------------------------------------------------
 -- Panning and spatialization
@@ -420,32 +575,39 @@ nestedap asig imode imaxdel idel1 igain1 =
 
 -- | 4 channel pan.
 --
-pan :: Conf ARate -> Conf KRate -> Conf KRate -> Conf IRate -> Element ARate
-pan asig kx ky ifn = 
-    mkElement "pan" [ getConfA asig, getConfK kx, getConfK ky, getConfI ifn ]
-                    (OutN A 4)
+pan :: Opcode4 ARate KRate KRate IRate -> Element ARate
+pan opF = 
+    mkElement "pan" inspec (OutN A 4)
+  where
+    inspec = applyOpcode opF $ \(asig, kx, ky, ifn) ->
+                [ getConfA asig,    getConfK kx
+                , getConfK ky,      getConfI ifn ]
 
-pan2 :: Conf ARate -> Conf KRate -> Conf KRate -> Conf IRate -> Element ARate
-pan2 asig kx ky ifn = 
-    mkElement "pan2" [ getConfA asig, getConfK kx, getConfK ky, getConfI ifn ]
-                     (Out2 A)
+pan2 :: Opcode4 ARate KRate KRate IRate -> Element ARate
+pan2 opF = 
+    mkElement "pan2" inspec (Out2 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kx, ky, ifn) ->
+                [ getConfA asig,    getConfK kx
+                , getConfK ky,      getConfI ifn ]
 
 -- | 4 channel version of locsig.
 --
-locsig :: Conf ARate -> Conf KRate -> Conf KRate -> Conf KRate 
-       -> Element ARate
-locsig asig kdegree kdistance kreverbsend = 
-    mkElement "locsig" [ getConfA asig, getConfK kdegree
-                       , getConfK kdistance, getConfK kreverbsend ]
-                       (OutN A 4)
+locsig :: Opcode4 ARate KRate KRate KRate -> Element ARate
+locsig opF = 
+    mkElement "locsig" inspec (OutN A 4)
+  where
+    inspec = applyOpcode opF $ \(asig, kdegree, kdistance, kreverbsend) ->
+                [ getConfA asig,      getConfK kdegree
+                , getConfK kdistance, getConfK kreverbsend ]
 
 
 -- | This is the 2 channel version of 'locsig'
 --
-locsig2 :: Conf ARate -> Conf KRate -> Conf KRate -> Conf KRate 
-        -> Element ARate
-locsig2 asig kdegree kdistance kreverbsend = 
-    mkElement "locsig" [ getConfA asig, getConfK kdegree
-                       , getConfK kdistance, getConfK kreverbsend ]
-                       (Out2 A)
-
+locsig2 :: Opcode4 ARate KRate KRate KRate -> Element ARate
+locsig2 opF =
+    mkElement "locsig" inspec (Out2 A)
+  where
+    inspec = applyOpcode opF $ \(asig, kdegree, kdistance, kreverbsend) ->
+                [ getConfA asig,      getConfK kdegree
+                , getConfK kdistance, getConfK kreverbsend ]

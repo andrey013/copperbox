@@ -35,7 +35,6 @@ module ZSnd.Core.Opcodes.Base
   -- * Math functions
   , int
   , frac
-  , icast
   , abs
   , exp
   , log
@@ -66,6 +65,7 @@ module ZSnd.Core.Opcodes.Base
   -- * Opcode equivalents of functions
   , sum
   , product
+
   , pow
   , taninv2
   , mac
@@ -81,13 +81,13 @@ module ZSnd.Core.Opcodes.Base
   , cps2pch
   , cpsxpch
 
-
   ) where
 
 
-import ZSnd.Core.CsoundInst
 import ZSnd.Core.Inst.Click
-import ZSnd.Core.Utils.FormatExpr
+import ZSnd.Core.Inst.HighLevel
+import ZSnd.Core.Inst.Index
+import ZSnd.Core.Inst.Prim
 
 
 import Prelude hiding ( init, negate, (&&), (||), (^)
@@ -100,25 +100,34 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
 
 
 binop :: Rator -> Conf rate -> Conf rate -> Conf rate
-binop op a b = mkConf $ CBinOp op (getConfI $ cast a) (getConfI $ cast b)
+binop op a b = mkConf $ BinOp op (getConfI $ cast a) (getConfI $ cast b)
 
 -- unop :: Rator -> Conf rate -> Conf rate
 -- unop op a = mkConf $ CUnOp op (getConfI $ cast a)
 
 
-out1 :: Conf ARate -> Element rate
-out1 ain = mkElement "out" [ getConfA ain ] Out0
+out1 :: Opcode1 ARate -> Element rate
+out1 opF = 
+    mkElement "out" inspec Out0 
+  where
+    inspec = applyOpcode opF $ \ ain -> 
+               [ getConfA ain ]
 
-out2 :: Conf ARate -> Conf ARate -> Element rate
-out2 ain bin = mkElement "outs" [ getConfA ain, getConfA bin ] Out0
+out2 :: Opcode2 ARate ARate -> Element rate
+out2 opF = 
+    mkElement "outs" inspec Out0
+  where
+    inspec = applyOpcode opF $ \(ain1, ain2) -> 
+               [ getConfA ain1, getConfA ain2 ]
 
 
 init :: forall rate. (Rate rate) 
-     => Conf IRate -> Element rate
-init ia = 
-    mkElement "init" [ getConfI ia ] 
-                     (Out1 $ dataRate (undefined :: rate))
-    
+     => Opcode1 IRate -> Element rate
+init opF = 
+    mkElement "init" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \ia -> 
+               [ getConfI ia ] 
 
 
 
@@ -127,10 +136,13 @@ init ia =
 -- tival = Expr $ ZeroOp "tival"
 
 divz :: forall rate. (Rate rate) 
-     => Conf IRate -> Conf IRate -> Conf IRate -> Element rate
-divz ia ib isubst = 
-    mkElement "divz" [ getConfI ia, getConfI ib, getConfI isubst ]
-                     (Out1 $ dataRate (undefined :: rate))
+     => Opcode3 IRate IRate IRate -> Element rate
+divz opF =
+    mkElement "divz" inspec (Out1 $ dataRate (undefined :: rate))
+  where
+    inspec = applyOpcode opF $ \ (ia, ib, isubst) -> 
+               [ getConfI ia, getConfI ib, getConfI isubst ]
+                     
     
 
 
@@ -193,11 +205,6 @@ powoftwo  = funcall "powoftwo"
 logbtwo   :: IK_Rate rate => Conf rate -> Conf rate
 logbtwo   = funcall "logbtwo"
 
-
--- | This is @i@ in Csound.
---
-icast     :: Conf KRate -> Conf IRate
-icast     = cast
 
 
 abs       :: Conf rate -> Conf rate
@@ -280,38 +287,56 @@ birnd     = funcall "birnd"
 --------------------------------------------------------------------------------
 -- Opcode equivalents of functions
 
-sum :: [Conf ARate] -> Element ARate
-sum xs = 
-    mkElement "sum" (map getConfA xs) (Out1 A)
+
+-- Not sure how to handle these...
+
+sum :: OpcodeList1 ARate -> Element ARate
+sum opF = 
+    mkElement "sum" inspec (Out1 A)
+  where
+    inspec = mapOpcode opF $ \x -> 
+               (getConfA x) 
 
 
-product :: [Conf ARate] -> Element ARate
-product xs = 
-    mkElement "product" (map getConfA xs) (Out1 A)
+product :: OpcodeList1 ARate -> Element ARate
+product opF = 
+    mkElement "product" inspec (Out1 A)
+  where
+    inspec = mapOpcode opF $ \x -> 
+               (getConfA x) 
+
+
 
 pow :: forall rate. (Rate rate) 
-    => Conf rate -> Conf rate -> Element rate
-pow a b = 
-    mkElement "pow" [ getConfUniv a, getConfUniv b ]
-                    (Out1 $ dataRate (undefined::rate))
-
+    => Opcode2 rate rate -> Element rate
+pow opF = 
+    mkElement "pow" inspec (Out1 $ dataRate (undefined::rate))
+  where
+    inspec = applyOpcode opF $ \(a,b) -> 
+               [ getConfUniv a, getConfUniv b ]
 
 taninv2 :: forall rate. (Rate rate) 
-        => Conf rate -> Conf rate -> Element rate
-taninv2 a b = 
-    mkElement "taninv2" [ getConfUniv a, getConfUniv b ]
-                        (Out1 $ dataRate (undefined::rate))
-
-
-mac :: [(Conf ARate, Conf KRate)] -> Element ARate
-mac xs = 
-    mkElement "mac" (concatMap fn xs) (Out1 A)
+        => Opcode2 rate rate -> Element rate
+taninv2 opF = 
+    mkElement "taninv2" inspec (Out1 $ dataRate (undefined::rate))
   where
-    fn (a,b) = [ getConfA a, getConfK b ]
+    inspec = applyOpcode opF $ \(a,b) -> 
+               [ getConfUniv a, getConfUniv b ]
 
-maca :: [Conf ARate] -> Element ARate
-maca xs = 
-    mkElement "maca" (map getConfA xs) (Out1 A)
+
+mac :: OpcodeList2 ARate KRate -> Element ARate
+mac opF = 
+    mkElement "mac" inspec (Out1 A)
+  where
+    inspec = mapOpcode2 opF $ \(a,b) -> 
+              [getConfA a, getConfK b]
+
+maca :: OpcodeList1 ARate -> Element ARate
+maca opF = 
+    mkElement "maca" inspec (Out1 A)
+  where
+    inspec = mapOpcode opF $ \x -> 
+               (getConfA x) 
 
 --------------------------------------------------------------------------------
 -- Pitch conversion
@@ -355,13 +380,20 @@ cpsoct    = funcall "cpsoct"
 -- Design note - here Csound uses @x@ for the version with more 
 -- args. Is this a convention used elsewhere?
 
-cps2pch :: Conf IRate -> Conf IRate -> Element IRate
-cps2pch ipch ieq = 
-    mkElement "cps2pch" [ getConfI ipch, getConfI ieq ] (Out1 I)
+cps2pch :: Opcode2 IRate IRate -> Element IRate
+cps2pch opF = 
+    mkElement "cps2pch" inspec (Out1 I)
+  where
+    inspec = applyOpcode opF $ \(ipch, ieq) -> 
+               [ getConfI ipch, getConfI ieq ] 
 
-cpsxpch :: Conf IRate -> Conf IRate -> Conf IRate -> Conf IRate 
+
+cpsxpch :: Opcode4 IRate IRate IRate IRate 
         -> Element IRate
-cpsxpch ipch ieq irep ibase = 
-    mkElement "cps2pch" [ getConfI ipch, getConfI ieq
-                        , getConfI irep, getConfI ibase ]
-                        (Out1 I)
+cpsxpch opF = 
+    mkElement "cps2pch" inspec (Out1 I)
+  where
+    inspec = applyOpcode opF $ \(ipch, ieq, irep, ibase) -> 
+               [ getConfI ipch,     getConfI ieq
+               , getConfI irep,     getConfI ibase ]
+                        
