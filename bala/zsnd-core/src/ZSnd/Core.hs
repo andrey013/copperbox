@@ -22,16 +22,15 @@
 module ZSnd.Core
   (
     module ZSnd.Core.GenRoutines
-  , module ZSnd.Core.Inst
+  , module ZSnd.Core.CsoundInst
   , module ZSnd.Core.CsoundScore
   , module ZSnd.Core.OutputCsound
-
 
   ) where
 
 
 import ZSnd.Core.GenRoutines
-import ZSnd.Core.Inst
+import ZSnd.Core.CsoundInst
 import ZSnd.Core.CsoundScore
 import ZSnd.Core.OutputCsound
 

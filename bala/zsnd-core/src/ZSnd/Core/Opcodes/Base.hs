@@ -84,10 +84,10 @@ module ZSnd.Core.Opcodes.Base
   ) where
 
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.HighLevel
-import ZSnd.Core.Inst.Index
-import ZSnd.Core.Inst.Prim
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Index
+import ZSnd.Core.CsoundInst.Prim
+import ZSnd.Core.CsoundInst.Typed
 
 
 import Prelude hiding ( init, negate, (&&), (||), (^)

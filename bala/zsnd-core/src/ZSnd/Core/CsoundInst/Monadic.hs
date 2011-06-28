@@ -1,9 +1,8 @@
-{-# LANGUAGE EmptyDataDecls             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.Inst.MonadicDefn
+-- Module      :  ZSnd.Core.CsoundInst.Monadic
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -16,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Core.Inst.MonadicDefn
+module ZSnd.Core.CsoundInst.Monadic
   (
 
     Orch(..)
@@ -43,9 +42,9 @@ module ZSnd.Core.Inst.MonadicDefn
   
   ) where
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.HighLevel
-import ZSnd.Core.Inst.Prim
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Prim
+import ZSnd.Core.CsoundInst.Typed
 import ZSnd.Core.Utils.FormatCombinators
 import ZSnd.Core.Utils.HList
 

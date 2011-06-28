@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- CsoundScore
+-- Build Csound Scores.
 --
 --------------------------------------------------------------------------------
 

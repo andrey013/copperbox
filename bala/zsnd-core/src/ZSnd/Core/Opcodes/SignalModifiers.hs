@@ -95,9 +95,9 @@ module ZSnd.Core.Opcodes.SignalModifiers
   ) where
 
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.HighLevel
-import ZSnd.Core.Inst.Index
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Index
+import ZSnd.Core.CsoundInst.Typed
 
 
 --------------------------------------------------------------------------------

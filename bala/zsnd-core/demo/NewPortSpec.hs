@@ -6,10 +6,10 @@
 
 module NewPortSpec where
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.HighLevel
-import ZSnd.Core.Inst.Index
-import ZSnd.Core.Inst.MonadicDefn hiding ( out )
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Index
+import ZSnd.Core.CsoundInst.Monadic hiding ( out )
+import ZSnd.Core.CsoundInst.Typed
 
 import ZSnd.Core.Utils.FormatCombinators hiding ( line )
 

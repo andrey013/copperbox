@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.Inst.Index
+-- Module      :  ZSnd.Core.CsoundInst.Index
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Core.Inst.Index
+module ZSnd.Core.CsoundInst.Index
   (
     Config1
   , Opcode1
@@ -88,9 +88,9 @@ module ZSnd.Core.Inst.Index
   
   ) where
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.HighLevel
-import ZSnd.Core.Inst.Prim
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Prim
+import ZSnd.Core.CsoundInst.Typed
 
 import Control.Applicative
 import qualified Data.Map       as M

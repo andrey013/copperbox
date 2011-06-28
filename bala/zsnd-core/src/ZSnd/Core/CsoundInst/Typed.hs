@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.Inst.HighLevel
+-- Module      :  ZSnd.Core.CsoundInst.Typed
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -16,7 +16,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Core.Inst.HighLevel
+module ZSnd.Core.CsoundInst.Typed
   (
 
   -- * Rate placeholder types and classes
@@ -52,8 +52,8 @@ module ZSnd.Core.Inst.HighLevel
 
   ) where
 
-import ZSnd.Core.Inst.Click
-import ZSnd.Core.Inst.Prim
+import ZSnd.Core.CsoundInst.Click
+import ZSnd.Core.CsoundInst.Prim
 
 
 data IRate 

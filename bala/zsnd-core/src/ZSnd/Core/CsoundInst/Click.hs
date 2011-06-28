@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.Inst.Click
+-- Module      :  ZSnd.Core.CsoundInst.Click
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Core.Inst.Click
+module ZSnd.Core.CsoundInst.Click
   (
 
 
@@ -34,7 +34,7 @@ module ZSnd.Core.Inst.Click
 
   ) where
 
-import ZSnd.Core.Inst.Prim
+import ZSnd.Core.CsoundInst.Prim
 import ZSnd.Core.Utils.FormatCombinators
 
 

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.Inst.Prim
+-- Module      :  ZSnd.Core.CsoundInst.Prim
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,7 +15,7 @@
 --
 --------------------------------------------------------------------------------
 
-module ZSnd.Core.Inst.Prim
+module ZSnd.Core.CsoundInst.Prim
   (
 
   -- * Data types
