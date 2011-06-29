@@ -152,7 +152,7 @@ import ZSnd.Core.CsoundInst.Typed
 
 
 line :: forall rate . (KA_Rate rate)
-     => Opcode3 IRate IRate IRate -> Element rate
+     => Opcode3 IInit IInit IInit -> Element rate
 line opF = 
     mkOpcode "line" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -163,7 +163,7 @@ line opF =
 
 
 expon :: forall rate. (KA_Rate rate)
-      => Opcode3 IRate IRate IRate -> Element rate
+      => Opcode3 IInit IInit IInit -> Element rate
 expon opF = 
     mkOpcode "expon" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -173,8 +173,8 @@ expon opF =
 
 -- Complex input signatures are a pain...
 
-type LinsegConfig = ( Conf IRate, Conf IRate
-                    , Conf IRate, [(Conf IRate, Conf IRate)] )
+type LinsegConfig = ( Conf IInit, Conf IInit
+                    , Conf IInit, [(Conf IInit, Conf IInit)] )
                       
 type LinsegOpcode = ElemRef -> PortDict -> Either FailMsg LinsegConfig
 
@@ -189,9 +189,9 @@ linseg opF =
                 in (getConfI ia : getConfI idur : getConfI ib : rest)
     
 
-type LinsegrConfig = ( Conf IRate, Conf IRate
-                     , Conf IRate, [(Conf IRate, Conf IRate)]
-                     , Conf IRate, Conf IRate )
+type LinsegrConfig = ( Conf IInit, Conf IInit
+                     , Conf IInit, [(Conf IInit, Conf IInit)]
+                     , Conf IInit, Conf IInit )
                       
 type LinsegrOpcode = ElemRef -> PortDict -> Either FailMsg LinsegrConfig
 
@@ -207,8 +207,8 @@ linsegr opF =
                 in (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
 
 
-type ExpsegConfig = ( Conf IRate, Conf IRate
-                    , Conf IRate, [(Conf IRate, Conf IRate)])
+type ExpsegConfig = ( Conf IInit, Conf IInit
+                    , Conf IInit, [(Conf IInit, Conf IInit)])
                       
 type ExpsegOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegConfig
 
@@ -223,9 +223,9 @@ expseg opF =
                 let rest = concatMap (\(a,b) -> [getConfI a, getConfI b]) xs
                 in (getConfI ia : getConfI idur : getConfI ib : rest)
 
-type ExpsegrConfig = ( Conf IRate, Conf IRate
-                     , Conf IRate, [(Conf IRate, Conf IRate)]
-                     , Conf IRate, Conf IRate )
+type ExpsegrConfig = ( Conf IInit, Conf IInit
+                     , Conf IInit, [(Conf IInit, Conf IInit)]
+                     , Conf IInit, Conf IInit )
                       
 type ExpsegrOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegrConfig
 
@@ -240,8 +240,8 @@ expsegr opF =
                 in (getConfI ia : getConfI idur : getConfI ib : rest ++ end)
 
 
-type ExpsegaConfig = ( Conf IRate, Conf IRate
-                     , Conf IRate, [(Conf IRate, Conf IRate)])
+type ExpsegaConfig = ( Conf IInit, Conf IInit
+                     , Conf IInit, [(Conf IInit, Conf IInit)])
                       
 type ExpsegaOpcode = ElemRef -> PortDict -> Either FailMsg ExpsegaConfig
 
@@ -255,7 +255,7 @@ expsega opF =
                 in (getConfI ia : getConfI idur : getConfI ib : rest)
 
 adsr :: forall rate. (KA_Rate rate)
-     => Opcode4 IRate IRate IRate IRate -> Element rate
+     => Opcode4 IInit IInit IInit IInit -> Element rate
 adsr opF =
     mkOpcode "adsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -264,7 +264,7 @@ adsr opF =
                 , getConfI isl,  getConfI ir ]
 
 adsr_ :: forall rate. (KA_Rate rate)
-      => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+      => Opcode5 IInit IInit IInit IInit IInit -> Element rate
 adsr_ opF =
     mkOpcode "adsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -275,7 +275,7 @@ adsr_ opF =
 
 
 madsr :: forall rate. (KA_Rate rate)
-      => Opcode4 IRate IRate IRate IRate -> Element rate
+      => Opcode4 IInit IInit IInit IInit -> Element rate
 madsr opF = 
     mkOpcode "madsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -284,7 +284,7 @@ madsr opF =
                 , getConfI isl,   getConfI ir ]
 
 madsr_ :: forall rate. (KA_Rate rate)
-       => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+       => Opcode5 IInit IInit IInit IInit IInit -> Element rate
 madsr_ opF =
     mkOpcode "madsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -294,7 +294,7 @@ madsr_ opF =
                 , getConfI idel ]
 
 xadsr :: forall rate. (KA_Rate rate)
-      => Opcode4 IRate IRate IRate IRate -> Element rate
+      => Opcode4 IInit IInit IInit IInit -> Element rate
 xadsr opF =
     mkOpcode "xadsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -304,7 +304,7 @@ xadsr opF =
 
 
 xadsr_ :: forall rate. (KA_Rate rate)
-       => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+       => Opcode5 IInit IInit IInit IInit IInit -> Element rate
 xadsr_ opF =
     mkOpcode "xadsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -314,7 +314,7 @@ xadsr_ opF =
                 , getConfI idel ]
 
 mxadsr :: forall rate. (KA_Rate rate)
-       => Opcode4 IRate IRate IRate IRate -> Element rate
+       => Opcode4 IInit IInit IInit IInit -> Element rate
 mxadsr opF =
     mkOpcode "mxadsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -323,7 +323,7 @@ mxadsr opF =
                 , getConfI isl,  getConfI ir ]
 
 mxadsr_ :: forall rate. (KA_Rate rate)
-        => Opcode5 IRate IRate IRate IRate IRate -> Element rate
+        => Opcode5 IInit IInit IInit IInit IInit -> Element rate
 mxadsr_ opF =
     mkOpcode "mxadsr" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -337,7 +337,7 @@ mxadsr_ opF =
 -- Table access
 
 table :: forall rate1 rate. (Rate rate)
-      => Opcode2 rate1 IRate -> Element rate
+      => Opcode2 rate1 IInit -> Element rate
 table opF =
     mkOpcode "table" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -345,7 +345,7 @@ table opF =
                 [ getConfUniv ndx, getConfI ifn ]
 
 table_ :: forall rate1 rate. (Rate rate)
-       => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+       => Opcode5 rate1 IInit IInit IInit IInit -> Element rate
 table_ opF =
     mkOpcode "table" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -355,7 +355,7 @@ table_ opF =
                 , getConfI ixwrap ]
 
 tablei :: forall rate1 rate. (Rate rate)
-       => Opcode2 rate1 IRate -> Element rate
+       => Opcode2 rate1 IInit -> Element rate
 tablei opF =
     mkOpcode "tablei" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -363,7 +363,7 @@ tablei opF =
                 [ getConfUniv ndx, getConfI ifn ]
 
 tablei_ :: forall rate1 rate. (Rate rate)
-        => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+        => Opcode5 rate1 IInit IInit IInit IInit -> Element rate
 tablei_ opF =
     mkOpcode "tablei" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -375,7 +375,7 @@ tablei_ opF =
 
 
 table3 :: forall rate1 rate. (Rate rate)
-       => Opcode2 rate1 IRate -> Element rate
+       => Opcode2 rate1 IInit -> Element rate
 table3 opF =
     mkOpcode "table" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -384,7 +384,7 @@ table3 opF =
 
 
 table3_ :: forall rate1 rate. (Rate rate)
-        => Opcode5 rate1 IRate IRate IRate IRate -> Element rate
+        => Opcode5 rate1 IInit IInit IInit IInit -> Element rate
 table3_ opF =
     mkOpcode "table3" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -394,7 +394,7 @@ table3_ opF =
                 , getConfI ixwrap ]
 
 
-oscil1 :: Opcode4 IRate KRate IRate IRate -> Element KRate
+oscil1 :: Opcode4 IInit KRate IInit IInit -> Element KRate
 oscil1 opF =
     mkOpcode "oscil1" inspec (Out1 K)
   where
@@ -402,7 +402,7 @@ oscil1 opF =
                [ getConfI idel,   getConfK kamp
                , getConfI idur,   getConfI ifn ]
 
-oscil1i :: Opcode4 IRate KRate IRate IRate -> Element KRate
+oscil1i :: Opcode4 IInit KRate IInit IInit -> Element KRate
 oscil1i opF =
     mkOpcode "oscil1i" inspec (Out1 K)
   where
@@ -410,7 +410,7 @@ oscil1i opF =
                 [ getConfI idel,  getConfK kamp
                 , getConfI idur,  getConfI ifn ]
 
-osciln :: Opcode4 KRate IRate IRate IRate -> Element KRate
+osciln :: Opcode4 KRate IInit IInit IInit -> Element KRate
 osciln opF =
     mkOpcode "osciln" inspec (Out1 K)
   where
@@ -434,7 +434,7 @@ phasor opF =
 
 
 phasor_ :: forall rate1 rate. (KA_Rate rate)
-        => Opcode2 rate1 IRate -> Element rate
+        => Opcode2 rate1 IInit -> Element rate
 phasor_ opF =
     mkOpcode "phasor" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -443,7 +443,7 @@ phasor_ opF =
 
 
 phasorbnk :: forall rate1 rate. (KA_Rate rate)
-          => Opcode3 rate1 KRate IRate -> Element rate
+          => Opcode3 rate1 KRate IInit -> Element rate
 phasorbnk opF =
     mkOpcode "phasorbnk" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -453,7 +453,7 @@ phasorbnk opF =
 
 
 phasorbnk_  :: forall rate1 rate. (KA_Rate rate)
-            => Opcode4 rate1 KRate IRate IRate -> Element rate
+            => Opcode4 rate1 KRate IInit IInit -> Element rate
 phasorbnk_ opF = 
     mkOpcode "phasorbnk" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -468,7 +468,7 @@ phasorbnk_ opF =
 -- | Note for A rate, cps can seemingly be any type.
 -- 
 oscil :: forall r1 r2 rate. (KA_Rate rate)
-      => Opcode3 r1 r2 IRate -> Element rate
+      => Opcode3 r1 r2 IInit -> Element rate
 oscil opF = 
     mkOpcode "oscil" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -478,7 +478,7 @@ oscil opF =
 
 
 oscil_ :: forall r1 r2 rate. (KA_Rate rate)
-       => Opcode4 r1 r2 IRate  IRate -> Element rate
+       => Opcode4 r1 r2 IInit  IInit -> Element rate
 oscil_ opF =
     mkOpcode "oscil" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -487,7 +487,7 @@ oscil_ opF =
                 , getConfI ifn,     getConfI iphs ]
 
 oscili :: forall r1 r2 rate. (KA_Rate rate)
-       => Opcode3 r1 r2 IRate -> Element rate
+       => Opcode3 r1 r2 IInit -> Element rate
 oscili opF = 
     mkOpcode "oscili" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -496,7 +496,7 @@ oscili opF =
                 , getConfI ifn ]
 
 oscili_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Opcode4 r1 r2 IRate IRate -> Element rate
+        => Opcode4 r1 r2 IInit IInit -> Element rate
 oscili_ opF =
     mkOpcode "oscili" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -505,7 +505,7 @@ oscili_ opF =
                 , getConfI ifn,      getConfI iphs ]
 
 oscil3 :: forall r1 r2 rate. (KA_Rate rate)
-       => Opcode3 r1 r2 IRate -> Element rate
+       => Opcode3 r1 r2 IInit -> Element rate
 oscil3 opF =
     mkOpcode "oscil3" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -514,7 +514,7 @@ oscil3 opF =
                 , getConfI ifn ]
 
 oscil3_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Opcode4 r1 r2 IRate IRate -> Element rate
+        => Opcode4 r1 r2 IInit IInit -> Element rate
 oscil3_ opF = 
     mkOpcode "oscil3" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -523,7 +523,7 @@ oscil3_ opF =
                 , getConfI ifn,      getConfI iphs ]
 
 poscil :: forall r1 r2 rate. (KA_Rate rate)
-       => Opcode3 r1 r2 IRate -> Element rate
+       => Opcode3 r1 r2 IInit -> Element rate
 poscil opF = 
     mkOpcode "poscil" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -532,7 +532,7 @@ poscil opF =
                 , getConfI ift ]
 
 poscil_ :: forall r1 r2 rate. (KA_Rate rate)
-        => Opcode4 r1 r2 IRate IRate -> Element rate
+        => Opcode4 r1 r2 IInit IInit -> Element rate
 poscil_ opF = 
     mkOpcode "poscil" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -542,7 +542,7 @@ poscil_ opF =
 
 
 poscil3 :: forall r1 r2 rate. (KA_Rate rate)
-        => Opcode3 r1 r2 IRate -> Element rate
+        => Opcode3 r1 r2 IInit -> Element rate
 poscil3 opF = 
     mkOpcode "poscil3" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -552,7 +552,7 @@ poscil3 opF =
 
 
 poscil3_  :: forall r1 r2 rate. (KA_Rate rate)
-          => Opcode4 r1 r2 IRate IRate -> Element rate
+          => Opcode4 r1 r2 IInit IInit -> Element rate
 poscil3_ opF = 
     mkOpcode "poscil3" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -571,7 +571,7 @@ lfo opF =
 
 
 lfo_ :: forall r1 r2 rate. (KA_Rate rate)
-     => Opcode3 r1 r2 IRate -> Element rate
+     => Opcode3 r1 r2 IInit -> Element rate
 lfo_ opF =
     mkOpcode "lfo" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -588,7 +588,7 @@ lfo_ opF =
 -- Above we have interpreted it as audio rate, but is this
 -- correct?
 
-buzz :: Opcode4 r1 r2 KRate IRate -> Element ARate
+buzz :: Opcode4 r1 r2 KRate IInit -> Element ARate
 buzz opF =
     mkOpcode "buzz" inspec (Out1 A)
   where
@@ -596,7 +596,7 @@ buzz opF =
                 [ getConfUniv xamp,  getConfUniv xcps
                 , getConfK knh,      getConfI ifn ]
 
-buzz_ :: Opcode5 r1 r2 KRate IRate IRate -> Element ARate
+buzz_ :: Opcode5 r1 r2 KRate IInit IInit -> Element ARate
 buzz_ opF =
     mkOpcode "buzz" inspec (Out1 A)
   where
@@ -606,7 +606,7 @@ buzz_ opF =
                 , getConfI iphs ]
 
 
-gbuzz :: Opcode6 r1 r2 KRate KRate KRate IRate -> Element ARate
+gbuzz :: Opcode6 r1 r2 KRate KRate KRate IInit -> Element ARate
 gbuzz opF =
     mkOpcode "gbuzz" inspec (Out1 A)
   where
@@ -615,7 +615,7 @@ gbuzz opF =
                 , getConfK knh,       getConfK klh
                 , getConfK kr,        getConfI ifn ]
 
-gbuzz_ :: Opcode7 r1 r2 KRate KRate KRate IRate IRate -> Element ARate
+gbuzz_ :: Opcode7 r1 r2 KRate KRate KRate IInit IInit -> Element ARate
 gbuzz_ opF = 
     mkOpcode "gbuzz" inspec (Out1 A)
   where
@@ -625,7 +625,7 @@ gbuzz_ opF =
                 , getConfK kr,        getConfI ifn
                 , getConfI iphs ]
 
-vco :: Opcode6 KRate KRate IRate KRate IRate IRate -> Element ARate
+vco :: Opcode6 KRate KRate IInit KRate IInit IInit -> Element ARate
 vco opF =
     mkOpcode "gbuzz" inspec (Out1 A)
   where
@@ -637,7 +637,7 @@ vco opF =
 --------------------------------------------------------------------------------
 -- Additive synthesis / resynthesis
 
-adsyn :: Opcode4 KRate KRate KRate IRate -> Element ARate
+adsyn :: Opcode4 KRate KRate KRate IInit -> Element ARate
 adsyn opF =
     mkOpcode "adsyn" inspec (Out1 A)
   where
@@ -646,7 +646,7 @@ adsyn opF =
                 , getConfK ksmod,   getConfI ifilcod ]
 
 
-adsynt :: Opcode6 KRate KRate IRate IRate IRate IRate -> Element ARate
+adsynt :: Opcode6 KRate KRate IInit IInit IInit IInit -> Element ARate
 adsynt opF =
     mkOpcode "adsynt" inspec (Out1 A)
   where
@@ -656,7 +656,7 @@ adsynt opF =
                 , getConfI iampfn,   getConfI icnt ]
 
 
-adsynt_ :: Opcode7 KRate KRate IRate IRate IRate IRate IRate -> Element ARate
+adsynt_ :: Opcode7 KRate KRate IInit IInit IInit IInit IInit -> Element ARate
 adsynt_  opF = 
     mkOpcode "adsynt" inspec (Out1 A)
   where
@@ -667,7 +667,7 @@ adsynt_  opF =
                 , getConfI iphs ]
 
 
-hsboscil :: Opcode6 KRate KRate KRate IRate IRate IRate -> Element ARate
+hsboscil :: Opcode6 KRate KRate KRate IInit IInit IInit -> Element ARate
 hsboscil opF = 
     mkOpcode "hsboscil" inspec (Out1 A)
   where
@@ -676,7 +676,7 @@ hsboscil opF =
                 , getConfK kbrite,   getConfI ibasfreq
                 , getConfI iwfn,     getConfI ioctfn ]
 
-hsboscil_ :: Opcode7 KRate KRate KRate IRate IRate IRate IRate -> Element ARate
+hsboscil_ :: Opcode7 KRate KRate KRate IInit IInit IInit IInit -> Element ARate
 hsboscil_ opF = 
     mkOpcode "hsboscil" inspec (Out1 A)
   where
@@ -691,7 +691,7 @@ hsboscil_ opF =
 --------------------------------------------------------------------------------
 -- FM Synthesis
 
-foscil :: Opcode6 rate KRate KRate KRate KRate IRate -> Element ARate
+foscil :: Opcode6 rate KRate KRate KRate KRate IInit -> Element ARate
 foscil opF =
     mkOpcode "foscil" inspec (Out1 A)
   where
@@ -700,7 +700,7 @@ foscil opF =
                 , getConfK kcar,     getConfK kmod
                 , getConfK kndx,     getConfI ifn ]
 
-foscil_ :: Opcode7 rate KRate KRate KRate KRate IRate IRate -> Element ARate
+foscil_ :: Opcode7 rate KRate KRate KRate KRate IInit IInit -> Element ARate
 foscil_ opF  =
     mkOpcode "foscil" inspec (Out1 A)
   where
@@ -710,7 +710,7 @@ foscil_ opF  =
                 , getConfK kndx,     getConfI ifn
                 , getConfI iphs ]
 
-foscili :: Opcode6 rate KRate KRate KRate KRate IRate -> Element ARate
+foscili :: Opcode6 rate KRate KRate KRate KRate IInit -> Element ARate
 foscili opF =
     mkOpcode "foscili" inspec (Out1 A)
   where
@@ -720,7 +720,7 @@ foscili opF =
                 , getConfK kndx,      getConfI ifn ]
 
 
-foscili_ :: Opcode7 rate KRate KRate KRate KRate IRate IRate -> Element ARate
+foscili_ :: Opcode7 rate KRate KRate KRate KRate IInit IInit -> Element ARate
 foscili_ opF =
     mkOpcode "foscil" inspec (Out1 A)
   where
@@ -732,7 +732,7 @@ foscili_ opF =
 
 
 fmvoice :: Opcode11 KRate KRate KRate KRate KRate KRate
-                    IRate IRate IRate IRate IRate
+                    IInit IInit IInit IInit IInit
         -> Element ARate
 fmvoice opF =
     mkOpcode "fmvoice" inspec (Out1 A)
@@ -748,7 +748,7 @@ fmvoice opF =
                       , getConfI ivibfn ]
 
 fmbell :: Opcode11 KRate KRate KRate KRate KRate KRate
-                   IRate IRate IRate IRate IRate
+                   IInit IInit IInit IInit IInit
        -> Element ARate
 fmbell opF =
     mkOpcode "fmbell" inspec (Out1 A)
@@ -764,7 +764,7 @@ fmbell opF =
                       , getConfI ivibfn ]
 
 fmrhode :: Opcode11 KRate KRate KRate KRate KRate KRate
-                    IRate IRate IRate IRate IRate
+                    IInit IInit IInit IInit IInit
         -> Element ARate
 fmrhode opF =
     mkOpcode "fmrhode" inspec (Out1 A)
@@ -781,7 +781,7 @@ fmrhode opF =
 
 
 fmwurlie :: Opcode11 KRate KRate KRate KRate KRate KRate
-                     IRate IRate IRate IRate IRate
+                     IInit IInit IInit IInit IInit
          -> Element ARate
 fmwurlie opF =
     mkOpcode "fmwurlie" inspec (Out1 A)
@@ -797,7 +797,7 @@ fmwurlie opF =
                       , getConfI ivibfn ]
 
 fmmetal :: Opcode11 KRate KRate KRate KRate KRate KRate
-                    IRate IRate IRate IRate IRate
+                    IInit IInit IInit IInit IInit
         -> Element ARate
 fmmetal opF =
     mkOpcode "fmmetal" inspec (Out1 A)
@@ -813,7 +813,7 @@ fmmetal opF =
                       , getConfI ivibfn ]
 
 fmb3 :: Opcode11 KRate KRate KRate KRate KRate KRate
-                 IRate IRate IRate IRate IRate
+                 IInit IInit IInit IInit IInit
      -> Element ARate
 fmb3 opF =
     mkOpcode "fmb3" inspec (Out1 A)
@@ -830,7 +830,7 @@ fmb3 opF =
 
 
 fmpercfl :: Opcode11 KRate KRate KRate KRate KRate KRate
-                     IRate IRate IRate IRate IRate
+                     IInit IInit IInit IInit IInit
          -> Element ARate
 fmpercfl opF = 
     mkOpcode "fmpercfl" inspec (Out1 A)
@@ -854,7 +854,7 @@ fmpercfl opF =
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil :: Opcode5 rate KRate IRate IRate IRate
+loscil :: Opcode5 rate KRate IInit IInit IInit
        -> Element ARate
 loscil opF =
     mkOpcode "loscil" inspec (Out1 A)
@@ -869,7 +869,7 @@ loscil opF =
 --
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil :: Opcode5 rate KRate IRate IRate IRate
+biloscil :: Opcode5 rate KRate IInit IInit IInit
          -> Element ARate
 biloscil opF =
     mkOpcode "loscil" inspec (Out2 A)
@@ -881,7 +881,7 @@ biloscil opF =
 
 -- | Note - use 1 for ibase and kcps if the frequency is not known.
 --
-loscil3 :: Opcode5 rate KRate IRate IRate IRate -> Element ARate
+loscil3 :: Opcode5 rate KRate IInit IInit IInit -> Element ARate
 loscil3 opF =
     mkOpcode "loscil3" inspec (Out1 A)
   where
@@ -895,7 +895,7 @@ loscil3 opF =
 --
 --Note - use 1 for ibase and kcps if the frequency is not known.
 --
-biloscil3 :: Opcode5 rate KRate IRate IRate IRate -> Element ARate
+biloscil3 :: Opcode5 rate KRate IInit IInit IInit -> Element ARate
 biloscil3 opF =
     mkOpcode "loscil3" inspec (Out2 A)
   where
@@ -904,7 +904,7 @@ biloscil3 opF =
                 , getConfI ifn,      getConfI ibase
                 , getConfI  imod1 ]
 
-lposcil :: Opcode5 KRate KRate KRate KRate IRate -> Element ARate
+lposcil :: Opcode5 KRate KRate KRate KRate IInit -> Element ARate
 lposcil opF =
     mkOpcode "lposcil" inspec (Out1 A)
   where
@@ -913,7 +913,7 @@ lposcil opF =
                 , getConfK kloop,   getConfK kend
                 , getConfI ift ]
 
-lposcil3 :: Opcode5 KRate KRate KRate KRate IRate -> Element ARate
+lposcil3 :: Opcode5 KRate KRate KRate KRate IInit -> Element ARate
 lposcil3 opF =
     mkOpcode "lposcil3" inspec (Out1 A)
   where
@@ -927,7 +927,7 @@ lposcil3 opF =
 --------------------------------------------------------------------------------
 -- Models and emulations
 
-moog :: Opcode9 KRate KRate KRate KRate KRate KRate IRate IRate IRate
+moog :: Opcode9 KRate KRate KRate KRate KRate KRate IInit IInit IInit
      -> Element ARate
 moog opF =
     mkOpcode "moog" inspec (Out1 A)

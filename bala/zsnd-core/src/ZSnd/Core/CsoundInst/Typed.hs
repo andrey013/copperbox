@@ -20,7 +20,7 @@ module ZSnd.Core.CsoundInst.Typed
   (
 
   -- * Rate placeholder types and classes
-    IRate
+    IInit
   , KRate  
   , ARate
 
@@ -58,7 +58,7 @@ import ZSnd.Core.CsoundInst.Click
 import ZSnd.Core.CsoundInst.Prim
 
 
-data IRate 
+data IInit
 data KRate
 data ARate
 
@@ -70,7 +70,7 @@ data ARate
 class Rate rate where
   dataRate :: rate -> DataRate
 
-instance Rate IRate where
+instance Rate IInit where
   dataRate _ = I
 
 instance Rate KRate where
@@ -88,7 +88,7 @@ instance KA_Rate ARate
 
 class Rate rate => IK_Rate rate
 
-instance IK_Rate IRate
+instance IK_Rate IInit
 instance IK_Rate KRate
 
 --------------------------------------------------------------------------------
@@ -107,7 +107,7 @@ mkInfixAssign op ins outspec = Element $ UElement (AssignInfix op) ins outspec
 mkPrefixAssign :: String -> InputConfig -> OutConf -> Element rate
 mkPrefixAssign ss ins outspec = Element $ UElement (AssignPrefix ss) ins outspec
 
-getElementI :: Element IRate -> UElement
+getElementI :: Element IInit -> UElement
 getElementI = getElement
 
 getElementK :: Element KRate -> UElement
@@ -136,7 +136,7 @@ instance Show (Conf rate) where
 mkConf :: Expr -> Conf rate
 mkConf = Conf
 
-getConfI :: Conf IRate -> Expr
+getConfI :: Conf IInit -> Expr
 getConfI = getConf
 
 getConfK :: Conf KRate -> Expr

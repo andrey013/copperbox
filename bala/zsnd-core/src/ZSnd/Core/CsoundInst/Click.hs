@@ -274,7 +274,7 @@ makeStmt eref ac = do
                   desc = elt_desc ue
               in fmap (\a -> (desc,a)) $ find eref $ acc_port_assign_bwd ac
 
-    inter r x []     = x
+    inter _ x []     = x
     inter r x (y:ys) = BinOp r x (inter r y ys)
 
 

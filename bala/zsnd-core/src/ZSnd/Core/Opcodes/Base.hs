@@ -122,7 +122,7 @@ out2 opF =
 
 
 init :: forall rate. (Rate rate) 
-     => Opcode1 IRate -> Element rate
+     => Opcode1 IInit -> Element rate
 init opF = 
     mkOpcode "init" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -136,7 +136,7 @@ init opF =
 -- tival = Expr $ ZeroOp "tival"
 
 divz :: forall rate. (Rate rate) 
-     => Opcode3 IRate IRate IRate -> Element rate
+     => Opcode3 IInit IInit IInit -> Element rate
 divz opF =
     mkOpcode "divz" inspec (Out1 $ dataRate (undefined :: rate))
   where
@@ -380,7 +380,7 @@ cpsoct    = funcall "cpsoct"
 -- Design note - here Csound uses @x@ for the version with more 
 -- args. Is this a convention used elsewhere?
 
-cps2pch :: Opcode2 IRate IRate -> Element IRate
+cps2pch :: Opcode2 IInit IInit -> Element IInit
 cps2pch opF = 
     mkOpcode "cps2pch" inspec (Out1 I)
   where
@@ -388,8 +388,8 @@ cps2pch opF =
                [ getConfI ipch, getConfI ieq ] 
 
 
-cpsxpch :: Opcode4 IRate IRate IRate IRate 
-        -> Element IRate
+cpsxpch :: Opcode4 IInit IInit IInit IInit 
+        -> Element IInit
 cpsxpch opF = 
     mkOpcode "cps2pch" inspec (Out1 I)
   where

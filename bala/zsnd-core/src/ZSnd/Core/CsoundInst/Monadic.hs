@@ -39,6 +39,11 @@ module ZSnd.Core.CsoundInst.Monadic
   , (=>=)
   , (=>-)
   , (->=)
+
+  , (==>>)
+  , (===>>)
+  , (====>>)
+  , (=====>>)
   
   ) where
 
@@ -152,7 +157,7 @@ clet elt = Inst $ \s ->
     in (v1, s+1, wrapH $ DeclE v1 (getElementUniv elt))
 
 
-ilet :: Element IRate -> Inst ElemRef
+ilet :: Element IInit -> Inst ElemRef
 ilet = clet
 
 klet :: Element KRate -> Inst ElemRef
@@ -179,6 +184,54 @@ out v = Inst $ \s -> ((),s, wrapH $ Out v)
 (->=) :: (ElemRef,Int) -> ElemRef -> Inst ()
 (->=) p1 v2 = p1 ->- (v2,0)
 
+
+
+-- | Serial assignment - assign: 
+--
+-- > e1[0] to right[0]
+-- > e2[0] to right[1]
+-- 
+(==>>) :: (ElemRef,ElemRef) -> ElemRef -> Inst ()
+(==>>) (e0,e1) eo = 
+    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1) }
+
+
+-- | Serial assignment - assign: 
+--
+-- > e1[0] to right[0]
+-- > e2[0] to right[1]
+-- > e3[0] to right[2]
+-- 
+(===>>) :: (ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
+(===>>) (e0,e1,e2) eo = 
+    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2) }
+
+
+-- | Serial assignment - assign: 
+--
+-- > e1[0] to right[0]
+-- > e2[0] to right[1]
+-- > e3[0] to right[2]
+-- > e4[0] to right[3]
+-- 
+(====>>) :: (ElemRef,ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
+(====>>) (e0,e1,e2,e3) eo = 
+    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2)
+       ; (e3,0) ->- (eo,3) }
+
+
+-- | Serial assignment - assign: 
+--
+-- > e1[0] to right[0]
+-- > e2[0] to right[1]
+-- > e3[0] to right[2]
+-- > e4[0] to right[3]
+-- > e5[0] to right[4]
+-- 
+(=====>>) :: (ElemRef,ElemRef,ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
+(=====>>) (e0,e1,e2,e3,e4) eo = 
+    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2)
+       ; (e3,0) ->- (eo,3); (e4,0) ->- (eo,4) }
 
 
 --------------------------------------------------------------------------------
