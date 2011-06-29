@@ -39,6 +39,7 @@ library
     ZSnd.Core.CsoundScore,
     ZSnd.Core.GenRoutines,
     ZSnd.Core.Opcodes,
+    ZSnd.Core.Opcodes.Assignment,
     ZSnd.Core.Opcodes.Base,
     ZSnd.Core.Opcodes.SignalGenerators,
     ZSnd.Core.Opcodes.SignalModifiers,

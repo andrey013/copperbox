@@ -31,7 +31,9 @@ module ZSnd.Core.CsoundInst.Typed
 
   -- * Phantom typed UElement
   , Element
-  , mkElement
+  , mkOpcode
+  , mkInfixAssign
+  , mkPrefixAssign
   , getElementI 
   , getElementK
   , getElementA
@@ -96,8 +98,14 @@ instance IK_Rate KRate
 --
 newtype Element rate = Element { getElement :: UElement }
 
-mkElement :: String -> InputConfig -> OutConf -> Element rate
-mkElement ss ins outspec = Element $ UElement ss ins outspec
+mkOpcode :: String -> InputConfig -> OutConf -> Element rate
+mkOpcode ss ins outspec = Element $ UElement (NamedOpcode ss) ins outspec
+
+mkInfixAssign :: Rator -> InputConfig -> OutConf -> Element rate
+mkInfixAssign op ins outspec = Element $ UElement (AssignInfix op) ins outspec
+
+mkPrefixAssign :: String -> InputConfig -> OutConf -> Element rate
+mkPrefixAssign ss ins outspec = Element $ UElement (AssignPrefix ss) ins outspec
 
 getElementI :: Element IRate -> UElement
 getElementI = getElement

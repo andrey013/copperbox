@@ -56,6 +56,22 @@ module ZSnd.Core.CsoundInst.Index
   , mapOpcode
   , mapOpcode2
 
+
+  -- * Port \"gen\" - generalized port functions
+  , port0_gen
+  , port1_gen
+  , port2_gen
+  , port3_gen
+  , port4_gen 
+  , port5_gen
+  , port6_gen
+  , port7_gen
+  , port8_gen
+  , port9_gen
+  , port10_gen
+  , port11_gen
+
+
   -- * Port 1 (arity 1 - 1 input to the opcode)
   , port0_1
   , port1_1

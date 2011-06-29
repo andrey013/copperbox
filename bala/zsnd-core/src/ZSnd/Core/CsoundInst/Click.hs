@@ -23,6 +23,7 @@ module ZSnd.Core.CsoundInst.Click
   , InputConfig
   , CStmt(..)
   , UElement(..)
+  , ElementDesc(..)
   , OutConf(..)
   , TagVar(..)
   , DataRate(..)
@@ -98,10 +99,30 @@ instance Show CStmt where
 -- | UElement - universally typed element. This is a UGen.
 --
 data UElement = UElement
-       { elt_name   :: String           -- the opcode name
-       , elt_inputs :: InputConfig
-       , elt_out    :: OutConf
-       }
+      { elt_desc   :: ElementDesc
+      , elt_inputs :: InputConfig
+      , elt_out    :: OutConf
+      }
+
+-- Note - handling assignment via UElement allows bad 
+-- configurations to be constructed. Currently they should be 
+-- censored by only providing constructors that form legitmate
+-- syntax, but it would probably be better to change the 
+-- datatypes / syntax to prevent them.
+--
+-- Here are examples of a bad assignment 
+--
+-- > a1 = + []          (???)
+-- > a1 = exp (23, pfield 12)
+--
+
+
+
+data ElementDesc = NamedOpcode  String
+                 | AssignPrefix String
+                 | AssignInfix  Rator
+  deriving (Eq,Ord,Show)
+
 
 instance Show UElement where
   show = show . format
@@ -202,6 +223,8 @@ instance Monad TransMonad where
   ma >>= k  = TM $ \s ac -> case getTM ma s ac of 
       Left err -> Left err
       Right (a,s1,ac1) -> (getTM . k) a s1 ac1
+  fail msg  = TM $ \_ _ -> Left msg
+
 
 runTransMonad :: TransMonad a -> Either FailMsg [Stmt]
 runTransMonad ma = getTM ma (St 0 0 0 0) accdZero >>= sk
@@ -227,17 +250,32 @@ extractPlan ac = orderByAssign deps ac
 
 
 makeStmt :: ElemRef -> AccDecls -> Either FailMsg Stmt
-makeStmt eref ac = 
-    (\(name,exps) tvs -> Opcode tvs name exps)  
-        <$> (elookup fk1 eref (acc_decls ac) >>= sk1) 
-        <*> elookup fk2 eref (acc_tagvars ac)
+makeStmt eref ac = do
+    (desc,exps) <- elookup fk1 eref (acc_decls ac) >>= sk1
+    tvs         <- elookup fk2 eref (acc_tagvars ac)
+    case desc of
+      NamedOpcode name  -> return $ Opcode tvs name exps
+
+      AssignPrefix name -> case (tvs,exps) of
+        ([tv],[expr]) -> return $ Vardef tv (Funcall name expr)
+        _             -> fail "error - ill-formed assignement."
+
+      AssignInfix rator -> case (tvs,exps) of
+        (_,[])    -> fail "error - ill-formed assignement."
+        ([tv],x:xs) -> return $ Vardef tv (inter rator x xs)
+        _         -> fail "error - ill-formed assignement."
+ 
   where
     fk1 = "error - could not find element in decls " ++ show [eref]
     fk2 = "error - could not find tag vars for " ++ show [eref]
-    sk1 :: UElement -> Either FailMsg (String,[Expr])
+
+    sk1 :: UElement -> Either FailMsg (ElementDesc,[Expr])
     sk1 ue =  let find = elt_inputs ue 
-                  name = elt_name ue
-              in fmap (\a -> (name,a)) $ find eref $ acc_port_assign_bwd ac
+                  desc = elt_desc ue
+              in fmap (\a -> (desc,a)) $ find eref $ acc_port_assign_bwd ac
+
+    inter r x []     = x
+    inter r x (y:ys) = BinOp r x (inter r y ys)
 
 
 orderByAssign :: [ElemRef] -> AccDecls -> Either FailMsg [ElemRef]
@@ -412,8 +450,14 @@ instance Format CStmt where
      
 
 instance Format UElement where
-  format (UElement name _ _)    = text name
+  format (UElement desc _ _)    = format desc
 
 instance Format ElemRef where
   format (ElemRef i) = text "var" <> int i 
  
+
+instance Format ElementDesc where
+  format (NamedOpcode ss)  = text ss
+  format (AssignPrefix ss) = text ":=" <+> text ss
+  format (AssignInfix (a,_,_))  = text ":=" <+> parens (text a)
+
