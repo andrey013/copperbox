@@ -120,6 +120,14 @@ module ZSnd.Core.Opcodes.SignalGenerators
 
   -- * Models and emulations
   , moog
+  , shaker
+  , marimba
+  , vibes
+  , mandol
+  , gogobel
+  , voice
+  , lorenz
+  , planet
 
   -- * Random noise generators
   , rand
@@ -940,6 +948,121 @@ moog opF =
                       , getConfK kvibf,    getConfK kvamp
                       , getConfI iafn,     getConfI iwfn
                       , getConfI ivfn ]
+
+
+-- | idecay - default is 0
+shaker :: Opcode6 KRate KRate KRate KRate KRate IInit
+       -> Element ARate
+shaker opF =
+    mkOpcode "shaker" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kbeans, kdamp, ktimes, idecay ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kbeans,   getConfK kdamp
+                      , getConfK ktimes,   getConfI idecay ]
+
+
+marimba :: Opcode9 KRate KRate IInit IInit IInit KRate KRate IInit IInit
+        -> Element ARate
+marimba opF =
+    mkOpcode "marimba" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, ihrd, ipos, imp, kvibf
+                 , kvamp, ivibfn, idec ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfI ihrd,     getConfI ipos
+                      , getConfI imp,      getConfK kvibf
+                      , getConfK kvamp,    getConfI ivibfn
+                      , getConfI idec ]
+
+
+vibes :: Opcode9 KRate KRate IInit IInit IInit KRate KRate IInit IInit
+      -> Element ARate
+vibes opF =
+    mkOpcode "vibes" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, ihrd, ipos, imp, kvibf
+                 , kvamp, ivibfn, idec ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfI ihrd,     getConfI ipos
+                      , getConfI imp,      getConfK kvibf
+                      , getConfK kvamp,    getConfI ivibfn
+                      , getConfI idec ]
+
+-- | iminfreq - default 0
+mandol :: Opcode8 KRate KRate KRate KRate KRate KRate IInit IInit
+       -> Element ARate
+mandol opF =
+    mkOpcode "marimba" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kpluck, kdetune, kgain
+                 , ksize, ifn, iminfreq ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kpluck,   getConfK kdetune
+                      , getConfK kgain,    getConfK ksize
+                      , getConfI ifn,      getConfI iminfreq ]
+
+
+gogobel :: Opcode8 KRate KRate IInit IInit IInit KRate KRate IInit
+        -> Element ARate
+gogobel opF =
+    mkOpcode "gogobel" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, ihrd, ipos, imp, kvibf, kvamp, ivibfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfI ihrd,     getConfI ipos
+                      , getConfI imp,      getConfK kvibf
+                      , getConfK kvamp,    getConfI ivibfn ]
+
+voice :: Opcode8 KRate KRate KRate KRate KRate KRate IInit IInit
+      -> Element ARate
+voice opF =
+    mkOpcode "voice" inspec (Out1 A)
+  where
+    inspec = applyOpcode opF $ 
+                \( kamp, kfreq, kphoneme, kform, kvibf
+                 , kvamp, ifn, ivfn ) ->
+                      [ getConfK kamp,     getConfK kfreq
+                      , getConfK kphoneme, getConfK kform
+                      , getConfK kvibf,    getConfK kvamp
+                      , getConfI ifn,      getConfI ivfn ]
+
+lorenz :: Opcode8 KRate KRate KRate KRate IInit IInit IInit IInit
+      -> Element ARate
+lorenz opF =
+    mkOpcode "lorenz" inspec (OutN A 3)
+  where
+    inspec = applyOpcode opF $ 
+                \( ks, kr, kb, kh, ix, iy, iz, ivx ) ->
+                      [ getConfK ks,       getConfK kr
+                      , getConfK kb,       getConfK kh
+                      , getConfI ix,       getConfI iy
+                      , getConfI iz,       getConfI ivx ]
+
+
+
+planet :: Opcode11 KRate KRate KRate IInit IInit 
+                   IInit IInit IInit IInit IInit IInit
+      -> Element ARate
+planet opF =
+    mkOpcode "planet" inspec (OutN A 3)
+  where
+    inspec = applyOpcode opF $ 
+                \( kmass1, kmass2, ksep, ix, iy, iz
+                 , ivx, ivy, ivz, idelta, ifriction ) ->
+                      [ getConfK kmass1,   getConfK kmass2
+                      , getConfK ksep,     getConfI ix
+                      , getConfI iy,       getConfI iz
+                      , getConfI ivx,      getConfI ivy
+                      , getConfI ivz,      getConfI idelta
+                      , getConfI ifriction ]
+
+
 
 --------------------------------------------------------------------------------
 -- Random noise generators

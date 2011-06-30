@@ -33,7 +33,7 @@ module ZSnd.Basic.Kernel.Objects.AdvNotelist
   , runAdvNotelistT
   , execAdvNotelistT
 
-  , AEventM(..)
+  , AdvEventM(..)
 
   ) where
 
@@ -147,7 +147,7 @@ execAdvNotelistT :: (Monad m, InterpretUnit u)
 execAdvNotelistT ctx mf = liftM snd $ runAdvNotelistT ctx mf
 
 
-class AEventM (m :: * -> *) where
+class AdvEventM (m :: * -> *) where
   aevent    :: (u ~ DUnit (m ()), ctx ~ UCtx m) 
             => (u -> ULocEvent ctx u) -> u -> m ()
 
@@ -158,7 +158,7 @@ class AEventM (m :: * -> *) where
 --
 
 instance (InterpretUnit u, VectorSpace u, Fractional (Scalar u)) 
-    => AEventM (AdvNotelist ctx u) where
+    => AdvEventM (AdvNotelist ctx u) where
   aevent mf d = AdvNotelist $ 
                   get_staccato_factor >>= \sd -> 
                   let d1 = d ^* (realToFrac sd)
@@ -167,7 +167,7 @@ instance (InterpretUnit u, VectorSpace u, Fractional (Scalar u))
 
 instance ( Monad m, InterpretUnit u, VectorSpace u
          , Fractional (Scalar u)) 
-    => AEventM (AdvNotelistT ctx u m) where
+    => AdvEventM (AdvNotelistT ctx u m) where
   aevent mf d = AdvNotelistT $  
                   get_staccato_factor >>= \sd -> 
                   let d1 = d ^* (realToFrac sd)

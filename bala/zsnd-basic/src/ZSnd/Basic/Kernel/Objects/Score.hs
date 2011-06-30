@@ -20,6 +20,7 @@ module ZSnd.Basic.Kernel.Objects.Score
   , runScore
   , traceNotelist
   , traceAdvNotelist
+  , traceOnsetNotelist
 
     
   ) where
@@ -32,6 +33,7 @@ import ZSnd.Basic.Kernel.Objects.AdvNotelist
 import ZSnd.Basic.Kernel.Objects.Basis
 import ZSnd.Basic.Kernel.Objects.Concat
 import ZSnd.Basic.Kernel.Objects.LocEvent
+import ZSnd.Basic.Kernel.Objects.OnsetNotelist
 import ZSnd.Basic.Kernel.Objects.TraceNotelist
 
 import ZSnd.Core                                -- package: zsnd-core
@@ -63,6 +65,12 @@ traceAdvNotelist :: InterpretUnit u
                  => Context ctx -> AdvNotelist ctx u a -> Score
 traceAdvNotelist ctx mf = 
     let (PrimW ca _) = runLocEvent 0 ctx $ execAdvNotelist ctx mf
+    in liftToScore $ singleH ca
+
+traceOnsetNotelist :: InterpretUnit u
+                   => Context ctx -> OnsetNotelist ctx u a -> Score
+traceOnsetNotelist ctx mf = 
+    let (PrimW ca _) = runLocEvent 0 ctx $ execOnsetNotelist ctx mf
     in liftToScore $ singleH ca
 
 

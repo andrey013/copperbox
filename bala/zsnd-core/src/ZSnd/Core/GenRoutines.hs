@@ -218,7 +218,7 @@ gen27 t sz a xs = dyngen 27 t sz (CsInt a : concatMap fn xs)
 
 -- | Read data from a sound file into a table.
 --
--- > gen1 :: time * size * file_name * skip_time * format
+-- > gen1 :: time * size * file_name * skip_time * format * channel
 -- 
 -- @skip_time@ is read position start position within the file.
 -- 
@@ -229,8 +229,9 @@ gen27 t sz a xs = dyngen 27 t sz (CsInt a : concatMap fn xs)
 -- anonymous numbered sound files, ZSyn needs all files to be 
 -- named.
 -- 
-gen1 :: Double -> Int -> String -> Double -> Int -> ScoBuilder ()
-gen1 t sz fc skip fmt = dyngen 1 t sz [CsString fc, CsDouble skip, CsInt fmt]
+gen1 :: Double -> Int -> String -> Double -> Int -> Int -> ScoBuilder ()
+gen1 t sz fc skip fmt ch = 
+    dyngen 1 t sz [CsString fc, CsDouble skip, CsInt fmt, CsInt ch]
 
 
 -- | Read numeric values from a text file.

@@ -29,6 +29,7 @@ module ZSnd.Basic.Kernel
   , module ZSnd.Basic.Kernel.Objects.Connector
   , module ZSnd.Basic.Kernel.Objects.GenRoutines
   , module ZSnd.Basic.Kernel.Objects.LocEvent
+  , module ZSnd.Basic.Kernel.Objects.OnsetNotelist
   , module ZSnd.Basic.Kernel.Objects.PosEvent
   , module ZSnd.Basic.Kernel.Objects.Score
   , module ZSnd.Basic.Kernel.Objects.TraceLoc
@@ -45,6 +46,7 @@ import ZSnd.Basic.Kernel.Objects.Concat
 import ZSnd.Basic.Kernel.Objects.Connector
 import ZSnd.Basic.Kernel.Objects.GenRoutines
 import ZSnd.Basic.Kernel.Objects.LocEvent
+import ZSnd.Basic.Kernel.Objects.OnsetNotelist
 import ZSnd.Basic.Kernel.Objects.PosEvent
 import ZSnd.Basic.Kernel.Objects.Score
 import ZSnd.Basic.Kernel.Objects.TraceLoc

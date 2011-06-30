@@ -24,14 +24,20 @@ module ZSnd.Basic.Kernel.Base.Context
 
   , initialContext
 
+  , normalizeCtx
+  , dinterpCtx
+
   , get_tempo
   , set_tempo
+
+  , get_amplitude
+  , amplitude
 
   , get_staccato_factor
   , staccato_factor
 
-  , normalizeCtx
-  , dinterpCtx
+  , get_unit_duration
+  , unit_duration
 
   ) where
 
@@ -39,10 +45,22 @@ import ZSnd.Basic.Kernel.Base.BaseDefs
 
 import Control.Applicative
 
-
+-- | Context
+--
+-- Note - factors in the context are not universal, some and may 
+-- be ignored by a partical Object (notelist, etc.).
+-- 
+-- @stacccato_factor@ - shortens the sounding of a note, but not 
+-- its overall duration.
+--
+-- @unit_duration@ - duration for instruments that have no dynamic
+-- prolongation.
+--
 data Context uctx = Context
       { ctx_tempo               :: Tempo
+      , ctx_amplitude           :: Double
       , ctx_staccato_factor     :: Double   -- range 0 .. 1.0
+      , ctx_unit_duration       :: Double
       , ctx_user_context        :: uctx
       }
 
@@ -72,8 +90,10 @@ class (Applicative m, Monad m) => ContextM (m :: * -> *) where
 initialContext :: uctx -> Context uctx
 initialContext uc = Context
       { ctx_tempo               = 120
+      , ctx_amplitude           = 31662.8
       , ctx_staccato_factor     = 1.0
       , ctx_user_context        = uc
+      , ctx_unit_duration       = 1.0
       }
 
 
@@ -99,11 +119,33 @@ initialContext uc = Context
 --
 
 
+
+normalizeCtx :: (ContextM m, InterpretUnit u)
+             => u -> m Double
+normalizeCtx du = (\bpm -> normalize bpm du) <$> get_tempo
+
+dinterpCtx :: (ContextM m, InterpretUnit u)
+           => Double -> m u
+dinterpCtx u = (\bpm -> dinterp bpm u) <$> get_tempo
+
+
+
+
+
 get_tempo :: ContextM m => m Tempo
 get_tempo = asksCtx ctx_tempo
 
 set_tempo :: Tempo -> ContextF uctx
 set_tempo bpm = (\s -> s { ctx_tempo = bpm})
+
+
+
+get_amplitude :: ContextM m => m Double 
+get_amplitude = asksCtx ctx_amplitude
+
+
+amplitude :: Double -> ContextF uctx
+amplitude a = (\s -> s { ctx_amplitude = a})
 
 
 
@@ -115,11 +157,13 @@ staccato_factor :: Double -> ContextF uctx
 staccato_factor sd = (\s -> s { ctx_staccato_factor = sd })
 
 
-normalizeCtx :: (ContextM m, InterpretUnit u)
-             => u -> m Double
-normalizeCtx du = (\bpm -> normalize bpm du) <$> get_tempo
 
-dinterpCtx :: (ContextM m, InterpretUnit u)
-           => Double -> m u
-dinterpCtx u = (\bpm -> dinterp bpm u) <$> get_tempo
+
+get_unit_duration :: (ContextM m, InterpretUnit u) => m u
+get_unit_duration = asksCtx ctx_unit_duration >>= dinterpCtx
+
+
+unit_duration :: InterpretUnit u => u -> ContextF uctx
+unit_duration ud = 
+    (\s -> let dd = normalize (ctx_tempo s) ud in s { ctx_unit_duration = dd })
 

@@ -65,42 +65,9 @@ inst3 = runInstU 3 $ do
   where
     p3    = pfield 3
     
-    i1,i2,i3 :: Conf IRate
+    i1,i2,i3 :: Conf IInit
     i1    = 0.006667
     i2    = cpspch (pfield 5)
     i3    = octpch (pfield 5)
 
-
-
-{-
-inst3 :: PrimInst
-inst3 = runInstU 3 $ do 
-    kadsr  <- klet $ linseg 0 (p3 / 3) 1.0 
-                              [(p3 / 3, 1.0), (p3 / 3, 0)]
-    kmodi  <- klet $ linseg 0 (p3 / 3) 5 
-                              [(p3 / 3, 3), (p3 / 3, 0)]
-    kmodr  <- klet $ linseg (pfield 6) (pfield 3) (pfield 7) [] 
---    let (a1 :: Conf ARate) = cast $ kmodi * ((kmodr-1)/kmodr) / 2
---    let a1ndx :: Conf ARate =  abs ((a1 * 2) / 20)
---    a2            <- avar $ castAR $ kmodi*(parens ((kmodr+1)/kmodr))/2
-    a3     <- alet $ tablei_ (port 0) 3 1 0 0
-    ao1    <- alet $ oscil   (port 0) ipch 2
---    a4            <- avar $ exp((-0.5) * a3 + ao1)
-    ao2           <- oscil (a2 * castAR ipch) ipch 2
-    aoutl  <- alet $ oscil (1000 * (cast (port 0) * (port 1)) )
-                           (port 2 + cast (cpsoct(ioct+ishift))) 1
-
-    (aoutr <- alet $ oscil (1000 * (cast $ port 0) * a4) 
-                           (port 1 + castAR (cpsoct(ioct-ishift))) 1
-
-    o1   <- alet $ out2 (port 0) (port 1)
-    outs o1
-  where
-    p3     = pfield 3
-    ishift = 0.00666667
-
-    ipch, ioct   :: Conf IRate
-    ipch   = cpspch (pfield 5)
-    ioct   = octpch (pfield 5)
--}
 

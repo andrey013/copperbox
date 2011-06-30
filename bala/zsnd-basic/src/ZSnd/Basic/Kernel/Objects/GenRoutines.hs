@@ -248,7 +248,7 @@ fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs)
 
 -- | Read data from a sound file into a table.
 --
--- > fgen1 :: size * file_name * skip_time * format
+-- > fgen1 :: size * file_name * skip_time * format * channel
 -- 
 -- @skip_time@ is read position start position within the file.
 -- 
@@ -260,8 +260,8 @@ fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs)
 -- named.
 -- 
 fgen1 :: InterpretUnit u 
-      => Int -> String -> Double -> Int -> ULocEvent ctx u
-fgen1 sz fc skip fmt = mkGen (\ot -> gen1 ot sz fc skip fmt) 
+      => Int -> String -> Double -> Int -> Int -> ULocEvent ctx u
+fgen1 sz fc skip fmt ch = mkGen (\ot -> gen1 ot sz fc skip fmt ch) 
 
 
 -- | Read numeric values from a text file.
