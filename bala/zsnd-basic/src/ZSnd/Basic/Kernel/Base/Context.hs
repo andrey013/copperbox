@@ -39,6 +39,9 @@ module ZSnd.Basic.Kernel.Base.Context
   , get_unit_duration
   , unit_duration
 
+  , get_global_tuning
+  , global_tuning
+
   ) where
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
@@ -61,6 +64,7 @@ data Context uctx = Context
       , ctx_amplitude           :: Double
       , ctx_staccato_factor     :: Double   -- range 0 .. 1.0
       , ctx_unit_duration       :: Double
+      , ctx_global_tuning       :: Double   -- usually 440.0 (A4)
       , ctx_user_context        :: uctx
       }
 
@@ -94,6 +98,7 @@ initialContext uc = Context
       , ctx_staccato_factor     = 1.0
       , ctx_user_context        = uc
       , ctx_unit_duration       = 1.0
+      , ctx_global_tuning       = 440.0
       }
 
 
@@ -167,3 +172,11 @@ unit_duration :: InterpretUnit u => u -> ContextF uctx
 unit_duration ud = 
     (\s -> let dd = normalize (ctx_tempo s) ud in s { ctx_unit_duration = dd })
 
+
+
+get_global_tuning :: ContextM m => m Double
+get_global_tuning = asksCtx ctx_global_tuning
+
+
+global_tuning :: Double -> ContextF uctx
+global_tuning hz = (\s -> s { ctx_global_tuning = hz })
