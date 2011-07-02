@@ -33,6 +33,8 @@ module ZSnd.Core.CsoundInst.Prim
   , infixL
   , infixR
 
+  , ppPrimInst
+
   ) where
 
 
@@ -45,8 +47,9 @@ import ZSnd.Core.Utils.FormatExpr
 
 
 data PrimInst = PrimInst 
-      { inst_num    :: Int
-      , inst_body   :: [Stmt]
+      { inst_num          :: Int
+      , inst_table_start  :: Int
+      , inst_body         :: [Stmt]
       }
   deriving (Eq,Ord,Show)
 
@@ -72,13 +75,14 @@ data Stmt = Vardef      TagVar Expr
 
 -- | Dynamically typed expr
 -- 
-data Expr = VarE    TagVar
-          | PField  Int
-          | Literal CsValue
-          | ZeroOp  String
-          | UnOp    Rator Expr
-          | BinOp   Rator Expr Expr
-          | Funcall String Expr
+data Expr = VarE      TagVar
+          | PField    Int
+          | TableRef  Int
+          | Literal   CsValue
+          | ZeroOp    String
+          | UnOp      Rator Expr
+          | BinOp     Rator Expr Expr
+          | Funcall   String Expr
   deriving (Eq,Ord,Show)
 
 
@@ -110,43 +114,45 @@ data DataRate = I | K | A
 -- Format instances
 
 
-instance Format PrimInst where
-  format (PrimInst n ds) = 
+ppPrimInst :: PrimInst -> Doc
+ppPrimInst (PrimInst n i ds) = 
       (text "instr" <+> int n) `vconcat` body `vconcat` text "endin"
     where
-      body = vcat $ map format ds
+      body = vcat $ map (ppStmt i) ds
                            
 
-instance Format Stmt where
-  format (Vardef v1 val)    = 
-    padr 7 (format v1) <+> char '=' <+> format val
+ppStmt :: Int -> Stmt -> Doc
+ppStmt ix (Vardef v1 val)    = 
+    padr 7 (format v1) <+> char '=' <+> ppExpr ix val
 
-  format (Opcode vs name xs) = 
+ppStmt ix (Opcode vs name xs) = 
     padr 7 (dlist $ map format vs) <+> padr 11 (text name) 
-                                   <+> dlist (map format xs)
+                                   <+> dlist (map (ppExpr ix) xs)
       where
         dlist = punctuate (text ", ")
 
 
-  format (Outs [x])           = 
-    indent 8 (padr 11 (text "out") <+> format x)
+ppStmt ix (Outs [x])           = 
+    indent 8 (padr 11 (text "out") <+> ppExpr ix x)
   
-  format (Outs xs)            = 
-    indent 8 (padr 11 (text "outs") <+> punctuate (text ", ") (map format xs))
+ppStmt ix (Outs xs)            = 
+    indent 8 (padr 11 (text "outs") <+> punctuate (text ", ") 
+                                                  (map (ppExpr ix) xs))
 
                       
 
-instance Format Expr where
-  format = unparse . buildExpr
+ppExpr :: Int -> Expr -> Doc
+ppExpr i = unparse . buildExpr i
 
-buildExpr :: Expr -> DocExpr
-buildExpr (VarE s)       = Atom $ format s
-buildExpr (PField i)     = Atom $ char 'p' <> int i 
-buildExpr (Literal val)  = Atom $ format val
-buildExpr (ZeroOp ss)    = Atom $ text ss
-buildExpr (UnOp op a)    = Unary op (buildExpr a)
-buildExpr (BinOp op a b) = Binary (buildExpr a) op (buildExpr b)
-buildExpr (Funcall ss a) = Atom $ text ss <> parens (format a)
+buildExpr :: Int -> Expr -> DocExpr
+buildExpr _  (VarE s)       = Atom $ format s
+buildExpr _  (PField i)     = Atom $ char 'p' <> int i 
+buildExpr ix (TableRef i)   = Atom $ int $ i + ix 
+buildExpr _  (Literal val)  = Atom $ format val
+buildExpr _  (ZeroOp ss)    = Atom $ text ss
+buildExpr ix (UnOp op a)    = Unary op (buildExpr ix a)
+buildExpr ix (BinOp op a b) = Binary (buildExpr ix a) op (buildExpr ix b)
+buildExpr ix (Funcall ss a) = Atom $ text ss <> parens (ppExpr ix a)
 
 
 

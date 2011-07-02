@@ -168,7 +168,7 @@ funcall :: String -> Conf rate -> Conf rate
 funcall s a = Conf $ Funcall s (getConf a)
 
 tablefn  :: Int -> Conf IInit
-tablefn = Conf . Literal . CsInt
+tablefn = Conf . TableRef 
 
 filecode  :: String -> Conf IInit
 filecode = Conf . Literal . CsString

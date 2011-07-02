@@ -153,10 +153,10 @@ mkElemRef = ElemRef
 
 -- | Translate a Click instrument.
 --
-translateDesc :: Int -> [CStmt] -> Either FailMsg PrimInst
-translateDesc i stmts = case runTransMonad $ mapM transStmt stmts of
+translateDesc :: Int -> Int -> [CStmt] -> Either FailMsg PrimInst
+translateDesc i ix stmts = case runTransMonad $ mapM transStmt stmts of
   Left err -> Left err
-  Right xs -> Right $ PrimInst i xs
+  Right xs -> Right $ PrimInst i ix xs
 
 
 

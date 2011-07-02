@@ -23,7 +23,7 @@ main = do
 orch01 :: Orch
 orch01 = Orch default_mono_header [inst1]
   where
-    inst1 = runInstU 101 $ do 
+    inst1 = runInstU 101 0 $ do 
       a1   <-  alet $ oscil 1 $ port0_2 (10000, 440)
       o1   <-  alet $ out1 $ port1_1 id
       a1   =>= o1

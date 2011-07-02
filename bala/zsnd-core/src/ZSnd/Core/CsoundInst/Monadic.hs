@@ -136,15 +136,15 @@ instance Monad Inst where
 
 
 
-runInst :: Int -> Inst a -> Either FailMsg PrimInst
-runInst n ma = post $ getInst ma 0
+runInst :: Int -> Int -> Inst a -> Either FailMsg PrimInst
+runInst n ix ma = post $ getInst ma 0
   where
-    post (_,_,f) = translateDesc n $ toListH f
+    post (_,_,f) = translateDesc n ix $ toListH f
 
 -- | Unsafe version of @runInst@ - throws runtime error on failure.
 --
-runInstU :: Int -> Inst a -> PrimInst
-runInstU n ma = case runInst n ma of
+runInstU :: Int -> Int -> Inst a -> PrimInst
+runInstU n ix ma = case runInst n ix ma of
     Left err -> error err
     Right ans -> ans
 
@@ -238,7 +238,7 @@ out v = Inst $ \s -> ((),s, wrapH $ Out v)
 -- Format instances
 
 instance Format Orch where
-  format (Orch hdr xs) = vspace (format hdr : map format xs)
+  format (Orch hdr xs) = vspace (format hdr : map ppPrimInst xs)
 
 instance Format OrchHeader where
   format orch =        lhs "0dbfs"  <+> int (zero_dbfs orch)
