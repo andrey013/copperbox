@@ -50,7 +50,8 @@ module ZSnd.Core.CsoundInst.Typed
   , cast
   , pfield
   , funcall  
-
+  , tablefn
+  , filecode
 
   ) where
 
@@ -98,14 +99,17 @@ instance IK_Rate KRate
 --
 newtype Element rate = Element { getElement :: UElement }
 
-mkOpcode :: String -> InputConfig -> OutConf -> Element rate
-mkOpcode ss ins outspec = Element $ UElement (NamedOpcode ss) ins outspec
+mkOpcode :: String -> InputConfig -> [Int] -> OutConf -> Element rate
+mkOpcode ss ins tabs outspec = 
+    Element $ UElement (NamedOpcode ss) ins tabs outspec
 
-mkInfixAssign :: Rator -> InputConfig -> OutConf -> Element rate
-mkInfixAssign op ins outspec = Element $ UElement (AssignInfix op) ins outspec
+mkInfixAssign :: Rator -> InputConfig -> [Int] -> OutConf -> Element rate
+mkInfixAssign op ins tabs outspec = 
+    Element $ UElement (AssignInfix op) ins tabs outspec
 
-mkPrefixAssign :: String -> InputConfig -> OutConf -> Element rate
-mkPrefixAssign ss ins outspec = Element $ UElement (AssignPrefix ss) ins outspec
+mkPrefixAssign :: String -> InputConfig -> [Int] -> OutConf -> Element rate
+mkPrefixAssign ss ins tabs outspec = 
+    Element $ UElement (AssignPrefix ss) ins tabs outspec
 
 getElementI :: Element IInit -> UElement
 getElementI = getElement
@@ -162,6 +166,12 @@ pfield  = Conf . PField
 
 funcall :: String -> Conf rate -> Conf rate
 funcall s a = Conf $ Funcall s (getConf a)
+
+tablefn  :: Int -> Conf IInit
+tablefn = Conf . Literal . CsInt
+
+filecode  :: String -> Conf IInit
+filecode = Conf . Literal . CsString
 
 
 

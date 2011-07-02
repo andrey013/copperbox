@@ -52,7 +52,7 @@ import ZSnd.Core.CsoundInst.Typed
 add2 :: forall rate. (Rate rate) 
      => Opcode2 rate rate -> Element rate
 add2 opF = 
-    mkInfixAssign (infixL 6 "+") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 6 "+") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \(x1,x2) -> 
                 [ getConfUniv x1, getConfUniv x2 ]
@@ -60,7 +60,7 @@ add2 opF =
 adds :: forall rate. (Rate rate) 
      => OpcodeList1 rate -> Element rate
 adds opF = 
-    mkInfixAssign (infixL 6 "+") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 6 "+") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \xs -> 
                 map getConfUniv xs
@@ -71,7 +71,7 @@ adds opF =
 sub2 :: forall rate. (Rate rate) 
      => Opcode2 rate rate -> Element rate
 sub2 opF = 
-    mkInfixAssign (infixL 6 "-") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 6 "-") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \(x1,x2) -> 
                 [ getConfUniv x1, getConfUniv x2 ]
@@ -79,7 +79,7 @@ sub2 opF =
 subs :: forall rate. (Rate rate) 
      => OpcodeList1 rate -> Element rate
 subs opF = 
-    mkInfixAssign (infixL 6 "-") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 6 "-") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \xs -> 
                 map getConfUniv xs
@@ -90,7 +90,7 @@ subs opF =
 mult2 :: forall rate. (Rate rate) 
       => Opcode2 rate rate -> Element rate
 mult2 opF = 
-    mkInfixAssign (infixL 7 "*") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 7 "*") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \(x1,x2) -> 
                 [ getConfUniv x1, getConfUniv x2 ]
@@ -98,7 +98,7 @@ mult2 opF =
 mults :: forall rate. (Rate rate) 
       => OpcodeList1 rate -> Element rate
 mults opF = 
-    mkInfixAssign (infixL 7 "*") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 7 "*") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \xs -> 
                 map getConfUniv xs
@@ -109,7 +109,7 @@ mults opF =
 div2 :: forall rate. (Rate rate) 
      => Opcode2 rate rate -> Element rate
 div2 opF = 
-    mkInfixAssign (infixL 7 "/") inspec (Out1 $ dataRate (undefined :: rate))
+    mkInfixAssign (infixL 7 "/") inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \(x1,x2) -> 
                 [ getConfUniv x1, getConfUniv x2 ]
@@ -118,7 +118,7 @@ div2 opF =
 opexp :: forall rate. (Rate rate) 
      => Opcode1 rate -> Element rate
 opexp opF = 
-    mkPrefixAssign "exp" inspec (Out1 $ dataRate (undefined :: rate))
+    mkPrefixAssign "exp" inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \x1 -> 
                 [ getConfUniv x1 ]
@@ -126,7 +126,7 @@ opexp opF =
 opabs :: forall rate. (Rate rate) 
      => Opcode1 rate -> Element rate
 opabs opF = 
-    mkPrefixAssign "abs" inspec (Out1 $ dataRate (undefined :: rate))
+    mkPrefixAssign "abs" inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \x1 -> 
                 [ getConfUniv x1 ]

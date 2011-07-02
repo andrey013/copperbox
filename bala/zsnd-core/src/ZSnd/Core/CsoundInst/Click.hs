@@ -101,6 +101,7 @@ instance Show CStmt where
 data UElement = UElement
       { elt_desc   :: ElementDesc
       , elt_inputs :: InputConfig
+      , elt_tables :: [Int]
       , elt_out    :: OutConf
       }
 
@@ -450,7 +451,7 @@ instance Format CStmt where
      
 
 instance Format UElement where
-  format (UElement desc _ _)    = format desc
+  format (UElement desc _ _ _)  = format desc
 
 instance Format ElemRef where
   format (ElemRef i) = text "var" <> int i 

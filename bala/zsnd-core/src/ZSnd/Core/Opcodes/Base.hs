@@ -108,14 +108,14 @@ binop op a b = mkConf $ BinOp op (getConfI $ cast a) (getConfI $ cast b)
 
 out1 :: Opcode1 ARate -> Element rate
 out1 opF = 
-    mkOpcode "out" inspec Out0 
+    mkOpcode "out" inspec [] Out0 
   where
     inspec = applyOpcode opF $ \ ain -> 
                [ getConfA ain ]
 
 out2 :: Opcode2 ARate ARate -> Element rate
 out2 opF = 
-    mkOpcode "outs" inspec Out0
+    mkOpcode "outs" inspec [] Out0
   where
     inspec = applyOpcode opF $ \(ain1, ain2) -> 
                [ getConfA ain1, getConfA ain2 ]
@@ -124,7 +124,7 @@ out2 opF =
 init :: forall rate. (Rate rate) 
      => Opcode1 IInit -> Element rate
 init opF = 
-    mkOpcode "init" inspec (Out1 $ dataRate (undefined :: rate))
+    mkOpcode "init" inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \ia -> 
                [ getConfI ia ] 
@@ -138,7 +138,7 @@ init opF =
 divz :: forall rate. (Rate rate) 
      => Opcode3 IInit IInit IInit -> Element rate
 divz opF =
-    mkOpcode "divz" inspec (Out1 $ dataRate (undefined :: rate))
+    mkOpcode "divz" inspec [] (Out1 $ dataRate (undefined :: rate))
   where
     inspec = applyOpcode opF $ \ (ia, ib, isubst) -> 
                [ getConfI ia, getConfI ib, getConfI isubst ]
@@ -292,7 +292,7 @@ birnd     = funcall "birnd"
 
 sum :: OpcodeList1 ARate -> Element ARate
 sum opF = 
-    mkOpcode "sum" inspec (Out1 A)
+    mkOpcode "sum" inspec [] (Out1 A)
   where
     inspec = mapOpcode opF $ \x -> 
                (getConfA x) 
@@ -300,7 +300,7 @@ sum opF =
 
 product :: OpcodeList1 ARate -> Element ARate
 product opF = 
-    mkOpcode "product" inspec (Out1 A)
+    mkOpcode "product" inspec [] (Out1 A)
   where
     inspec = mapOpcode opF $ \x -> 
                (getConfA x) 
@@ -310,7 +310,7 @@ product opF =
 pow :: forall rate. (Rate rate) 
     => Opcode2 rate rate -> Element rate
 pow opF = 
-    mkOpcode "pow" inspec (Out1 $ dataRate (undefined::rate))
+    mkOpcode "pow" inspec [] (Out1 $ dataRate (undefined::rate))
   where
     inspec = applyOpcode opF $ \(a,b) -> 
                [ getConfUniv a, getConfUniv b ]
@@ -318,7 +318,7 @@ pow opF =
 taninv2 :: forall rate. (Rate rate) 
         => Opcode2 rate rate -> Element rate
 taninv2 opF = 
-    mkOpcode "taninv2" inspec (Out1 $ dataRate (undefined::rate))
+    mkOpcode "taninv2" inspec [] (Out1 $ dataRate (undefined::rate))
   where
     inspec = applyOpcode opF $ \(a,b) -> 
                [ getConfUniv a, getConfUniv b ]
@@ -326,14 +326,14 @@ taninv2 opF =
 
 mac :: OpcodeList2 ARate KRate -> Element ARate
 mac opF = 
-    mkOpcode "mac" inspec (Out1 A)
+    mkOpcode "mac" inspec [] (Out1 A)
   where
     inspec = mapOpcode2 opF $ \(a,b) -> 
               [getConfA a, getConfK b]
 
 maca :: OpcodeList1 ARate -> Element ARate
 maca opF = 
-    mkOpcode "maca" inspec (Out1 A)
+    mkOpcode "maca" inspec [] (Out1 A)
   where
     inspec = mapOpcode opF $ \x -> 
                (getConfA x) 
@@ -382,7 +382,7 @@ cpsoct    = funcall "cpsoct"
 
 cps2pch :: Opcode2 IInit IInit -> Element IInit
 cps2pch opF = 
-    mkOpcode "cps2pch" inspec (Out1 I)
+    mkOpcode "cps2pch" inspec [] (Out1 I)
   where
     inspec = applyOpcode opF $ \(ipch, ieq) -> 
                [ getConfI ipch, getConfI ieq ] 
@@ -391,7 +391,7 @@ cps2pch opF =
 cpsxpch :: Opcode4 IInit IInit IInit IInit 
         -> Element IInit
 cpsxpch opF = 
-    mkOpcode "cps2pch" inspec (Out1 I)
+    mkOpcode "cps2pch" inspec [] (Out1 I)
   where
     inspec = applyOpcode opF $ \(ipch, ieq, irep, ibase) -> 
                [ getConfI ipch,     getConfI ieq
