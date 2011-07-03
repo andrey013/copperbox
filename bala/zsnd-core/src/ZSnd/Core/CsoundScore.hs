@@ -17,29 +17,65 @@
 module ZSnd.Core.CsoundScore
   (
 
-    Section(..)
-  , DStmt(..)
-  , CsoundValue(..)
+  -- * Re-exports
+    Score(..)
+  , GenStmtProps(..)
+  , InstStmtProps(..)
+  , AbsPrimStmt                 -- opaque
+  , PrimStmt                    -- opaque
 
-  , ScoBuilder
-  , runScoBuilder
-  , setTableNum 
 
-  , advance
-  , dyngen
-  , dyninst
+  -- * Build scores
+  , frame 
+
+  , absTableGen
+  , absEvent
+
  
   ) where
 
-import ZSnd.Core.Utils.FormatCombinators
-import ZSnd.Core.Utils.HList
+import ZSnd.Core.ScoreInternal
+import qualified ZSnd.Core.Utils.JoinList as JL
 
-import Control.Applicative
+import Data.List ( sortBy )
 
--- Is there a pressing need to build syntax?
+-- | Lift a list of primitives to a score.
+--
+-- \*\* WARNING \*\* - this function throws a runtime error when 
+-- supplied the empty list.
+--
+frame :: [AbsPrimStmt] -> Score
+frame [] = error "Zsnd.Core.CsoundScore.frame - empty list"
+frame xs = step0 $ sortBy cmp xs 
+  where 
+    cmp a b = compare (absPrimStart a) (absPrimStart b)
+
+    step0 []                          = error "frame - unreachable" 
+    step0 (AbsTableStmt ot props :es) = 
+        step1 (ot,0) ot (JL.one $ TableStmt 0 props) es
+
+    step0 (AbsInstStmt  ot props :es) = 
+        step1 (ot,inst_dur props) ot (JL.one $ InstStmt 0 props) es
 
 
+    step1 (t0,d) _ ac []                          = 
+        Leaf (Timespan t0 (t0+d), Frame t0 1) ac
 
+    step1 (t0,d) t1 ac (AbsTableStmt ot props :es) = 
+        step1 (t0,d) ot (JL.snoc ac $ TableStmt (ot - t1) props) es
+
+    step1 (t0,d) t1 ac (AbsInstStmt ot props :es) = 
+        let dnew = d + (ot - t1) + inst_dur props
+        in step1 (t0,dnew) ot (JL.snoc ac $ InstStmt (ot - t1) props) es
+   
+
+absTableGen :: Double -> GenStmtProps -> AbsPrimStmt
+absTableGen = AbsTableStmt
+
+absEvent :: Double -> InstStmtProps -> AbsPrimStmt
+absEvent = AbsInstStmt
+
+{-
 
 newtype Section = Section  { getSection :: [DStmt] }
   deriving (Eq,Ord,Show)
@@ -165,3 +201,4 @@ instance Format DStmt where
 
   format (F0Stmt s) = text "f0" <+> padl 5 (dtrunc s)
 
+-}

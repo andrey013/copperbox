@@ -11,10 +11,12 @@ import ZSnd.Core.Opcodes
 import System.Directory
 import System.Process
 
+
+
 main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/" 
-    writeUnifiedFile "out/cs101.csd" flags orch01 [sco01]
+    writeUnifiedFile "out/cs101.csd" flags orch01 sco01
     _ <- system "csound out/cs101.csd"
     return ()
   where
@@ -28,9 +30,18 @@ orch01 = Orch default_mono_header [inst1]
       o1   <-  alet $ out1 $ port1_1 id
       a1   =>= o1
       out o1
+
+sco01 :: Score 
+sco01 = frame [ absTableGen 0 $ gen10 1 4096 [1] 
+              , absEvent    0 $ InstStmtProps 101 3 [] 
+              ]
+
+{-
   
 sco01 :: Section
 sco01 = runScoBuilder $ do 
     gen10   0 4096 [1]  
     dyninst 101 0 3 []
 --    dyninst 101 3 3 []
+
+-}

@@ -32,12 +32,16 @@ module ZSnd.Core.OutputCsound
 
 import ZSnd.Core.CSDDoc
 import ZSnd.Core.CsoundInst
-import ZSnd.Core.CsoundScore
+import ZSnd.Core.ScoreInternal
 import ZSnd.Core.Utils.FormatCombinators
+import ZSnd.Core.Utils.JoinList hiding ( empty )
 
-import Data.List
+import Control.Applicative hiding ( empty )
 
-writeSco :: FilePath -> [Section] -> IO ()
+
+
+
+writeSco :: FilePath -> Score -> IO ()
 writeSco file_path xs = writeFile file_path $ show $ buildScoreDoc xs
 
 -- | Orchestra file needs a prologue (sr, ksmps, ...)
@@ -46,13 +50,13 @@ writeOrc :: FilePath -> Orch -> IO ()
 writeOrc file_path orch = writeFile file_path $ show $ format orch
 
 
-writeUnifiedFile :: FilePath -> CsoundFlags -> Orch -> [Section] -> IO ()
+writeUnifiedFile :: FilePath -> CsoundFlags -> Orch -> Score -> IO ()
 writeUnifiedFile file_path flags orch sco = 
     writeFile file_path $ show $ csound_synthesizer dflags dorch dsco
   where
     dflags = cs_options [getCsoundFlags flags]
     dorch  = cs_instruments [format orch]
-    dsco   = cs_score $ map format sco
+    dsco   = cs_score $ buildScoreDoc sco
 
 
 data CsoundFlags = CsoundFlags { getCsoundFlags :: String }
@@ -81,59 +85,129 @@ flags_aiff_file_out aiff = CsoundFlags $ body
 --------------------------------------------------------------------------------
 -- Printing scores
 
-buildScoreDoc :: [Section] -> Doc
-buildScoreDoc []     = empty
-buildScoreDoc (x:xs) = step x xs
-  where
-    step a []     = renderSection a `vconcat` char 'e'
-    step a (b:bs) = let d1 = renderSection a `vconcat` char 'e' `vconcat` empty
-                    in d1 `vconcat` step b bs
-
--- write Sco files with carry (.) shorthand.
--- (never carry inst).
--- default column width is 5
+buildScoreDoc :: Score -> Doc
+buildScoreDoc = evalScoMonad . score
 
 
-data CarrySt = CarrySt 
-      { instr_num   :: Int
-      , args_list   :: [Double]
+data St = St 
+      { cummulative_time    :: Double 
+      , scale_factor        :: Double
+      , carry_props         :: InstStmtProps
       }
-  deriving (Eq,Show)
 
-
-init_st :: CarrySt
-init_st = CarrySt { instr_num = (-1), args_list = [] }
-
--- | Differentiate the curent line from the Carry state. 
---
--- Print (.) in the generated output where the values are the 
--- same.
---
-oneline :: Int -> Double -> Double -> [Double] -> CarrySt -> (CarrySt, Doc)
-oneline inst st dur args s0 
-    | inst == instr_num s0 = let doc = diff dprefix (args_list s0) new_args
-                             in (CarrySt inst new_args, doc)
-    | otherwise            = (CarrySt inst new_args, doc0) 
+st_zero :: St
+st_zero = St { cummulative_time = 0 
+             , scale_factor     = 1
+             , carry_props      = false_inst 
+             }
   where
-    new_args              = st:dur:args
-    dprefix               = char 'i' <+> padr 5 (int inst)
+    false_inst = InstStmtProps { inst_num     = (-1)
+                               , inst_dur     = (-1.0)
+                               , inst_pfields = [] } 
+
+
+-- | ScoMonad is a State monad.
+-- 
+-- State tracks onset time and \"carry\" printing.
+--
+newtype ScoMonad a = ScoMonad { getScoMonad :: St -> (a,St) }
+
+
+
+instance Functor ScoMonad where
+  fmap f ma = ScoMonad $ \s -> let (a, s1) = getScoMonad ma s in (f a, s1)
+
+
+instance Applicative ScoMonad where
+  pure a    = ScoMonad $ \s -> (a, s)
+  mf <*> ma = ScoMonad $ \s -> let (f,s1) = getScoMonad mf s
+                                   (a,s2) = getScoMonad ma s1
+                               in (f a,s2)
+
+instance Monad ScoMonad where
+  return a  = ScoMonad $ \s -> (a, s)
+  ma >>= k  = ScoMonad $ \s -> let (a,s1) = getScoMonad ma s
+                                   (b,s2) = (getScoMonad . k) a s1
+                               in (b, s2)
+
+
+evalScoMonad :: ScoMonad a -> a
+evalScoMonad ma = fst $ getScoMonad ma st_zero
+
+
+-- | This is for nesting in scores...
+--
+localBumpLocale :: Double -> Double -> ScoMonad a -> ScoMonad a
+localBumpLocale tx sx ma = ScoMonad $ \s -> 
+    let t0 = cummulative_time s
+        sf = scale_factor s
+    in getScoMonad ma (s { cummulative_time = t0 + tx, scale_factor = sf * sx })
+
+
+-- | This is for contiguous notes...
+--
+nextOnsetTime :: Double -> ScoMonad Double
+nextOnsetTime dt = ScoMonad $ \s -> let t0 = cummulative_time s
+                                        sf = scale_factor s
+                                        t1 = t0 + sf * dt
+                                    in (t1, s { cummulative_time = t1 } )
+
+
+-- | Return a list of rendered pfields - dot indicates same.
+-- 
+-- Obviously if the instrument changes all fields are /fresh/.
+--
+-- It\'s not enforced but the same instrument should always have 
+-- pfield lists of the same length.
+--
+pfieldDiffs :: InstStmtProps -> ScoMonad [Doc]
+pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
+    if i == (inst_num $ carry_props s)
+       then let ans = diff (inst_pfields $ carry_props s) ps
+            in (ans, s { carry_props = new })
+       else (map field ps, s {carry_props = new})
+  where
     field                 = padl 5 . dtrunc
-    doc0                  = dprefix <+> hsep (map field (st:dur:args))
 
-    diff ac (x:xs) (y:ys) 
-      | x `tEQ` y         = diff (ac <+> padl 5 (char '.')) xs ys
-      | otherwise         = diff (ac <+> padl 5 (dtrunc y)) xs ys
-    diff ac []     ys     = ac <+> hsep (map field ys)
-    diff ac xs     []     = ac <+> hsep (map field xs)
-    
+    diff (x:xs) (y:ys) 
+      | x `tEQ` y         = (padl 5 $ char '.') : diff xs ys
+      | otherwise         = (padl 5 $ dtrunc y) : diff xs ys
 
-renderSection :: Section -> Doc
-renderSection = vcat . snd . mapAccumL fn init_st . getSection
+    -- These cases shouldn't match...
+    diff []     ys     = map field ys
+    diff xs     []     = map field xs
+
+
+--------------------------------------------------------------------------------
+-- Translation
+
+score :: Score -> ScoMonad Doc
+score (Leaf loc ones)  = bracketLocale loc $ oneConcat primitive ones
+score (Score loc ones) = bracketLocale loc $ oneConcat score ones
+
+
+bracketLocale :: Locale -> ScoMonad a -> ScoMonad a
+bracketLocale loc ma = let ogin = frame_origin $ snd loc
+                           sf   = frame_scaling $ snd loc
+                       in localBumpLocale ogin sf ma
+
+oneConcat :: (a -> ScoMonad Doc) -> JoinList a -> ScoMonad Doc
+oneConcat fn ones = outstep (viewl ones)
   where
-    fn _  a@(TableStmt _ _ _ _ _)   = (init_st, format a)
-    fn st   (InstStmt i t dur args) = oneline i t dur args st
-    fn st a@(F0Stmt _)              = (st, format a)
+    outstep (e :< rest)   = fn e >>= \a -> instep a (viewl rest)
+    outstep EmptyL        = return empty
+    
+    instep ac EmptyL      = return ac
+    instep ac (e :< rest) = fn e >>= \a -> instep (ac `vconcat` a) (viewl rest)
 
+
+primitive :: PrimStmt -> ScoMonad Doc
+primitive (TableStmt dt (GenStmtProps ix sz gen args)) =
+    (\ot -> cs_sco_table_stmt ix ot sz gen args) <$> nextOnsetTime dt
+    
+primitive (InstStmt dt props) =
+    (\ot ps -> cs_sco_inst_stmt (inst_num props) ot (inst_dur props) ps) 
+      <$> nextOnsetTime dt <*> pfieldDiffs props
 
 
 infix 4 `tEQ`
@@ -146,3 +220,4 @@ infix 4 `tEQ`
 --
 tEQ :: Double -> Double -> Bool
 tEQ a b = (abs (a-b)) < 0.000001
+

@@ -67,7 +67,7 @@ module ZSnd.Core.GenRoutines
 
   ) where
 
-import ZSnd.Core.CsoundScore
+import ZSnd.Core.ScoreInternal
 
 
 
@@ -78,32 +78,34 @@ import ZSnd.Core.CsoundScore
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids.
 -- 
--- > gen9 :: time * size * [(partial_num, strength, inital_phase)]
+-- > gen9 :: inst_field_ref * size * [(partial_num, strength, inital_phase)]
 -- 
-gen9 :: Double -> Int -> [(Double,Double,Double)] -> ScoBuilder ()
-gen9 t sz xs = dyngen 9 t sz (double3 xs)
+gen9 :: Int -> Int -> [(Double,Double,Double)] -> GenStmtProps
+gen9 ix sz xs = GenStmtProps ix sz 9 (double3 xs)
+
 
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids.
 --
--- > gen10 :: time * size * [relative_strength]
+-- > gen10 :: inst_field_ref * size * [relative_strength]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen10 :: Double -> Int -> [Double] -> ScoBuilder ()
-gen10 t sz xs = dyngen 10 t sz (map CsDouble xs)
+gen10 :: Int -> Int -> [Double] -> GenStmtProps
+gen10 ix sz xs = GenStmtProps ix sz 10 (map CsDouble xs)
+
 
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids.
 -- 
--- > gen19 :: time * size * [(partial_num, strength, inital_phase, dc_offset)]
+-- > gen19 :: inst_field_ref * size * [(partial, strength, initial_phase, dc_offset)]
 --
-gen19 :: Double -> Int -> [(Double,Double,Double,Double)] -> ScoBuilder ()
-gen19 t sz xs = dyngen 19 t sz (double4 xs)
+gen19 :: Int -> Int -> [(Double,Double,Double,Double)] -> GenStmtProps
+gen19 ix sz xs = GenStmtProps ix sz 19 (double4 xs)
 
 -- | Generate additive set of cosine partials.
 -- 
--- > gen11 :: time * size * num_harmonics *
+-- > gen11 :: inst_field_ref * size * num_harmonics *
 --
 -- @num_harmonics@ must be positive.
 --
@@ -112,8 +114,8 @@ gen19 t sz xs = dyngen 19 t sz (double4 xs)
 -- 
 -- ZSnd needs extending to handle this optional cases... 
 --
-gen11 :: Double -> Int -> Int -> ScoBuilder ()
-gen11 t sz nh  = dyngen 11 t sz [ CsInt nh ]
+gen11 :: Int -> Int -> Int -> GenStmtProps
+gen11 ix sz nh  = GenStmtProps ix sz 11 [ CsInt nh ]
 
 
 --------------------------------------------------------------------------------
@@ -122,22 +124,22 @@ gen11 t sz nh  = dyngen 11 t sz [ CsInt nh ]
 
 -- | Construct exponential curve table.
 -- 
--- > gen10 :: time * size * [(ordinate_value, length)]
+-- > gen10 :: inst_field_ref * size * [(ordinate_value, length)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 -- @ordinate_values@ cannot be zero, use 0.001 for a near zero 
 -- number.
 --
-gen5 :: Double -> Int -> [(Double, Int) ] -> ScoBuilder ()
-gen5 t sz xs = dyngen 5 t sz (concatMap fn xs)
+gen5 :: Int -> Int -> [(Double, Int) ] -> GenStmtProps
+gen5 ix sz xs = GenStmtProps ix sz 5 (concatMap fn xs)
   where
     fn (d,i) = [CsDouble d, CsInt i]
 
 
 -- | Construct a table of cubic polynomial segments.
 -- 
--- > gen6 :: time * size * a -> [(n, b, n+1, c, n+2, d)]
+-- > gen6 :: inst_field_ref * size * a -> [(n, b, n+1, c, n+2, d)]
 -- 
 -- @m0@ is the start maxima, sucessive curve segments are 
 -- specified as ordinate_value and maxima tuples interspersed
@@ -146,9 +148,9 @@ gen5 t sz xs = dyngen 5 t sz (concatMap fn xs)
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen6 :: Double -> Int -> Double 
-     -> [(Int,Double, Int,Double, Int,Double)] -> ScoBuilder ()
-gen6 t sz a xs = dyngen 6 t sz (CsDouble a : concatMap fn xs)
+gen6 :: Int -> Int -> Double 
+     -> [(Int,Double, Int,Double, Int,Double)] -> GenStmtProps
+gen6 ix sz a xs = GenStmtProps ix sz 6 (CsDouble a : concatMap fn xs)
   where
     fn (n,b,n1,c,n2,d) = [ CsInt n,  CsDouble b
                          , CsInt n1, CsDouble c
@@ -159,14 +161,14 @@ gen6 t sz a xs = dyngen 6 t sz (CsDouble a : concatMap fn xs)
 
 -- | Construct a table of straight line segments.
 -- 
--- > gen7 :: time * size * [(ordinate_value, length)]
+-- > gen7 :: inst_field_ref * size * [(ordinate_value, length)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 -- @segment_length@ cannot be negative, though it can be zero.
 --
-gen7 :: Double -> Int -> [(Double, Int)] -> ScoBuilder ()
-gen7 t sz xs = dyngen 7 t sz (concatMap fn xs)
+gen7 :: Int -> Int -> [(Double, Int)] -> GenStmtProps
+gen7 ix sz xs = GenStmtProps ix sz 7 (concatMap fn xs)
   where
     fn (a,n) = [ CsDouble a, CsInt n ] 
 
@@ -174,7 +176,7 @@ gen7 t sz xs = dyngen 7 t sz (concatMap fn xs)
 
 -- | Construct a table of cubic spine segments.
 -- 
--- > gen8 :: time * size * ordinate_value * [(segment_length, ordinate_value)]
+-- > gen8 :: inst_field_ref * size * ordinate_value * [(segment_length, ordinate_value)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
@@ -183,32 +185,32 @@ gen7 t sz xs = dyngen 7 t sz (concatMap fn xs)
 --
 -- Note - potentially the segment list should be three * two-tuples.
 --
-gen8 :: Double -> Int -> Double -> [(Int,Double)] -> ScoBuilder ()
-gen8 t sz a xs = dyngen 8 t sz (CsDouble a : concatMap fn xs)
+gen8 :: Int -> Int -> Double -> [(Int,Double)] -> GenStmtProps
+gen8 ix sz a xs = GenStmtProps ix sz 8 (CsDouble a : concatMap fn xs)
   where
     fn (n,b) = [ CsInt n, CsDouble b ] 
 
 
 -- | Construct exponential curves in breakpoint fashion.
 -- 
--- > gen25 :: time * size * table_loc * [(break_point, table_loc)]
+-- > gen25 :: inst_field_ref * size * table_loc * [(break_point, table_loc)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen25 :: Double -> Int -> Int -> [(Int,Int)] -> ScoBuilder ()
-gen25 t sz a xs = dyngen 25 t sz (CsInt a : concatMap fn xs)
+gen25 :: Int -> Int -> Int -> [(Int,Int)] -> GenStmtProps
+gen25 ix sz a xs = GenStmtProps ix sz 25 (CsInt a : concatMap fn xs)
   where
     fn (n,b) = [ CsInt n, CsInt b ] 
 
 
 -- | Construct straight lines in brreakpoint fashion.
 -- 
--- > gen8 :: time * size * ordinate_value * [(segment_length, ordinate_value)]
+-- > gen8 :: inst_field_ref * size * ordinate_value * [(segment_length, ordinate_value)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen27 :: Double -> Int -> Int -> [(Int,Int)] -> ScoBuilder ()
-gen27 t sz a xs = dyngen 27 t sz (CsInt a : concatMap fn xs)
+gen27 :: Int -> Int -> Int -> [(Int,Int)] -> GenStmtProps
+gen27 ix sz a xs = GenStmtProps ix sz 27 (CsInt a : concatMap fn xs)
   where
     fn (n,b) = [ CsInt n, CsInt b ] 
 
@@ -218,7 +220,7 @@ gen27 t sz a xs = dyngen 27 t sz (CsInt a : concatMap fn xs)
 
 -- | Read data from a sound file into a table.
 --
--- > gen1 :: time * size * file_name * skip_time * format * channel
+-- > gen1 :: inst_field_ref * size * file_name * skip_time * format * channel
 -- 
 -- @skip_time@ is read position start position within the file.
 -- 
@@ -229,30 +231,30 @@ gen27 t sz a xs = dyngen 27 t sz (CsInt a : concatMap fn xs)
 -- anonymous numbered sound files, ZSyn needs all files to be 
 -- named.
 -- 
-gen1 :: Double -> Int -> String -> Double -> Int -> Int -> ScoBuilder ()
-gen1 t sz fc skip fmt ch = 
-    dyngen 1 t sz [CsString fc, CsDouble skip, CsInt fmt, CsInt ch]
+gen1 :: Int -> Int -> String -> Double -> Int -> Int -> GenStmtProps
+gen1 ix sz fc skip fmt ch = 
+    GenStmtProps ix sz 1 [CsString fc, CsDouble skip, CsInt fmt, CsInt ch]
 
 
 -- | Read numeric values from a text file.
 --
--- > gen23 :: time * size * file_name
+-- > gen23 :: inst_field_ref * size * file_name
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen23 :: Double -> Int -> String -> ScoBuilder ()
-gen23 t sz file_path = dyngen 23 t sz [CsString file_path]
+gen23 :: Int -> Int -> String -> GenStmtProps
+gen23 ix sz file_path = GenStmtProps ix sz 23 [CsString file_path]
 
 
 -- | Read a time-tagged trajectory from a file.
 --
--- > gen28 :: time * file_name 
+-- > gen28 :: inst_field_ref * file_name 
 -- 
 -- Note - size is automatically set to 0 in the generated Csound
 -- score. Csound itself handles the allocation size.
 -- 
-gen28 :: Double -> String -> ScoBuilder ()
-gen28 t file_name = dyngen 28 t 0 [CsString file_name]
+gen28 :: Int -> String -> GenStmtProps
+gen28 ix file_name = GenStmtProps ix 0 28 [CsString file_name]
 
 
 --------------------------------------------------------------------------------
@@ -260,31 +262,31 @@ gen28 t file_name = dyngen 28 t 0 [CsString file_name]
 
 -- | Transfer data from immediate p-fields into a table.
 --
--- > gen2 :: time * size * [value] 
+-- > gen2 :: inst_field_ref * size * [value] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen2 :: Double -> Int -> [Int] -> ScoBuilder ()
-gen2 t sz xs = dyngen 2 t sz (map CsInt xs)
+gen2 :: Int -> Int -> [Int] -> GenStmtProps
+gen2 ix sz xs = GenStmtProps ix sz 2 (map CsInt xs)
 
 -- | /Negative/ version of gen2.
 --
--- > genN2 :: time * size * [value] 
+-- > genN2 :: inst_field_ref * size * [value] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-genN2 :: Double -> Int -> [Int] -> ScoBuilder ()
-genN2 t sz xs = dyngen (-2) t sz (map CsInt xs)
+genN2 :: Int -> Int -> [Int] -> GenStmtProps
+genN2 ix sz xs = GenStmtProps ix sz (-2) (map CsInt xs)
 
 
 -- | Generate a step table from the supplied pairs.
 --
--- > gen17 :: time * size * [(ordinate,y_value)] 
+-- > gen17 :: inst_field_ref * size * [(ordinate,y_value)] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen17 :: Double -> Int -> [(Int,Int)] -> ScoBuilder ()
-gen17 t sz xs = dyngen 17 t sz (int2 xs)
+gen17 :: Int -> Int -> [(Int,Int)] -> GenStmtProps
+gen17 ix sz xs = GenStmtProps ix sz 17 (int2 xs)
 
 
 --------------------------------------------------------------------------------
@@ -314,12 +316,12 @@ gen20Opts SYNC            mx = [CsInt 9, CsInt mx]
 
 -- | Generate functions of different windows.
 --
--- > gen20 :: time * size * window_type * maximum
+-- > gen20 :: inst_field_ref * size * window_type * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen20 :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
-gen20 t sz wt mx = dyngen 20 t sz (gen20Opts wt mx)
+gen20 :: Int -> Int -> Gen20Window -> Int -> GenStmtProps
+gen20 ix sz wt mx = GenStmtProps ix sz 20 (gen20Opts wt mx)
 
 
 -- | /Negative/ version of gen20.
@@ -330,8 +332,8 @@ gen20 t sz wt mx = dyngen 20 t sz (gen20Opts wt mx)
 -- 
 -- > f1       0       1024    -20     2       456
 --
-genN20 :: Double -> Int -> Gen20Window -> Int -> ScoBuilder ()
-genN20 t sz wt mx = dyngen (-20) t sz (gen20Opts wt mx)
+genN20 :: Int -> Int -> Gen20Window -> Int -> GenStmtProps
+genN20 ix sz wt mx = GenStmtProps ix sz (-20) (gen20Opts wt mx)
 
 --------------------------------------------------------------------------------
 -- Random functions 
@@ -361,12 +363,12 @@ gen21Opts POISSON         lv = [CsInt 11, CsDouble lv]
 
 -- | Generate tabels of random distributions.
 --
--- > gen21 :: time * size * distribution_type * level
+-- > gen21 :: inst_field_ref * size * distribution_type * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen21 :: Double -> Int -> Gen21Dist -> Double -> ScoBuilder ()
-gen21 t sz dist lv = dyngen 21 t sz (gen21Opts dist lv)
+gen21 :: Int -> Int -> Gen21Dist -> Double -> GenStmtProps
+gen21 ix sz dist lv = GenStmtProps ix sz 21 (gen21Opts dist lv)
 
 
 
@@ -375,71 +377,75 @@ gen21 t sz dist lv = dyngen 21 t sz (gen21Opts dist lv)
 
 -- | Generate a table by evaulating a polynomial.
 --
--- > gen3 :: time * size * xval1 * xval2 * [coeffcients] 
+-- > gen3 :: inst_field_ref * size * xval1 * xval2 * [coeffcients] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen3 :: Double -> Int -> Int -> Int -> [(Double,Double)] -> ScoBuilder ()
-gen3 t sz x1 x2 xs = dyngen 3 t sz (CsInt x1 : CsInt x2 : double2 xs)
+gen3 :: Int -> Int -> Int -> Int -> [(Double,Double)] -> GenStmtProps
+gen3 ix sz x1 x2 xs = GenStmtProps ix sz 3 (CsInt x1 : CsInt x2 : double2 xs)
 
 
 -- | Store a Chebyshev polynomial of the first kind.
 --
--- > gen13 :: time * size * xint * xamp * [partial_strength] 
+-- > gen13 :: inst_field_ref * size * xint * xamp * [partial_strength] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen13 :: Double -> Int -> Int -> Int -> [Double] -> ScoBuilder ()
-gen13 t sz x1 x2 xs = dyngen 13 t sz (CsInt x1 : CsInt x2 : map CsDouble xs)
+gen13 :: Int -> Int -> Int -> Int -> [Double] -> GenStmtProps
+gen13 ix sz x1 x2 xs = 
+    GenStmtProps ix sz 13 (CsInt x1 : CsInt x2 : map CsDouble xs)
 
 
 -- | Store a Chebyshev polynomial of the second kind.
 --
--- > gen14 :: time * size * xint * xamp * [partial_strength] 
+-- > gen14 :: inst_field_ref * size * xint * xamp * [partial_strength] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen14 :: Double -> Int -> Int -> Int -> [Double] -> ScoBuilder ()
-gen14 t sz x1 x2 xs = dyngen 14 t sz (CsInt x1 : CsInt x2 : map CsDouble xs)
+gen14 :: Int -> Int -> Int -> Int -> [Double] -> GenStmtProps
+gen14 ix sz x1 x2 xs = 
+    GenStmtProps ix sz 14 (CsInt x1 : CsInt x2 : map CsDouble xs)
 
 
 -- | Generate two tables of stored polynomials.
 --
--- > gen15 :: time * size * xint * xamp * [(partial_strength, phase)] 
+-- > gen15 :: inst_field_ref * size * xint * xamp * [(partial_strength, phase)] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen15 :: Double -> Int -> Int -> Int -> [(Double,Double)] -> ScoBuilder ()
-gen15 t sz x1 x2 xs = dyngen 15 t sz (CsInt x1 : CsInt x2 : double2 xs)
+gen15 :: Int -> Int -> Int -> Int -> [(Double,Double)] -> GenStmtProps
+gen15 ix sz x1 x2 xs = 
+    GenStmtProps ix sz 15 (CsInt x1 : CsInt x2 : double2 xs)
 
 --------------------------------------------------------------------------------
 -- Amplitude scaling
 
 -- | Generate a log of a Bessel function of the second kind.
 --
--- > gen4 :: time * size * source_table * source_mode 
+-- > gen4 :: inst_field_ref * size * source_table * source_mode 
 -- 
 -- @size@ must be a power-of-2 plus 1.
 --
-gen4 :: Double -> Int -> Int -> Int -> ScoBuilder ()
-gen4 t sz src src_mode = dyngen 4 t sz [CsInt src, CsInt src_mode]
+gen4 :: Int -> Int -> Int -> Int -> GenStmtProps
+gen4 ix sz src src_mode = 
+    GenStmtProps ix sz 4 [CsInt src, CsInt src_mode]
 
 
 -- | Generate a normalizing function.
 --
--- > gen12 :: time * size * xint 
+-- > gen12 :: inst_field_ref * size * xint 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-gen12 :: Double -> Int -> Int -> ScoBuilder ()
-gen12 t sz xint = dyngen 12 t sz [CsInt xint]
+gen12 :: Int -> Int -> Int -> GenStmtProps
+gen12 ix sz xint = GenStmtProps ix sz 12 [CsInt xint]
 
 -- | Negative version of 'gen12'.
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
-genN12 :: Double -> Int -> Int -> ScoBuilder ()
-genN12 t sz xint = dyngen (-12) t sz [CsInt xint]
+genN12 :: Int -> Int -> Int -> GenStmtProps
+genN12 ix sz xint = GenStmtProps ix sz (-12) [CsInt xint]
 
 
 

@@ -27,10 +27,13 @@ module ZSnd.Core.CSDDoc
   , cs_options
   , cs_instruments
   , cs_score 
+  
+  , cs_sco_table_stmt
+  , cs_sco_inst_stmt
 
   ) where
 
-
+import ZSnd.Core.ScoreInternal
 import ZSnd.Core.Utils.FormatCombinators
 
 csdStartTag :: String -> Doc
@@ -58,5 +61,23 @@ cs_instruments xs = csdElem "CsInstruments" (vcat xs)
 
 -- | Note - this terminates with an @e@.
 --
-cs_score :: [Doc] -> Doc
-cs_score xs = csdElem "CsScore" (vcat xs `vconcat` char 'e' )
+cs_score :: Doc -> Doc
+cs_score d = csdElem "CsScore" (d `vconcat` char 'e' )
+
+
+cs_sco_table_stmt :: Int -> Double -> Int -> Int -> [CsoundValue] -> Doc
+cs_sco_table_stmt ix t0 sz gennum args = 
+    char 'f' <+> padr 5 (int ix) 
+             <+> padl 5 (dtrunc t0) 
+             <+> padl 5 (int sz)
+             <+> padl 5 (int gennum) 
+             <+> hsep (map (padl 5 . format) args)
+
+
+cs_sco_inst_stmt :: Int -> Double -> Double -> [Doc] -> Doc
+cs_sco_inst_stmt inst start dur args = 
+    char 'i' <+> padr 5 (int inst)
+             <+> padl 5 (dtrunc start) 
+             <+> padl 5 (dtrunc dur)
+             <+> hsep args
+

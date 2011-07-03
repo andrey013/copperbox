@@ -47,8 +47,10 @@ library
 
   other-modules:
     ZSnd.Core.CSDDoc,
+    ZSnd.Core.ScoreInternal,
     ZSnd.Core.Utils.FormatCombinators,
     ZSnd.Core.Utils.FormatExpr,
+    ZSnd.Core.Utils.JoinList,
     ZSnd.Core.Utils.HList
       
   extensions:
