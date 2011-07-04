@@ -64,6 +64,7 @@ newtype LocEvent ctx u a = LocEvent {
 
 
 type instance DUnit (LocEvent ctx u a) = u
+type instance UCtx  (LocEvent ctx u)   = ctx
 
 
 
@@ -109,7 +110,6 @@ instance Monoid a => Monoid (LocEvent ctx u a) where
 -- DrawingCtxM
 
 instance ContextM (LocEvent ctx u) where
-  type UCtx (LocEvent ctx u) = ctx
   askCtx          = LocEvent $ \_  -> askCtx
   asksCtx fn      = LocEvent $ \_  -> asksCtx fn
   localize upd ma = LocEvent $ \ot -> localize upd (getLocEvent ma ot)
@@ -188,7 +188,7 @@ emptyLocEvent = mempty
 moveStart :: InterpretUnit u
           => u -> LocEvent ctx u a -> LocEvent ctx u a
 moveStart dt ma = LocEvent $ \t1 -> 
-    normalizeCtx dt >>= \ddt -> getLocEvent ma (t1 + ddt) 
+    zapQuery (normalizeCtx dt) >>= \ddt -> getLocEvent ma (t1 + ddt) 
 
 
 

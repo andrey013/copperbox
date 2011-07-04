@@ -87,7 +87,10 @@ newtype NotelistT ctx u m a = NotelistT {
           getNotelistT :: Context ctx -> m (a, HPrim u) }
 
 type instance DUnit (Notelist ctx u a) = u
+type instance UCtx (Notelist ctx u)    = ctx
+
 type instance DUnit (NotelistT ctx u m a) = u
+type instance UCtx (NotelistT ctx u m)    = ctx
 
 type DNotelist ctx a    = Notelist ctx Double a
 type DNotelistT ctx m a = NotelistT ctx Double m a
@@ -166,7 +169,6 @@ instance Monad m => TraceM (NotelistT ctx u m) where
 -- ContextM
 
 instance ContextM (Notelist ctx u) where
-  type UCtx (Notelist ctx u) = ctx
   askCtx          = Notelist $ \ctx -> (ctx, mempty)
   asksCtx f       = Notelist $ \ctx -> (f ctx, mempty)
   localize upd ma = Notelist $ \ctx -> getNotelist ma (upd ctx)
@@ -174,7 +176,6 @@ instance ContextM (Notelist ctx u) where
 
 
 instance Monad m => ContextM (NotelistT ctx u m) where
-  type UCtx (NotelistT ctx u m) = ctx
   askCtx          = NotelistT $ \ctx -> return (ctx, mempty)
   asksCtx f       = NotelistT $ \ctx -> return (f ctx, mempty)
   localize upd ma = NotelistT $ \ctx -> getNotelistT ma (upd ctx)

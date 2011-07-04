@@ -19,8 +19,10 @@ module ZSnd.Basic.Kernel.Base.Context
   (
     Context(..)
   , ContextM(..)
+  , UCtx
 
   , ContextF
+
 
   , initialContext
 
@@ -70,10 +72,14 @@ data Context uctx = Context
       , ctx_user_context        :: uctx
       }
 
--- type family Ctx ctx :: *
-
 
 type ContextF uctx = Context uctx -> Context uctx
+
+
+
+type family UCtx m :: *
+
+
 
 -- | 'ContextM' is equivalent to the @MonadReader@ class.
 --
@@ -85,7 +91,6 @@ type ContextF uctx = Context uctx -> Context uctx
 --
 
 class (Applicative m, Monad m) => ContextM (m :: * -> *) where
-  type UCtx m :: *
   askCtx    :: r ~ UCtx m  => m (Context r)
   asksCtx   :: r ~ UCtx m => (Context r -> a) -> m a
   localize  :: r ~ UCtx m => ContextF r -> m a -> m a

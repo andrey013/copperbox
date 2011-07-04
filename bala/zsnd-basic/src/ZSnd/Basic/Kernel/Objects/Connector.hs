@@ -51,6 +51,7 @@ newtype Connector ctx u a = Connector {
 
 
 type instance DUnit (Connector ctx u a) = u
+type instance UCtx  (Connector ctx u)   = ctx
 
 -- | Type specialized version of 'Connector'.
 --
@@ -96,7 +97,6 @@ instance Monoid a => Monoid (Connector ctx u a) where
 -- DrawingCtxM
 
 instance ContextM (Connector ctx u) where
-  type UCtx (Connector ctx u) = ctx
   askCtx          = Connector $ \_  _  -> askCtx
   asksCtx f       = Connector $ \_  _  -> asksCtx f
   localize upd ma = Connector $ \t0 t1 -> 

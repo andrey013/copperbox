@@ -20,23 +20,12 @@ module ZSnd.Basic.Kernel.Objects.Score
     traceNotelist
   , traceNotelistU
 
-  , traceAdvNotelist
-  , traceAdvNotelistU
-
-  , traceOnsetNotelist
-  , traceOnsetNotelistU
-
     
   ) where
 
 
-import ZSnd.Basic.Kernel.Base.BaseDefs
 import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
-import ZSnd.Basic.Kernel.Objects.AdvNotelist
-import ZSnd.Basic.Kernel.Objects.Basis
-import ZSnd.Basic.Kernel.Objects.LocEvent
-import ZSnd.Basic.Kernel.Objects.OnsetNotelist
 import ZSnd.Basic.Kernel.Objects.TraceNotelist
 
 import ZSnd.Core                                -- package: zsnd-core
@@ -57,34 +46,6 @@ traceNotelistU ctx mf = maybe fk id $ traceNotelist ctx mf
   where
     fk = error "traceNotelistU - emptyScore." 
 
-
-
-
-traceAdvNotelist :: InterpretUnit u
-                 => Context ctx -> AdvNotelist ctx u a -> Maybe Score
-traceAdvNotelist ctx mf = 
-    let (PrimW ca _) = runLocEvent 0 ctx $ execAdvNotelist ctx mf
-    in liftToScoreMb $ singleH ca
-
-traceAdvNotelistU :: InterpretUnit u
-                  => Context ctx -> AdvNotelist ctx u a -> Score
-traceAdvNotelistU ctx mf = maybe fk id $ traceAdvNotelist ctx mf
-  where
-    fk = error "traceAdvNotelistU - emptyScore." 
-
-
-
-traceOnsetNotelist :: InterpretUnit u
-                   => Context ctx -> OnsetNotelist ctx u a -> Maybe Score
-traceOnsetNotelist ctx mf = 
-    let (PrimW ca _) = runLocEvent 0 ctx $ execOnsetNotelist ctx mf
-    in liftToScoreMb $ singleH ca
-
-traceOnsetNotelistU :: InterpretUnit u
-                    => Context ctx -> OnsetNotelist ctx u a -> Score
-traceOnsetNotelistU ctx mf = maybe fk id $ traceOnsetNotelist ctx mf
-  where
-    fk = error "traceOnsetNotelistU - emptyScore." 
 
 
 

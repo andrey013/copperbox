@@ -106,6 +106,7 @@ newtype Event ctx u a = Event {
           getEvent :: Context ctx -> PrimW u a }
 
 type instance DUnit (Event ctx u a) = u
+type instance UCtx  (Event ctx u)   = ctx
 
 
 type DEvent ctx a = Event ctx Double a
@@ -116,6 +117,7 @@ type UEvent ctx u = Event ctx u (UNil u)
 newtype Query ctx u a =  Query { getQuery :: Context ctx -> a }
 
 type instance DUnit (Query ctx u a) = u
+type instance UCtx  (Query ctx u)   = ctx
 
 -- Functor
 
@@ -168,13 +170,11 @@ instance Monoid a => Monoid (Query ctx u a) where
 
 
 instance ContextM (Event uctx u) where
-  type UCtx (Event uctx u) = uctx
   askCtx          = Event $ \ctx -> return ctx
   asksCtx fn      = Event $ \ctx -> return (fn ctx)
   localize upd ma = Event $ \ctx -> getEvent ma (upd ctx)
 
 instance ContextM (Query uctx u) where
-  type UCtx (Query uctx u) = uctx
   askCtx          = Query $ \ctx -> ctx
   asksCtx fn      = Query $ \ctx -> fn ctx
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
