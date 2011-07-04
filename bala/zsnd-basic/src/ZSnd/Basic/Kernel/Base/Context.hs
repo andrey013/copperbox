@@ -27,6 +27,8 @@ module ZSnd.Basic.Kernel.Base.Context
   , normalizeCtx
   , dinterpCtx
 
+  , get_user_context
+
   , get_tempo
   , set_tempo
 
@@ -135,6 +137,8 @@ dinterpCtx u = (\bpm -> dinterp bpm u) <$> get_tempo
 
 
 
+get_user_context :: (ContextM m, uctx ~ UCtx m) => m uctx
+get_user_context = asksCtx ctx_user_context
 
 
 get_tempo :: ContextM m => m Tempo
@@ -163,14 +167,17 @@ staccato_factor sd = (\s -> s { ctx_staccato_factor = sd })
 
 
 
-
-get_unit_duration :: (ContextM m, InterpretUnit u) => m u
+-- | @unit_duration@ is how long a note on an instrument without
+-- dynamic sustain  prologation sounds for.
+--
+-- The value is a @Double@ (seconds).
+--
+get_unit_duration :: ContextM m => m Double
 get_unit_duration = asksCtx ctx_unit_duration >>= dinterpCtx
 
 
-unit_duration :: InterpretUnit u => u -> ContextF uctx
-unit_duration ud = 
-    (\s -> let dd = normalize (ctx_tempo s) ud in s { ctx_unit_duration = dd })
+unit_duration :: Double -> ContextF uctx
+unit_duration ud = (\s -> s { ctx_unit_duration = ud })
 
 
 

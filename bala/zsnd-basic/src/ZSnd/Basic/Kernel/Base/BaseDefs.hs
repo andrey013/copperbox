@@ -29,14 +29,10 @@ module ZSnd.Basic.Kernel.Base.BaseDefs
   , dinterpF
   , uconvert1
   , uconvertF
-
-  , NoteStmt(..)
-  , orderNote
   
   ) where
 
 
-import ZSnd.Core
 
 import Data.Monoid
 
@@ -154,16 +150,27 @@ uconvertF bpm = fmap (uconvert1 bpm)
 
 
 
--- Onset time should always be positive.
---
-data NoteStmt = NoteStmt 
-      { onset_time  :: Double
-      , event_dur   :: Double
-      , event_gen   :: OnsetDbl -> Double -> ScoBuilder ()
-      }
+{-
 
+-- | Onset time should always be positive.
+--
+-- @note_length@ gives us the length of the event without us 
+-- having to run it. This is essential for summing the length of
+-- a list of notes before we renderer them - for score composition 
+-- it would be computationally expensive to render the list then 
+-- move all the elements. 
+--  
+-- 
+data NoteStmt = NoteStmt 
+      { onset_time    :: OnsetDbl
+      , note_length   :: Double
+      , event_gen     :: OnsetDbl -> AbsPrimStmt
+      }
+      
+      -- , onset_time  :: Double
 
 orderNote :: NoteStmt -> NoteStmt -> Ordering
 orderNote (NoteStmt t1 _ _) (NoteStmt t2 _ _) = compare t1 t2
 
 
+-}

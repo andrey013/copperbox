@@ -95,52 +95,48 @@ import ZSnd.Core                                -- package: zsnd-core
 
 -- | Helper.
 --
--- All note statemets have duration, even when it is irrelevent...
---
 mkGen :: InterpretUnit u
-      => (OnsetDbl -> ScoBuilder ()) ->  ULocEvent ctx u
-mkGen fn = promoteLoc $ \u -> 
-    askCtx >>= \ctx -> 
-    primEvent $ prim1 $ NoteStmt { onset_time = normalize (ctx_tempo ctx) u
-                                 , event_dur  = 0
-                                 , event_gen  = (\ot _ -> fn ot) }
+      => GenStmtProps ->  ULocEvent ctx u
+mkGen props = promoteLoc $ \u -> 
+    normalizeCtx u >>= \du -> 
+    primEvent $ prim1 $ absTableGen du props
 
 
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids.
 -- 
--- > fgen9 :: size * [(partial_num, strength, inital_phase)]
+-- > fgen9 :: inst_ref * size * [(partial_num, strength, inital_phase)]
 -- 
 fgen9 :: InterpretUnit u
-      => Int -> [(Double,Double,Double)] -> ULocEvent ctx u
-fgen9 sz ds = mkGen (\ot -> gen9 ot sz ds)
+      => Int -> Int -> [(Double,Double,Double)] -> ULocEvent ctx u
+fgen9 ix sz ds = mkGen (gen9 ix sz ds)
      
 
 
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids. 
 --
--- >  fgen10 :: size * [relative_strength]
+-- >  fgen10 :: inst_ref * size * [relative_strength]
 --
 fgen10 :: InterpretUnit u 
-       => Int -> [Double] -> ULocEvent ctx u
-fgen10 sz ds = mkGen (\ot -> gen10 ot sz ds)
+       => Int -> Int -> [Double] -> ULocEvent ctx u
+fgen10 ix sz ds = mkGen (gen10 ix sz ds)
      
 
 -- | Generate composite waveforms from weighted sums of simple 
 -- sinusoids.
 -- 
--- > fgen19 :: time * size * [(partial_num, strength, inital_phase, dc_offset)]
+-- > fgen19 :: inst_ref * size * [(partial_num, strength, inital_phase, dc_offset)]
 --
 fgen19 :: InterpretUnit u 
-       => Int -> [(Double,Double,Double,Double)] -> ULocEvent ctx u
-fgen19 sz ds = mkGen (\ot -> gen19 ot sz ds)
+       => Int -> Int -> [(Double,Double,Double,Double)] -> ULocEvent ctx u
+fgen19 ix sz ds = mkGen (gen19 ix sz ds)
 
 
 
 -- | Generate additive set of cosine partials.
 -- 
--- > gen11 :: time * size * num_harmonics *
+-- > gen11 :: inst_ref * size * num_harmonics *
 --
 -- @num_harmonics@ must be positive.
 --
@@ -150,8 +146,8 @@ fgen19 sz ds = mkGen (\ot -> gen19 ot sz ds)
 -- ZSnd needs extending to handle this optional cases... 
 --
 fgen11 :: InterpretUnit u 
-       => Int -> Int -> ULocEvent ctx u
-fgen11 sz nh = mkGen (\ot -> gen11 ot sz nh)
+       => Int -> Int -> Int -> ULocEvent ctx u
+fgen11 ix sz nh = mkGen (gen11 ix sz nh)
 
 
 
@@ -161,7 +157,7 @@ fgen11 sz nh = mkGen (\ot -> gen11 ot sz nh)
 
 -- | Construct exponential curve table.
 -- 
--- > fgen10 :: size * [(ordinate_value, length)]
+-- > fgen10 :: inst_ref * size * [(ordinate_value, length)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
@@ -169,13 +165,13 @@ fgen11 sz nh = mkGen (\ot -> gen11 ot sz nh)
 -- number.
 --
 fgen5 :: InterpretUnit u 
-      => Int -> [(Double, Int) ] -> ULocEvent ctx u
-fgen5 sz xs = mkGen (\ot -> gen5 ot sz xs)
+      => Int -> Int -> [(Double, Int) ] -> ULocEvent ctx u
+fgen5 ix sz xs = mkGen (gen5 ix sz xs)
 
 
 -- | Construct a table of cubic polynomial segments.
 -- 
--- > fgen6 :: size * a -> [(n, b, n+1, c, n+2, d)]
+-- > fgen6 :: inst_ref * size * a -> [(n, b, n+1, c, n+2, d)]
 -- 
 -- @m0@ is the start maxima, sucessive curve segments are 
 -- specified as ordinate_value and maxima tuples interspersed
@@ -185,29 +181,29 @@ fgen5 sz xs = mkGen (\ot -> gen5 ot sz xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen6 :: InterpretUnit u 
-      => Int -> Double -> [(Int,Double, Int,Double, Int,Double)] 
+      => Int -> Int -> Double -> [(Int,Double, Int,Double, Int,Double)] 
       -> ULocEvent ctx u
-fgen6 sz a xs = mkGen (\ot -> gen6 ot sz a xs)
+fgen6 ix sz a xs = mkGen (gen6 ix sz a xs)
 
 
 
 -- | Construct a table of straight line segments.
 -- 
--- > fgen7 :: size * [(ordinate_value, length)]
+-- > fgen7 :: inst_ref * size * [(ordinate_value, length)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 -- @segment_length@ cannot be negative, though it can be zero.
 --
 fgen7 :: InterpretUnit u 
-      => Int -> [(Double, Int)] -> ULocEvent ctx u
-fgen7 sz xs = mkGen (\ot -> gen7 ot sz xs)
+      => Int -> Int -> [(Double, Int)] -> ULocEvent ctx u
+fgen7 ix sz xs = mkGen (gen7 ix sz xs)
 
 
 
 -- | Construct a table of cubic spine segments.
 -- 
--- > fgen8 :: time * size * ordinate_value * [(segment_length, ordinate_value)]
+-- > fgen8 :: inst_ref * size * ordinate_value * [(segment_length, ordinate_value)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
@@ -217,30 +213,30 @@ fgen7 sz xs = mkGen (\ot -> gen7 ot sz xs)
 -- Note - potentially the segment list should be three * two-tuples.
 --
 fgen8 :: InterpretUnit u 
-      => Int -> Double -> [(Int,Double)] -> ULocEvent ctx u
-fgen8 sz a xs = mkGen (\ot -> gen8 ot sz a xs) 
+      => Int -> Int -> Double -> [(Int,Double)] -> ULocEvent ctx u
+fgen8 ix sz a xs = mkGen (gen8 ix sz a xs) 
 
 
 -- | Construct exponential curves in breakpoint fashion.
 -- 
--- > fgen25 :: time * size * table_loc * [(break_point, table_loc)]
+-- > fgen25 :: inst_ref * size * table_loc * [(break_point, table_loc)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen25 :: InterpretUnit u 
-       => Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
-fgen25 sz a xs = mkGen (\ot -> gen25 ot sz a xs)
+       => Int -> Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
+fgen25 ix sz a xs = mkGen (gen25 ix sz a xs)
 
 
 -- | Construct straight lines in brreakpoint fashion.
 -- 
--- > fgen8 :: size * ordinate_value * [(segment_length, ordinate_value)]
+-- > fgen8 :: inst_ref * size * ordinate_value * [(segment_length, ordinate_value)]
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen27 :: InterpretUnit u 
-       => Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
-fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs) 
+       => Int -> Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
+fgen27 ix sz a xs = mkGen (gen27 ix sz a xs) 
 
 
 --------------------------------------------------------------------------------
@@ -248,7 +244,7 @@ fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs)
 
 -- | Read data from a sound file into a table.
 --
--- > fgen1 :: size * file_name * skip_time * format * channel
+-- > fgen1 :: inst_ref * size * file_name * skip_time * format * channel
 -- 
 -- @skip_time@ is read position start position within the file.
 -- 
@@ -260,31 +256,31 @@ fgen27 sz a xs = mkGen (\ot -> gen27 ot sz a xs)
 -- named.
 -- 
 fgen1 :: InterpretUnit u 
-      => Int -> String -> Double -> Int -> Int -> ULocEvent ctx u
-fgen1 sz fc skip fmt ch = mkGen (\ot -> gen1 ot sz fc skip fmt ch) 
+      => Int -> Int -> String -> Double -> Int -> Int -> ULocEvent ctx u
+fgen1 ix sz fc skip fmt ch = mkGen (gen1 ix sz fc skip fmt ch) 
 
 
 -- | Read numeric values from a text file.
 --
--- > fgen23 :: size * file_name
+-- > fgen23 :: inst_ref * size * file_name
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen23 :: InterpretUnit u 
-       => Int -> String -> ULocEvent ctx u
-fgen23 sz file_path = mkGen (\ot -> gen23 ot sz file_path) 
+       => Int -> Int -> String -> ULocEvent ctx u
+fgen23 ix sz file_path = mkGen (gen23 ix sz file_path) 
 
 
 -- | Read a time-tagged trajectory from a file.
 --
--- > fgen28 :: time * file_name 
+-- > fgen28 :: inst_ref * size *  file_name 
 -- 
 -- Note - size is automatically set to 0 in the generated Csound
 -- score. Csound itself handles the allocation size.
 -- 
 fgen28 :: InterpretUnit u 
-       => String -> ULocEvent ctx u
-fgen28 file_name = mkGen (\ot -> gen28 ot file_name) 
+       => Int -> String -> ULocEvent ctx u
+fgen28 ix file_name = mkGen (gen28 ix file_name) 
 
 
 --------------------------------------------------------------------------------
@@ -292,46 +288,46 @@ fgen28 file_name = mkGen (\ot -> gen28 ot file_name)
 
 -- | Generate a table by evaulating a polynomial.
 --
--- > fgen3 :: size * xval1 * xval2 * [coeffcients] 
+-- > fgen3 :: inst_ref * size * xval1 * xval2 * [coeffcients] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen3 :: InterpretUnit u 
-      => Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
-fgen3 sz x1 x2 xs = mkGen (\ot -> gen3 ot sz x1 x2 xs)
+      => Int -> Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
+fgen3 ix sz x1 x2 xs = mkGen (gen3 ix sz x1 x2 xs)
 
 
 -- | Store a Chebyshev polynomial of the first kind.
 --
--- > fgen13 :: size * xint * xamp * [partial_strength] 
+-- > fgen13 :: inst_ref * size * xint * xamp * [partial_strength] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen13 :: InterpretUnit u 
-       => Int -> Int -> Int -> [Double] -> ULocEvent ctx u
-fgen13 sz x1 x2 xs = mkGen (\ot -> gen13 ot sz x1 x2 xs)
+       => Int -> Int -> Int -> Int -> [Double] -> ULocEvent ctx u
+fgen13 ix sz x1 x2 xs = mkGen (gen13 ix sz x1 x2 xs)
 
 
 -- | Store a Chebyshev polynomial of the second kind.
 --
--- > fgen14 :: size * xint * xamp * [partial_strength] 
+-- > fgen14 :: inst_ref * size * xint * xamp * [partial_strength] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen14 :: InterpretUnit u 
-       => Int -> Int -> Int -> [Double] -> ULocEvent ctx u
-fgen14 sz x1 x2 xs = mkGen (\ot -> gen14 ot sz x1 x2 xs)
+       => Int -> Int -> Int -> Int -> [Double] -> ULocEvent ctx u
+fgen14 ix sz x1 x2 xs = mkGen (gen14 ix sz x1 x2 xs)
 
 
 -- | Generate two tables of stored polynomials.
 --
--- > fgen15 :: size * xint * xamp * [(partial_strength, phase)] 
+-- > fgen15 :: inst_ref * size * xint * xamp * [(partial_strength, phase)] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen15 :: InterpretUnit u 
-       => Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
-fgen15 sz x1 x2 xs = mkGen (\ot -> gen15 ot sz x1 x2 xs)
+       => Int -> Int -> Int -> Int -> [(Double,Double)] -> ULocEvent ctx u
+fgen15 ix sz x1 x2 xs = mkGen (gen15 ix sz x1 x2 xs)
 
 
 --------------------------------------------------------------------------------
@@ -339,13 +335,13 @@ fgen15 sz x1 x2 xs = mkGen (\ot -> gen15 ot sz x1 x2 xs)
 
 -- | Transfer data from immediate p-fields into a table.
 --
--- > fgen2 :: size * [value] 
+-- > fgen2 :: inst_ref * size * [value] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen2 :: InterpretUnit u 
-      => Int -> [Int] -> ULocEvent ctx u
-fgen2 sz xs = mkGen (\ot -> gen2 ot sz xs) 
+      => Int -> Int -> [Int] -> ULocEvent ctx u
+fgen2 ix sz xs = mkGen (gen2 ix sz xs) 
 
 
 
@@ -354,19 +350,19 @@ fgen2 sz xs = mkGen (\ot -> gen2 ot sz xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgenN2 :: InterpretUnit u 
-       => Int -> [Int] -> ULocEvent ctx u
-fgenN2 sz xs = mkGen (\ot -> genN2 ot sz xs) 
+       => Int -> Int -> [Int] -> ULocEvent ctx u
+fgenN2 ix sz xs = mkGen (genN2 ix sz xs) 
 
 
 -- | Generate a step table from the supplied pairs.
 --
--- > fgen17 :: size * [(ordinate,y_value)] 
+-- > fgen17 :: inst_ref * size * [(ordinate,y_value)] 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen17 :: InterpretUnit u 
-       => Int -> [(Int,Int)] -> ULocEvent ctx u
-fgen17 sz xs = mkGen (\ot -> gen17 ot sz xs) 
+       => Int -> Int -> [(Int,Int)] -> ULocEvent ctx u
+fgen17 ix sz xs = mkGen (gen17 ix sz xs) 
 
 
 --------------------------------------------------------------------------------
@@ -374,99 +370,99 @@ fgen17 sz xs = mkGen (\ot -> gen17 ot sz xs)
 
 -- | Generate a Hamming window.
 --
--- > fgen20_hamming :: size * maximum
+-- > fgen20_hamming :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_hamming :: InterpretUnit u 
-               => Int -> Int -> ULocEvent ctx u
-fgen20_hamming sz mx = mkGen (\ot -> gen20 ot sz HAMMING mx) 
+               => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_hamming ix sz mx = mkGen (gen20 ix sz HAMMING mx) 
 
 
 -- | Generate a Hanning window.
 --
--- > fgen20_hanning :: size * maximum
+-- > fgen20_hanning :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_hanning :: InterpretUnit u 
-               => Int -> Int -> ULocEvent ctx u
-fgen20_hanning sz mx = mkGen (\ot -> gen20 ot sz HANNING mx) 
+               => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_hanning ix sz mx = mkGen (gen20 ix sz HANNING mx) 
 
 
 -- | Generate a Bartlett window.
 --
--- > fgen20_bartlett :: size * maximum
+-- > fgen20_bartlett :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_bartlett :: InterpretUnit u 
-                => Int -> Int -> ULocEvent ctx u
-fgen20_bartlett sz mx = mkGen (\ot -> gen20 ot sz BARTLETT mx) 
+                => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_bartlett ix sz mx = mkGen (gen20 ix sz BARTLETT mx) 
 
 -- | Generate a Blackman window.
 --
--- > fgen20_blackman :: size * maximum
+-- > fgen20_blackman :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_blackman :: InterpretUnit u 
-                => Int -> Int -> ULocEvent ctx u
-fgen20_blackman sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN mx) 
+                => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_blackman ix sz mx = mkGen (gen20 ix sz BLACKMAN mx) 
 
 
 -- | Generate a Blackman-Harris window.
 --
--- > fgen20_blackman_harris :: size * maximum
+-- > fgen20_blackman_harris :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_blackman_harris :: InterpretUnit u 
-                       => Int -> Int -> ULocEvent ctx u
-fgen20_blackman_harris sz mx = mkGen (\ot -> gen20 ot sz BLACKMAN_HARRIS mx) 
+                       => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_blackman_harris ix sz mx = mkGen (gen20 ix sz BLACKMAN_HARRIS mx) 
 
 
 -- | Generate a Gaussian window.
 --
--- > fgen20_gaussian :: size * maximum * openness
+-- > fgen20_gaussian :: inst_ref * size * maximum * openness
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_gaussian :: InterpretUnit u 
-                => Int -> Int -> Int -> ULocEvent ctx u
-fgen20_gaussian sz mx opn = mkGen (\ot -> gen20 ot sz (GAUSSIAN opn) mx) 
+                => Int -> Int -> Int -> Int -> ULocEvent ctx u
+fgen20_gaussian ix sz mx opn = mkGen (gen20 ix sz (GAUSSIAN opn) mx) 
 
 -- | Generate a Kaiser window.
 --
--- > fgen20_kaiser :: size * maximum * broadness
+-- > fgen20_kaiser :: inst_ref * size * maximum * broadness
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_kaiser :: InterpretUnit u 
-              => Int -> Int -> Int -> ULocEvent ctx u
-fgen20_kaiser sz mx broad = mkGen (\ot -> gen20 ot sz (KAISER broad) mx) 
+              => Int -> Int -> Int -> Int -> ULocEvent ctx u
+fgen20_kaiser ix sz mx broad = mkGen (gen20 ix sz (KAISER broad) mx) 
 
 
 -- | Generate a rectangle window.
 --
--- > fgen20_rectangle :: size * maximum
+-- > fgen20_rectangle :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_rectangle :: InterpretUnit u 
-                 => Int -> Int -> ULocEvent ctx u
-fgen20_rectangle sz mx = mkGen (\ot -> gen20 ot sz RECTANGLE mx) 
+                 => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_rectangle ix sz mx = mkGen (gen20 ix sz RECTANGLE mx) 
 
 
 -- | Generate a sync window.
 --
--- > fgen20_sync :: size * maximum
+-- > fgen20_sync :: inst_ref * size * maximum
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen20_sync :: InterpretUnit u 
-            => Int -> Int -> ULocEvent ctx u
-fgen20_sync sz mx = mkGen (\ot -> gen20 ot sz SYNC mx) 
+            => Int -> Int -> Int -> ULocEvent ctx u
+fgen20_sync ix sz mx = mkGen (gen20 ix sz SYNC mx) 
 
 --------------------------------------------------------------------------------
 -- Random functions
@@ -474,151 +470,151 @@ fgen20_sync sz mx = mkGen (\ot -> gen20 ot sz SYNC mx)
 
 -- | Generate a uniform random distribution.
 --
--- > fgen21_uniform :: size * level
+-- > fgen21_uniform :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_uniform :: InterpretUnit u 
-               => Int -> Double -> ULocEvent ctx u
-fgen21_uniform sz lv = mkGen (\ot -> gen21 ot sz UNIFORM lv) 
+               => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_uniform ix sz lv = mkGen (gen21 ix sz UNIFORM lv) 
 
 
 -- | Generate a uniform linear distribution.
 --
--- > fgen21_linear :: size * level
+-- > fgen21_linear :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_linear :: InterpretUnit u 
-              => Int -> Double -> ULocEvent ctx u
-fgen21_linear sz lv = mkGen (\ot -> gen21 ot sz LINEAR lv) 
+              => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_linear ix sz lv = mkGen (gen21 ix sz LINEAR lv) 
 
 
 -- | Generate a triangular distribution.
 --
--- > fgen21_triangular :: size * level
+-- > fgen21_triangular :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_triangular :: InterpretUnit u 
-                  => Int -> Double -> ULocEvent ctx u
-fgen21_triangular sz lv = mkGen (\ot -> gen21 ot sz TRIANGULAR lv) 
+                  => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_triangular ix sz lv = mkGen (gen21 ix sz TRIANGULAR lv) 
 
 
 -- | Generate an exponential distribution.
 --
--- > fgen21_expon :: size * level
+-- > fgen21_expon :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_expon :: InterpretUnit u 
-             => Int -> Double -> ULocEvent ctx u
-fgen21_expon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
+             => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_expon ix sz lv = mkGen (gen21 ix sz EXPON lv) 
 
 
 -- | Generate a biexponential distribution.
 --
--- > fgen21_biexpon :: size * level
+-- > fgen21_biexpon :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_biexpon :: InterpretUnit u 
-               => Int -> Double -> ULocEvent ctx u
-fgen21_biexpon sz lv = mkGen (\ot -> gen21 ot sz EXPON lv) 
+               => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_biexpon ix sz lv = mkGen (gen21 ix sz EXPON lv) 
 
 
 -- | Generate a Gaussian distribution.
 --
--- > fgen21_gaussian :: size * level
+-- > fgen21_gaussian :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_gaussian :: InterpretUnit u 
-                => Int -> Double -> ULocEvent ctx u
-fgen21_gaussian sz lv = mkGen (\ot -> gen21 ot sz DIST_GAUSSIAN lv) 
+                => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_gaussian ix sz lv = mkGen (gen21 ix sz DIST_GAUSSIAN lv) 
 
 
 -- | Generate a Cauchy distribution.
 --
--- > fgen21_cauchy :: size * level
+-- > fgen21_cauchy :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_cauchy :: InterpretUnit u 
-              => Int -> Double -> ULocEvent ctx u
-fgen21_cauchy sz lv = mkGen (\ot -> gen21 ot sz CAUCHY lv) 
+              => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_cauchy ix sz lv = mkGen (gen21 ix sz CAUCHY lv) 
 
 
 -- | Generate a positive Cauchy distribution.
 --
--- > fgen21_positive_cauchy :: size * level
+-- > fgen21_positive_cauchy :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_positive_cauchy :: InterpretUnit u 
-                       => Int -> Double -> ULocEvent ctx u
-fgen21_positive_cauchy sz lv = mkGen (\ot -> gen21 ot sz POSITIVE_CAUCHY lv) 
+                       => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_positive_cauchy ix sz lv = mkGen (gen21 ix sz POSITIVE_CAUCHY lv)
 
 -- | Generate a beta distribution.
 --
--- > fgen21_beta :: size * level * a * b
+-- > fgen21_beta :: inst_ref * size * level * a * b
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_beta :: InterpretUnit u 
-              => Int -> Double -> Int -> Int -> ULocEvent ctx u
-fgen21_beta sz lv a b = mkGen (\ot -> gen21 ot sz (BETA a b) lv) 
+            => Int -> Int -> Double -> Int -> Int -> ULocEvent ctx u
+fgen21_beta ix sz lv a b = mkGen (gen21 ix sz (BETA a b) lv) 
 
 
 -- | Generate a Weibull distribution.
 --
--- > fgen21_weibull :: size * level * a
+-- > fgen21_weibull :: inst_ref * size * level * a
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_weibull :: InterpretUnit u 
-               => Int -> Double -> Int -> ULocEvent ctx u
-fgen21_weibull sz lv a = mkGen (\ot -> gen21 ot sz (WEIBULL a) lv) 
+               => Int -> Int -> Double -> Int -> ULocEvent ctx u
+fgen21_weibull ix sz lv a = mkGen (gen21 ix sz (WEIBULL a) lv) 
 
 
 -- | Generate a poisson distribution.
 --
--- > fgen21_poisson :: size * level
+-- > fgen21_poisson :: inst_ref * size * level
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen21_poisson :: InterpretUnit u 
-               => Int -> Double -> ULocEvent ctx u
-fgen21_poisson sz lv = mkGen (\ot -> gen21 ot sz POISSON lv) 
+               => Int -> Int -> Double -> ULocEvent ctx u
+fgen21_poisson ix sz lv = mkGen (gen21 ix sz POISSON lv) 
 
 --------------------------------------------------------------------------------
 -- Amplitude scaling
 
 -- | Generate a log of a Bessel function of the second kind.
 --
--- > gen4 :: size * source_table * source_mode 
+-- > gen4 :: inst_ref * size * source_table * source_mode 
 -- 
 -- @size@ must be a power-of-2 plus 1.
 --
 fgen4 :: InterpretUnit u 
-      => Int -> Int -> Int -> ULocEvent ctx u
-fgen4 sz src src_mode = mkGen (\ot -> gen4 ot sz src src_mode)
+      => Int -> Int -> Int -> Int -> ULocEvent ctx u
+fgen4 ix sz src src_mode = mkGen (gen4 ix sz src src_mode)
 
 
 -- | Generate a normalizing function.
 --
--- > fgen12 :: size * xint 
+-- > fgen12 :: inst_ref * size * xint 
 -- 
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgen12 :: InterpretUnit u 
-       => Int -> Int -> ULocEvent ctx u
-fgen12 sz xint = mkGen (\ot -> gen12 ot sz xint)
+       => Int -> Int -> Int -> ULocEvent ctx u
+fgen12 ix sz xint = mkGen (gen12 ix sz xint)
 
 -- | Negative version of 'gen12'.
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 fgenN12 :: InterpretUnit u 
-        => Int -> Int -> ULocEvent ctx u
-fgenN12 sz xint = mkGen (\ot -> genN12 ot sz xint)
+        => Int -> Int -> Int -> ULocEvent ctx u
+fgenN12 ix sz xint = mkGen (genN12 ix sz xint)

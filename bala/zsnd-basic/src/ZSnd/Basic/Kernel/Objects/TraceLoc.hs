@@ -82,47 +82,47 @@ type instance DUnit (TraceLocT ctx u m a) = u
 -- Functor
 
 instance Functor (TraceLoc ctx u) where
-  fmap f ma = TraceLoc $ \ctx ut -> let (a,u1,o) = getTraceLoc ma ctx ut 
-                                    in (f a, u1, o)
+  fmap f ma = TraceLoc $ \ctx s0 -> let (a,s1,o) = getTraceLoc ma ctx s0 
+                                    in (f a, s1, o)
 
 instance Monad m => Functor (TraceLocT ctx u m) where
-  fmap f ma = TraceLocT $ \ctx v0 -> getTraceLocT ma ctx v0 >>= \(a,v1,o) -> 
-                                     return (f a, v1, o)
+  fmap f ma = TraceLocT $ \ctx s0 -> getTraceLocT ma ctx s0 >>= \(a,s1,o) -> 
+                                     return (f a, s1, o)
 
 -- Applicative
 
 instance Applicative (TraceLoc ctx u) where
-  pure a    = TraceLoc $ \_   v0 -> (a, v0, mempty)
-  mf <*> ma = TraceLoc $ \ctx v0 -> 
-                let (f,v1,o1) = getTraceLoc mf ctx v0
-                    (a,v2,o2) = getTraceLoc ma ctx v1
-                in (f a, v2, o1 `mappend` o2)
+  pure a    = TraceLoc $ \_   s0 -> (a, s0, mempty)
+  mf <*> ma = TraceLoc $ \ctx s0 -> 
+                let (f,s1,o1) = getTraceLoc mf ctx s0
+                    (a,s2,o2) = getTraceLoc ma ctx s1
+                in (f a, s2, o1 `mappend` o2)
 
 
 instance Monad m => Applicative (TraceLocT ctx u m) where
-  pure a    = TraceLocT $ \_   v0 -> return (a, v0, mempty)
-  mf <*> ma = TraceLocT $ \ctx v0 -> 
-                getTraceLocT mf ctx v0 >>= \(f,v1,o1) ->
-                getTraceLocT ma ctx v1 >>= \(a,v2,o2) ->
-                return (f a, v2, o1 `mappend` o2)
+  pure a    = TraceLocT $ \_   s0 -> return (a, s0, mempty)
+  mf <*> ma = TraceLocT $ \ctx s0 -> 
+                getTraceLocT mf ctx s0 >>= \(f,s1,o1) ->
+                getTraceLocT ma ctx s1 >>= \(a,s2,o2) ->
+                return (f a, s2, o1 `mappend` o2)
 
 
 
 -- Monad
 
 instance Monad (TraceLoc ctx u) where
-  return a  = TraceLoc $ \_   v0 -> (a, v0, mempty)
-  ma >>= k  = TraceLoc $ \ctx v0 -> 
-                let (a,v1,o1) = getTraceLoc ma ctx v0
-                    (b,v2,o2) = (getTraceLoc . k) a ctx v1
-                in (b, v2, o1 `mappend` o2)
+  return a  = TraceLoc $ \_   s0 -> (a, s0, mempty)
+  ma >>= k  = TraceLoc $ \ctx s0 -> 
+                let (a,s1,o1) = getTraceLoc ma ctx s0
+                    (b,s2,o2) = (getTraceLoc . k) a ctx s1
+                in (b, s2, o1 `mappend` o2)
 
 instance Monad m => Monad (TraceLocT ctx u m) where
-  return a  = TraceLocT $ \_   v0 -> return (a, v0, mempty)
-  ma >>= k  = TraceLocT $ \ctx v0 -> 
-                getTraceLocT ma ctx v0 >>= \(a,v1,o1) ->
-                (getTraceLocT . k) a ctx v1 >>= \(b,v2,o2) -> 
-                return (b, v2, o1 `mappend` o2)
+  return a  = TraceLocT $ \_   s0 -> return (a, s0, mempty)
+  ma >>= k  = TraceLocT $ \ctx s0 -> 
+                getTraceLocT ma ctx s0      >>= \(a,s1,o1) ->
+                (getTraceLocT . k) a ctx s1 >>= \(b,s2,o2) -> 
+                return (b, s2, o1 `mappend` o2)
 
 
 -- ContextM
@@ -133,32 +133,32 @@ instance Monad m => Monad (TraceLocT ctx u m) where
 
 instance ContextM (TraceLoc ctx u) where
   type UCtx (TraceLoc ctx u) = ctx
-  askCtx          = TraceLoc $ \ctx v0 -> (ctx,v0,mempty)
-  asksCtx f       = TraceLoc $ \ctx v0 -> (f ctx, v0, mempty)
-  localize upd ma = TraceLoc $ \ctx v0 -> getTraceLoc ma (upd ctx) v0
+  askCtx          = TraceLoc $ \ctx s0 -> (ctx, s0, mempty)
+  asksCtx f       = TraceLoc $ \ctx s0 -> (f ctx, s0, mempty)
+  localize upd ma = TraceLoc $ \ctx s0 -> getTraceLoc ma (upd ctx) s0
 
 instance Monad m => ContextM (TraceLocT ctx u m) where
   type UCtx (TraceLocT ctx u m) = ctx
-  askCtx          = TraceLocT $ \ctx v0 -> return (ctx,v0,mempty)
-  asksCtx f       = TraceLocT $ \ctx v0 -> return (f ctx, v0, mempty)
-  localize upd ma = TraceLocT $ \ctx v0 -> getTraceLocT ma (upd ctx) v0
+  askCtx          = TraceLocT $ \ctx s0 -> return (ctx, s0, mempty)
+  asksCtx f       = TraceLocT $ \ctx s0 -> return (f ctx, s0, mempty)
+  localize upd ma = TraceLocT $ \ctx s0 -> getTraceLocT ma (upd ctx) s0
 
 
 -- Monoid
 
 instance Monoid a => Monoid (TraceLoc ctx u a) where
-  mempty          = TraceLoc $ \_   v0 -> (mempty, v0, mempty)
-  ma `mappend` mb = TraceLoc $ \ctx v0 -> 
-                      let (a,v1,w1) = getTraceLoc ma ctx v0
-                          (b,v2,w2) = getTraceLoc mb ctx v1
-                      in (a `mappend` b, v2, w1 `mappend` w2)
+  mempty          = TraceLoc $ \_   s0 -> (mempty, s0, mempty)
+  ma `mappend` mb = TraceLoc $ \ctx s0 -> 
+                      let (a,s1,w1) = getTraceLoc ma ctx s0
+                          (b,s2,w2) = getTraceLoc mb ctx s1
+                      in (a `mappend` b, s2, w1 `mappend` w2)
 
 instance (Monad m, Monoid a) => Monoid (TraceLocT ctx u m a) where
-  mempty          = TraceLocT $ \_   v0 -> return (mempty, v0, mempty)
-  ma `mappend` mb = TraceLocT $ \ctx v0 -> 
-                      getTraceLocT ma ctx v0 >>= \(a,v1,w1) ->
-                      getTraceLocT mb ctx v1 >>= \(b,v2,w2) ->
-                      return (a `mappend` b, v2, w1 `mappend` w2)
+  mempty          = TraceLocT $ \_   s0 -> return (mempty, s0, mempty)
+  ma `mappend` mb = TraceLocT $ \ctx s0 -> 
+                      getTraceLocT ma ctx s0 >>= \(a,s1,w1) ->
+                      getTraceLocT mb ctx s1 >>= \(b,s2,w2) ->
+                      return (a `mappend` b, s2, w1 `mappend` w2)
 
 
 
@@ -219,17 +219,17 @@ class TraceLocM m => LocForkTraceM (m :: * -> *) where
 
 
 instance InterpretUnit u => TraceLocM (TraceLoc ctx u) where
-  insertl gf  = TraceLoc $ \ctx v0 -> 
-                   let fn = \u -> case runLocEvent u ctx $ moveStart v0 gf of
+  insertl gf  = TraceLoc $ \ctx s0 -> 
+                   let fn = \u -> case runLocEvent u ctx $ moveStart s0 gf of
                                     PrimW cp _ -> cp
-                   in ((), v0, fn)
-  moveBy v    = TraceLoc $ \_   v0 -> ((), v0 + v, mempty)
-  location    = TraceLoc $ \_   v0 -> (v0, v0, mempty)
+                   in ((), s0, fn)
+  moveBy v    = TraceLoc $ \_   s0 -> ((), s0 + v, mempty)
+  location    = TraceLoc $ \_   s0 -> (s0, s0, mempty)
 
 instance InterpretUnit u => LocForkTraceM (TraceLoc ctx u) where
   reset       = TraceLoc $ \_   _  -> ((), 0, mempty)
-  branch ma   = TraceLoc $ \ctx v0 -> 
-                  let (a,_,o) = getTraceLoc ma ctx v0 in (a,v0,o)
+  branch ma   = TraceLoc $ \ctx s0 -> 
+                  let (a,_,o) = getTraceLoc ma ctx s0 in (a,s0,o)
 
   
 

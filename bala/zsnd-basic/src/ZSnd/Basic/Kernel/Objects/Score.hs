@@ -16,11 +16,15 @@
 
 module ZSnd.Basic.Kernel.Objects.Score
   ( 
-    Score
-  , runScore
-  , traceNotelist
+
+    traceNotelist
+  , traceNotelistU
+
   , traceAdvNotelist
+  , traceAdvNotelistU
+
   , traceOnsetNotelist
+  , traceOnsetNotelistU
 
     
   ) where
@@ -31,7 +35,6 @@ import ZSnd.Basic.Kernel.Base.Context
 import ZSnd.Basic.Kernel.Base.WrappedPrimitive
 import ZSnd.Basic.Kernel.Objects.AdvNotelist
 import ZSnd.Basic.Kernel.Objects.Basis
-import ZSnd.Basic.Kernel.Objects.Concat
 import ZSnd.Basic.Kernel.Objects.LocEvent
 import ZSnd.Basic.Kernel.Objects.OnsetNotelist
 import ZSnd.Basic.Kernel.Objects.TraceNotelist
@@ -39,53 +42,61 @@ import ZSnd.Basic.Kernel.Objects.TraceNotelist
 import ZSnd.Core                                -- package: zsnd-core
 
 
-import Data.List 
-import Data.Monoid
+--
+-- Note - because we don\'t load font metrics from file, sharing 
+-- context is not so valuable...
+--
+
+
+traceNotelist :: Context uctx -> Notelist uctx u a -> Maybe Score
+traceNotelist ctx mf = liftToScoreMb $ execNotelist ctx mf
+
+
+traceNotelistU :: Context uctx -> Notelist uctx u a -> Score
+traceNotelistU ctx mf = maybe fk id $ traceNotelist ctx mf
+  where
+    fk = error "traceNotelistU - emptyScore." 
 
 
 
-
-data Score = Score 
-      { score_duration   :: Double
-      , score_sequence   :: OnsetDbl -> ScoBuilder ()
-      }
-
-
-type instance DUnit Score = Double
-
--- Note runScore builds a one element list.
-
-runScore :: Score -> Section
-runScore sco = runScoBuilder (score_sequence sco $ 0)
-
-traceNotelist :: Context ctx -> Notelist ctx u a -> Score
-traceNotelist ctx mf = liftToScore $ execNotelist ctx mf
 
 traceAdvNotelist :: InterpretUnit u
-                 => Context ctx -> AdvNotelist ctx u a -> Score
+                 => Context ctx -> AdvNotelist ctx u a -> Maybe Score
 traceAdvNotelist ctx mf = 
     let (PrimW ca _) = runLocEvent 0 ctx $ execAdvNotelist ctx mf
-    in liftToScore $ singleH ca
+    in liftToScoreMb $ singleH ca
+
+traceAdvNotelistU :: InterpretUnit u
+                  => Context ctx -> AdvNotelist ctx u a -> Score
+traceAdvNotelistU ctx mf = maybe fk id $ traceAdvNotelist ctx mf
+  where
+    fk = error "traceAdvNotelistU - emptyScore." 
+
+
 
 traceOnsetNotelist :: InterpretUnit u
-                   => Context ctx -> OnsetNotelist ctx u a -> Score
+                   => Context ctx -> OnsetNotelist ctx u a -> Maybe Score
 traceOnsetNotelist ctx mf = 
     let (PrimW ca _) = runLocEvent 0 ctx $ execOnsetNotelist ctx mf
-    in liftToScore $ singleH ca
+    in liftToScoreMb $ singleH ca
 
+traceOnsetNotelistU :: InterpretUnit u
+                    => Context ctx -> OnsetNotelist ctx u a -> Score
+traceOnsetNotelistU ctx mf = maybe fk id $ traceOnsetNotelist ctx mf
+  where
+    fk = error "traceOnsetNotelistU - emptyScore." 
 
-
--- Note unlike Wumpus, empty note lists pose no problem for ZSnd.
 
 
 
 -- | Promotion of @HPrim@ to @Picture@.
 --
 -- 
-liftToScore :: HPrim u -> Score
-liftToScore = score1 . hprimToList
+liftToScoreMb :: HPrim u -> Maybe Score
+liftToScoreMb hf = let prims = hprimToList hf in 
+                   if null prims then Nothing else Just (frame prims)
 
-
+{-
 
 score1 :: [NoteStmt] -> Score
 score1 xs = Score { score_duration = da
@@ -143,3 +154,4 @@ spaceScore w (Score d0 f0) (Score d1 f1) =
 
 
 
+-}

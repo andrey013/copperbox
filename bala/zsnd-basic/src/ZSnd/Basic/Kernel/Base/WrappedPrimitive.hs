@@ -26,16 +26,16 @@ module ZSnd.Basic.Kernel.Base.WrappedPrimitive
 
   ) where
 
-import ZSnd.Basic.Kernel.Base.BaseDefs
 import ZSnd.Basic.Utils.HList
 import ZSnd.Basic.Utils.JoinList ( JoinList, ViewR(..), viewr )
 import qualified ZSnd.Basic.Utils.JoinList as JL
 
+import ZSnd.Core                                -- package: zsnd-core
 
 import Data.Monoid
 
 data CatPrim = CZero
-             | Cat1 (JoinList NoteStmt)
+             | Cat1 (JoinList AbsPrimStmt)
 
 
 instance Monoid CatPrim where
@@ -46,13 +46,13 @@ instance Monoid CatPrim where
 
 
 
-prim1 :: NoteStmt -> CatPrim
+prim1 :: AbsPrimStmt -> CatPrim
 prim1 = Cat1 . JL.one
 
 
 -- | Map 
 --
-cpmap :: (NoteStmt -> NoteStmt) -> CatPrim -> CatPrim
+cpmap :: (AbsPrimStmt -> AbsPrimStmt) -> CatPrim -> CatPrim
 cpmap _ CZero    = CZero
 cpmap f (Cat1 a) = Cat1 $ fmap f a
 
@@ -64,7 +64,7 @@ cpmap f (Cat1 a) = Cat1 $ fmap f a
 -- representation to build musical objects upon must support 
 -- /concatenation/ of primitives. 
 -- 
-newtype HPrim u = HPrim { getHPrim :: H NoteStmt }
+newtype HPrim u = HPrim { getHPrim :: H AbsPrimStmt }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
 -- shown, fmapped etc.
@@ -82,7 +82,7 @@ instance Monoid (HPrim u) where
 
 -- | Extract the internal list of 'Event' from a 'HPrim'.
 --
-hprimToList :: HPrim u -> [NoteStmt]
+hprimToList :: HPrim u -> [AbsPrimStmt]
 hprimToList = toListH . getHPrim
 
 
