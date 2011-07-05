@@ -59,10 +59,10 @@ cs_instruments :: [Doc] -> Doc
 cs_instruments xs = csdElem "CsInstruments" (vcat xs)
 
 
--- | Note - this terminates with an @e@.
+-- | Note - this does not add any terminators.
 --
 cs_score :: Doc -> Doc
-cs_score d = csdElem "CsScore" (d `vconcat` char 'e' )
+cs_score d = csdElem "CsScore" d
 
 
 cs_sco_table_stmt :: Int -> Double -> Int -> Int -> [CsoundValue] -> Doc

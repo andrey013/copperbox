@@ -31,10 +31,18 @@ module ZSnd.Core.CsoundScore
   , absTableGen
   , absEvent
 
+  , scoOver
+  , scoMoveBy
+  , scoBeside
+
+  , extendTimeFrame
+
+  , printScore
  
   ) where
 
 import ZSnd.Core.ScoreInternal
+import ZSnd.Core.Utils.FormatCombinators ( format )
 import qualified ZSnd.Core.Utils.JoinList as JL
 
 import Data.List ( sortBy )
@@ -59,7 +67,7 @@ frame xs = step0 $ sortBy cmp xs
 
 
     step1 (t0,d) _ ac []                          = 
-        Leaf (Timespan t0 (t0+d), Frame t0 1) ac
+        Leaf (Timespan t0 (t0+d), standardFrame) ac
 
     step1 (t0,d) t1 ac (AbsTableStmt ot props :es) = 
         step1 (t0,d) ot (JL.snoc ac $ TableStmt (ot - t1) props) es
@@ -69,136 +77,82 @@ frame xs = step0 $ sortBy cmp xs
         in step1 (t0,dnew) ot (JL.snoc ac $ InstStmt (ot - t1) props) es
    
 
+-- | 'absTableGen' : @ onset_time * props -> AbsPrimStmt @
+-- 
+-- Create a function statement (@f-statment@).
+--
 absTableGen :: Double -> GenStmtProps -> AbsPrimStmt
 absTableGen = AbsTableStmt
 
+
+-- | 'absEvent' : @ onset_time * props -> AbsPrimStmt @
+-- 
+-- Create a note statement (@i-statment@).
+--
 absEvent :: Double -> InstStmtProps -> AbsPrimStmt
 absEvent = AbsInstStmt
 
-{-
 
-newtype Section = Section  { getSection :: [DStmt] }
-  deriving (Eq,Ord,Show)
-      
 
--- | Dynamically typed statement.
+
+
+infixr 6 `scoOver`, `scoBeside`
+
+-- | 'scoOver' : @ score * score -> SCore @
 --
-data DStmt = 
-      TableStmt
-        { table_num       :: Int
-        , table_atime     :: Double
-        , table_size      :: Int
-        , table_gennum    :: Int
-        , table_args      :: [CsoundValue]
-        }
-    | InstStmt
-        { inst_num        :: Int
-        , inst_start      :: Double
-        , inst_dur        :: Double
-        , inst_pfields    :: [Double]
-        } 
-    | F0Stmt
-        { dummy_atime     :: Double }
-  deriving (Eq,Ord,Show)
+-- Combine the scores by playing them simultaneously.
+-- The onsets of both scores are unchanged.
+--
+scoOver :: Score -> Score -> Score
+a `scoOver` b = Score (tspan,standardFrame) (JL.join (JL.one b) (JL.one a))   
+  where
+    tspan = scoreTimespan a `timespanUnion` scoreTimespan b
 
 
-data CsoundValue = CsDouble Double
-                 | CsInt    Int
-                 | CsString String
-  deriving (Eq,Ord,Show)
 
-
-type TNum = Int
-
-
--- | ScoBuilder is a State-Writer monad.
+-- | 'scoMoveBy' : @ score * time -> SCore @
 -- 
--- Writer collects Inst and Table statements.
+--  Move a score by the supplied time. 
+-- 
+-- The result time should be @>= 0@, thought this is not enforced.
 --
--- State tracks table number for generating fresh tables.
+scoMoveBy :: Score -> Double -> Score
+scoMoveBy (Score loc body) dx = Score (moveLocale dx loc) body
+scoMoveBy (Leaf  loc body) dx = Leaf (moveLocale dx loc) body
+
+
+
+-- | 'scoBeside' : @ score * score -> Score @
 --
-newtype ScoBuilder a = Build { getBuild :: TNum -> (a, H DStmt, TNum) }
+-- Combine the scores by playing them sequentially.
+-- The second score is played after then first.
+--
+scoBeside :: Score -> Score -> Score
+a `scoBeside` b = a `scoOver` (b `scoMoveBy` dx) 
+  where 
+    x1 = timespan_end $ scoreTimespan a
+    x2 = timespan_start $ scoreTimespan b 
+    dx = x1 - x2 
 
 
 
-instance Functor ScoBuilder where
-  fmap f ma = Build $ \s -> let (a,w, s1) = getBuild ma s in (f a, w, s1)
-
-
-instance Applicative ScoBuilder where
-  pure a    = Build $ \s -> (a, emptyH, s)
-  mf <*> ma = Build $ \s -> let (f,w1,s1) = getBuild mf s
-                                (a,w2,s2) = getBuild ma s1
-                      in (f a, w1 `appendH` w2,s2)
-
-instance Monad ScoBuilder where
-  return a  = Build $ \s -> (a, emptyH, s)
-  ma >>= k  = Build $ \s -> let (a,w1,s1) = getBuild ma s
-                                (b,w2, s2) = (getBuild . k) a s1
-                            in (b, w1 `appendH` w2, s2)
-
-
-runScoBuilder :: ScoBuilder a -> Section
-runScoBuilder ma = post $ getBuild ma 1
+-- | 'extendTimeFrame' : @ initial_delay * epilogue_delay * score -> Score @
+--
+-- Combine the scores by playing them sequentially.
+-- The second score is played after then first.
+--
+extendTimeFrame :: Double -> Double -> Score -> Score
+extendTimeFrame d0 d1 sco = step sco 
   where
-    post (_,w,_) = Section { getSection = toListH w }
-
-
-setTableNum :: Int -> ScoBuilder ()
-setTableNum i = Build $ \_ -> ((), emptyH, i)
-
-advance :: Double -> ScoBuilder ()
-advance d = Build $ \s -> ((), wrapH $ F0Stmt d, s )
-
-
-
--- | Dynamically typed gen statement.
---
--- > gen_num * time * size * [arg]
---
-dyngen :: Int -> Double -> Int -> [CsoundValue] -> ScoBuilder ()
-dyngen gnum t sz args = Build $ \s -> ((), wrapH $ stmt1 s, s+1 )
-  where
-    stmt1 i = TableStmt { table_num       = i
-                        , table_atime     = t
-                        , table_size      = sz
-                        , table_gennum    = gnum
-                        , table_args      = args 
-                        }
-
-
--- | Dynamically typed inst statement.
---
-dyninst :: Int -> Double -> Double -> [Double] -> ScoBuilder ()
-dyninst i d dur args = Build $ \s -> ((), wrapH $ stmt1, s)
-  where
-    stmt1 = InstStmt { inst_num         = i
-                     , inst_start       = d
-                     , inst_dur         = dur
-                     , inst_pfields     = args
-                     }
-
---------------------------------------------------------------------------------
--- Format instances
-
-instance Format CsoundValue where
-  format (CsDouble d) = dtrunc d
-  format (CsInt i)    = int i
-  format (CsString s) = dquotes $ text s
+    step (Score (tspan,fr) body) = Score (extT tspan, extF fr) body
+    step (Leaf  (tspan,fr) body) = Leaf  (extT tspan, extF fr) body
   
+    extT (Timespan a0 a1) = Timespan a0 (a1 + d0 + d1)
+    
+    extF (Frame o sx)     = Frame (o+d0) sx
 
-instance Format Section where
-  format (Section xs) = vcat (map format xs)
 
-instance Format DStmt where
-  format (TableStmt i s sz n xs) = 
-      char 'f' <+> padr 5 (int i) <+> padl 5 (dtrunc s) <+> padl 5 (int sz)
-               <+> padl 5 (int n) <+> hsep (map (padl 5 . format) xs)
-
-  format (InstStmt i s d xs) = 
-      char 'i' <+> padr 5 (int i) <+> padl 5 (dtrunc s) <+> padl 5 (dtrunc d)
-               <+> hsep (map (padl 5 . dtrunc) xs)
-
-  format (F0Stmt s) = text "f0" <+> padl 5 (dtrunc s)
-
--}
+-- | Print the syntax tree of a Score to the console.
+--
+printScore :: Score -> IO ()
+printScore pic = putStrLn (show $ format pic) >> putStrLn []

@@ -153,6 +153,19 @@ nextOnsetTime dt = ScoMonad $ \s -> let t0 = cummulative_time s
                                     in (t1, s { cummulative_time = t1 } )
 
 
+
+
+-- | This is for Scores at the same level within the tree...
+--
+resetOnsetTime :: Double -> ScoMonad ()
+resetOnsetTime t0 = ScoMonad $ \s -> ((), s { cummulative_time = t0 } )
+
+-- | This is Scores at the same level within the tree...
+--
+getOnsetTime :: ScoMonad Double
+getOnsetTime = ScoMonad $ \s -> (cummulative_time s, s)
+
+
 -- | Return a list of rendered pfields - dot indicates same.
 -- 
 -- Obviously if the instrument changes all fields are /fresh/.
@@ -182,8 +195,23 @@ pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
 -- Translation
 
 score :: Score -> ScoMonad Doc
-score (Leaf loc ones)  = bracketLocale loc $ oneConcat primitive ones
-score (Score loc ones) = bracketLocale loc $ oneConcat score ones
+score sco = flat <$> scoreSections sco 
+  where
+    flat []     = empty
+    flat [d]    = d `vconcat` char 'e' 
+    flat (d:ds) = d `vconcat` char 's' `vconcat` flat ds
+
+
+scoreSections :: Score -> ScoMonad [Doc]
+scoreSections (Leaf loc ones)  = 
+    bracketLocale loc $ (\a -> [a]) <$> oneConcat primitive ones
+
+scoreSections (Score loc ones) = 
+    bracketLocale loc $ getOnsetTime >>= \t0 -> step t0 (viewl ones) 
+  where
+    step _  EmptyL    = return []
+    step t0 (a :< as) = (++) <$> scoreSections a 
+                             <*> (resetOnsetTime t0 >> step t0 (viewl as))
 
 
 bracketLocale :: Locale -> ScoMonad a -> ScoMonad a
