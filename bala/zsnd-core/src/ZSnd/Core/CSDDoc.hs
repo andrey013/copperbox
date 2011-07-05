@@ -68,16 +68,16 @@ cs_score d = csdElem "CsScore" d
 cs_sco_table_stmt :: Int -> Double -> Int -> Int -> [CsoundValue] -> Doc
 cs_sco_table_stmt ix t0 sz gennum args = 
     char 'f' <+> padr 5 (int ix) 
-             <+> padl 5 (dtrunc t0) 
-             <+> padl 5 (int sz)
-             <+> padl 5 (int gennum) 
-             <+> hsep (map (padl 5 . format) args)
+             <+> padr 10 (dtrunc t0) 
+             <+> padr 10 (int sz)
+             <+> padr 10 (int gennum) 
+             <+> hsep (map (padr 10 . format) args)
 
 
 cs_sco_inst_stmt :: Int -> Double -> Double -> [Doc] -> Doc
 cs_sco_inst_stmt inst start dur args = 
     char 'i' <+> padr 5 (int inst)
-             <+> padl 5 (dtrunc start) 
-             <+> padl 5 (dtrunc dur)
+             <+> padr 10 (dtrunc start) 
+             <+> padr 10 (dtrunc dur)
              <+> hsep args
 

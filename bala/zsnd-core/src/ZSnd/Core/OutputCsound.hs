@@ -100,10 +100,11 @@ st_zero = St { cummulative_time = 0
              , scale_factor     = 1
              , carry_props      = false_inst 
              }
-  where
-    false_inst = InstStmtProps { inst_num     = (-1)
-                               , inst_dur     = (-1.0)
-                               , inst_pfields = [] } 
+
+false_inst :: InstStmtProps
+false_inst = InstStmtProps { inst_num     = (-1)
+                           , inst_dur     = (-1.0)
+                           , inst_pfields = [] } 
 
 
 -- | ScoMonad is a State monad.
@@ -160,11 +161,15 @@ nextOnsetTime dt = ScoMonad $ \s -> let t0 = cummulative_time s
 resetOnsetTime :: Double -> ScoMonad ()
 resetOnsetTime t0 = ScoMonad $ \s -> ((), s { cummulative_time = t0 } )
 
+
 -- | This is Scores at the same level within the tree...
 --
 getOnsetTime :: ScoMonad Double
 getOnsetTime = ScoMonad $ \s -> (cummulative_time s, s)
 
+
+zeroInst :: ScoMonad ()
+zeroInst = ScoMonad $ \s -> ((), s { carry_props = false_inst })
 
 -- | Return a list of rendered pfields - dot indicates same.
 -- 
@@ -180,11 +185,11 @@ pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
             in (ans, s { carry_props = new })
        else (map field ps, s {carry_props = new})
   where
-    field                 = padl 5 . dtrunc
+    field                 = padr 10 . dtrunc
 
     diff (x:xs) (y:ys) 
-      | x `tEQ` y         = (padl 5 $ char '.') : diff xs ys
-      | otherwise         = (padl 5 $ dtrunc y) : diff xs ys
+      | x `tEQ` y         = (padr 10 $ char '.') : diff xs ys
+      | otherwise         = (padr 10 $ dtrunc y) : diff xs ys
 
     -- These cases shouldn't match...
     diff []     ys     = map field ys
@@ -199,12 +204,13 @@ score sco = flat <$> scoreSections sco
   where
     flat []     = empty
     flat [d]    = d `vconcat` char 'e' 
-    flat (d:ds) = d `vconcat` char 's' `vconcat` flat ds
+    flat (d:ds) = d `vconcat` (char 'b' <+> int 0) `vconcat` flat ds
 
+--     prefix      = \d -> char 'b' <+> int 0 `vconcat` d 
 
 scoreSections :: Score -> ScoMonad [Doc]
 scoreSections (Leaf loc ones)  = 
-    bracketLocale loc $ (\a -> [a]) <$> oneConcat primitive ones
+    bracketLocale loc $ (\a -> [a]) <$> (zeroInst >> oneConcat primitive ones)
 
 scoreSections (Score loc ones) = 
     bracketLocale loc $ getOnsetTime >>= \t0 -> step t0 (viewl ones) 

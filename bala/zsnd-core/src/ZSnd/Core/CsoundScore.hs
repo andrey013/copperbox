@@ -59,22 +59,25 @@ frame xs = step0 $ sortBy cmp xs
     cmp a b = compare (absPrimStart a) (absPrimStart b)
 
     step0 []                          = error "frame - unreachable" 
-    step0 (AbsTableStmt ot props :es) = 
-        step1 (ot,0) ot (JL.one $ TableStmt 0 props) es
+    step0 (AbsTableStmt t0 props :es) = 
+        step1 (t0,t0) t0 (JL.one $ TableStmt 0 props) es
 
-    step0 (AbsInstStmt  ot props :es) = 
-        step1 (ot,inst_dur props) ot (JL.one $ InstStmt 0 props) es
+    step0 (AbsInstStmt t0 props :es)  = 
+        step1 (t0, t0 + inst_dur props) t0 (JL.one $ InstStmt 0 props) es
 
 
-    step1 (t0,d) _ ac []                          = 
-        Leaf (Timespan t0 (t0+d), standardFrame) ac
+    step1 (t0,t1) _ ac []                          = 
+        Leaf (Timespan t0 t1, standardFrame) ac
 
-    step1 (t0,d) t1 ac (AbsTableStmt ot props :es) = 
-        step1 (t0,d) ot (JL.snoc ac $ TableStmt (ot - t1) props) es
+    step1 (t0,t1) ot ac (AbsTableStmt abst props :es) = 
+        let dt  = abst - ot
+            t1' = max t1 abst
+        in step1 (t0,t1') abst (ac `JL.snoc` TableStmt dt props) es
 
-    step1 (t0,d) t1 ac (AbsInstStmt ot props :es) = 
-        let dnew = d + (ot - t1) + inst_dur props
-        in step1 (t0,dnew) ot (JL.snoc ac $ InstStmt (ot - t1) props) es
+    step1 (t0,t1) ot ac (AbsInstStmt abst props :es) = 
+        let dt  = abst - ot
+            t1' = max t1 (abst + inst_dur props)
+        in step1 (t0,t1') abst (ac `JL.snoc` InstStmt dt props) es
    
 
 -- | 'absTableGen' : @ onset_time * props -> AbsPrimStmt @
