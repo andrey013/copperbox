@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZSnd.Core.CsoundInst.Monadic
+-- Module      :  ZSnd.Core.Monadic
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -10,245 +10,155 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Monadic instrument definition patterned after the Click modular 
--- router language.
+-- New inst langauge...
 --
 --------------------------------------------------------------------------------
 
 module ZSnd.Core.CsoundInst.Monadic
   (
 
-    Orch(..)
-  , OrchHeader(..)
-  , default_mono_header
-  , default_stereo_header
+    BuildOrch
+  , BuildInst
 
-  , Inst
-  , PrimInst    -- * re-export
-  , runInst
-  , runInstU
+  , runOrch
+  , runOrchU
 
+  , instr
+  , gaInit
 
-  , ilet
-  , klet
-  , alet
+  , newLabel 
+
+  , label
 
   , out
+  , (=<=)
 
-  , (->-)
-  , (=>=)
-  , (=>-)
-  , (->=)
+  , alet
 
-  , (==>>)
-  , (===>>)
-  , (====>>)
-  , (=====>>)
-  
+  , (.>.)
+  , ifgoto
+
   ) where
 
-import ZSnd.Core.CsoundInst.Click
 import ZSnd.Core.CsoundInst.Prim
 import ZSnd.Core.CsoundInst.Typed
-import ZSnd.Core.Utils.FormatCombinators
 import ZSnd.Core.Utils.HList
 
+import Control.Applicative
 
-import Control.Applicative hiding ( empty )
-
-
-
---------------------------------------------------------------------------------
--- Orchestra - collections of Inst
+type LetIx   = Int
+type FailMsg = String
 
 
-data Orch = Orch
-      { orch_header     :: OrchHeader
-      , orch_insts      :: [PrimInst]
-      }
-  deriving (Eq,Ord,Show)
+bimap :: (a -> c) -> (b -> d) -> Either a b -> Either c d
+bimap f _ (Left a)  = Left (f a)
+bimap _ g (Right b) = Right (g b)
 
--- | Orchestra file header values.
+
+-- | Build Monad - state-writer-error.
 --
--- The following fields are not accessible to ZScore:
---
--- > ctrlinit   
--- > massign
--- > pgmassign
--- > pset
--- > strset
---
-data OrchHeader = OrchHeader 
-      { zero_dbfs               :: Int     -- default 32767
-      , kr_ctrl_rate            :: Int     -- default 1000
-      , sr_aud_sample_rate      :: Int     -- default 44100
-      , ksmps_ctrl_period_samps :: Int     -- default 10
-      , nchnls_num_chans        :: Int     -- default 1 (mono)
-      , seed_gbl_random         :: Maybe Int  
-      }
-  deriving (Eq,Ord,Show)
+newtype BuildMonad elt a = BM { 
+          getBM :: LetIx -> Either FailMsg (a, LetIx, H elt ) }
 
-      
-default_mono_header :: OrchHeader 
-default_mono_header =  
-    OrchHeader { zero_dbfs                = 32767
-               , kr_ctrl_rate             = 4410
-               , sr_aud_sample_rate       = 44100
-               , ksmps_ctrl_period_samps  = 32
-               , nchnls_num_chans         = 1
-               , seed_gbl_random          = Nothing
-               }
-
-default_stereo_header :: OrchHeader 
-default_stereo_header =  
-    OrchHeader { zero_dbfs                = 32767
-               , kr_ctrl_rate             = 4410
-               , sr_aud_sample_rate       = 44100
-               , ksmps_ctrl_period_samps  = 32
-               , nchnls_num_chans         = 2
-               , seed_gbl_random          = Nothing
-               }
+type BuildOrch a  = BuildMonad (Either UStmt PrimInst) a
+type BuildInst a  = BuildMonad UStmt a
 
 
---------------------------------------------------------------------------------
--- Inst
-
-type LetCount = Int
-type W = H CStmt
-
-
-newtype Inst a = Inst { getInst :: LetCount -> (a,LetCount,W) }
-
-instance Functor Inst where
-  fmap f ma = Inst $ \s -> let (a,s1,w) = getInst ma s in (f a, s1,w)
-
-instance Applicative Inst where
-  pure a    = Inst $ \s -> (a,s,id)
-  mf <*> ma = Inst $ \s -> let (f,s1,w1) = getInst mf s
-                               (a,s2,w2) = getInst ma s1
-                           in (f a, s2, w1 . w2)
-
-instance Monad Inst where
-  return a = Inst $ \s -> (a,s,id)
-  m >>= k  = Inst $ \s -> let (a,s1,w1) = getInst m s
-                              (b,s2,w2) = (getInst . k) a s1
-                          in (b, s2, w1 . w2)
-
-
-
-runInst :: Int -> Int -> Inst a -> Either FailMsg PrimInst
-runInst n ix ma = post $ getInst ma 0
-  where
-    post (_,_,f) = translateDesc n ix $ toListH f
-
--- | Unsafe version of @runInst@ - throws runtime error on failure.
---
-runInstU :: Int -> Int -> Inst a -> PrimInst
-runInstU n ix ma = case runInst n ix ma of
-    Left err -> error err
-    Right ans -> ans
-
-
--- | configuration let
---
-clet :: Element rate -> Inst ElemRef
-clet elt = Inst $ \s -> 
-    let v1 = mkElemRef s
-    in (v1, s+1, wrapH $ DeclE v1 (getElementUniv elt))
-
-
-ilet :: Element IInit -> Inst ElemRef
-ilet = clet
-
-klet :: Element KRate -> Inst ElemRef
-klet = clet
-
-alet :: Element ARate -> Inst ElemRef
-alet = clet
-
-
-
-out :: ElemRef -> Inst ()
-out v = Inst $ \s -> ((),s, wrapH $ Out v)
-
-
-(->-) :: (ElemRef,Int) -> (ElemRef,Int) -> Inst ()
-(->-) p1 p2 = Inst $ \s -> ((),s, wrapH $ Conn p1 p2)
-
-(=>=) :: ElemRef -> ElemRef -> Inst ()
-(=>=) v1 v2 = (v1,0) ->- (v2,0)
-
-(=>-) :: ElemRef -> (ElemRef,Int) -> Inst ()
-(=>-) v1 p2 = (v1,0) ->- p2 
-
-(->=) :: (ElemRef,Int) -> ElemRef -> Inst ()
-(->=) p1 v2 = p1 ->- (v2,0)
-
-
-
--- | Serial assignment - assign: 
---
--- > e1[0] to right[0]
--- > e2[0] to right[1]
--- 
-(==>>) :: (ElemRef,ElemRef) -> ElemRef -> Inst ()
-(==>>) (e0,e1) eo = 
-    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1) }
-
-
--- | Serial assignment - assign: 
---
--- > e1[0] to right[0]
--- > e2[0] to right[1]
--- > e3[0] to right[2]
--- 
-(===>>) :: (ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
-(===>>) (e0,e1,e2) eo = 
-    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2) }
-
-
--- | Serial assignment - assign: 
---
--- > e1[0] to right[0]
--- > e2[0] to right[1]
--- > e3[0] to right[2]
--- > e4[0] to right[3]
--- 
-(====>>) :: (ElemRef,ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
-(====>>) (e0,e1,e2,e3) eo = 
-    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2)
-       ; (e3,0) ->- (eo,3) }
-
-
--- | Serial assignment - assign: 
---
--- > e1[0] to right[0]
--- > e2[0] to right[1]
--- > e3[0] to right[2]
--- > e4[0] to right[3]
--- > e5[0] to right[4]
--- 
-(=====>>) :: (ElemRef,ElemRef,ElemRef,ElemRef,ElemRef) -> ElemRef -> Inst ()
-(=====>>) (e0,e1,e2,e3,e4) eo = 
-    do { (e0,0) ->- (eo,0); (e1,0) ->- (eo,1); (e2,0) ->- (eo,2)
-       ; (e3,0) ->- (eo,3); (e4,0) ->- (eo,4) }
-
-
---------------------------------------------------------------------------------
--- Format instances
-
-instance Format Orch where
-  format (Orch hdr xs) = vspace (format hdr : map ppPrimInst xs)
-
-instance Format OrchHeader where
-  format orch =        lhs "0dbfs"  <+> int (zero_dbfs orch)
-            `vconcat`  lhs "sr"     <+> int (sr_aud_sample_rate orch)
---            `vconcat`  lhs "kr"     <+> int (kr_ctrl_rate orch)
-            `vconcat`  lhs "ksmps"  <+> int (ksmps_ctrl_period_samps orch)
-            `vconcat`  lhs "nchnls" <+> int (nchnls_num_chans orch)
-            `vconcat`  opt_seed
+instance Functor (BuildMonad elt) where
+  fmap f ma = BM $ \s -> bimap id sk $ getBM ma s 
     where
-      lhs s = text s <+> char '='
-      opt_seed = case seed_gbl_random orch of 
-                   Nothing -> empty
-                   Just i  -> lhs "seed" <+> int i
+      sk (a,s1,w) = (f a, s1, w)
+
+instance Applicative (BuildMonad elt) where
+  pure a    = BM $ \s -> Right (a,s,emptyH)
+  mf <*> ma = BM $ \s -> 
+                case getBM mf s of
+                  Left err -> Left err
+                  Right (f,s1,w1) -> case getBM ma s1 of
+                    Left err -> Left err
+                    Right (a,s2,w2) -> Right (f a,s2, w1 `appendH` w2)
+
+instance Monad (BuildMonad elt) where
+  return a = BM $ \s -> Right (a,s,emptyH)
+  ma >>= k = BM $ \s -> 
+                case getBM ma s of
+                  Left err -> Left err
+                  Right (a,s1,w1) -> case getBM (k a) s1 of
+                    Left err -> Left err
+                    Right (b,s2,w2) -> Right (b,s2, w1 `appendH` w2)
+
+
+runOrch :: OrchHeader -> BuildOrch a -> Either FailMsg Orch
+runOrch hdr ma = bimap id sk $ getBM ma 1
+  where
+    sk (_,_,w1) = Orch hdr $ toListH w1 
+
+runOrchU :: OrchHeader -> BuildOrch a -> Orch
+runOrchU hdr ma = either error sk $ getBM ma 1
+  where
+    sk (_,_,w1) = Orch hdr $ toListH w1 
+
+
+
+tellElt :: elt -> BuildMonad elt ()
+tellElt elt = BM $ \s -> Right ((),s, wrapH elt)
+
+
+newLocVar :: Rate rate 
+          => rate -> BuildMonad elt (Var rate)
+newLocVar a = BM $ \s -> let rt = dataRate a 
+                         in Right (mkVar $ LocVar rt s , s+1, emptyH)
+
+
+gaInit :: String -> Expr rate -> BuildOrch (Var ARate)
+gaInit name e = 
+    tellElt (Left (OpcodeAssign [getVarA v1] "init" [getExprUniv e])) >> return v1
+  where
+    v1 = mkVar $ UserVar name
+
+-- is gainit special in that it isn\'t a @galet@ ?
+
+
+instr :: Int -> BuildInst a -> BuildOrch ()
+instr n ma = BM $ \s -> bimap id (sk s) $ getBM ma s
+  where
+    sk s0 (_,_,w1) = let inst = PrimInst n (toListH w1)
+                     in ((),s0, wrapH $ Right inst)
+
+
+newLabel :: String -> BuildInst Label
+newLabel s = return (mkLabel s)
+
+label :: Label -> BuildInst ()
+label lbl = tellElt (Label lbl)
+
+out :: Expr ARate -> BuildInst ()
+out e1 = tellElt (Outs [getExprA e1])
+
+
+(=<=) :: Var rate -> Opcode1 rate -> BuildInst ()
+v1 =<= opc = tellElt (assignStmt1 v1 opc)
+
+alet :: Opcode1 ARate -> BuildInst (Var ARate)
+alet opc = do 
+    varid <- newLocVar (undefined :: ARate)
+    tellElt (assignStmt1 varid opc)
+    return varid
+
+goto :: Label -> BuildInst ()
+goto lbl = tellElt (Goto GOTO lbl)
+
+kgoto :: Label -> BuildInst ()
+kgoto lbl = tellElt (Goto KGOTO lbl)
+
+igoto :: Label -> BuildInst ()
+igoto lbl = tellElt (Goto IGOTO lbl)
+
+
+infix 4 .>.
+
+(.>.) :: Expr rate -> Expr rate -> BinRel
+(.>.) e1 e2 = BinRel greater_than (getExprUniv e1) (getExprUniv e2)
+
+ifgoto :: BinRel -> Label -> BuildInst ()
+ifgoto brel lbl = tellElt (IfGoto brel GOTO lbl)

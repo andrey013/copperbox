@@ -31,7 +31,7 @@ module ZSnd.Core.OutputCsound
   ) where
 
 import ZSnd.Core.CSDDoc
-import ZSnd.Core.CsoundInst
+import ZSnd.Core.CsoundInst.Prim
 import ZSnd.Core.ScoreInternal
 import ZSnd.Core.Utils.FormatCombinators
 import ZSnd.Core.Utils.JoinList hiding ( empty )

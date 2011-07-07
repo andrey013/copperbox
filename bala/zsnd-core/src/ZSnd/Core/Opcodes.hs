@@ -35,14 +35,13 @@
 
 module ZSnd.Core.Opcodes
   (
-    module ZSnd.Core.Opcodes.Assignment
-  , module ZSnd.Core.Opcodes.Base
+   
+    module ZSnd.Core.Opcodes.Base
   , module ZSnd.Core.Opcodes.SignalGenerators
   , module ZSnd.Core.Opcodes.SignalModifiers
 
   ) where
 
-import ZSnd.Core.Opcodes.Assignment
 import ZSnd.Core.Opcodes.Base
 import ZSnd.Core.Opcodes.SignalGenerators
 import ZSnd.Core.Opcodes.SignalModifiers

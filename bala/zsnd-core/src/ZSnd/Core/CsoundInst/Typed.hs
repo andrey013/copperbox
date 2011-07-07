@@ -11,41 +11,36 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- High-level monadic layer for definition Click instruments.
--- Some typing improvements via phantom types.
+-- New inst langauge...
 --
 --------------------------------------------------------------------------------
 
 module ZSnd.Core.CsoundInst.Typed
   (
-
-  -- * Rate placeholder types and classes
     IInit
-  , KRate  
+  , KRate
   , ARate
+  , ITableNum
 
-  , Rate
+  , IR
+  , KR
+  , AR
+
+  , Rate        -- opaque
   , dataRate
   , KA_Rate
   , IK_Rate
-
-  -- * Phantom typed UElement
-  , Element
-  , mkOpcode
-  , mkInfixAssign
-  , mkPrefixAssign
-  , getElementI 
-  , getElementK
-  , getElementA
-  , getElementUniv 
+  , Expr_Rate
 
   -- * Phantom typed Expr
-  , Conf
-  , mkConf
-  , getConfI
-  , getConfK
-  , getConfA
-  , getConfUniv
+  , Expr
+  , getExprI
+  , getExprK
+  , getExprA
+  , getExprUniv
+
+  , binop
+  , unop
   
   , cast
   , pfield
@@ -53,15 +48,46 @@ module ZSnd.Core.CsoundInst.Typed
   , tablefn
   , filecode
 
+  -- * Phantom typed Var
+  , Var
+  , mkVar
+  , getVarI
+  , getVarK
+  , getVarA
+  , getVarUniv
+
+  , var
+
+  , Opcode0(..)
+  , assignStmt0
+
+  , Opcode1(..)
+  , assignStmt1
+
+  , Opcode2(..)
+  , assignStmt2
+
+  , Opcode3(..)
+  , assignStmt3
+
+  , Opcode4(..)
+  , assignStmt4
+
   ) where
 
-import ZSnd.Core.CsoundInst.Click
 import ZSnd.Core.CsoundInst.Prim
-
+import ZSnd.Core.Utils.FormatExpr
 
 data IInit
 data KRate
 data ARate
+
+data ITableNum          
+
+
+type IR = Expr IInit
+type KR = Expr KRate
+type AR = Expr ARate
 
 
 -- Note - the classes are exported opaquely. This is because there
@@ -81,6 +107,10 @@ instance Rate ARate where
   dataRate _ = A
 
 
+instance Rate ITableNum where
+  dataRate _ = I
+
+
 class Rate rate => KA_Rate rate
 
 instance KA_Rate KRate
@@ -92,107 +122,182 @@ class Rate rate => IK_Rate rate
 instance IK_Rate IInit
 instance IK_Rate KRate
 
---------------------------------------------------------------------------------
--- Element
 
--- | Typed version of 'UElement' - rate is a phantom param.
+-- | No ITableNum instance - this means table ref fields cannot 
+-- be added etc.
 --
-newtype Element rate = Element { getElement :: UElement }
+class Rate rate => Expr_Rate rate
 
-mkOpcode :: String -> InputConfig -> [Int] -> OutConf -> Element rate
-mkOpcode ss ins tabs outspec = 
-    Element $ UElement (NamedOpcode ss) ins tabs outspec
+instance Expr_Rate IInit
+instance Expr_Rate KRate
+instance Expr_Rate ARate
 
-mkInfixAssign :: Rator -> InputConfig -> [Int] -> OutConf -> Element rate
-mkInfixAssign op ins tabs outspec = 
-    Element $ UElement (AssignInfix op) ins tabs outspec
 
-mkPrefixAssign :: String -> InputConfig -> [Int] -> OutConf -> Element rate
-mkPrefixAssign ss ins tabs outspec = 
-    Element $ UElement (AssignPrefix ss) ins tabs outspec
-
-getElementI :: Element IInit -> UElement
-getElementI = getElement
-
-getElementK :: Element KRate -> UElement
-getElementK = getElement
-
-getElementA :: Element ARate -> UElement
-getElementA = getElement
-
-getElementUniv :: Element rate -> UElement
-getElementUniv = getElement
 
 --------------------------------------------------------------------------------
 -- Conf
 
--- | Typed version of 'Expr' - rate is a phantom param.
+-- | Typed version of 'UExpr' - rate is a phantom param.
 --
-newtype Conf rate = Conf { getConf :: Expr }
+newtype Expr rate = Expr { getExpr :: UExpr }
   deriving (Eq,Ord)
 
-instance Show (Conf rate) where
-  showsPrec p = showsPrec p . getConf
+instance Show (Expr rate) where
+  showsPrec p = showsPrec p . getExpr
 
 
--- | Note - not sure this is necessary,  it may be removed...
---
-mkConf :: Expr -> Conf rate
-mkConf = Conf
 
-getConfI :: Conf IInit -> Expr
-getConfI = getConf
+getExprI :: Expr IInit -> UExpr
+getExprI = getExpr
 
-getConfK :: Conf KRate -> Expr
-getConfK = getConf
+getExprK :: Expr KRate -> UExpr
+getExprK = getExpr
 
-getConfA :: Conf ARate -> Expr
-getConfA = getConf
+getExprA :: Expr ARate -> UExpr
+getExprA = getExpr
 
-getConfUniv :: Conf rate -> Expr
-getConfUniv = getConf
+getExprUniv :: Expr rate -> UExpr
+getExprUniv = getExpr
 
 
 -- Constructors ( also num instances for literals)
 
 
-cast :: Conf r1 -> Conf r2
-cast a = Conf (getConf a)
+cast :: Expr r1 -> Expr r2
+cast a = Expr (getExpr a)
 
 
-pfield  :: Int -> Conf rate
-pfield  = Conf . PField
+pfield  :: Int -> Expr rate
+pfield  = Expr . PField
 
 
-funcall :: String -> Conf rate -> Conf rate
-funcall s a = Conf $ Funcall s (getConf a)
+funcall :: String -> Expr rate -> Expr rate
+funcall s a = Expr $ Funcall s (getExpr a)
 
-tablefn  :: Int -> Conf IInit
-tablefn = Conf . TableRef 
+tablefn  :: Int -> Expr ITableNum
+tablefn = Expr . TableRef 
 
-filecode  :: String -> Conf IInit
-filecode = Conf . Literal . CsString
-
-
-
-binop :: Rator -> Conf rate -> Conf rate -> Conf rate
-binop op a b = Conf $ BinOp op (getConf a) (getConf b)
-
-unop :: Rator -> Conf rate -> Conf rate
-unop op a = Conf $ UnOp op (getConf a)
+filecode  :: String -> Expr IInit
+filecode = Expr . Literal . CsString
 
 
-instance Num (Conf rate) where
-  (+)     = binop (infixL 6 "+")
-  (-)     = binop (infixL 6 "-")
-  (*)     = binop (infixL 7 "*")
+
+binop :: Rator -> Expr rate -> Expr rate -> Expr rate
+binop op a b = Expr $ BinOp op (getExpr a) (getExpr b)
+
+unop :: Rator -> Expr rate -> Expr rate
+unop op a = Expr $ UnOp op (getExpr a)
+
+
+-- Note - Num instances exclude ITableNum (table refs)
+
+instance Expr_Rate rate => Num (Expr rate) where
+  (+)     = binop plus_op
+  (-)     = binop minus_op
+  (*)     = binop mult_op
   abs     = funcall "abs"
-  negate  = unop (prefix 9 "-")
+  negate  = unop unary_negate
   signum _      = error "signum - no interpretation of signum in Csound."
-  fromInteger i = Conf $ Literal $ CsInt $ fromInteger i
+  fromInteger i = Expr $ Literal $ CsInt $ fromInteger i
 
 
-instance Fractional (Conf rate) where
-  (/)     = binop (infixL 7 "/")
+instance Expr_Rate rate => Fractional (Expr rate) where
+  (/)     = binop divide_op
   recip _ = error "recip - no interpretation of recip in Csound."  
-  fromRational d = Conf $ Literal $ CsDouble (fromRational d)
+  fromRational d = Expr $ Literal $ CsDouble (fromRational d)
+
+
+
+--------------------------------------------------------------------------------
+-- Variable
+
+newtype Var rate = Var { getVar :: VarId } 
+  deriving (Eq,Ord)
+
+instance Show (Var rate) where
+  showsPrec p = showsPrec p . getVar
+
+mkVar :: VarId -> Var rate
+mkVar = Var
+
+getVarI :: Var IInit -> VarId
+getVarI = getVar
+
+getVarK :: Var KRate -> VarId
+getVarK = getVar
+
+getVarA :: Var ARate -> VarId
+getVarA = getVar
+
+getVarUniv :: Var rate -> VarId
+getVarUniv = getVar
+
+
+var :: Var rate -> Expr rate
+var v1 = Expr $ VarE (getVarUniv v1)
+
+
+--------------------------------------------------------------------------------
+-- Opcode
+
+-- | Opcode generating 1 output channel.
+--
+data Opcode0 rate = Opcode0 String [UExpr]
+  deriving (Eq,Ord,Show)
+
+-- Is this one necessary - check @delayw@...
+--
+assignStmt0 :: Opcode0 rate -> UStmt
+assignStmt0 (Opcode0 name exprs) = 
+    OpcodeAssign [] name exprs
+
+
+
+-- | Opcode generating 1 output channel.
+--
+data Opcode1 rate = Opcode1 String [UExpr]
+  deriving (Eq,Ord,Show)
+
+
+assignStmt1 :: Var rate -> Opcode1 rate -> UStmt
+assignStmt1 v1 (Opcode1 name exprs) = 
+    OpcodeAssign [getVarUniv v1] name exprs
+
+
+-- | Opcode generating 2 output channels.
+--
+data Opcode2 rate = Opcode2 String [UExpr]
+  deriving (Eq,Ord,Show)
+
+
+assignStmt2 :: (Var rate,Var rate) -> Opcode2 rate -> UStmt
+assignStmt2 (v1,v2) (Opcode2 name exprs) = 
+    OpcodeAssign [getVarUniv v1, getVarUniv v2] name exprs
+
+
+
+-- | Opcode generating 3 results - e.g. 'lorenz'.
+--
+data Opcode3 rate = Opcode3 String [UExpr]
+  deriving (Eq,Ord,Show)
+
+
+assignStmt3 :: (Var rate,Var rate,Var rate) -> Opcode3 rate -> UStmt
+assignStmt3 (v1,v2,v3) (Opcode3 name exprs) = 
+    OpcodeAssign [getVarUniv v1, getVarUniv v2, getVarUniv v3] name exprs
+
+
+
+-- | Opcode generating 4 output channels.
+--
+data Opcode4 rate = Opcode4 String [UExpr]
+  deriving (Eq,Ord,Show)
+
+
+assignStmt4 :: (Var rate,Var rate, Var rate, Var rate) -> Opcode4 rate 
+            -> UStmt
+assignStmt4 (v1,v2,v3,v4) (Opcode4 name exprs) = 
+    OpcodeAssign xs name exprs 
+  where
+    xs = [ getVarUniv v1, getVarUniv v2, getVarUniv v3, getVarUniv v4 ]
+
