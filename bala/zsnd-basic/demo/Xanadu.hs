@@ -80,5 +80,6 @@ note pch drn = promoteLoc $ \ot ->
     get_user_context >>= \uctx -> 
     primEvent $ prim1 $ absEvent dot (InstStmtProps 3 ddrn (mkPfs uctx))
   where
-    mkPfs ctx = [0, pch, (line_start ctx), (line_end ctx)]
+    mkPfs ctx = [ CsInt 0, CsDouble pch
+                , CsDouble (line_start ctx), CsDouble (line_end ctx)]
   

@@ -23,6 +23,7 @@ module ZSnd.Core.CsoundInst
 
   , Orch        -- re-export
   , OrchHeader(..)
+  , CsValue(..)
 
   , default_mono_header
   , default_stereo_header

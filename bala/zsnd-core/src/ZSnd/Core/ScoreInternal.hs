@@ -25,8 +25,6 @@ module ZSnd.Core.ScoreInternal
   , AbsPrimStmt(..)
   , GenStmtProps(..)
   , InstStmtProps(..)
-  , CsoundValue(..)
-
 
   , absPrimStart
   , absPrimDuration
@@ -42,6 +40,7 @@ module ZSnd.Core.ScoreInternal
  
   ) where
 
+import ZSnd.Core.CsoundInst.Prim ( CsValue(..) )
 import ZSnd.Core.Utils.FormatCombinators
 import ZSnd.Core.Utils.JoinList hiding ( empty )
 
@@ -95,21 +94,15 @@ data GenStmtProps = GenStmtProps
        { table_assign_num     :: Int  -- corresponds to table-ref in orch
        , table_size           :: Int
        , table_genroutine     :: Int
-       , table_args           :: [CsoundValue]
+       , table_args           :: [CsValue]
        }
   deriving (Eq,Ord,Show)
 
 data InstStmtProps = InstStmtProps 
         { inst_num            :: Int
         , inst_dur            :: Double
-        , inst_pfields        :: [Double]
+        , inst_pfields        :: [CsValue]
         } 
-  deriving (Eq,Ord,Show)
-
-
-data CsoundValue = CsDouble Double
-                 | CsInt    Int
-                 | CsString String
   deriving (Eq,Ord,Show)
 
 
@@ -186,12 +179,6 @@ fmtTimespan (Timespan t0 t1) = tupled [dtrunc t0, dtrunc t1]
 fmtFrame :: Frame -> Doc
 fmtFrame (Frame o sx) = 
     semiBraces [ text "o:" <> dtrunc o, text "sx:" <> dtrunc sx ]
-
-instance Format CsoundValue where
-  format (CsDouble d) = dtrunc d
-  format (CsInt i)    = int i
-  format (CsString s) = dquotes $ text s
-  
 
 
 fmtStmt :: PrimStmt -> Doc

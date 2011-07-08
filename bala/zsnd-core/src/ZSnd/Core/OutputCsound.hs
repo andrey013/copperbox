@@ -185,11 +185,17 @@ pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
             in (ans, s { carry_props = new })
        else (map field ps, s {carry_props = new})
   where
-    field                 = padr 10 . dtrunc
+    field                 = padr 10 . format
 
-    diff (x:xs) (y:ys) 
-      | x `tEQ` y         = (padr 10 $ char '.') : diff xs ys
-      | otherwise         = (padr 10 $ dtrunc y) : diff xs ys
+    diff (x:xs) (y:ys)    = step x y
+      where
+        step (CsInt a)    (CsInt b) 
+             | a == b     = (padr 10 $ char '.') : diff xs ys
+
+        step (CsDouble a) (CsDouble b)
+             | a `tEQ` b  = (padr 10 $ char '.') : diff xs ys
+
+        step csval        _ = (padr 10 $ format csval) : diff xs ys
 
     -- These cases shouldn't match...
     diff []     ys     = map field ys

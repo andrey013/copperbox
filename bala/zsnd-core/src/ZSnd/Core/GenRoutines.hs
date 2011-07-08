@@ -67,6 +67,7 @@ module ZSnd.Core.GenRoutines
 
   ) where
 
+import ZSnd.Core.CsoundInst.Prim ( CsValue(..) )
 import ZSnd.Core.ScoreInternal
 
 
@@ -302,7 +303,7 @@ data Gen20Window = HAMMING | HANNING | BARTLETT | BLACKMAN
   deriving (Eq,Ord,Show)
 
 
-gen20Opts :: Gen20Window -> Int -> [CsoundValue]
+gen20Opts :: Gen20Window -> Int -> [CsValue]
 gen20Opts HAMMING         mx = [CsInt 1, CsInt mx]     
 gen20Opts HANNING         mx = [CsInt 2, CsInt mx]     
 gen20Opts BARTLETT        mx = [CsInt 3, CsInt mx]     
@@ -347,7 +348,7 @@ data Gen21Dist = UNIFORM | LINEAR | TRIANGULAR | EXPON
                | BETA Int Int | WEIBULL Int | POISSON
   deriving (Eq,Ord,Show)
 
-gen21Opts :: Gen21Dist -> Double -> [CsoundValue]
+gen21Opts :: Gen21Dist -> Double -> [CsValue]
 gen21Opts UNIFORM         lv = [CsInt 1, CsDouble lv]
 gen21Opts LINEAR          lv = [CsInt 2, CsDouble lv]
 gen21Opts TRIANGULAR      lv = [CsInt 3, CsDouble lv]     
@@ -454,25 +455,25 @@ genN12 ix sz xint = GenStmtProps ix sz (-12) [CsInt xint]
 -- helpers 
 
 
-int2 :: [(Int,Int)] -> [CsoundValue]
+int2 :: [(Int,Int)] -> [CsValue]
 int2 = concatMap fn 
   where
     fn (a,b) = [CsInt a, CsInt b]
 
 
-double2 :: [(Double,Double)] -> [CsoundValue]
+double2 :: [(Double,Double)] -> [CsValue]
 double2 = concatMap fn 
   where
     fn (a,b) = [CsDouble a, CsDouble b]
 
 
-double3 :: [(Double,Double,Double)] -> [CsoundValue]
+double3 :: [(Double,Double,Double)] -> [CsValue]
 double3 = concatMap fn 
   where
     fn (a,b,c) = [CsDouble a, CsDouble b, CsDouble c]
 
              
-double4 :: [(Double,Double,Double,Double)] -> [CsoundValue]
+double4 :: [(Double,Double,Double,Double)] -> [CsValue]
 double4 = concatMap fn 
   where
     fn (a,b,c,d) = [CsDouble a, CsDouble b, CsDouble c, CsDouble d]

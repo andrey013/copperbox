@@ -33,7 +33,7 @@ module ZSnd.Core.CSDDoc
 
   ) where
 
-import ZSnd.Core.ScoreInternal
+import ZSnd.Core.CsoundInst.Prim ( CsValue(..) )
 import ZSnd.Core.Utils.FormatCombinators
 
 csdStartTag :: String -> Doc
@@ -65,7 +65,7 @@ cs_score :: Doc -> Doc
 cs_score d = csdElem "CsScore" d
 
 
-cs_sco_table_stmt :: Int -> Double -> Int -> Int -> [CsoundValue] -> Doc
+cs_sco_table_stmt :: Int -> Double -> Int -> Int -> [CsValue] -> Doc
 cs_sco_table_stmt ix t0 sz gennum args = 
     char 'f' <+> padr 5 (int ix) 
              <+> padr 10 (dtrunc t0) 

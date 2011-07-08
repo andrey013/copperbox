@@ -32,6 +32,8 @@ module ZSnd.Core.CsoundInst.Prim
   , VarId(..)
   , DataRate(..)
 
+  , Rator               -- re-export
+
   -- * Operators
   , logical_and
   , logical_or

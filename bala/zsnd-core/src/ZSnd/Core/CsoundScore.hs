@@ -23,8 +23,7 @@ module ZSnd.Core.CsoundScore
   , InstStmtProps(..)
   , AbsPrimStmt                 -- opaque
   , PrimStmt                    -- opaque
-
-
+  
   -- * Build scores
   , frame 
 
