@@ -188,6 +188,8 @@ runQuery :: Context ctx -> Query ctx u a -> a
 runQuery ctx mf = getQuery mf ctx
 
 
+-- | Run a Query building an Event.
+--
 zapQuery :: Query ctx u a -> Event ctx u a
 zapQuery mq = askCtx >>= \ctx -> let a = runQuery ctx mq in return a
 

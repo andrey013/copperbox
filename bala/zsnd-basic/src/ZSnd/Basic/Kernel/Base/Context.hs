@@ -36,12 +36,10 @@ module ZSnd.Basic.Kernel.Base.Context
 
   , get_amplitude
   , amplitude
+  , scale_amplitude
 
   , get_staccato_factor
   , staccato_factor
-
-  , get_unit_duration
-  , unit_duration
 
   , get_global_tuning
   , global_tuning
@@ -67,7 +65,6 @@ data Context uctx = Context
       { ctx_tempo               :: Tempo
       , ctx_amplitude           :: Double
       , ctx_staccato_factor     :: Double   -- range 0 .. 1.0
-      , ctx_unit_duration       :: Double
       , ctx_global_tuning       :: Double   -- usually 440.0 (A4)
       , ctx_user_context        :: uctx
       }
@@ -104,7 +101,6 @@ initialContext uc = Context
       , ctx_amplitude           = 31662.8
       , ctx_staccato_factor     = 1.0
       , ctx_user_context        = uc
-      , ctx_unit_duration       = 1.0
       , ctx_global_tuning       = 440.0
       }
 
@@ -161,7 +157,9 @@ get_amplitude = asksCtx ctx_amplitude
 amplitude :: Double -> ContextF uctx
 amplitude a = (\s -> s { ctx_amplitude = a})
 
-
+scale_amplitude    :: Double -> ContextF uctx
+scale_amplitude d  = (\s a -> s { ctx_amplitude = a * d })
+                         <*> ctx_amplitude
 
 get_staccato_factor :: ContextM m => m Double
 get_staccato_factor = asksCtx ctx_staccato_factor
@@ -170,19 +168,6 @@ get_staccato_factor = asksCtx ctx_staccato_factor
 staccato_factor :: Double -> ContextF uctx
 staccato_factor sd = (\s -> s { ctx_staccato_factor = sd })
 
-
-
--- | @unit_duration@ is how long a note on an instrument without
--- dynamic sustain  prologation sounds for.
---
--- The value is a @Double@ (seconds).
---
-get_unit_duration :: ContextM m => m Double
-get_unit_duration = asksCtx ctx_unit_duration >>= dinterpCtx
-
-
-unit_duration :: Double -> ContextF uctx
-unit_duration ud = (\s -> s { ctx_unit_duration = ud })
 
 
 

@@ -57,6 +57,8 @@ module ZSnd.Core.CsoundInst.Typed
   , getVarUniv
 
   , var
+  , expr1
+  , expr2
 
   , Opcode0(..)
   , assignStmt0
@@ -237,6 +239,18 @@ var :: Var rate -> Expr rate
 var v1 = Expr $ VarE (getVarUniv v1)
 
 
+expr1 :: Var rate1 -> (Expr rate1 -> Expr rate) -> Expr rate
+expr1 v1 f = f (Expr $ VarE (getVarUniv v1))
+
+
+expr2 :: Var rate1 -> Var rate2 
+      -> (Expr rate1 -> Expr rate2 -> Expr rate) 
+      -> Expr rate
+expr2 v1 v2 f = 
+    f (Expr $ VarE (getVarUniv v1)) (Expr $ VarE (getVarUniv v2))
+
+
+
 --------------------------------------------------------------------------------
 -- Opcode
 
@@ -270,8 +284,8 @@ data Opcode2 rate = Opcode2 String [UExpr]
   deriving (Eq,Ord,Show)
 
 
-assignStmt2 :: (Var rate,Var rate) -> Opcode2 rate -> UStmt
-assignStmt2 (v1,v2) (Opcode2 name exprs) = 
+assignStmt2 :: Var rate -> Var rate -> Opcode2 rate -> UStmt
+assignStmt2 v1 v2 (Opcode2 name exprs) = 
     OpcodeAssign [getVarUniv v1, getVarUniv v2] name exprs
 
 
@@ -282,8 +296,8 @@ data Opcode3 rate = Opcode3 String [UExpr]
   deriving (Eq,Ord,Show)
 
 
-assignStmt3 :: (Var rate,Var rate,Var rate) -> Opcode3 rate -> UStmt
-assignStmt3 (v1,v2,v3) (Opcode3 name exprs) = 
+assignStmt3 :: Var rate -> Var rate -> Var rate -> Opcode3 rate -> UStmt
+assignStmt3 v1 v2 v3 (Opcode3 name exprs) = 
     OpcodeAssign [getVarUniv v1, getVarUniv v2, getVarUniv v3] name exprs
 
 
@@ -294,9 +308,9 @@ data Opcode4 rate = Opcode4 String [UExpr]
   deriving (Eq,Ord,Show)
 
 
-assignStmt4 :: (Var rate,Var rate, Var rate, Var rate) -> Opcode4 rate 
+assignStmt4 :: Var rate -> Var rate -> Var rate -> Var rate -> Opcode4 rate 
             -> UStmt
-assignStmt4 (v1,v2,v3,v4) (Opcode4 name exprs) = 
+assignStmt4 v1 v2 v3 v4 (Opcode4 name exprs) = 
     OpcodeAssign xs name exprs 
   where
     xs = [ getVarUniv v1, getVarUniv v2, getVarUniv v3, getVarUniv v4 ]

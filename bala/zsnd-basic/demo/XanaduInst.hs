@@ -16,58 +16,45 @@ import Prelude hiding ( abs, exp )
 
 
 xanadu_orc :: Orch
-xanadu_orc = Orch default_stereo_header [inst3 0]
+xanadu_orc = runOrchU default_stereo_header (inst3 3)
 
 -- Note - this instrument is not exemplary...
 
-inst3 :: Int -> PrimInst
-inst3 port_start = runInstU 3 port_start $ do
-    k1 <- klet $ linseg $ port0_gen $ (0, p3/3, 1, [(p3/3, 1), (p3/3, 0)])
-    k2 <- klet $ linseg $ port0_gen $ (0, p3/3, 5, [(p3/3, 3), (p3/3, 0)])
-    k3 <- alet $ linseg $ port0_gen $ (pfield 6, pfield 3, pfield 7, [])
+inst3 :: Int -> BuildOrch ()
+inst3 inum = instr inum $ do
+    kadsr   <- klet $ linseg 0 (p3/3) 1 [(p3/3, 1), (p3/3, 0)]
 
-    a1 <- alet $ mult2 $ port2_2 $ \kx2 kx3 -> (cast kx2, cast $ ((kx3-1)/kx3) / 2)
-    (k2,k3) ==>> a1
+    kmodi   <- klet $ linseg 0 (p3/3) 5 [(p3/3, 3), (p3/3, 0)]
+    kmodr   <- klet $ linseg (pfield 6) (pfield 3) (pfield 7) []
 
-    a2 <- alet $ opabs $ port1_1 $ \ax1 -> (ax1 * 2 / 20)
-    a1 =>= a2 
+ 
+    a1      <- adef $ cast (var kmodi * ((var kmodi - 1) / (var kmodr) / 2))
+    a1ndx   <- adef $ abs (var a1 * 2 / 20)
+    a2      <- adef $ cast (var kmodi * ((var kmodi + 1) / (var kmodr) / 2))
 
-    a3 <- alet $ mult2 $ port2_2 $ \kx2 kx3 -> (cast kx2, cast $ ((kx3+1)/kx3) / 2)
-    (k2,k3) ==>> a3
+    a3      <- alet $ tablei_ (var a1ndx) (tablefn 1) 1 0 0
+    ao1     <- alet $ oscil   (var a1) ipch (tablefn 2)
 
-    a4 <- alet $ tablei_ 1 $ port1_4 $ \ax2 -> (ax2, 1, 0, 0)
-    a2 =>= a4
+    a4      <- adef $ exp ((-0.5) * var a3 + var ao1)
+
+    ao2     <- alet $ oscil (var a2 * cast ipch) ipch (tablefn 2)
     
+    aoutl  <- alet $ oscil (1000 * cast (var kadsr) * var a4)
+                           (var ao2 + cast (cpsoct (ioct + ishift)))
+                           (tablefn 1)
 
-    a5 <- alet $ oscil 2 $ port1_2 $ \ax1 -> (ax1, i2)
-    a1 =>= a5
+    aoutr  <- alet $ oscil (1000 * cast (var kadsr) * var a4)
+                           (var ao2 + cast (cpsoct (ioct - ishift)))
+                           (tablefn 1)
 
-    a6 <- alet $ opexp $ port2_1 $ \ax4 ax5 -> ((-0.5) * ax4 + ax5)
-    (a4,a5) ==>> a6
-
-    a7 <- alet $ oscil 2 $ port1_2 $ \ax3 -> (ax3*i2, i2)
-    a3 =>= a7
-
-    a8 <- alet $ oscil 1 $ port3_2 $ \kx1 ax6 ax7 -> 
-                  (1000*kx1*ax6, ax7+cpsoct(i3+i1))
-           
-    (k1,a6,a7) ===>> a8
-
-    a9 <- alet $ oscil 1 $ port3_2 $ \kx1 ax6 ax7 -> 
-                  (1000*kx1*ax6, ax7+cpsoct(i3-i1))
-           
-    (k1,a6,a7) ===>> a9
-
-    o1 <- alet $ out2 $ port2_2 $ \a b -> (a,b)
-    (a8,a9) ==>> o1
-    out o1
+    out2 (var aoutl) (var aoutr)
 
   where
     p3    = pfield 3
     
-    i1,i2,i3 :: Conf IInit
-    i1    = 0.006667
-    i2    = cpspch (pfield 5)
-    i3    = octpch (pfield 5)
+    ishift, ipch, ioct :: Expr IInit
+    ishift  = 0.006667
+    ipch    = cpspch (pfield 5)
+    ioct    = octpch (pfield 5)
 
 

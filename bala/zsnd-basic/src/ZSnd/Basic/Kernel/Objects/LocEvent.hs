@@ -30,6 +30,7 @@ module ZSnd.Basic.Kernel.Objects.LocEvent
    , applyLoc
 
    , emptyLocEvent
+   , primULocEvent
 
    , moveStart
    , at
@@ -47,9 +48,10 @@ module ZSnd.Basic.Kernel.Objects.LocEvent
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
 import ZSnd.Basic.Kernel.Base.Context
+import ZSnd.Basic.Kernel.Base.WrappedPrimitive
 import ZSnd.Basic.Kernel.Objects.Basis
 
-
+import ZSnd.Core                                -- package: zsnd-core
 
 import Control.Applicative
 import Data.Monoid
@@ -180,6 +182,12 @@ emptyLocEvent :: Monoid a => LocEvent ctx u a
 emptyLocEvent = mempty
 
 
+primULocEvent :: InterpretUnit u 
+              => InstStmtProps -> ULocEvent ctx u
+primULocEvent props = promoteLoc $ \ot -> 
+    normalizeCtx ot >>= \dot -> 
+    primEvent $ prim1 $ absEvent dot $ props
+                          
 
 
 -- Note - maybe this should just be an operator on LocEvent...

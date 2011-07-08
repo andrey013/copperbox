@@ -32,6 +32,7 @@ module ZSnd.Basic.Kernel.Objects.Concat
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
 
+import ZSnd.Core                                -- package: zsnd-core
 
 import Data.Monoid
 
@@ -54,7 +55,8 @@ overlays (x:xs) = go x xs
     go acc (a:as) = go (acc `overlay` a) as
   
 
-
+instance Overlay Score where
+  overlay = scoOver
 
 infixr 6 `append`
 
@@ -67,7 +69,8 @@ infixr 6 `append`
 class Append o where
   append :: o -> o -> o
   
-
+instance Append Score where
+  append = scoBeside
 
 
 -- | Linear concatenate a list of objects.
@@ -87,7 +90,7 @@ appends (x:xs) = go x xs
   
 
 class Space o where
-   space :: u ~ DUnit o => u -> o -> o -> o
+  space :: u ~ DUnit o => u -> o -> o -> o
 
 spaces :: (Monoid o, Space o, u ~ DUnit o) => u -> [o] -> o
 spaces _  []     = mempty
@@ -97,6 +100,9 @@ spaces dx (x:xs) = go x xs
     go acc []     = acc
     go acc (a:as) = go (acc `op` a) as
   
+instance Space Score where
+  space dx s1 s2 = s1 `append` (scoMoveBy s2 dx)
+
 
 --
 -- No analogue to alignment in Wumpus, as we only in the temporal 

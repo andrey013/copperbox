@@ -31,10 +31,30 @@ module ZSnd.Core.CsoundInst.Monadic
   , label
 
   , out
+  , out2
+
   , (=<=)
 
-  , alet
+  , idef
+  , kdef
+  , adef
 
+  , ilet
+  , klet
+  , alet
+  , ilet2
+  , klet2
+  , alet2
+  , ilet3
+  , klet3
+  , alet3
+  , ilet4
+  , klet4
+  , alet4
+
+  , goto
+  , kgoto
+  , igoto
   , (.>.)
   , ifgoto
 
@@ -135,15 +155,137 @@ label lbl = tellElt (Label lbl)
 out :: Expr ARate -> BuildInst ()
 out e1 = tellElt (Outs [getExprA e1])
 
+out2 :: Expr ARate -> Expr ARate -> BuildInst ()
+out2 e1 e2 = tellElt (Outs [getExprA e1, getExprA e2])
+
 
 (=<=) :: Var rate -> Opcode1 rate -> BuildInst ()
 v1 =<= opc = tellElt (assignStmt1 v1 opc)
+
+--------------------------------------------------------------------------------
+-- Binding
+
+idef :: Expr IInit -> BuildInst (Var IInit)
+idef expr = do 
+    varid <- newLocVar (undefined :: IInit)
+    tellElt (VarAssign (getVarI varid) (getExprI expr))
+    return varid
+
+kdef :: Expr KRate -> BuildInst (Var KRate)
+kdef expr = do 
+    varid <- newLocVar (undefined :: KRate)
+    tellElt (VarAssign (getVarK varid) (getExprK expr))
+    return varid
+
+adef :: Expr ARate -> BuildInst (Var ARate)
+adef expr = do 
+    varid <- newLocVar (undefined :: ARate)
+    tellElt (VarAssign (getVarA varid) (getExprA expr))
+    return varid
+
+
+ilet :: Opcode1 IInit -> BuildInst (Var IInit)
+ilet opc = do 
+    varid <- newLocVar (undefined :: IInit)
+    tellElt (assignStmt1 varid opc)
+    return varid
+
+
+klet :: Opcode1 KRate -> BuildInst (Var KRate)
+klet opc = do 
+    varid <- newLocVar (undefined :: KRate)
+    tellElt (assignStmt1 varid opc)
+    return varid
 
 alet :: Opcode1 ARate -> BuildInst (Var ARate)
 alet opc = do 
     varid <- newLocVar (undefined :: ARate)
     tellElt (assignStmt1 varid opc)
     return varid
+
+
+ilet2 :: Opcode2 IInit -> BuildInst (Var IInit, Var IInit)
+ilet2 opc = do 
+    v1 <- newLocVar (undefined :: IInit)
+    v2 <- newLocVar (undefined :: IInit)
+    tellElt (assignStmt2 v1 v2 opc)
+    return (v1,v2)
+
+
+klet2 :: Opcode2 KRate -> BuildInst (Var KRate, Var KRate)
+klet2 opc = do 
+    v1 <- newLocVar (undefined :: KRate)
+    v2 <- newLocVar (undefined :: KRate)
+    tellElt (assignStmt2 v1 v2 opc)
+    return (v1,v2)
+
+alet2 :: Opcode2 ARate -> BuildInst (Var ARate, Var ARate)
+alet2 opc = do 
+    v1 <- newLocVar (undefined :: ARate)
+    v2 <- newLocVar (undefined :: ARate)
+    tellElt (assignStmt2 v1 v2 opc)
+    return (v1,v2)
+
+
+ilet3 :: Opcode3 IInit -> BuildInst (Var IInit, Var IInit, Var IInit)
+ilet3 opc = do 
+    v1 <- newLocVar (undefined :: IInit)
+    v2 <- newLocVar (undefined :: IInit)
+    v3 <- newLocVar (undefined :: IInit)
+    tellElt (assignStmt3 v1 v2 v3 opc)
+    return (v1,v2,v3)
+
+
+klet3 :: Opcode3 KRate -> BuildInst (Var KRate, Var KRate, Var KRate)
+klet3 opc = do 
+    v1 <- newLocVar (undefined :: KRate)
+    v2 <- newLocVar (undefined :: KRate)
+    v3 <- newLocVar (undefined :: KRate)
+    tellElt (assignStmt3 v1 v2 v3 opc)
+    return (v1,v2,v3)
+
+alet3 :: Opcode3 ARate -> BuildInst (Var ARate, Var ARate, Var ARate)
+alet3 opc = do 
+    v1 <- newLocVar (undefined :: ARate)
+    v2 <- newLocVar (undefined :: ARate)
+    v3 <- newLocVar (undefined :: ARate)
+    tellElt (assignStmt3 v1 v2 v3 opc)
+    return (v1,v2,v3)
+
+
+ilet4 :: Opcode4 IInit 
+      -> BuildInst (Var IInit, Var IInit, Var IInit, Var IInit)
+ilet4 opc = do 
+    v1 <- newLocVar (undefined :: IInit)
+    v2 <- newLocVar (undefined :: IInit)
+    v3 <- newLocVar (undefined :: IInit)
+    v4 <- newLocVar (undefined :: IInit)
+    tellElt (assignStmt4 v1 v2 v3 v4 opc)
+    return (v1,v2,v3,v4)
+
+
+klet4 :: Opcode4 KRate 
+      -> BuildInst (Var KRate, Var KRate, Var KRate, Var KRate)
+klet4 opc = do 
+    v1 <- newLocVar (undefined :: KRate)
+    v2 <- newLocVar (undefined :: KRate)
+    v3 <- newLocVar (undefined :: KRate)
+    v4 <- newLocVar (undefined :: KRate)
+    tellElt (assignStmt4 v1 v2 v3 v4 opc)
+    return (v1,v2,v3,v4)
+
+alet4 :: Opcode4 ARate 
+      -> BuildInst (Var ARate, Var ARate, Var ARate, Var ARate)
+alet4 opc = do 
+    v1 <- newLocVar (undefined :: ARate)
+    v2 <- newLocVar (undefined :: ARate)
+    v3 <- newLocVar (undefined :: ARate)
+    v4 <- newLocVar (undefined :: ARate)
+    tellElt (assignStmt4 v1 v2 v3 v4 opc)
+    return (v1,v2,v3,v4)
+
+
+--------------------------------------------------------------------------------
 
 goto :: Label -> BuildInst ()
 goto lbl = tellElt (Goto GOTO lbl)

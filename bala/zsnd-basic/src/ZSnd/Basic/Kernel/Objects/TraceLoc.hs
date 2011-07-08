@@ -37,10 +37,7 @@ module ZSnd.Basic.Kernel.Objects.TraceLoc
   , TraceLocM(..)
   , LocForkTraceM(..)
 
-
-  )
-
-  where
+  ) where
 
 
 import ZSnd.Basic.Kernel.Base.BaseDefs
@@ -184,6 +181,7 @@ execTraceLocT :: (Monad m, Num u) => TraceLocT ctx u m a -> m (ULocEvent ctx u)
 execTraceLocT = liftM post . runTraceLocT
   where
     post (_,_,o) = o
+
 
 
 

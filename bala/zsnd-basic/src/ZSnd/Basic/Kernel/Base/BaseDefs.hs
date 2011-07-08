@@ -22,7 +22,6 @@ module ZSnd.Basic.Kernel.Base.BaseDefs
   , OnsetDbl
   , Tempo
   , UNil(..)
-  , Duration(..)
   
   , InterpretUnit(..)
   , normalizeF
@@ -33,6 +32,7 @@ module ZSnd.Basic.Kernel.Base.BaseDefs
   ) where
 
 
+import ZSnd.Core                                -- package: zsnd-core
 
 import Data.Monoid
 
@@ -57,8 +57,11 @@ data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
 
 type instance DUnit (UNil u) = u
 
+type instance DUnit Score = Double
+
+
 instance Functor UNil where
-  fmap _ UNil= UNil
+  fmap _ UNil = UNil
 
 
 instance Monoid (UNil u) where
@@ -66,18 +69,6 @@ instance Monoid (UNil u) where
   _ `mappend` _ = UNil
 
 
-data Duration u = Duration u
-
-
-type instance DUnit (Duration u) = u
-
-instance Functor Duration where
-  fmap f (Duration d) = Duration (f d)
-
-
-instance Num u => Monoid (Duration u) where
-  mempty                          = Duration 0
-  Duration a `mappend` Duration b = Duration (a+b)
 
 
 --
