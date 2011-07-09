@@ -78,7 +78,6 @@ module ZSnd.Core.CsoundInst.Typed
   ) where
 
 import ZSnd.Core.CsoundInst.Prim
-import ZSnd.Core.Utils.FormatExpr
 
 data IInit
 data KRate

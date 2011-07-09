@@ -106,7 +106,7 @@ infixr 6 `scoOver`, `scoBeside`
 -- The onsets of both scores are unchanged.
 --
 scoOver :: Score -> Score -> Score
-a `scoOver` b = Score (tspan,standardFrame) (JL.join (JL.one b) (JL.one a))   
+a `scoOver` b = Score (tspan,standardFrame) (JL.join (JL.one a) (JL.one b))
   where
     tspan = scoreTimespan a `timespanUnion` scoreTimespan b
 

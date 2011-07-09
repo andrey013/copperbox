@@ -39,9 +39,13 @@ module ZSnd.Core.Opcodes
     module ZSnd.Core.Opcodes.Base
   , module ZSnd.Core.Opcodes.SignalGenerators
   , module ZSnd.Core.Opcodes.SignalModifiers
+  , module ZSnd.Core.Opcodes.Zak
 
   ) where
 
 import ZSnd.Core.Opcodes.Base
 import ZSnd.Core.Opcodes.SignalGenerators
 import ZSnd.Core.Opcodes.SignalModifiers
+import ZSnd.Core.Opcodes.Zak
+
+

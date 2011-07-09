@@ -195,7 +195,7 @@ pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
         step (CsDouble a) (CsDouble b)
              | a `tEQ` b  = (padr 10 $ char '.') : diff xs ys
 
-        step csval        _ = (padr 10 $ format csval) : diff xs ys
+        step _             v2 = (padr 10 $ format v2) : diff xs ys
 
     -- These cases shouldn't match...
     diff []     ys     = map field ys
@@ -212,7 +212,6 @@ score sco = flat <$> scoreSections sco
     flat [d]    = d `vconcat` char 'e' 
     flat (d:ds) = d `vconcat` (char 'b' <+> int 0) `vconcat` flat ds
 
---     prefix      = \d -> char 'b' <+> int 0 `vconcat` d 
 
 scoreSections :: Score -> ScoMonad [Doc]
 scoreSections (Leaf loc ones)  = 

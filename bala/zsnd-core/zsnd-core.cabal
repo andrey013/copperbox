@@ -40,6 +40,7 @@ library
     ZSnd.Core.Opcodes.Base,
     ZSnd.Core.Opcodes.SignalGenerators,
     ZSnd.Core.Opcodes.SignalModifiers,
+    ZSnd.Core.Opcodes.Zak,
     ZSnd.Core.OutputCsound
 
   other-modules:

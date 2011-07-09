@@ -61,7 +61,7 @@ import ZSnd.Core.Utils.FormatExpr
 
 
 
-data Orch = Orch OrchHeader [Either UStmt PrimInst]
+data Orch = Orch OrchHeader [UStmt] [PrimInst]
   deriving (Eq,Ord,Show)
 
 
@@ -216,7 +216,9 @@ not_equal_rel       = RelOp "!="
 
 
 instance Format Orch where
-  format (Orch hdr stmts) = vspace $ (format hdr) : map (either format format) stmts
+  format (Orch hdr stmts insts) = 
+      format hdr `vconcat` (vspace $ map format stmts) 
+                 `vconcat` (vspace $ map format insts)
 
 instance Format OrchHeader where
   format orch =        lhs "0dbfs"  <+> int (zero_dbfs orch)

@@ -34,6 +34,8 @@ module ZSnd.Core.CsoundInst.Monadic
   , out2
 
   , (=<=)
+  , writeSignalInst
+  , writeSignalOrch
 
   , idef
   , kdef
@@ -65,6 +67,7 @@ import ZSnd.Core.CsoundInst.Typed
 import ZSnd.Core.Utils.HList
 
 import Control.Applicative
+import Data.Either
 
 type LetIx   = Int
 type FailMsg = String
@@ -111,12 +114,15 @@ instance Monad (BuildMonad elt) where
 runOrch :: OrchHeader -> BuildOrch a -> Either FailMsg Orch
 runOrch hdr ma = bimap id sk $ getBM ma 1
   where
-    sk (_,_,w1) = Orch hdr $ toListH w1 
+    sk (_,_,w1) = let (xs,ys) = partitionEithers $ toListH w1 
+                  in Orch hdr xs ys
+
 
 runOrchU :: OrchHeader -> BuildOrch a -> Orch
 runOrchU hdr ma = either error sk $ getBM ma 1
   where
-    sk (_,_,w1) = Orch hdr $ toListH w1 
+    sk (_,_,w1) = let (xs,ys) = partitionEithers $ toListH w1 
+                  in Orch hdr xs ys
 
 
 
@@ -161,6 +167,19 @@ out2 e1 e2 = tellElt (Outs [getExprA e1, getExprA e2])
 
 (=<=) :: Var rate -> Opcode1 rate -> BuildInst ()
 v1 =<= opc = tellElt (assignStmt1 v1 opc)
+
+
+-- | Write a signal via a zero-output opcode.
+--
+writeSignalOrch :: Opcode0 rate -> BuildOrch ()
+writeSignalOrch opc = tellElt (Left (assignStmt0 opc))
+
+
+-- | Write a signal via a zero-output opcode.
+--
+writeSignalInst :: Opcode0 rate -> BuildInst ()
+writeSignalInst opc = tellElt (assignStmt0 opc)
+
 
 --------------------------------------------------------------------------------
 -- Binding

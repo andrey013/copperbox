@@ -18,12 +18,11 @@
 module ZSnd.Core.Opcodes.Base
   (
 
-   -- * Output
---    out1
---  , out2
+  -- * Output
+    printf
 
   -- * Variable initialization
-    init
+  , init
   , divz
 
   -- * Arithmetic and logical operators
@@ -84,6 +83,7 @@ module ZSnd.Core.Opcodes.Base
   ) where
 
 
+import ZSnd.Core.CsoundInst.Monadic
 import ZSnd.Core.CsoundInst.Prim
 import ZSnd.Core.CsoundInst.Typed
 
@@ -103,22 +103,16 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
 -- unop :: Rator -> Expr rate -> Expr rate
 -- unop op a = mkExpr $ CUnOp op (getExprI $ cast a)
 
-{-
 
-out1 :: Opcode1 ARate -> Opcode rate
-out1 opF = 
-    Opcode "out" inspec [] Out0 
-  where
-    inspec = applyOpcode opF $ \ ain -> 
-               [ getExprA ain ]
+-- | Note - list of args need to be the same type, use cast where
+-- necessary.
+--
+printf :: forall rate. (Rate rate) 
+     => String -> [Expr rate] -> BuildInst ()
+printf ss xs = writeSignalInst $ 
+    Opcode0 "printf" ((Literal $ CsString ss) : map getExprUniv xs) 
 
-out2 :: Opcode2 ARate ARate -> Opcode rate
-out2 opF = 
-    Opcode "outs" inspec [] Out0
-  where
-    inspec = applyOpcode opF $ \(ain1, ain2) -> 
-               [ getExprA ain1, getExprA ain2 ]
--}
+
 
 init :: forall rate. (Rate rate) 
      => Expr IInit -> Opcode1 rate
