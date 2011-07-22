@@ -24,12 +24,6 @@ module Sound.FMSS.AbstractSyntax
   , CsValue(..)
 
 
-
-  , mult
-  , plus
-  , minus
-  , divide
-
   ) where
 
 
@@ -50,11 +44,12 @@ data Decl = CommentD String Decl
           | Decl VarId Expr
   deriving (Eq,Ord,Show)
 
-data Expr = VarE   VarId
-          | PField Int
-          | Const  CsValue
-          | UnOp   Rator Expr
-          | BinOp  Rator Expr Expr
+data Expr = VarE    VarId
+          | PField  Int
+          | Const   CsValue
+          | UnOp    Rator Expr
+          | BinOp   Rator Expr Expr
+          | Funcall String Expr
   deriving (Eq,Ord,Show)
 
 
@@ -62,7 +57,8 @@ data Stmt = CommentS String Stmt
           | Envelope VarId String Doc
           | Phasor   VarId Expr
           | Tablei   VarId Expr 
-          | Out      VarId
+          | Out      Expr
+          | Assign   VarId Expr
   deriving (Eq,Show)
 
 data CsValue = CsInt    Int
@@ -72,17 +68,6 @@ data CsValue = CsInt    Int
 
 --------------------------------------------------------------------------------
 
-mult :: Expr -> Expr -> Expr 
-mult = BinOp mult_op
-
-plus :: Expr -> Expr -> Expr
-plus = BinOp plus_op
-
-minus :: Expr -> Expr -> Expr
-minus = BinOp minus_op
-
-divide :: Expr -> Expr -> Expr
-divide = BinOp divide_op
 
 
 plus_op         :: Rator
@@ -97,6 +82,26 @@ mult_op         = infixL 7 "*"
 
 divide_op       :: Rator
 divide_op       = infixL 7 "/"
+
+unary_negate    :: Rator
+unary_negate    = prefix 9 "-"
+
+
+instance Num Expr where
+  (+)     = BinOp plus_op
+  (-)     = BinOp minus_op
+  (*)     = BinOp mult_op
+  abs     = Funcall "abs"
+  negate  = UnOp unary_negate
+  signum _      = error "signum - no interpretation of signum in Csound."
+  fromInteger i = Const $ CsInt $ fromInteger i
+
+
+instance Fractional Expr where
+  (/)     = BinOp divide_op
+  recip _ = error "recip - no interpretation of recip in Csound."  
+  fromRational d = Const $ CsDouble (fromRational d)
+
 
 --------------------------------------------------------------------------------
 
@@ -125,8 +130,10 @@ instance Format Stmt where
     where
       rest = [ text "isinetbl", int 1, int 0, int 1 ]
 
-  format (Out var)                 = 
-    spaces 11 <+> padr 9 (text "out") <+> text var
+  format (Out expr)                = 
+    spaces 11 <+> padr 9 (text "out") <+> format expr
+
+  format (Assign var expr)         = assignDoc var (format expr)
 
 instance Format Expr where
   format = unparse . buildExpr
@@ -137,6 +144,7 @@ buildExpr (PField i)     = Atom $ char 'p' <> int i
 buildExpr (Const val)    = Atom $ format val
 buildExpr (UnOp op a)    = Unary op (buildExpr a)
 buildExpr (BinOp op a b) = Binary (buildExpr a) op (buildExpr b)
+buildExpr (Funcall ss a) = Atom $ text ss <> parens (format a)
 
 instance Format CsValue where
   format (CsInt i)    = int i
@@ -145,7 +153,7 @@ instance Format CsValue where
 
 
 prependComment :: String -> Doc -> Doc
-prependComment ss = vconcat (char ';' <+> text ss)
+prependComment ss doc = vcat [text "", char ';' <+> text ss, doc]
 
 assignDoc :: String -> Doc -> Doc
 assignDoc name val = padr 11 (text name) <+> char '=' <+> val
