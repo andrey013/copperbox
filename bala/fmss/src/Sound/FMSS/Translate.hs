@@ -70,8 +70,7 @@ runTrans = flip getTrans
 
 translate :: FMSynth -> Either ErrMsg Instr
 translate (FMSynth { fm_instr_num = inst_num, fm_envelopes = envlps
-                   , fm_mods      = mods,     fm_cars      = cars
-                   , fm_sinetbl   = tablenum, fm_links     = links
+                   , fm_synth_body = body,    fm_sinetbl   = tablenum
                    , fm_out       = out1 }) = 
     runTrans env $ do 
       decls         <- stdDecls tablenum mods cars
@@ -88,8 +87,11 @@ translate (FMSynth { fm_instr_num = inst_num, fm_envelopes = envlps
                      }
                    
   where
-    modnums = map mosc_num mods
-    carnums = map cosc_num cars
+    mods    = synth_mods body
+    cars    = synth_cars body
+    links   = synth_links body
+    modnums = map oscilNum mods
+    carnums = map oscilNum cars
     env     = buildLinkTables modnums carnums links
    
 
@@ -131,7 +133,7 @@ carBacklinks i = (queryLink i) <$> asks carrier_backlinks
 
 
 
-stdDecls :: Int -> [ModulatorOsc] -> [CarrierOsc] -> Trans [Decl]
+stdDecls :: Int -> [Modulator] -> [Carrier] -> Trans [Decl]
 stdDecls sinetab xs ys = return $ 
     declProlog sinetab ++ map freqIDecl_m xs ++ map freqIDecl_c ys
 
@@ -139,7 +141,7 @@ envelopes :: [EnvelopeSpec] -> Trans [Stmt]
 envelopes = return . map envelope 
 
 
-carriers :: [CarrierOsc] -> Trans [Stmt]
+carriers :: [Carrier] -> Trans [Stmt]
 carriers xs = fmap concat $ mapM emitCarrier xs
 
 outStatement  :: Stmt -> Trans Stmt
@@ -160,11 +162,13 @@ declProlog sinetab =
     ]
 
 
-freqIDecl_m :: ModulatorOsc -> Decl
-freqIDecl_m osc = freqIDecl (inputFreqName_m $ mosc_num osc) (mosc_freq osc)
+freqIDecl_m :: Modulator -> Decl
+freqIDecl_m osc = 
+    freqIDecl (inputFreqName MODULATOR $ oscilNum osc) (oscilFreq osc)
 
-freqIDecl_c :: CarrierOsc -> Decl
-freqIDecl_c osc = freqIDecl (inputFreqName_c $ cosc_num osc) (cosc_freq osc)
+freqIDecl_c :: Carrier -> Decl
+freqIDecl_c osc = 
+    freqIDecl (inputFreqName CARRIER $ oscilNum osc) (oscilFreq osc)
 
 freqIDecl :: String -> OscilFreq -> Decl
 freqIDecl varid hz = Decl varid (mkExpr hz)
@@ -199,9 +203,9 @@ envelope (EnvelopeSpec varid mb_cmt opco doc) =
 --
 --
 
-modulators :: [ModulatorOsc] -> Trans [Stmt]
+modulators :: [Modulator] -> Trans [Stmt]
 modulators mods = 
-    let mtable = IM.fromList $ map (\a -> (mosc_num a, a)) mods
+    let mtable = IM.fromList $ map (\a -> (oscilNum a, a)) mods
     in modOrder >>= \ixs -> stepM mtable ixs emptyH
   where
     err_msg i   = "Error - unresolved modulator " ++ (show i)
@@ -262,101 +266,102 @@ modOrder1 links = level links emptyH
 --------------------------------------------------------------------------------
 
 
-emitModulator :: ModulatorOsc -> Trans [Stmt]
-emitModulator osc@(ModulatorOsc { mosc_num = ix }) = 
+emitModulator :: Modulator -> Trans [Stmt]
+emitModulator osc = 
     (\links -> mkS1 links : s2 : xs)
       <$> modBacklinks ix
   where
+    ix    = oscilNum osc
     cmt   = "modulator " ++ show ix
     mkS1  = \ns -> CommentS cmt $ phasorCall_m ix ns
-    s2    = tableiCall_m osc
+    s2    = tableiCall_m ix
     xs    = postproSig_m osc
    
 
 
-emitCarrier :: CarrierOsc -> Trans [Stmt]
-emitCarrier osc@(CarrierOsc { cosc_num = ix }) = 
+emitCarrier :: Carrier -> Trans [Stmt]
+emitCarrier osc = 
     (\links -> mkS1 links : s2 : xs)
       <$> carBacklinks ix
   where
-    cmt   = "carrier " ++ show (cosc_num osc)
+    ix    = oscilNum osc
+    cmt   = "carrier " ++ show ix
     mkS1  = \ns -> CommentS cmt $ phasorCall_c ix ns
-    s2    = tableiCall_c osc
+    s2    = tableiCall_c ix
     xs    = postproSig_c osc
 
 -- | Note this is too simple, rhs could be an expr...
 --
 phasorCall_m :: Int -> [Int] -> Stmt
-phasorCall_m i xs = Phasor (outputPhaseName_m i) expr 
+phasorCall_m i xs = Phasor (outputPhaseName MODULATOR i) expr 
   where
-    expr    = foldl' fn (VarE $ inputFreqName_m i) xs
-    fn ac n = ac + VarE (outputSignalName_m n)
+    expr    = foldl' fn (VarE $ inputFreqName MODULATOR i) xs
+    fn ac n = ac + VarE (outputSignalName MODULATOR n)
 
 phasorCall_c :: Int -> [Int] -> Stmt
-phasorCall_c i xs = Phasor (outputPhaseName_c i) expr 
+phasorCall_c i xs = Phasor (outputPhaseName CARRIER i) expr 
   where
-    expr    = foldl' fn (VarE $ inputFreqName_c i) xs
-    fn ac n = ac + VarE (outputSignalName_m n)
+    expr    = foldl' fn (VarE $ inputFreqName CARRIER i) xs
+    fn ac n = ac + VarE (outputSignalName MODULATOR n)
 
 
-tableiCall_m :: ModulatorOsc -> Stmt 
-tableiCall_m osc = 
-    let i = mosc_num osc
-    in Tablei (outputSignalName_m i) (VarE $ outputPhaseName_m i)
+tableiCall_m :: Int -> Stmt 
+tableiCall_m i = 
+    Tablei (outputSignalName MODULATOR i) (VarE $ outputPhaseName MODULATOR i)
 
-tableiCall_c :: CarrierOsc -> Stmt 
-tableiCall_c osc = 
-    let i = cosc_num osc
-    in Tablei (outputSignalName_c i) (VarE $ outputPhaseName_c i)
+tableiCall_c :: Int -> Stmt 
+tableiCall_c i = 
+    Tablei (outputSignalName CARRIER i) (VarE $ outputPhaseName CARRIER i)
 
 
 -- | Note - the list really encodes a Maybe value
 --
-postproSig_m :: ModulatorOsc -> [Stmt]
-postproSig_m osc = case mosc_postpro osc of
+postproSig_m :: Modulator -> [Stmt]
+postproSig_m osc = case oscilPostpro osc of
     Nothing -> []
-    Just fn -> let varid = outputSignalName_m (mosc_num osc)
+    Just fn -> let varid = outputSignalName MODULATOR (oscilNum osc)
                in [ Assign varid (fn $ VarE varid) ]
 
 
-postproSig_c :: CarrierOsc -> [Stmt]
-postproSig_c osc = case cosc_postpro osc of
+postproSig_c :: Carrier -> [Stmt]
+postproSig_c osc = case oscilPostpro osc of
     Nothing -> []
-    Just fn -> let varid = outputSignalName_c (cosc_num osc)
+    Just fn -> let varid = outputSignalName CARRIER (oscilNum osc)
                in [ Assign varid (fn $ VarE varid) ]
 
 
--- Could get these just by number ...
+--------------------------------------------------------------------------------
+-- Names
+
+data OscilType = CARRIER | MODULATOR
+  deriving (Eq,Show)
+
+shortName :: OscilType -> String
+shortName CARRIER   = "car"
+shortName MODULATOR = "mod"
 
 -- | Of form:
 --
 -- > 'i' ("mod" | "car") <num> "freq"
 --
-inputFreqName_m :: Int -> String
-inputFreqName_m i = "imod" ++ show i ++ "freq"
+inputFreqName :: OscilType -> Int -> String
+inputFreqName ot i = 'i' : shortName ot ++ show i ++ "freq"
 
 
-inputFreqName_c :: Int -> String
-inputFreqName_c i   = "icar" ++ show i ++ "freq"
 
 -- | Of form:
 --
 -- > 'a' ("mod" | "car") <num> "phs"
 --
-outputPhaseName_m :: Int -> String
-outputPhaseName_m i = "amod" ++ show i ++ "phs"
+outputPhaseName :: OscilType -> Int -> String
+outputPhaseName ot i = 'a' : shortName ot ++ show i ++ "phs"
 
-outputPhaseName_c :: Int -> String
-outputPhaseName_c i = "acar" ++ show i ++ "phs"
 
 
 -- | Of form:
 --
 -- > 'a' ("mod" | "car") <num> "sig"
 --
-outputSignalName_m :: Int -> String
-outputSignalName_m i = "amod" ++ show i ++ "sig"
-
-outputSignalName_c :: Int -> String
-outputSignalName_c i = "acar" ++ show i ++ "sig"
+outputSignalName :: OscilType -> Int -> String
+outputSignalName ot i = 'a' : shortName ot ++ show i ++ "sig"
 

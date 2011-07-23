@@ -23,12 +23,16 @@ module Sound.FMSS.AbstractSyntax
   , Stmt(..)
   , CsValue(..)
 
+  , SymDouble
+  , idur
 
   ) where
 
 
 import Sound.FMSS.Utils.FormatCombinators
 import Sound.FMSS.Utils.FormatExpr
+
+import Data.String
 
 
 data Instr = Instr 
@@ -54,7 +58,7 @@ data Expr = VarE    VarId
 
 
 data Stmt = CommentS String Stmt
-          | Envelope VarId String Doc
+          | Envelope VarId String [SymDouble]
           | Phasor   VarId Expr
           | Tablei   VarId Expr 
           | Out      Expr
@@ -64,6 +68,17 @@ data Stmt = CommentS String Stmt
 data CsValue = CsInt    Int
              | CsDouble Double
   deriving (Eq,Ord,Show)
+
+
+
+-- | Symbolic number type for describing envelopes.
+-- 
+data SymDouble = SDouble Double
+               | IDur
+               | SUnOp    Rator SymDouble
+               | SBinOp   Rator SymDouble SymDouble
+               | SFuncall String SymDouble
+  deriving (Eq,Show)
 
 
 --------------------------------------------------------------------------------
@@ -102,6 +117,28 @@ instance Fractional Expr where
   recip _ = error "recip - no interpretation of recip in Csound."  
   fromRational d = Const $ CsDouble (fromRational d)
 
+instance IsString Expr where
+  fromString ss = VarE ss
+
+instance Num SymDouble where
+  (+)     = SBinOp plus_op
+  (-)     = SBinOp minus_op
+  (*)     = SBinOp mult_op
+  abs     = SFuncall "abs"
+  negate  = SUnOp unary_negate
+  signum _      = error "signum - no interpretation of signum in Csound."
+  fromInteger i = SDouble $ fromInteger i
+
+
+instance Fractional SymDouble where
+  (/)     = SBinOp divide_op
+  recip _ = error "recip - no interpretation of recip in Csound."  
+  fromRational d = SDouble $ fromRational d
+
+-- | @idur@ is a symbolic constant in envelope expressions.
+--
+idur :: SymDouble
+idur = IDur
 
 --------------------------------------------------------------------------------
 
@@ -122,7 +159,7 @@ instance Format Decl where
 instance Format Stmt where
   format (CommentS ss stmt)        = prependComment ss (format stmt)
 
-  format (Envelope  var opco body) = opcodeDoc var opco [body]
+  format (Envelope  var opco body) = opcodeDoc var opco (map format body)
 
   format (Phasor var expr)         = opcodeDoc var "phasor" [format expr]
 
@@ -149,6 +186,18 @@ buildExpr (Funcall ss a) = Atom $ text ss <> parens (format a)
 instance Format CsValue where
   format (CsInt i)    = int i
   format (CsDouble d) = dtrunc d
+
+
+
+instance Format SymDouble where
+  format = unparse . buildSymExpr
+
+buildSymExpr :: SymDouble -> DocExpr
+buildSymExpr IDur            = Atom $ text "idur"
+buildSymExpr (SDouble d)     = Atom $ dtrunc d
+buildSymExpr (SUnOp op a)    = Unary op (buildSymExpr a)
+buildSymExpr (SBinOp op a b) = Binary (buildSymExpr a) op (buildSymExpr b)
+buildSymExpr (SFuncall ss a) = Atom $ text ss <> parens (format a)
 
 
 

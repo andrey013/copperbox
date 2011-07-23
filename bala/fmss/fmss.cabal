@@ -1,0 +1,50 @@
+name:             fmss
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         FM Synthesizer synthesizer 
+description:
+  Generate Csound FM synthesizer instruments.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo101.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      containers        >= 0.3      && <= 0.6
+
+  exposed-modules:
+    Sound.FMSS.AbstractSyntax,
+    Sound.FMSS.Datatypes,
+    Sound.FMSS.Envelopes,
+    Sound.FMSS.SpecMonad,
+    Sound.FMSS.Translate,
+    Sound.FMSS.Utils.FormatCombinators,
+    Sound.FMSS.Utils.FormatExpr,
+    Sound.FMSS.Utils.HList
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

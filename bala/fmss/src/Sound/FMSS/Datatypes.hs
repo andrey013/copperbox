@@ -18,51 +18,83 @@ module Sound.FMSS.Datatypes
   (
 
     FMSynth(..)
+  , SynthBody(..)
   , EnvelopeSpec(..)
-  , ModulatorOsc(..)
-  , CarrierOsc(..)
+  , Modulator(..)
+  , Carrier(..)
+  , Oscil(..)
 
   , OscilFreq(..)
   , Link(..) 
+
+  , Oscillator(..)
 
   ) where
 
 
 import Sound.FMSS.AbstractSyntax
-import Sound.FMSS.Utils.FormatCombinators
 
 data FMSynth = FMSynth
       { fm_instr_num    :: Int
       , fm_sinetbl      :: Int
       , fm_envelopes    :: [EnvelopeSpec]
-      , fm_mods         :: [ModulatorOsc]
-      , fm_cars         :: [CarrierOsc]
-      , fm_links        :: [Link]
+      , fm_synth_body   :: SynthBody
       , fm_out          :: Stmt
       }
+
+data SynthBody = SynthBody 
+      { synth_mods      :: [Modulator]
+      , synth_cars      :: [Carrier]
+      , synth_links     :: [Link]
+      } 
+
 
 data EnvelopeSpec = EnvelopeSpec 
       { env_varname     :: VarId 
       , env_desc        :: Maybe String
       , env_opcode      :: String
-      , env_expr_doc    :: Doc
+      , env_exprs       :: [SymDouble]
       }
 
 type NodeId = Int
 
-data ModulatorOsc = ModulatorOsc
-      { mosc_num        :: NodeId
-      , mosc_freq       :: OscilFreq 
-      , mosc_postpro    :: Maybe (Expr -> Expr)
+data Modulator = Modulator 
+      { mod_num     :: Int
+      , mod_oscil   :: Oscil 
       }
 
 
-data CarrierOsc = CarrierOsc 
-      { cosc_num        :: NodeId
-      , cosc_freq       :: OscilFreq
-      , cosc_postpro    :: Maybe (Expr -> Expr)
-      }
- 
+data Carrier = Carrier 
+      { car_num     :: Int 
+      , car_oscil   :: Oscil 
+      } 
+
+
+-- | Number should potentially be a property of Carrier or 
+-- Modulator, as number might be assigned as a uid in a monad...
+--
+data Oscil = Oscil 
+      { oscil_freq      :: OscilFreq
+      , oscil_postpro   :: Maybe (Expr -> Expr)
+      } 
+
+
+class Oscillator osc where
+  oscilNum      :: osc -> NodeId
+  oscilFreq     :: osc -> OscilFreq
+  oscilPostpro  :: osc -> Maybe (Expr -> Expr)
+
+
+instance Oscillator Modulator where
+  oscilNum      = mod_num
+  oscilFreq     = oscil_freq . mod_oscil
+  oscilPostpro  = oscil_postpro . mod_oscil
+
+
+instance Oscillator Carrier where
+  oscilNum      = car_num
+  oscilFreq     = oscil_freq . car_oscil
+  oscilPostpro  = oscil_postpro . car_oscil
 
 
 -- Note - looks like Modulators have either a modulation envelope, 
@@ -76,6 +108,10 @@ data CarrierOsc = CarrierOsc
 data OscilFreq = FixedFreq Double
                | BaseScaler Double
   deriving (Eq,Ord,Show)
+
+  -- Potentially oscilFreq could be extended to OscilInput 
+  -- tosupport noide inputs.
+
 
 -- | Note cycles can be Car-Car e.g. DX7 algorithm 32
 --
