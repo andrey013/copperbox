@@ -6,7 +6,7 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         FM Synthesizer synthesizer 
+synopsis:         FM synthesizer synthesizer 
 description:
   Generate Csound FM synthesizer instruments.
   .
@@ -28,6 +28,7 @@ library
 
   exposed-modules:
     Sound.FMSS.AbstractSyntax,
+    Sound.FMSS.ConfigMonad,
     Sound.FMSS.Datatypes,
     Sound.FMSS.Envelopes,
     Sound.FMSS.SpecMonad,

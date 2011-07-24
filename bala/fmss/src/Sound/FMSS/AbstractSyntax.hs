@@ -36,7 +36,7 @@ import Data.String
 
 
 data Instr = Instr 
-      { instr_num           :: Int
+      { instr_number        :: Int
       , instr_irate_decls   :: [Decl]
       , instr_body          :: [Stmt]
       } 
@@ -44,9 +44,18 @@ data Instr = Instr
 
 type VarId = String
 
+
+-- | Calls to invoke envelopes (@linseg@, @expseg@, etc.) are 
+-- considered declarations, even though in Csound they are 
+-- /opcode statements/ so are syntactically the same as  @phasor@ 
+-- or @tablei@. This is for convenience within FMSS.
+--
+--
 data Decl = CommentD String Decl
-          | Decl VarId Expr
+          | Decl     VarId Expr
+          | Envelope VarId String [SymDouble]
   deriving (Eq,Ord,Show)
+
 
 data Expr = VarE    VarId
           | PField  Int
@@ -58,11 +67,10 @@ data Expr = VarE    VarId
 
 
 data Stmt = CommentS String Stmt
-          | Envelope VarId String [SymDouble]
           | Phasor   VarId Expr
           | Tablei   VarId Expr 
-          | Out      Expr
           | Assign   VarId Expr
+          | Out      Expr
   deriving (Eq,Show)
 
 data CsValue = CsInt    Int
@@ -78,7 +86,7 @@ data SymDouble = SDouble Double
                | SUnOp    Rator SymDouble
                | SBinOp   Rator SymDouble SymDouble
                | SFuncall String SymDouble
-  deriving (Eq,Show)
+  deriving (Eq,Ord,Show)
 
 
 --------------------------------------------------------------------------------
@@ -152,14 +160,15 @@ instance Format Instr where
      
 
 instance Format Decl where
-  format (CommentD ss decl) = prependComment ss (format decl)
+  format (CommentD ss decl)        = prependComment ss (format decl)
 
-  format (Decl var expr)    = assignDoc var (format expr)
+  format (Decl var expr)           = assignDoc var (format expr)
+
+  format (Envelope  var opco body) = opcodeDoc var opco (map format body)
+
 
 instance Format Stmt where
   format (CommentS ss stmt)        = prependComment ss (format stmt)
-
-  format (Envelope  var opco body) = opcodeDoc var opco (map format body)
 
   format (Phasor var expr)         = opcodeDoc var "phasor" [format expr]
 
@@ -167,10 +176,11 @@ instance Format Stmt where
     where
       rest = [ text "isinetbl", int 1, int 0, int 1 ]
 
+  format (Assign var expr)         = assignDoc var (format expr)
+
   format (Out expr)                = 
     spaces 11 <+> padr 9 (text "out") <+> format expr
 
-  format (Assign var expr)         = assignDoc var (format expr)
 
 instance Format Expr where
   format = unparse . buildExpr

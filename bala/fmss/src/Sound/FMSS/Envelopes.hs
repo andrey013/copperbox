@@ -16,8 +16,11 @@
 
 module Sound.FMSS.Envelopes
   (
-
-    linsegEnvelope
+   
+    DeconsEnvelope(..)
+        
+  , Linseg
+  , linsegEnvelope
   , expsegEnvelope
 
   ) where
@@ -25,9 +28,22 @@ module Sound.FMSS.Envelopes
 
 import Sound.FMSS.AbstractSyntax
 
-linsegEnvelope :: [(Double,Double)] -> (String,[SymDouble])
-linsegEnvelope []            = ("linseg", [0])
-linsegEnvelope (v@(_,a0):vs) = ("linseg", realToFrac a0 : work v vs)
+-- | Destructure an evelope to its Csound opcode name and arglist.
+--
+class DeconsEnvelope env where
+  deconsEnvelope :: env -> (String,[SymDouble])
+
+-- Represent envelopes as opaque newtypes...
+
+newtype Linseg = Linseg { getLinseg :: [SymDouble] }
+
+instance DeconsEnvelope Linseg where
+  deconsEnvelope env = ("linseg", getLinseg env)
+
+
+linsegEnvelope :: [(Double,Double)] -> Linseg
+linsegEnvelope []            = Linseg [0]
+linsegEnvelope (v@(_,a0):vs) = Linseg $ realToFrac a0 : work v vs
   where
     work _      []               = [] 
     work (d0,_) (x@(d1,amp):xs)  = drn d1 d0 : realToFrac amp : work x xs

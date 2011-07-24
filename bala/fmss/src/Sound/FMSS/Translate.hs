@@ -20,6 +20,8 @@ module Sound.FMSS.Translate
     ErrMsg
 
   , translate     
+
+  , outputVar
  
   ) where
 
@@ -69,19 +71,17 @@ runTrans :: Env -> Trans a -> Either ErrMsg a
 runTrans = flip getTrans 
 
 translate :: FMSynth -> Either ErrMsg Instr
-translate (FMSynth { fm_instr_num = inst_num, fm_envelopes = envlps
-                   , fm_synth_body = body,    fm_sinetbl   = tablenum
+translate (FMSynth { fm_instr_num = inst_num, fm_decls    = decls
+                   , fm_synth_body = body,    fm_sinetbl  = tablenum
                    , fm_out       = out1 }) = 
     runTrans env $ do 
-      decls         <- stdDecls tablenum mods cars
-      envlp_stmts   <- envelopes envlps
+      gen_decls     <- stdDecls tablenum mods cars
       mod_stmts     <- modulators mods
       car_stmts     <- carriers cars
       out_stmt      <- outStatement out1
-      return $ Instr { instr_num         = inst_num
-                     , instr_irate_decls = decls
-                     , instr_body        = concat [ envlp_stmts 
-                                                  , mod_stmts 
+      return $ Instr { instr_number      = inst_num
+                     , instr_irate_decls = gen_decls ++ decls 
+                     , instr_body        = concat [ mod_stmts 
                                                   , car_stmts
                                                   , [out_stmt] ]
                      }
@@ -137,9 +137,6 @@ stdDecls :: Int -> [Modulator] -> [Carrier] -> Trans [Decl]
 stdDecls sinetab xs ys = return $ 
     declProlog sinetab ++ map freqIDecl_m xs ++ map freqIDecl_c ys
 
-envelopes :: [EnvelopeSpec] -> Trans [Stmt]
-envelopes = return . map envelope 
-
 
 carriers :: [Carrier] -> Trans [Stmt]
 carriers xs = fmap concat $ mapM emitCarrier xs
@@ -177,15 +174,6 @@ freqIDecl varid hz = Decl varid (mkExpr hz)
     mkExpr (BaseScaler d) = VarE "ifreq" * Const (CsDouble d)
 
 
-
-envelope :: EnvelopeSpec -> Stmt
-envelope (EnvelopeSpec varid mb_cmt opco doc) =
-    maybe ans (\cmt -> CommentS cmt ans) mb_cmt
-  where 
-    ans = Envelope varid opco doc
-    
- 
-    
 
 
 
@@ -365,3 +353,7 @@ outputPhaseName ot i = 'a' : shortName ot ++ show i ++ "phs"
 outputSignalName :: OscilType -> Int -> String
 outputSignalName ot i = 'a' : shortName ot ++ show i ++ "sig"
 
+
+
+outputVar :: Carrier -> Expr
+outputVar osc = VarE $ outputSignalName CARRIER (oscilNum osc)

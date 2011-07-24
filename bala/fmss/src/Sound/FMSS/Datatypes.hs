@@ -37,7 +37,7 @@ import Sound.FMSS.AbstractSyntax
 data FMSynth = FMSynth
       { fm_instr_num    :: Int
       , fm_sinetbl      :: Int
-      , fm_envelopes    :: [EnvelopeSpec]
+      , fm_decls        :: [Decl]
       , fm_synth_body   :: SynthBody
       , fm_out          :: Stmt
       }
