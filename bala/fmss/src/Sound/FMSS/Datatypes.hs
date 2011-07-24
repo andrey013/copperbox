@@ -26,6 +26,7 @@ module Sound.FMSS.Datatypes
 
   , OscilFreq(..)
   , Link(..) 
+  , Cycle(..)
 
   , Oscillator(..)
 
@@ -46,6 +47,7 @@ data SynthBody = SynthBody
       { synth_mods      :: [Modulator]
       , synth_cars      :: [Carrier]
       , synth_links     :: [Link]
+      , synth_cycles    :: [Cycle]
       } 
 
 
@@ -113,9 +115,15 @@ data OscilFreq = FixedFreq Double
   -- tosupport noide inputs.
 
 
--- | Note cycles can be Car-Car e.g. DX7 algorithm 32
---
 data Link = ModMod  NodeId NodeId
           | ModCar  NodeId NodeId
-          | Cycle   NodeId NodeId
   deriving (Eq,Ord,Show)
+
+
+-- | Note cycles can be Car-Car e.g. DX7 algorithm 32
+--
+-- The @ExprF @ is used in the assignment to the @aphm@ variable.
+--
+data Cycle = CycModMod   NodeId NodeId ExprF
+           | CycCarCar   NodeId NodeId ExprF
+           | CycCarMod   NodeId NodeId ExprF

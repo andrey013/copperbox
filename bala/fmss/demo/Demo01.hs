@@ -86,6 +86,7 @@ config2_no1 (Config2 o1 o2) = do
    m1 <- modulator o1
    c1 <- carrier   o2
    m1 =>- c1
+   cycleMM m1 m1 (\e -> e * VarE "indx")
    return $ out1 c1
 
 
@@ -96,6 +97,7 @@ fm1 = FMSynth { fm_instr_num  = 1
               , fm_synth_body = SynthBody { synth_mods       = [om]
                                           , synth_cars       = [oc]
                                           , synth_links      = [ModCar 1 1]
+                                          , synth_cycles     = []
                                           }
               , fm_out        = outS
               }
@@ -109,8 +111,8 @@ fm1 = FMSynth { fm_instr_num  = 1
 
 
 
-fm2 :: FMSynth
-fm2 = execSpec (Params { instr_num = 1, sine_table = 1}) $ do
+fm2 :: Spec SpecAns
+fm2 = do
     ampenv <- envelope "kampenv" env1
     config (config2_no1 $ Config2 oscil1 oscil2)
            (\c1 -> iamp * ampenv * c1)
@@ -118,4 +120,9 @@ fm2 = execSpec (Params { instr_num = 1, sine_table = 1}) $ do
     oscil1 = Oscil (BaseScaler 1.4) Nothing
     oscil2 = Oscil (BaseScaler 1.0) Nothing
 
-demo02 = either print print $ (fmap (format) $ translate fm1)
+demo02 = writeSynth "fm-one.orc" (Params { instr_num = 1, sine_table = 1}) fm2
+
+writeSynth :: FilePath -> Params -> Spec SpecAns -> IO ()
+writeSynth outpath params mf = case translate $ execSpec params mf of
+   Left err -> putStrLn err
+   Right ans -> writeFile outpath (show $ format $ ans)

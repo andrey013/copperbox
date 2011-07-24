@@ -20,6 +20,7 @@ module Sound.FMSS.AbstractSyntax
   , VarId
   , Decl(..)
   , Expr(..)
+  , ExprF
   , Stmt(..)
   , CsValue(..)
 
@@ -65,8 +66,10 @@ data Expr = VarE    VarId
           | Funcall String Expr
   deriving (Eq,Ord,Show)
 
+type ExprF = Expr -> Expr
 
 data Stmt = CommentS String Stmt
+          | Init     VarId Expr
           | Phasor   VarId Expr
           | Tablei   VarId Expr 
           | Assign   VarId Expr
@@ -169,6 +172,8 @@ instance Format Decl where
 
 instance Format Stmt where
   format (CommentS ss stmt)        = prependComment ss (format stmt)
+
+  format (Init var expr)           = opcodeDoc var "init" [format expr]
 
   format (Phasor var expr)         = opcodeDoc var "phasor" [format expr]
 

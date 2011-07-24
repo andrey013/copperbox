@@ -32,16 +32,25 @@ import Sound.FMSS.Utils.HList
 import Control.Applicative hiding ( Const )
 import qualified Data.IntMap as IM
 import Data.List ( foldl', delete )
+import Data.Monoid
 
 type ErrMsg = String
 
 
 -- | The relationships are one-to-many.
 --
+-- Note - storing modulator backlints as Ints is more convenient 
+-- for finding mod-order. It is less convenient than Varid for 
+-- printing.
+--
 data Env = Env 
-      { modulator_backlinks :: IM.IntMap [Int]
-      , carrier_backlinks   :: IM.IntMap [Int]
+      { modulator_backlinks   :: IM.IntMap [Int]
+      , carrier_backlinks     :: IM.IntMap [Int]
+      , modulator_backcycles  :: IM.IntMap [(VarId,ExprF)]
+      , carrier_backcycles    :: IM.IntMap [(VarId,ExprF)]
       }
+
+      --  Note - env needs cycles adding...
 
 
 newtype Trans a = Trans { getTrans :: Env -> Either ErrMsg a }
@@ -76,12 +85,14 @@ translate (FMSynth { fm_instr_num = inst_num, fm_decls    = decls
                    , fm_out       = out1 }) = 
     runTrans env $ do 
       gen_decls     <- stdDecls tablenum mods cars
+      cyc_inits     <- mapM cycleInit cycles
       mod_stmts     <- modulators mods
       car_stmts     <- carriers cars
       out_stmt      <- outStatement out1
       return $ Instr { instr_number      = inst_num
                      , instr_irate_decls = gen_decls ++ decls 
-                     , instr_body        = concat [ mod_stmts 
+                     , instr_body        = concat [ cyc_inits
+                                                  , mod_stmts 
                                                   , car_stmts
                                                   , [out_stmt] ]
                      }
@@ -90,35 +101,63 @@ translate (FMSynth { fm_instr_num = inst_num, fm_decls    = decls
     mods    = synth_mods body
     cars    = synth_cars body
     links   = synth_links body
+    cycles  = synth_cycles body
     modnums = map oscilNum mods
     carnums = map oscilNum cars
-    env     = buildLinkTables modnums carnums links
+    env     = buildLinkTables modnums carnums links cycles
    
 
 
--- | Note - this relies on key being populated.
+-- | Note - all modulator indexes need populating (even if empty)
+-- for the mod-order algorithm.
 --
 insertLink :: Int -> Int -> IM.IntMap [Int] -> IM.IntMap [Int]
-insertLink ix n imap = IM.adjust (n:) ix imap
+insertLink ix n imap = let ns = queryLink ix imap 
+                       in IM.insert ix (n:ns) imap
 
 queryLink :: Int -> IM.IntMap [Int] -> [Int]
 queryLink ix imap = maybe [] id $ IM.lookup ix imap
 
 
-buildLinkTables :: [Int] -> [Int] -> [Link] -> Env
-buildLinkTables modnums carnums links = 
-    foldr fn (Env mods cars) links
+-- | Doesn\'t care about every indexes being populated.
+--
+insertCycle :: Int -> (VarId,ExprF) -> IM.IntMap [(VarId,ExprF)] 
+            -> IM.IntMap [(VarId,ExprF)]
+insertCycle ix cyc imap = let cs = queryCycle ix imap 
+                          in IM.insert ix (cyc:cs) imap
+
+queryCycle :: Int -> IM.IntMap [(VarId,ExprF)] -> [(VarId,ExprF)]
+queryCycle ix imap = maybe [] id $ IM.lookup ix imap
+
+
+
+-- | Note - @mods@ needs populating with all @modnums@ even if 
+-- there are no backlinks. This lets the mod-order algorithm take
+-- dependency free modualtors first.
+--
+buildLinkTables :: [Int] -> [Int] -> [Link] -> [Cycle] -> Env
+buildLinkTables modnums carnums links cycles = 
+    let mods0       = IM.fromList $ map (\a -> (a,[])) modnums
+        cars0       = IM.fromList $ map (\a -> (a,[])) carnums    
+        (mods,cars)   = foldr fl (mods0,cars0) links
+        (mcycs,ccycs) = foldr fc (mempty,mempty) cycles 
+    in Env { modulator_backlinks   = mods
+           , carrier_backlinks     = cars
+           , modulator_backcycles  = mcycs
+           , carrier_backcycles    = ccycs 
+           }
   where
-    mods            = IM.fromList $ map (\a -> (a,[])) modnums
-    cars            = IM.fromList $ map (\a -> (a,[])) carnums
+    fl (ModMod a b) (mm,cm) = (insertLink b a mm, cm) 
+    fl (ModCar a b) (mm,cm) = (mm, insertLink b a cm) 
+       
+    fc (CycModMod a b eF) (mm,cm) = let varid = outputCyclePhmName MODULATOR a
+                                    in (insertCycle b (varid,eF) mm, cm)
 
-    fn (ModMod a b) = (\s u -> s { modulator_backlinks = insertLink b a u }) 
-                        <*> modulator_backlinks
+    fc (CycCarCar a b eF) (mm,cm) = let varid = outputCyclePhmName CARRIER a
+                                    in (mm, insertCycle b (varid,eF) cm)
 
-    fn (ModCar a b) = (\s u -> s { carrier_backlinks = insertLink b a u }) 
-                        <*> carrier_backlinks
-    
-    fn _            = id
+    fc (CycCarMod a b eF) (mm,cm) = let varid = outputCyclePhmName CARRIER a
+                                    in (insertCycle b (varid,eF) mm, cm)
 
 
 asks :: (Env -> a) -> Trans a
@@ -131,11 +170,27 @@ modBacklinks i = (queryLink i) <$> asks modulator_backlinks
 carBacklinks :: Int -> Trans [Int]
 carBacklinks i = (queryLink i) <$> asks carrier_backlinks
 
+modBackcycles :: Int -> Trans [(VarId,ExprF)]
+modBackcycles i = (queryCycle i) <$> asks modulator_backcycles
+
+carBackcycles :: Int -> Trans [(VarId,ExprF)]
+carBackcycles i = (queryCycle i) <$> asks carrier_backcycles
 
 
 stdDecls :: Int -> [Modulator] -> [Carrier] -> Trans [Decl]
 stdDecls sinetab xs ys = return $ 
     declProlog sinetab ++ map freqIDecl_m xs ++ map freqIDecl_c ys
+
+cycleInit :: Cycle -> Trans Stmt
+cycleInit (CycModMod i _ _) = 
+    let varid = outputCyclePhmName MODULATOR i in return $ Init varid 0
+
+cycleInit (CycCarCar i _ _) = 
+    let varid = outputCyclePhmName CARRIER i in return $ Init varid 0
+
+cycleInit (CycCarMod i _ _) =
+    let varid = outputCyclePhmName CARRIER i in return $ Init varid 0
+
 
 
 carriers :: [Carrier] -> Trans [Stmt]
@@ -256,27 +311,36 @@ modOrder1 links = level links emptyH
 
 emitModulator :: Modulator -> Trans [Stmt]
 emitModulator osc = 
-    (\links -> mkS1 links : s2 : xs)
-      <$> modBacklinks ix
+    (\links cycs -> concat [ [mkS1 links] 
+                           , [mkS2 $ map fst cycs]
+                           , pps 
+                           , mkPhms cycs 
+                           ])
+      <$> modBacklinks ix <*> modBackcycles ix
   where
-    ix    = oscilNum osc
-    cmt   = "modulator " ++ show ix
-    mkS1  = \ns -> CommentS cmt $ phasorCall_m ix ns
-    s2    = tableiCall_m ix
-    xs    = postproSig_m osc
-   
+    ix     = oscilNum osc
+    cmt    = "modulator " ++ show ix
+    mkS1   = \ns -> CommentS cmt $ phasorCall_m ix ns
+    mkS2   = \cs -> tableiCall_m ix cs
+    pps    = postproSig_m osc
+    mkPhms = map (phaseAssign_m `flip` ix)
 
 
 emitCarrier :: Carrier -> Trans [Stmt]
 emitCarrier osc = 
-    (\links -> mkS1 links : s2 : xs)
-      <$> carBacklinks ix
+    (\links cycs -> concat [ [mkS1 links]
+                           , [mkS2 $ map fst cycs]
+                           , pps
+                           , mkPhms cycs
+                           ])
+      <$> carBacklinks ix <*> carBackcycles ix
   where
-    ix    = oscilNum osc
-    cmt   = "carrier " ++ show ix
-    mkS1  = \ns -> CommentS cmt $ phasorCall_c ix ns
-    s2    = tableiCall_c ix
-    xs    = postproSig_c osc
+    ix     = oscilNum osc
+    cmt    = "carrier " ++ show ix
+    mkS1   = \ns -> CommentS cmt $ phasorCall_c ix ns
+    mkS2   = \cs -> tableiCall_c ix cs
+    pps    = postproSig_c osc
+    mkPhms = map (phaseAssign_c `flip` ix)
 
 -- | Note this is too simple, rhs could be an expr...
 --
@@ -293,13 +357,17 @@ phasorCall_c i xs = Phasor (outputPhaseName CARRIER i) expr
     fn ac n = ac + VarE (outputSignalName MODULATOR n)
 
 
-tableiCall_m :: Int -> Stmt 
-tableiCall_m i = 
-    Tablei (outputSignalName MODULATOR i) (VarE $ outputPhaseName MODULATOR i)
+tableiCall_m :: Int -> [VarId] -> Stmt 
+tableiCall_m i xs = Tablei (outputSignalName MODULATOR i) expr
+  where
+    expr       = foldl' fn (VarE $ outputPhaseName MODULATOR i) xs
+    fn ac name = ac + VarE name
 
-tableiCall_c :: Int -> Stmt 
-tableiCall_c i = 
-    Tablei (outputSignalName CARRIER i) (VarE $ outputPhaseName CARRIER i)
+tableiCall_c :: Int -> [VarId] -> Stmt 
+tableiCall_c i xs = Tablei (outputSignalName CARRIER i) expr 
+  where
+    expr       = foldl' fn (VarE $ outputPhaseName CARRIER i) xs
+    fn ac name = ac + VarE name
 
 
 -- | Note - the list really encodes a Maybe value
@@ -317,6 +385,16 @@ postproSig_c osc = case oscilPostpro osc of
     Just fn -> let varid = outputSignalName CARRIER (oscilNum osc)
                in [ Assign varid (fn $ VarE varid) ]
 
+
+phaseAssign_m :: (VarId,ExprF) -> Int -> Stmt
+phaseAssign_m (varid,exprF) i = 
+    Assign varid (exprF $ VarE $ outputSignalName MODULATOR i)
+
+
+
+phaseAssign_c :: (VarId,ExprF) -> Int -> Stmt
+phaseAssign_c (varid,exprF) i = 
+    Assign varid (exprF $ VarE $ outputSignalName CARRIER i)
 
 --------------------------------------------------------------------------------
 -- Names
@@ -353,6 +431,13 @@ outputPhaseName ot i = 'a' : shortName ot ++ show i ++ "phs"
 outputSignalName :: OscilType -> Int -> String
 outputSignalName ot i = 'a' : shortName ot ++ show i ++ "sig"
 
+
+-- | Of form:
+--
+-- > 'a' ("mod" | "car") <num> "phm"
+--
+outputCyclePhmName :: OscilType -> Int -> String
+outputCyclePhmName ot i = 'a' : shortName ot ++ show i ++ "phm"
 
 
 outputVar :: Carrier -> Expr

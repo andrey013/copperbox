@@ -25,6 +25,9 @@ module Sound.FMSS.ConfigMonad
 
   , (=>-)
   , (=>=)
+  , cycleMM
+  , cycleCM
+  , cycleCC
 
   , Out1
   , out1
@@ -58,12 +61,15 @@ import Data.Monoid
 
 data St = St { mod_count :: !Int, car_count :: Int }
 
-data W = W { w_mods :: H Modulator, w_cars :: H Carrier, w_links :: H Link }
+data W = W { w_mods   :: H Modulator
+           , w_cars   :: H Carrier
+           , w_links  :: H Link
+           , w_cycs   :: H Cycle }
 
 instance Monoid W where
-  mempty = W emptyH emptyH emptyH
-  W a1 b1 c1 `mappend` W a2 b2 c2 = 
-      W (a1 `appendH` a2) (b1 `appendH` b2) (c1 `appendH` c2)
+  mempty = W emptyH emptyH emptyH emptyH 
+  W a1 b1 c1 d1 `mappend` W a2 b2 c2 d2 = 
+      W (a1 `appendH` a2) (b1 `appendH` b2) (c1 `appendH` c2) (d1 `appendH` d2)
 
 newtype Config a = Config { getConfig :: St -> (a, St, W) }
 
@@ -87,9 +93,10 @@ runConfig mf = post $ getConfig mf s0
   where
     post (a,_,w) = (a,syn) 
       where
-        syn = SynthBody { synth_mods  = toListH $ w_mods w
-                        , synth_cars  = toListH $ w_cars w
-                        , synth_links = toListH $ w_links w
+        syn = SynthBody { synth_mods    = toListH $ w_mods w
+                        , synth_cars    = toListH $ w_cars w
+                        , synth_links   = toListH $ w_links w
+                        , synth_cycles  = toListH $ w_cycs w 
                         }
 
     s0 = St { mod_count = 1, car_count = 1}
@@ -115,6 +122,23 @@ carrier osc = Config $ \s@(St {car_count=ix}) ->
     let link = ModMod (oscilNum m1) (oscilNum m2) 
     in ((),s, mempty { w_links = wrapH link })
 
+
+cycleMM :: Modulator -> Modulator -> ExprF -> Config ()
+cycleMM m1 m2 exprF = Config $ \s -> 
+    let cyc = CycModMod (oscilNum m1) (oscilNum m2) exprF
+    in ((),s, mempty { w_cycs = wrapH cyc })
+
+
+
+cycleCM :: Carrier -> Modulator -> ExprF -> Config ()
+cycleCM c1 m2 exprF = Config $ \s -> 
+    let cyc = CycCarMod (oscilNum c1) (oscilNum m2) exprF
+    in ((),s, mempty { w_cycs = wrapH cyc })
+
+cycleCC :: Carrier -> Carrier -> ExprF -> Config ()
+cycleCC c1 c2 exprF = Config $ \s -> 
+    let cyc = CycCarCar (oscilNum c1) (oscilNum c2) exprF
+    in ((),s, mempty { w_cycs = wrapH cyc })
 
 --------------------------------------------------------------------------------
 
