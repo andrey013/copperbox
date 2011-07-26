@@ -1,0 +1,52 @@
+name:             majalan-core
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Generate Csound
+description:
+  Generate Csound - both scores and orchestras.
+  . 
+  The embeddings are somewhat trivial...
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo101.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      containers        >= 0.3      && <= 0.6
+
+  exposed-modules:
+    Majalan.Core,
+    Majalan.Core.CsoundScore,
+    Majalan.Core.OutputCsound
+
+  other-modules:
+    Majalan.Core.CSDDoc,
+    Majalan.Core.ScoreInternal,
+    Majalan.Core.Utils.FormatCombinators,
+    Majalan.Core.Utils.JoinList,
+    Majalan.Core.Utils.HList
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
