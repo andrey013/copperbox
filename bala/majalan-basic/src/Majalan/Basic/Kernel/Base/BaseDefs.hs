@@ -19,6 +19,7 @@ module Majalan.Basic.Kernel.Base.BaseDefs
   ( 
 
     DUnit
+  , ITbl
   , OnsetDbl
   , Tempo
   , UNil(..)
@@ -39,6 +40,10 @@ import Data.Monoid
 
 
 type family DUnit u :: *
+
+type family ITbl tbl :: * 
+
+
 
 type OnsetDbl = Double
 

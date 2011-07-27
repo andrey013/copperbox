@@ -90,21 +90,21 @@ instance Functor Bounds where
 -- event from a PosEvent have to be generated within the same 
 -- context.
 --
-type PosDraw ctx u = u -> CatPrim ctx
+type PosDraw itbl u = u -> CatPrim itbl
 
 type Span u = u
 
 
 -- | A positionable event.
 --
-newtype PosEvent ctx u = PosEvent
-          { getPosEvent :: Query ctx u (Span u, PosDraw ctx u) }
+newtype PosEvent itbl ctx u = PosEvent
+          { getPosEvent :: Query itbl ctx u (Span u, PosDraw itbl u) }
 
-type instance DUnit (PosEvent ctx u) = u
+type instance DUnit (PosEvent itbl ctx u) = u
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
-type DPosEvent = PosEvent Double
+type DPosEvent itbl ctx = PosEvent itbl ctx Double
 
 
 
@@ -115,7 +115,7 @@ type DPosEvent = PosEvent Double
 
 -- Monoid
 instance (Fractional u, Ord u, InterpretUnit u) => 
-    Monoid (PosEvent ctx u) where
+    Monoid (PosEvent itbl ctx u) where
   mempty  = emptyPosEvent
   mappend = poconcat
 
@@ -124,7 +124,7 @@ instance (Fractional u, Ord u, InterpretUnit u) =>
 -- same time, the result span is the longest.
 -- 
 poconcat :: (Fractional u, Ord u) 
-         => PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
+         => PosEvent itbl ctx u -> PosEvent itbl ctx u -> PosEvent itbl ctx u
 poconcat a b = PosEvent body
    where
     body = askCtx >>= \ctx ->
@@ -135,9 +135,9 @@ poconcat a b = PosEvent body
 
 
 appendW :: (Fractional u, Ord u)
-        => (Span u, PosDraw ctx u) 
-        -> (Span u, PosDraw ctx u) 
-        -> (Span u, PosDraw ctx u)
+        => (Span u, PosDraw itbl u) 
+        -> (Span u, PosDraw itbl u) 
+        -> (Span u, PosDraw itbl u)
 appendW (s0,pf0) (s1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
                             in (max s0 s1, pf)
 
@@ -151,7 +151,7 @@ appendW (s0,pf0) (s1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
 -- an /arity one/ Graphic that needs drawing with the start-point.
 --
 runPosEvent :: (Fractional u, InterpretUnit u) 
-            => PosEvent ctx u -> LocEvent ctx u (Bounds u)
+            => PosEvent itbl ctx u -> LocEvent itbl ctx u (Bounds u)
 runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
    askCtx >>= \ctx -> 
    let (s0,df) = runQuery ctx mf
@@ -165,7 +165,8 @@ runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
 -- Create a 'PosEvent' from its length and 'LocEvent'.
 --
 makePosEvent :: InterpretUnit u
-             => Query ctx u (Span u) -> ULocEvent ctx u -> PosEvent ctx u
+             => Query itbl ctx u (Span u) -> ULocEvent itbl ctx u 
+             -> PosEvent itbl ctx u
 makePosEvent qortt gf = PosEvent body
   where
     body = askCtx >>= \ctx -> 
@@ -181,7 +182,7 @@ makePosEvent qortt gf = PosEvent body
 --
 -- Build an empty 'PosGraphicObject'.
 --
-emptyPosEvent :: InterpretUnit u => PosEvent ctx u
+emptyPosEvent :: InterpretUnit u => PosEvent itbl ctx u
 emptyPosEvent = PosEvent $ pure (0, const mempty)
 
     
@@ -190,7 +191,7 @@ emptyPosEvent = PosEvent $ pure (0, const mempty)
 
 -- | Apply a context update to a 'PosEvent'.
 --
-localPosEvent :: ContextF ctx -> PosEvent ctx u -> PosEvent ctx u
+localPosEvent :: ContextF ctx -> PosEvent itbl ctx u -> PosEvent itbl ctx u
 localPosEvent upd = PosEvent . localize upd . getPosEvent
 
 
@@ -206,8 +207,8 @@ localPosEvent upd = PosEvent . localize upd . getPosEvent
 -- even if it may sound for longer.
 --
 elaboratePosEvent :: InterpretUnit u
-                  => (Span u -> ULocEvent ctx u) -> PosEvent ctx u 
-                  -> PosEvent ctx u
+                  => (Span u -> ULocEvent itbl ctx u) -> PosEvent itbl ctx u 
+                  -> PosEvent itbl ctx u
 elaboratePosEvent fn po = PosEvent body
   where
     body = askCtx >>= \ctx -> 
@@ -223,7 +224,7 @@ elaboratePosEvent fn po = PosEvent body
 -- | Extend the orientation.
 --
 extendPosEvent :: InterpretUnit u 
-               => u -> u -> PosEvent ctx u -> PosEvent ctx u
+               => u -> u -> PosEvent itbl ctx u -> PosEvent itbl ctx u
 extendPosEvent t0 t1 po = PosEvent body
   where
     body = askCtx >>= \ctx -> 
@@ -240,17 +241,17 @@ extendPosEvent t0 t1 po = PosEvent body
 
 
 instance (Fractional u, Ord u, InterpretUnit u) => 
-    Overlay (PosEvent ctx u) where
+    Overlay (PosEvent itbl ctx u) where
   overlay = mappend
 
 
 
-instance Num u => Append (PosEvent ctx u) where
+instance Num u => Append (PosEvent itbl ctx u) where
   append = appendPE
 
 
 appendPE :: (Num u)   
-         => PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
+         => PosEvent itbl ctx u -> PosEvent itbl ctx u -> PosEvent itbl ctx u
 appendPE pe0 pe1 = PosEvent body
   where
     body = askCtx >>= \ctx -> 
@@ -260,12 +261,13 @@ appendPE pe0 pe1 = PosEvent body
           in return (s0 + s1, pf)
 
 
-instance InterpretUnit u => Space (PosEvent ctx u) where
+instance InterpretUnit u => Space (PosEvent itbl ctx u) where
   space = spacePE
 
 
 spacePE :: InterpretUnit u
-        => u -> PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
+        => u -> PosEvent itbl ctx u -> PosEvent itbl ctx u 
+        -> PosEvent itbl ctx u
 spacePE u a b = a `append` blank `append` b
   where
     blank = makePosEvent (pure u) mempty

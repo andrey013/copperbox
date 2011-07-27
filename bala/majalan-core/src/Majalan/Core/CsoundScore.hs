@@ -56,6 +56,20 @@ newtype Score env = Score { getScore :: env -> PrimScore }
 
 newtype Note env  = Note  { getNote :: env -> AbsPrimStmt } 
 
+--
+-- The same env for instr number lookup must be used for scores 
+-- built by combining (sub-) scores. Thus a function from 
+-- @env -> Score@ properly models numbering.
+--
+
+--
+-- Note - Score and Note are more restricted than a Reader monad,
+-- they only produce answers of the /natural/ type.
+--
+-- Is there any virtue to them being more general, e.g. Reader 
+-- plus a Writer collecting elements?
+--
+
 
 runScore :: env -> Score env -> PrimScore
 runScore env = getScore `flip` env
@@ -86,8 +100,8 @@ frame xs = Score $ \env -> step0 $ sortBy cmp $ map (getNote `flip` env) xs
 
 
 
--- Does Score share an Env mapping instr nums, or is a frame rendered
--- with an Env forming a Score?
+-- Score has an Env mapping instr nums.
+
 
 -- | 'absEvent' : @ numF * onset_time * props -> AbsPrimStmt @
 -- 
@@ -99,9 +113,17 @@ absNote numF otim dur vals = Note $ \env ->
                                     , inst_dur = dur
                                     , inst_params = vals })
 
+--
+-- absNote is a problem. We need notes to have the same type
+-- regardless of instrument, otherwise scores will be horrible. 
+--
+-- Passing a function to get instr_num from the env seems to be
+-- the only adequate way of enabling this.
+--
 
 
-
+-- | Prefix a Score with f-statements.
+--
 withGens :: [GenStmt] -> Score env -> Score env
 withGens gs sco = Score $ \env -> case getScore sco env of
     PrimScore loc body -> PrimScore (ext loc) body
