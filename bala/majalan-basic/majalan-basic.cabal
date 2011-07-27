@@ -1,0 +1,61 @@
+name:             majalan-basic
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Basic objects built on Majalan-Core.
+description:
+  Generate Csound - kernel code for higher level music built on 
+  Majalan-core.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Xanadu.hs,
+  demo/Xanadu3.orc
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      vector-space      >= 0.6     && <  1.0,
+                      majalan-core      == 0.1.0
+
+  exposed-modules:
+    Majalan.Basic.Kernel,
+    Majalan.Basic.Kernel.Base.BaseDefs,
+    Majalan.Basic.Kernel.Base.Context,
+    Majalan.Basic.Kernel.Base.DurationUnits,
+    Majalan.Basic.Kernel.Base.WrappedPrimitive,
+    Majalan.Basic.Kernel.Objects.AdvEvent,
+    Majalan.Basic.Kernel.Objects.Basis,
+    Majalan.Basic.Kernel.Objects.Concat,
+    Majalan.Basic.Kernel.Objects.Connector,
+    Majalan.Basic.Kernel.Objects.LocEvent,
+    Majalan.Basic.Kernel.Objects.PosEvent,
+    Majalan.Basic.Kernel.Objects.Score,
+    Majalan.Basic.Kernel.Objects.TraceLoc,
+    Majalan.Basic.Kernel.Objects.TraceNotelist,
+    Majalan.Basic.Utils.HList,
+    Majalan.Basic.Utils.JoinList
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

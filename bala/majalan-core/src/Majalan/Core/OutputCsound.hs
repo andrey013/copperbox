@@ -58,8 +58,8 @@ writeUnifiedFile file_path flags insts sco =
 
 
 
--- | Write a unified @.csd@ file with a pre-written orchestra
--- file.
+-- | Write a unified @.csd@ file incorporating a pre-written
+-- orchestra file.
 --
 writeUnifiedScore :: FilePath -> CsoundFlags -> FilePath -> PrimScore -> IO ()
 writeUnifiedScore out_path flags orch_file sco = do

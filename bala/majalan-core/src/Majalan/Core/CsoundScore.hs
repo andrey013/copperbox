@@ -26,6 +26,7 @@ module Majalan.Core.CsoundScore
   , InstStmtProps(..)
   , AbsPrimStmt                 -- opaque
   , PrimStmt                    -- opaque
+  , CsValue(..)
   
   -- * Build scores
   , frame 
