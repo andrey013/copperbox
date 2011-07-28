@@ -21,15 +21,19 @@
 module Majalan.Core
   (
 
-    module Majalan.Core.CsoundScore
+    module Majalan.Core.Basis
+  , module Majalan.Core.CsoundScore
   , module Majalan.Core.GenRoutines
   , module Majalan.Core.OutputCsound
+  , module Majalan.Core.Timespan
 
   ) where
 
 
+import Majalan.Core.Basis
 import Majalan.Core.CsoundScore
 import Majalan.Core.GenRoutines
 import Majalan.Core.OutputCsound
+import Majalan.Core.Timespan
 
 

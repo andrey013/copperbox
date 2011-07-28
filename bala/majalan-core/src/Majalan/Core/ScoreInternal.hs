@@ -19,7 +19,6 @@ module Majalan.Core.ScoreInternal
 
     PrimScore(..)
 
-  , Timespan(..)
   , Frame(..)
   , Locale
   , PrimStmt(..)
@@ -32,7 +31,6 @@ module Majalan.Core.ScoreInternal
   , absPrimDuration
 
   , standardFrame
-  , timespanUnion
   , scoreTimespan
 
   , moveTimespan
@@ -42,6 +40,7 @@ module Majalan.Core.ScoreInternal
  
   ) where
 
+import Majalan.Core.Timespan
 import Majalan.Core.Utils.FormatCombinators
 import Majalan.Core.Utils.JoinList hiding ( empty )
 
@@ -54,17 +53,6 @@ data PrimScore = PrimScore Locale (JoinList PrimScore)
   deriving (Show)          
 
 
-
--- | This is equaivalent to a bounding box.
---
-data Timespan u = Timespan
-      { timespan_start  :: u
-      , timespan_end    :: u
-      }
-  deriving (Show)
-
-
-type DTimespan = Timespan Double
 
 -- | This is equivalent to an affine frame.
 --
@@ -128,9 +116,6 @@ standardFrame = Frame { frame_origin   = 0
                       , frame_scaling  = 1
                       }
 
-timespanUnion :: Ord u => Timespan u -> Timespan u -> Timespan u
-timespanUnion (Timespan a0 a1) (Timespan b0 b1) = 
-    Timespan (min a0 b0) (max a1 b1)
 
 scoreTimespan :: PrimScore -> DTimespan 
 scoreTimespan (PrimScore (t,_,_) _) = t

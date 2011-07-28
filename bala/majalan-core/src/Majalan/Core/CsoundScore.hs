@@ -46,6 +46,7 @@ module Majalan.Core.CsoundScore
   ) where
 
 import Majalan.Core.ScoreInternal
+import Majalan.Core.Timespan
 import Majalan.Core.Utils.FormatCombinators ( format )
 import qualified Majalan.Core.Utils.JoinList as JL
 

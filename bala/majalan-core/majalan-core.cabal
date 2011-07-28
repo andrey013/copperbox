@@ -6,11 +6,11 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Generate Csound
+synopsis:         Generate Csound scores
 description:
-  Generate Csound - both scores and orchestras.
+  Generate Csound scores.
   . 
-  The embeddings are somewhat trivial...
+  The embedding is somewhat trivial...
   .
   (c) Stephen Tetley 2011
   .
@@ -30,8 +30,11 @@ library
 
   exposed-modules:
     Majalan.Core,
+    Majalan.Core.Basis,
     Majalan.Core.CsoundScore,
-    Majalan.Core.OutputCsound
+    Majalan.Core.GenRoutines,
+    Majalan.Core.OutputCsound,
+    Majalan.Core.Timespan
 
   other-modules:
     Majalan.Core.CSDDoc,
