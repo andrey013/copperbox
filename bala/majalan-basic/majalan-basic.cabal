@@ -6,10 +6,10 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Basic objects built on Majalan-Core.
+synopsis:         Basic objects built on Majalan-Core
 description:
-  Generate Csound - kernel code for higher level music built on 
-  Majalan-core.
+  Generate Csound - kernel code for higher level music objects 
+  built on Majalan-core.
   .
   (c) Stephen Tetley 2011
   .

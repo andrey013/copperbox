@@ -1,0 +1,51 @@
+name:             majalan-symbolic
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Symbolic music objects built on Majalan-Basic
+description:
+  Symbolic music objects (e.g. pitch represnetations) built on 
+  Majalan-Basic.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Xanadu.hs
+  demo/XanaduInst.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      vector-space      >= 0.6     && <  1.0,
+                      majalan-core      == 0.1.0,
+                      majalan-basic     == 0.1.0
+
+  exposed-modules:
+    Majalan.Symbolic.Basis.Z7,
+    Majalan.Symbolic.Basis.Z12,
+    Majalan.Symbolic.Scale.Base,
+    Majalan.Symbolic.Scale.Centaur,
+    Majalan.Symbolic.Scale.EqualTemperament    
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

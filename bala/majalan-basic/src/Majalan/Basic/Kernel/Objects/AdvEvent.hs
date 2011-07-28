@@ -82,9 +82,9 @@ type AdvDraw itbl u = u -> CatPrim itbl
 
 
 
--- | /Advance vector/ graphic - this partially models the 
--- PostScript @show@ command which moves the /current point/ by the
--- advance (width) vector as each character is drawn.
+-- | /Advance vector/ event - this models moving the 
+-- /onset time/ for the next event by the advance vector of the 
+-- current event.
 --
 newtype AdvEvent itbl ctx u = AdvEvent 
           { getAdvEvent :: Query itbl ctx u (AdvanceVec u, AdvDraw itbl u) }
@@ -136,8 +136,8 @@ makeAdvEvent mq gf = AdvEvent body
 -- Build an empty 'AdvEvent'.
 -- 
 -- The 'emptyAdvEvent' is treated as a /null primitive/ by 
--- @Wumpus-Core@ and is not drawn, the answer vector generated is
--- the zero vector @(V2 0 0)@.
+-- @Majalan-Core@ and has effect, the answer generated is
+-- the zero vector @0@.
 -- 
 emptyAdvEvent :: InterpretUnit u => AdvEvent itbl ctx u
 emptyAdvEvent = blankAdvEvent 0
