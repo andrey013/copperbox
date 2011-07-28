@@ -58,7 +58,7 @@ import Majalan.Basic.Kernel.Base.WrappedPrimitive
 import Majalan.Basic.Kernel.Objects.Basis
 import Majalan.Basic.Kernel.Objects.LocEvent
 
-
+import Majalan.Core                             -- package: majalan-core
 
 import Control.Applicative
 import Control.Monad

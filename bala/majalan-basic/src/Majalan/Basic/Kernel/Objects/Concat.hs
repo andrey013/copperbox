@@ -30,7 +30,6 @@ module Majalan.Basic.Kernel.Objects.Concat
   
   ) where
 
-import Majalan.Basic.Kernel.Base.BaseDefs
 
 import Majalan.Core                             -- package: majalan-core
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -40,6 +41,7 @@ module Majalan.Core.ScoreInternal
  
   ) where
 
+import Majalan.Core.Basis
 import Majalan.Core.Timespan
 import Majalan.Core.Utils.FormatCombinators
 import Majalan.Core.Utils.JoinList hiding ( empty )
@@ -52,6 +54,7 @@ data PrimScore = PrimScore Locale (JoinList PrimScore)
                | PrimLeaf  Locale (JoinList PrimStmt)
   deriving (Show)          
 
+type instance DUnit PrimScore = Double
 
 
 -- | This is equivalent to an affine frame.
@@ -62,6 +65,7 @@ data Frame = Frame
        }
   deriving (Eq,Ord,Show)
 
+type instance DUnit Frame = Double
 
 -- TODO - Table statements could go in the Locale then they 
 -- are printed first...
@@ -76,12 +80,14 @@ type Locale = (DTimespan, Frame, [GenStmt])
 data PrimStmt = InstStmt  Double InstStmtProps
   deriving (Eq,Ord,Show)
 
+type instance DUnit PrimStmt = Double
 
 -- | Dynamically typed, absolute timed statement.
 --
 data AbsPrimStmt = AbsInstStmt Double InstStmtProps
   deriving (Eq,Ord,Show)
 
+type instance DUnit AbsPrimStmt = Double
 
 data GenStmt = GenStmt
        { table_assign_num     :: Int  -- corresponds to table-ref in orch

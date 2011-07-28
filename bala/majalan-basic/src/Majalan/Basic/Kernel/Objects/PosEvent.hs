@@ -13,8 +13,7 @@
 --
 -- Extended Event object.
 --
--- Note - this object does not be seem to have a valuable 
--- use-case, and if one isn\'t found it will be removed.
+-- Note - this object is probably misnamed.
 --
 -- In Wumpus, some objects are obviously drawn from different 
 -- start positions (circles - center, direction-zero text - 
@@ -27,11 +26,8 @@
 module Majalan.Basic.Kernel.Objects.PosEvent
   (
 
-    Bounds(..)
-
   -- * Positionable event
-
-  , PosEvent
+    PosEvent
   , DPosEvent
 
 
@@ -58,27 +54,10 @@ import Majalan.Basic.Kernel.Objects.Basis
 import Majalan.Basic.Kernel.Objects.Concat
 import Majalan.Basic.Kernel.Objects.LocEvent
 
+import Majalan.Core                             -- package: majalan-core
 
 import Control.Applicative
 import Data.Monoid
-
-
--- Note - Orientation and BoundingBox are quite different 
--- objects in Wumpus. A BoundingBox is obviously not coordinate
--- free (and hence is not monoidal) whereas an Orientation is
--- coordinate free and monoidal.
-
-data Bounds u = Bounds 
-      { bounds_start :: u
-      , bounds_end   :: u
-      }
-  deriving (Eq,Ord,Show)
-
-
-type instance DUnit (Bounds u) = u
-
-instance Functor Bounds where
-  fmap f (Bounds s e) = Bounds (f s) (f e)
 
 
 
@@ -150,12 +129,12 @@ appendW (s0,pf0) (s1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
 -- argument (start-point is implicit). The corresponding answer is 
 -- an /arity one/ Graphic that needs drawing with the start-point.
 --
-runPosEvent :: (Fractional u, InterpretUnit u) 
-            => PosEvent itbl ctx u -> LocEvent itbl ctx u (Bounds u)
+runPosEvent :: (Ord u, Fractional u, InterpretUnit u) 
+            => PosEvent itbl ctx u -> LocEvent itbl ctx u (Timespan u)
 runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
    askCtx >>= \ctx -> 
    let (s0,df) = runQuery ctx mf
-       bb      = Bounds ot (ot + s0)
+       bb      = timespan ot (ot + s0)
    in replaceAns bb $ primEvent (df ot)
 
 

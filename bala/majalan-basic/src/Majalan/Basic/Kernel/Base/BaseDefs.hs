@@ -18,8 +18,7 @@
 module Majalan.Basic.Kernel.Base.BaseDefs
   ( 
 
-    DUnit
-  , ITbl
+    ITbl
   , OnsetDbl
   , Tempo
   , UNil(..)
@@ -38,8 +37,6 @@ import Majalan.Core                             -- package: majalan-core
 import Data.Monoid
 
 
-
-type family DUnit u :: *
 
 type family ITbl tbl :: * 
 
@@ -62,7 +59,6 @@ data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
 
 type instance DUnit (UNil u) = u
 
-type instance DUnit (Score env) = Double
 
 
 instance Functor UNil where

@@ -46,6 +46,8 @@ import Majalan.Basic.Kernel.Base.BaseDefs
 import Majalan.Basic.Kernel.Base.Context
 import Majalan.Basic.Kernel.Base.WrappedPrimitive
 
+import Majalan.Core                             -- package: majalan-core
+
 import Control.Applicative
 import Data.Monoid
 

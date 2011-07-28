@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -45,6 +46,7 @@ module Majalan.Core.CsoundScore
  
   ) where
 
+import Majalan.Core.Basis
 import Majalan.Core.ScoreInternal
 import Majalan.Core.Timespan
 import Majalan.Core.Utils.FormatCombinators ( format )
@@ -56,6 +58,10 @@ import Data.List ( sortBy )
 newtype Score env = Score { getScore :: env -> PrimScore }
 
 newtype Note env  = Note  { getNote :: env -> AbsPrimStmt } 
+
+type instance DUnit (Score env) = Double
+
+type instance DUnit (Note env) = Double
 
 --
 -- The same env for instr number lookup must be used for scores 

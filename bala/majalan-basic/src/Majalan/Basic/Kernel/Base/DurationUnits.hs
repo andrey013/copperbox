@@ -25,6 +25,9 @@ module Majalan.Basic.Kernel.Base.DurationUnits
 
   , FloatDuration
 
+  , Beat
+
+
   ) where
 
 import Majalan.Basic.Kernel.Base.BaseDefs
@@ -127,5 +130,39 @@ instance InterpretUnit FloatDuration where
                     in realToFrac a * dwn_secs
 
   dinterp bpm d   = let dwn_secs = 4.0 * (realToFrac $ 60 / bpm)
+                    in realToFrac d / dwn_secs
+
+
+
+--------------------------------------------------------------------------------
+
+-- | Context sensitive - 1.0 represents a quarter note which 
+-- is scaled according to the current tempo (bpm).
+--
+-- Internally the represntation is a Double - i.e. a floating 
+-- point type.
+--
+newtype Beat = Beat { getBeat :: Double } 
+  deriving (Enum,Eq,Fractional,Num,Ord,Real,RealFrac)
+
+
+
+instance Show Beat where
+  showsPrec p = showsPrec p . getBeat
+
+instance AdditiveGroup Beat where
+  zeroV = 0
+  (^+^) = (+)
+  negateV = negate
+
+instance VectorSpace Beat where
+  type Scalar Beat = Double
+  (*^) s a = realToFrac s * a
+
+instance InterpretUnit Beat where
+  normalize bpm a = let dwn_secs = (realToFrac $ 60 / bpm)
+                    in realToFrac a * dwn_secs
+
+  dinterp bpm d   = let dwn_secs = (realToFrac $ 60 / bpm)
                     in realToFrac d / dwn_secs
 
