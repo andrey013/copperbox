@@ -41,14 +41,18 @@ import Control.Applicative hiding ( empty )
 
 
 
-
-writeSco :: FilePath -> PrimScore -> IO ()
+-- | Write a score (@.sco@) file.
+--
+writeSco :: FilePath -> Score -> IO ()
 writeSco file_path xs = writeFile file_path $ show $ buildScoreDoc xs
 
 
 
 
-writeUnifiedFile :: FilePath -> CsoundFlags -> [String] -> PrimScore -> IO ()
+-- | Write a unified @.csd@ file where the orchestra is 
+-- represented as Strings (e.g. the output of some generator).
+-- 
+writeUnifiedFile :: FilePath -> CsoundFlags -> [String] -> Score -> IO ()
 writeUnifiedFile file_path flags insts sco = 
     writeFile file_path $ show $ csound_synthesizer dflags (mkOrch insts) dsco
   where
@@ -60,8 +64,11 @@ writeUnifiedFile file_path flags insts sco =
 
 -- | Write a unified @.csd@ file incorporating a pre-written
 -- orchestra file.
+-- 
+-- The orchestra file is expected to dictate sample-rate, number
+-- of channels, etc.
 --
-writeUnifiedScore :: FilePath -> CsoundFlags -> FilePath -> PrimScore -> IO ()
+writeUnifiedScore :: FilePath -> CsoundFlags -> FilePath -> Score -> IO ()
 writeUnifiedScore out_path flags orch_file sco = do
     orch <- readFile orch_file
     writeFile out_path $ show $ csound_synthesizer dflags (mkOrch orch) dsco
@@ -108,7 +115,7 @@ flags_display = CsoundFlags $ body
 --------------------------------------------------------------------------------
 -- Printing scores
 
-buildScoreDoc :: PrimScore -> Doc
+buildScoreDoc :: Score -> Doc
 buildScoreDoc = evalScoMonad . score
 
 
@@ -228,7 +235,7 @@ pfieldDiffs new@(InstStmtProps i _ ps) = ScoMonad $ \s ->
 --------------------------------------------------------------------------------
 -- Translation
 
-score :: PrimScore -> ScoMonad Doc
+score :: Score -> ScoMonad Doc
 score sco = flat <$> scoreSections sco 
   where
     flat []     = empty
@@ -236,12 +243,12 @@ score sco = flat <$> scoreSections sco
     flat (d:ds) = d `vconcat` (char 'b' <+> int 0) `vconcat` flat ds
 
 
-scoreSections :: PrimScore -> ScoMonad [Doc]
-scoreSections (PrimLeaf loc@(_,_,gs) ones) = bracketLocale loc $ 
+scoreSections :: Score -> ScoMonad [Doc]
+scoreSections (Leaf loc@(_,_,gs) ones) = bracketLocale loc $ 
     (\gens a -> [ gens `vconcat` a] ) <$> (fmap vcat $ mapM genStmt gs)
                                       <*> (zeroInst >> oneConcat primitive ones)
 
-scoreSections (PrimScore loc ones)         = 
+scoreSections (Score loc ones)         = 
     bracketLocale loc $ getOnsetTime >>= \t0 -> step t0 (viewl ones) 
   where
     step _  EmptyL    = return []

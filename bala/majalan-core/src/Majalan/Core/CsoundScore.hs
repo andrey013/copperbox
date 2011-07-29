@@ -18,7 +18,7 @@
 module Majalan.Core.CsoundScore
   (
 
-    Score
+    RScore
   , Note
   , runScore
 
@@ -34,7 +34,7 @@ module Majalan.Core.CsoundScore
 
   , absNote
 
-  , withGens
+  , prefixGens
 
   , scoOver
   , scoMoveBy
@@ -55,11 +55,11 @@ import qualified Majalan.Core.Utils.JoinList as JL
 import Data.List ( sortBy )
 
 
-newtype Score env = Score { getScore :: env -> PrimScore }
+newtype RScore env = RScore { getRScore :: env -> Score }
 
 newtype Note env  = Note  { getNote :: env -> AbsPrimStmt } 
 
-type instance DUnit (Score env) = Double
+type instance DUnit (RScore env) = Double
 
 type instance DUnit (Note env) = Double
 
@@ -78,17 +78,17 @@ type instance DUnit (Note env) = Double
 --
 
 
-runScore :: env -> Score env -> PrimScore
-runScore env = getScore `flip` env
+runScore :: env -> RScore env -> Score
+runScore env = getRScore `flip` env
 
 -- | Lift a list of primitives to a score.
 --
 -- \*\* WARNING \*\* - this function throws a runtime error when 
 -- supplied the empty list.
 --
-frame :: [Note env] -> Score env
+frame :: [Note env] -> RScore env
 frame [] = error "Majalan.Core.CsoundScore.frame - empty list"
-frame xs = Score $ \env -> step0 $ sortBy cmp $ map (getNote `flip` env) xs
+frame xs = RScore $ \env -> step0 $ sortBy cmp $ map (getNote `flip` env) xs
   where 
     cmp a b = compare (absPrimStart a) (absPrimStart b)
 
@@ -98,7 +98,7 @@ frame xs = Score $ \env -> step0 $ sortBy cmp $ map (getNote `flip` env) xs
         step1 (t0, t0 + inst_dur props) t0 (JL.one $ InstStmt 0 props) es
 
     step1 (t0,t1) _ ac []                          = 
-        PrimLeaf (Timespan t0 t1, standardFrame, []) ac
+        Leaf (Timespan t0 t1, standardFrame, []) ac
 
     step1 (t0,t1) ot ac (AbsInstStmt abst props :es) = 
         let dt  = abst - ot
@@ -131,12 +131,8 @@ absNote numF otim dur vals = Note $ \env ->
 
 -- | Prefix a Score with f-statements.
 --
-withGens :: [GenStmt] -> Score env -> Score env
-withGens gs sco = Score $ \env -> case getScore sco env of
-    PrimScore loc body -> PrimScore (ext loc) body
-    PrimLeaf  loc body -> PrimLeaf (ext loc) body
-  where
-    ext (tim,fr,ys) = (tim,fr,gs ++ ys)
+prefixGens :: [GenStmt] -> RScore env -> RScore env
+prefixGens gs sco = RScore $ \env -> foldr consGenStmt (getRScore sco env) gs
 
 
 
@@ -147,62 +143,54 @@ infixr 6 `scoOver`, `scoBeside`
 -- Combine the scores by playing them simultaneously.
 -- The onsets of both scores are unchanged.
 --
-scoOver :: Score env -> Score env -> Score env
-a `scoOver` b = Score $ \env -> 
-    let s1 = getScore a env
-        s2 = getScore b env
-        tspan = scoreTimespan s1 `timespanUnion` scoreTimespan s2
-    in PrimScore (tspan,standardFrame,[]) (JL.join (JL.one s1) (JL.one s2))
+scoOver :: RScore env -> RScore env -> RScore env
+a `scoOver` b = RScore $ \env -> 
+    let s1 = getRScore a env
+        s2 = getRScore b env
+    in joinScore s1 s2
 
 
 
--- | 'scoMoveBy' : @ score * time -> SCore @
+-- | 'scoMoveBy' : @ score * time -> RScore @
 -- 
 --  Move a score by the supplied time. 
 -- 
 -- The result time should be @>= 0@, thought this is not enforced.
 --
-scoMoveBy :: Score env -> Double -> Score env
-scoMoveBy sco dx = Score $ \env -> case getScore sco env of
-    PrimScore loc body -> PrimScore (moveLocale dx loc) body
-    PrimLeaf  loc body -> PrimLeaf (moveLocale dx loc) body
+scoMoveBy :: RScore env -> Double -> RScore env
+scoMoveBy sco dx = RScore $ \env -> moveScore dx $ getRScore sco env
 
 
-
--- | 'scoBeside' : @ score * score -> Score @
+-- | 'scoBeside' : @ score * score -> RScore @
 --
 -- Combine the scores by playing them sequentially.
 -- The second score is played after then first.
 --
-scoBeside :: Score env -> Score env -> Score env
-a `scoBeside` b = Score $ \env -> 
-    let x1 = timespan_end $ scoreTimespan $ getScore a env
-        x2 = timespan_start $ scoreTimespan $ getScore b env
+scoBeside :: RScore env -> RScore env -> RScore env
+a `scoBeside` b = RScore $ \env -> 
+    let s1 = getRScore a env
+        s2 = getRScore b env
+        x1 = timespan_end   $ timeframe s1
+        x2 = timespan_start $ timeframe s2
         dx = x1 - x2 
-    in getScore (a `scoOver` (b `scoMoveBy` dx)) env
+    in s1 `joinScore` (moveScore dx s2)
         
     
 
 
 -- | 'extendTimeFrame' : @ initial_delay * epilogue_delay * score -> Score @
 --
--- Combine the scores by playing them sequentially.
--- The second score is played after then first.
+-- Add an initial delay and an epilogue delay to the score extending
+-- its timespan.
 --
-extendTimeFrame :: Double -> Double -> Score env -> Score env
-extendTimeFrame d0 d1 sco = Score $ \env -> case getScore sco env of 
-   PrimScore (tspan,fr,gs) body -> PrimScore (extT tspan, extF fr,gs) body
-   PrimLeaf  (tspan,fr,gs) body -> PrimLeaf  (extT tspan, extF fr,gs) body
-  
-  where
-    extT (Timespan a0 a1) = Timespan a0 (a1 + d0 + d1)
-    extF (Frame o sx)     = Frame (o+d0) sx
-
+extendTimeFrame :: Double -> Double -> RScore env -> RScore env
+extendTimeFrame d0 d1 sco = RScore $ \env -> 
+    extendScoreTime d0 d1 $ getRScore sco env
 
 
 -- | Print the syntax tree of a Score to the console.
 --
-printScore :: env -> Score env -> IO ()
+printScore :: env -> RScore env -> IO ()
 printScore env sco = 
-    putStrLn (show $ format $ getScore sco env) >> putStrLn []
+    putStrLn (show $ format $ getRScore sco env) >> putStrLn []
 

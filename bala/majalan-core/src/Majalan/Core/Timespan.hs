@@ -22,6 +22,10 @@ module Majalan.Core.Timespan
     Timespan(..)
   , DTimespan
 
+
+  -- * Type class
+  , Timeframe(..)
+
   -- * Operations
   , timespan
   , timespanUnion
@@ -30,6 +34,7 @@ module Majalan.Core.Timespan
   , timespanCenter
   , withinTimespan
   , timespanLength
+  , scaleTimespan
    
   ) where
 
@@ -93,7 +98,8 @@ timespanUnion :: Ord u => Timespan u -> Timespan u -> Timespan u
 timespanUnion (Timespan a0 a1) (Timespan b0 b1) = 
     Timespan (min a0 b0) (max a1 b1)
 
-
+-- | Trace a set of time points finding their timespan.
+--
 traceTimespan :: Ord u => [u] -> Timespan u
 traceTimespan (p:ps) = 
     foldr (\z (Timespan a b) -> Timespan (min z a) (max z b)) (Timespan p p) ps
@@ -126,3 +132,9 @@ withinTimespan t (Timespan t0 t1) = t >= t0 && t <= t1
 --
 timespanLength :: Num u => Timespan u -> u 
 timespanLength (Timespan t0 t1) = t1 - t0
+
+
+-- | Scale a timespan.
+--
+scaleTimespan :: Num u => u -> Timespan u -> Timespan u
+scaleTimespan sx (Timespan a0 a1) = Timespan (sx * a0) (sx * a1)

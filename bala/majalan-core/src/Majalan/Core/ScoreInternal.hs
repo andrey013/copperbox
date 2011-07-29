@@ -18,7 +18,7 @@
 module Majalan.Core.ScoreInternal
   (
 
-    PrimScore(..)
+    Score(..)
 
   , Frame(..)
   , Locale
@@ -32,12 +32,15 @@ module Majalan.Core.ScoreInternal
   , absPrimDuration
 
   , standardFrame
-  , scoreTimespan
+  , joinScore
+  , consGenStmt
 
   , moveTimespan
   , moveLocale
-  , scaleTimespan
+  , moveScore
+
   , scaleLocale
+  , extendScoreTime
  
   ) where
 
@@ -49,15 +52,33 @@ import Majalan.Core.Utils.JoinList hiding ( empty )
 -- import Control.Applicative
 import qualified Data.Foldable as F
 
-
-data PrimScore = PrimScore Locale (JoinList PrimScore)
-               | PrimLeaf  Locale (JoinList PrimStmt)
+-- | Score is a rose tree.
+--
+-- > tree = Leaf [primitive] | Score [tree]
+--
+data Score = Score Locale (JoinList Score)
+           | Leaf  Locale (JoinList PrimStmt)
   deriving (Show)          
 
-type instance DUnit PrimScore = Double
+type instance DUnit Score = Double
 
 
--- | This is equivalent to an affine frame.
+-- | Locale = (bounding timespan * frame * table inits)
+--
+-- Locale abstracts the length and onset times of (sub-) scores 
+-- so they can be moved and concatenated without traversing into 
+-- the child elements (inividual instruemtn statements).
+-- 
+type Locale = (DTimespan, Frame, [GenStmt])
+
+
+-- | This is equivalent to an affine frame in geometry. It 
+-- abstracts the start point (useful for efficient displacement)
+-- and allows scaling. 
+-- 
+-- Scaling might not be musically useful - this structure was 
+-- inherited from Wumpus-Core (drawing / geometry) where scaling 
+-- is fundamental.
 --
 data Frame = Frame 
        { frame_origin   :: Double
@@ -67,10 +88,6 @@ data Frame = Frame
 
 type instance DUnit Frame = Double
 
--- TODO - Table statements could go in the Locale then they 
--- are printed first...
---
-type Locale = (DTimespan, Frame, [GenStmt])
 
 
 
@@ -82,7 +99,7 @@ data PrimStmt = InstStmt  Double InstStmtProps
 
 type instance DUnit PrimStmt = Double
 
--- | Dynamically typed, absolute timed statement.
+-- | Dynamically typed, absolute time statement.
 --
 data AbsPrimStmt = AbsInstStmt Double InstStmtProps
   deriving (Eq,Ord,Show)
@@ -109,6 +126,18 @@ data CsValue = CsInt    Int
              | CsString String          -- for file names
   deriving (Eq,Ord,Show)
 
+
+--------------------------------------------------------------------------------
+-- 
+
+instance Timeframe Score where
+  timeframe (Score (t,_,_) _) = t
+  timeframe (Leaf (t,_,_) _)  = t
+
+
+--------------------------------------------------------------------------------
+-- Contructors / operations
+
 absPrimStart :: AbsPrimStmt -> Double
 absPrimStart (AbsInstStmt  ot _) = ot
 
@@ -123,10 +152,18 @@ standardFrame = Frame { frame_origin   = 0
                       }
 
 
-scoreTimespan :: PrimScore -> DTimespan 
-scoreTimespan (PrimScore (t,_,_) _) = t
-scoreTimespan (PrimLeaf (t,_,_) _) = t
-          
+joinScore :: Score -> Score -> Score
+joinScore  a b =
+    Score (tspan,standardFrame,[]) (join (one a) (one b))
+  where
+    tspan = timeframe b `timespanUnion` timeframe b
+
+
+consGenStmt :: GenStmt -> Score -> Score
+consGenStmt a (Score (ts,fr,gs) body) = Score (ts,fr,a:gs) body
+consGenStmt a (Leaf (ts,fr,gs) body)  = Leaf (ts,fr,a:gs) body
+
+
 
 moveTimespan :: Num u => u -> Timespan u -> Timespan u
 moveTimespan dx (Timespan a0 a1) = Timespan (dx + a0) (dx + a1)
@@ -136,8 +173,9 @@ moveLocale dx (tspan, Frame o tx, gs) =
     (moveTimespan dx tspan, Frame (o+dx) tx, gs)
 
 
-scaleTimespan :: Num u => u -> Timespan u -> Timespan u
-scaleTimespan sx (Timespan a0 a1) = Timespan (sx * a0) (sx * a1)
+moveScore :: Double -> Score -> Score
+moveScore dx (Score loc body) = Score (moveLocale dx loc) body
+moveScore dx (Leaf  loc body) = Leaf (moveLocale dx loc) body
 
 
 scaleLocale :: Double -> Locale -> Locale
@@ -145,22 +183,31 @@ scaleLocale sx (tspan, Frame o tx, gs) =
     (scaleTimespan sx tspan, Frame o (sx * tx), gs)
 
 
+
+extendScoreTime :: Double -> Double -> Score -> Score
+extendScoreTime d0 d1 sco = case sco of 
+    Score (tspan,fr,gs) body -> Score (extT tspan, extF fr,gs) body
+    Leaf  (tspan,fr,gs) body -> Leaf  (extT tspan, extF fr,gs) body
+  where
+    extT (Timespan a0 a1) = Timespan a0 (a1 + d0 + d1)
+    extF (Frame o sx)     = Frame (o+d0) sx
+
 --------------------------------------------------------------------------------
 -- Format instances
 
-instance Format PrimScore where
-  format (PrimScore m scos) = indent 2 $ vcat [ text "** Tree-score **"
-                                              , fmtLocale m
-                                              , fmtScos scos ]
+instance Format Score where
+  format (Score m scos) = indent 2 $ vcat [ text "** Tree-score **"
+                                          , fmtLocale m
+                                          , fmtScos scos ]
 
-  format (PrimLeaf m prims) = indent 2 $ vcat [ text "** Leaf-score **"
-                                              , fmtLocale m 
-                                              , fmtPrimlist prims ]
-
-
+  format (Leaf m prims) = indent 2 $ vcat [ text "** Leaf-score **"
+                                          , fmtLocale m 
+                                          , fmtPrimlist prims ]
 
 
-fmtScos :: JoinList PrimScore -> Doc
+
+
+fmtScos :: JoinList Score -> Doc
 fmtScos ones = snd $ F.foldl' fn (0,empty) ones
   where
     fn (n,acc) e = (n+1, vcat [ acc, text "-- " <+> int n, format e, line])
