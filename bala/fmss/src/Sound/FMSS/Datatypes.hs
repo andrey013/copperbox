@@ -24,7 +24,7 @@ module Sound.FMSS.Datatypes
   , Carrier(..)
   , Oscil(..)
 
-  , OscilFreq(..)
+  , OscilInputZero(..)
   , Link(..) 
   , Cycle(..)
 
@@ -76,27 +76,27 @@ data Carrier = Carrier
 -- Modulator, as number might be assigned as a uid in a monad...
 --
 data Oscil = Oscil 
-      { oscil_freq      :: OscilFreq
-      , oscil_postpro   :: Maybe (Expr -> Expr)
+      { oscil_input_zero    :: OscilInputZero
+      , oscil_postpro       :: Maybe (Expr -> Expr)
       } 
 
 
 class Oscillator osc where
-  oscilNum      :: osc -> NodeId
-  oscilFreq     :: osc -> OscilFreq
-  oscilPostpro  :: osc -> Maybe (Expr -> Expr)
+  oscilNum          :: osc -> NodeId
+  oscilInputZero    :: osc -> OscilInputZero
+  oscilPostpro      :: osc -> Maybe (Expr -> Expr)
 
 
 instance Oscillator Modulator where
-  oscilNum      = mod_num
-  oscilFreq     = oscil_freq . mod_oscil
-  oscilPostpro  = oscil_postpro . mod_oscil
+  oscilNum          = mod_num
+  oscilInputZero    = oscil_input_zero . mod_oscil
+  oscilPostpro      = oscil_postpro . mod_oscil
 
 
 instance Oscillator Carrier where
-  oscilNum      = car_num
-  oscilFreq     = oscil_freq . car_oscil
-  oscilPostpro  = oscil_postpro . car_oscil
+  oscilNum          = car_num
+  oscilInputZero    = oscil_input_zero . car_oscil
+  oscilPostpro      = oscil_postpro . car_oscil
 
 
 -- Note - looks like Modulators have either a modulation envelope, 
@@ -107,9 +107,8 @@ instance Oscillator Carrier where
 -- objects.
 --
 
-data OscilFreq = FixedFreq Double
-               | BaseScaler Double
-  deriving (Eq,Ord,Show)
+data OscilInputZero = FixedInput Expr
+                    | BaseFreqScaler ExprF
 
   -- Potentially oscilFreq could be extended to OscilInput 
   -- tosupport noide inputs.

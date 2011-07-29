@@ -110,7 +110,7 @@ modulator osc = Config $ \s@(St {mod_count=ix}) ->
 carrier :: Oscil -> Config Carrier
 carrier osc = Config $ \s@(St {car_count=ix}) ->
     let c1 = Carrier ix osc
-    in (c1, s { mod_count = ix+1}, mempty { w_cars = wrapH c1})
+    in (c1, s { car_count = ix+1}, mempty { w_cars = wrapH c1})
 
 (=>-) :: Modulator -> Carrier -> Config ()
 (=>-) m1 c1 = Config $ \s -> 

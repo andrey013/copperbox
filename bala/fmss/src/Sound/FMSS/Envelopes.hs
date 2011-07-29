@@ -21,6 +21,8 @@ module Sound.FMSS.Envelopes
         
   , Linseg
   , linsegEnvelope
+
+  , Expseg
   , expsegEnvelope
 
   ) where
@@ -52,10 +54,15 @@ linsegEnvelope (v@(_,a0):vs) = Linseg $ realToFrac a0 : work v vs
     drn d1 d0 = idur * realToFrac ((d1 - d0) / 100)
 
 
+newtype Expseg = Expseg { getExpseg :: [SymDouble] }
 
-expsegEnvelope :: [(Double,Double)] -> (String,[SymDouble])
-expsegEnvelope []            = ("expseg", [0.01])
-expsegEnvelope (v@(_,a0):vs) = ("expseg", noZero a0 : work v vs)
+instance DeconsEnvelope Expseg where
+  deconsEnvelope env = ("expseg", getExpseg env)
+
+
+expsegEnvelope :: [(Double,Double)] -> Expseg
+expsegEnvelope []            = Expseg [0.01]
+expsegEnvelope (v@(_,a0):vs) = Expseg $ noZero a0 : work v vs
   where
     work _      []               = [] 
     work (d0,_) (x@(d1,amp):xs)  = drn d1 d0 : noZero amp : work x xs

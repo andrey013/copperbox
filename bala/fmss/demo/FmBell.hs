@@ -1,17 +1,92 @@
-{-# LANGUAGE OverloadedStrings          #-}
 {-# OPTIONS -Wall #-}
 
-module Demo01 where
+module FmBell where
 
-import Sound.FMSS.AbstractSyntax
-import Sound.FMSS.ConfigMonad
+
+import Sound.FMSS
 import Sound.FMSS.Datatypes
-import Sound.FMSS.Envelopes
-import Sound.FMSS.SpecMonad
-import Sound.FMSS.Translate
-import Sound.FMSS.Utils.FormatCombinators
 
-import Data.String
+import System.Directory
+
+
+-- | Configuration of 7 oscillators.
+
+
+data Config7 = Config7
+      { oscil7_1 :: Oscil
+      , oscil7_2 :: Oscil
+      , oscil7_3 :: Oscil
+      , oscil7_4 :: Oscil
+      , oscil7_5 :: Oscil
+      , oscil7_6 :: Oscil
+      , oscil7_7 :: Oscil
+      }
+
+
+-- Probably algorithms should return carriers so they 
+-- can be used in Out specs
+
+algorithm :: Config7 -> Config Out3
+algorithm (Config7 o1m o2m o3m o4m o5c o6c o7c) = do
+    m1 <- modulator o1m
+    m2 <- modulator o2m
+    m3 <- modulator o3m
+    m4 <- modulator o4m
+    c1 <- carrier   o5c
+    c2 <- carrier   o6c
+    c3 <- carrier   o7c
+    m1 =>- c1
+    m2 =>- c2
+    m3 =>- c2
+    m4 =>- c3
+    return $ out3 (c1,c2,c3)
+
+    -- m2 and m3 are summed to make the c2 carrier.
+
+
+indxenv :: Expseg
+indxenv = expsegEnvelope [ (0.0, 1.0), (100,0.001) ]
+
+ampenv :: Expseg 
+ampenv = expsegEnvelope [ (0.0,0.01), (0.02,1.0), (99.98,0.01) ]
+
+
+fmBell :: Spec SpecAns
+fmBell = do
+    (_,iamp,ifreq)      <- globals
+    indx                <- variable "indx"      (pfield 6)
+    ifm1index           <- variable "ifm1index" (32.0 * ifreq)
+    ifm2index           <- variable "ifm2index" (4.0 * (8.0 - ifreq / 50.0))
+    ifm3index           <- variable "ifm3index" (ifm2index * 0.705 * 
+                                                   (1.4 - ifreq / 250.0))
+
+    ifm4index           <- variable "ifm4index" (32.0 * (20.0 - ifreq / 20.0))
+
+    kindxenv            <- envelope "kindexenv" indxenv
+    kampenv             <- envelope "kampenv"   ampenv
+    
+    let mod1pp = mult (ifm1index * indx * kindxenv)
+
+    config (algorithm $ Config7 mod1 mod2 mod3 mod4 car1 car2 car3)
+           (\(c1,c2,c3) -> iamp * kampenv * (c1 + (0.15 * c2) + (0.15 * c3)))
+  where
+    mod1 = Oscil (BaseFreqScaler (* 2.0))   Nothing
+    mod2 = Oscil (BaseFreqScaler (* 1.41))  Nothing
+    mod3 = Oscil (BaseFreqScaler (* 2.82))  Nothing
+    mod4 = Oscil (BaseFreqScaler (* 2.4))   Nothing
+    car1 = Oscil (BaseFreqScaler id)        Nothing
+    car2 = Oscil (BaseFreqScaler id)        Nothing
+    car3 = Oscil (BaseFreqScaler (* 2.4))   Nothing
+
+main :: IO ()
+main = do
+    createDirectoryIfMissing True "./out/" 
+    writeSynth "out/fmbell.orc" 
+               (Params { instr_num = 1, sine_table = 1}) 
+               fmBell
+
+
+{-
 
 -- | Overloaded strings permit a lexically bizarre but otherwise 
 -- fairly simple approach to embedded expressions.
@@ -124,7 +199,5 @@ fm2 = do
 
 demo02 = writeSynth "fm-one.orc" (Params { instr_num = 1, sine_table = 1}) fm2
 
-writeSynth :: FilePath -> Params -> Spec SpecAns -> IO ()
-writeSynth outpath params mf = case translate $ execSpec params mf of
-   Left err -> putStrLn err
-   Right ans -> writeFile outpath (show $ format $ ans)
+
+-}

@@ -216,17 +216,17 @@ declProlog sinetab =
 
 freqIDecl_m :: Modulator -> Decl
 freqIDecl_m osc = 
-    freqIDecl (inputFreqName MODULATOR $ oscilNum osc) (oscilFreq osc)
+    freqIDecl (inputFreqName MODULATOR $ oscilNum osc) (oscilInputZero osc)
 
 freqIDecl_c :: Carrier -> Decl
 freqIDecl_c osc = 
-    freqIDecl (inputFreqName CARRIER $ oscilNum osc) (oscilFreq osc)
+    freqIDecl (inputFreqName CARRIER $ oscilNum osc) (oscilInputZero osc)
 
-freqIDecl :: String -> OscilFreq -> Decl
+freqIDecl :: String -> OscilInputZero -> Decl
 freqIDecl varid hz = Decl varid (mkExpr hz)
   where
-    mkExpr (FixedFreq d)  = Const $ CsDouble d
-    mkExpr (BaseScaler d) = VarE "ifreq" * Const (CsDouble d)
+    mkExpr (FixedInput expr)      = expr
+    mkExpr (BaseFreqScaler exprF) = exprF $ VarE "ifreq"
 
 
 
