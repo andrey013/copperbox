@@ -24,6 +24,7 @@ module Sound.FMSS.Utils.FormatExpr
   , postfix
   , infixL
   , infixR
+  , infixNone
 
   , unparse
 
@@ -67,6 +68,9 @@ infixL i s = (s,i, Infix AssocLeft)
 
 infixR :: Precedence -> String -> Rator 
 infixR i s = (s,i, Infix AssocRight)
+
+infixNone :: Precedence -> String -> Rator 
+infixNone i s = (s,i, Infix AssocNone)
 
 
 higher :: Rator -> Rator -> Bool

@@ -10,7 +10,8 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Low-level abstract syntax
+-- Low-level abstract syntax, this is pretty printed to generate
+-- the Csound file.
 --
 --------------------------------------------------------------------------------
 
@@ -27,6 +28,15 @@ module Sound.FMSS.AbstractSyntax
   , SymDouble
   , idur
 
+  , Var
+  , mkVar
+  , vexpr
+  , expr1
+  , expr2
+  , expr3
+  , assignOpcode
+  , assignExpr
+
   ) where
 
 
@@ -38,7 +48,6 @@ import Data.String
 
 data Instr = Instr 
       { instr_number        :: Int
-      , instr_irate_decls   :: [Decl]
       , instr_body          :: [Stmt]
       } 
   deriving (Eq,Show)
@@ -52,7 +61,7 @@ type VarId = String
 -- or @tablei@. This is for convenience within FMSS.
 --
 --
-data Decl = CommentD String Decl
+data Decl = CommentD String
           | Decl     VarId Expr
           | Envelope VarId String [SymDouble]
   deriving (Eq,Ord,Show)
@@ -64,17 +73,18 @@ data Expr = VarE    VarId
           | UnOp    Rator Expr
           | BinOp   Rator Expr Expr
           | Funcall String Expr
+          | Cond    Expr Expr Expr
   deriving (Eq,Ord,Show)
 
 type ExprF = Expr -> Expr
 
-data Stmt = CommentS String Stmt
-          | Init     VarId Expr
-          | Phasor   VarId Expr
-          | Tablei   VarId Expr 
-          | Assign   VarId Expr
-          | Out      Expr
+data Stmt = CommentS     String
+          | DeclStmt     Decl        
+          | AssignOpcode VarId String [Expr]
+          | AssignExpr   VarId Expr
+          | Out          Expr
   deriving (Eq,Show)
+
 
 data CsValue = CsInt    Int
              | CsDouble Double
@@ -90,6 +100,41 @@ data SymDouble = SDouble Double
                | SBinOp   Rator SymDouble SymDouble
                | SFuncall String SymDouble
   deriving (Eq,Ord,Show)
+
+--------------------------------------------------------------------------------
+-- Variables for the monad
+
+newtype Var = Var { getVar :: VarId }
+
+instance Show Var where
+  show = getVar
+
+
+mkVar :: VarId -> Var
+mkVar = Var
+
+vexpr :: Var -> Expr 
+vexpr = VarE . getVar
+
+expr1 :: Var -> (Expr -> Expr) -> Expr
+expr1 v1 fn = fn (VarE $ getVar v1)
+
+
+expr2 :: Var -> Var -> (Expr -> Expr -> Expr) -> Expr
+expr2 v1 v2 fn = 
+    fn (VarE $ getVar v1) (VarE $ getVar v2)
+
+expr3 :: Var -> Var -> Var -> (Expr -> Expr -> Expr -> Expr) -> Expr
+expr3 v1 v2 v3 fn = 
+    fn (VarE $ getVar v1) (VarE $ getVar v2) (VarE $ getVar v3)
+
+
+
+assignOpcode :: Var -> String -> [Expr] -> Stmt
+assignOpcode v name exprs = AssignOpcode (getVar v) name exprs
+
+assignExpr   ::  Var -> Expr -> Stmt
+assignExpr v expr = AssignExpr (getVar v) expr
 
 
 --------------------------------------------------------------------------------
@@ -154,16 +199,15 @@ idur = IDur
 --------------------------------------------------------------------------------
 
 instance Format Instr where
-  format (Instr ix decls body) = 
+  format (Instr ix body) = 
      text "instr" <+> int ix            `vconcat`
-     indent 2 (vcat $ map format decls) `vconcat`
      indent 2 (vcat $ map format body)  `vconcat`
      text "endin"
 
      
 
 instance Format Decl where
-  format (CommentD ss decl)        = prependComment ss (format decl)
+  format (CommentD ss)             = commentDoc ss
 
   format (Decl var expr)           = assignDoc var (format expr)
 
@@ -171,19 +215,15 @@ instance Format Decl where
 
 
 instance Format Stmt where
-  format (CommentS ss stmt)        = prependComment ss (format stmt)
+  format (CommentS ss)                 = commentDoc ss
 
-  format (Init var expr)           = opcodeDoc var "init" [format expr]
+  format (DeclStmt decl)               = format decl
 
-  format (Phasor var expr)         = opcodeDoc var "phasor" [format expr]
+  format (AssignOpcode var name exprs) = opcodeDoc var name (map format exprs)
 
-  format (Tablei var expr)         = opcodeDoc var "tablei" (format expr:rest)
-    where
-      rest = [ text "isinetbl", int 1, int 0, int 1 ]
+  format (AssignExpr var expr)         = assignDoc var (format expr)
 
-  format (Assign var expr)         = assignDoc var (format expr)
-
-  format (Out expr)                = 
+  format (Out expr)                    = 
     spaces 11 <+> padr 9 (text "out") <+> format expr
 
 
@@ -197,6 +237,10 @@ buildExpr (Const val)    = Atom $ format val
 buildExpr (UnOp op a)    = Unary op (buildExpr a)
 buildExpr (BinOp op a b) = Binary (buildExpr a) op (buildExpr b)
 buildExpr (Funcall ss a) = Atom $ text ss <> parens (format a)
+buildExpr (Cond a t f)   = Atom $ parens body 
+  where
+    body = format a <+> char '?' <+> format t <+> char ':' <+> format f
+
 
 instance Format CsValue where
   format (CsInt i)    = int i
@@ -215,9 +259,10 @@ buildSymExpr (SBinOp op a b) = Binary (buildSymExpr a) op (buildSymExpr b)
 buildSymExpr (SFuncall ss a) = Atom $ text ss <> parens (format a)
 
 
-
-prependComment :: String -> Doc -> Doc
-prependComment ss doc = vcat [text "", char ';' <+> text ss, doc]
+-- | Note - this relies on being printed its own line...
+--
+commentDoc :: String -> Doc
+commentDoc ss = char ';' <+> text ss
 
 assignDoc :: String -> Doc -> Doc
 assignDoc name val = padr 11 (text name) <+> char '=' <+> val

@@ -74,8 +74,12 @@ veloH :: (a -> H b) -> [a] -> H b
 veloH f = foldr step id 
   where step a hf = f a . hf
 
+-- Note - is veloH - concatMap ?
+
+
 concatH :: [H a] -> H a
 concatH = foldr (.) id
+
 
 
 toListH :: H a -> [a]

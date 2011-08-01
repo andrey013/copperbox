@@ -30,8 +30,13 @@ module Sound.FMSS
   -- * Expressions
   , pfield
 
-  , mult
-  , add
+  , cond
+  , (.==.)
+
+  , (.<.)
+  , (.>.)
+  , (.<=.)
+  , (.>=.)
 
   ) where
 
@@ -39,16 +44,14 @@ import Sound.FMSS.AbstractSyntax
 import Sound.FMSS.ConfigMonad
 import Sound.FMSS.Envelopes
 import Sound.FMSS.SpecMonad
-import Sound.FMSS.Translate
 import Sound.FMSS.Utils.FormatCombinators
+import Sound.FMSS.Utils.FormatExpr
 
 
-writeSynth :: FilePath -> Params -> Spec SpecAns -> IO ()
+writeSynth :: FilePath -> Params -> Spec a -> IO ()
 writeSynth outpath params mf = case execSpec params mf of
    Left err -> putStrLn err
-   Right ans -> case translate ans of 
-                  Left err -> putStrLn err
-                  Right code -> writeFile outpath (show $ format code)
+   Right ans -> writeFile outpath (show $ format ans)
 
 
 --------------------------------------------------------------------------------
@@ -58,8 +61,54 @@ writeSynth outpath params mf = case execSpec params mf of
 pfield :: Int -> Expr
 pfield = PField
 
-mult :: Expr -> ExprF 
-mult a = (a *)
+-- mult :: Expr -> ExprF 
+-- mult a = (a *)
 
-add  :: Expr -> ExprF 
-add a = (a +)
+-- add  :: Expr -> ExprF 
+-- add a = (a +)
+
+
+cond :: Expr -> Expr -> Expr -> Expr 
+cond = Cond
+
+infix 4 .==.
+
+(.==.)          :: Expr -> Expr -> Expr
+(.==.)          = BinOp equal
+
+equal           :: Rator 
+equal           = infixNone 4 "=="
+
+infix 4 .<., .>.
+
+(.<.)           :: Expr -> Expr -> Expr
+(.<.)           = BinOp lessthan
+
+
+lessthan        :: Rator
+lessthan        = infixNone 4 "<"
+
+(.>.)           :: Expr -> Expr -> Expr
+(.>.)           = BinOp greaterthan
+
+
+greaterthan     :: Rator
+greaterthan     = infixNone 4 ">"
+
+
+infix 4 .<=., .>=.
+
+(.<=.)          :: Expr -> Expr -> Expr
+(.<=.)          = BinOp lessthaneq
+
+
+lessthaneq      :: Rator
+lessthaneq      = infixNone 4 "<="
+
+(.>=.)          :: Expr -> Expr -> Expr
+(.>=.)          = BinOp greaterthaneq
+
+
+greaterthaneq   :: Rator
+greaterthaneq   = infixNone 4 ">="
+

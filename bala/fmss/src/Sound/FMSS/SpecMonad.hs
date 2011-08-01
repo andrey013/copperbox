@@ -19,11 +19,9 @@ module Sound.FMSS.SpecMonad
 
     Spec
   , ErrMsg
-  , SpecAns  
   , Params(..)
 
   , execSpec
-
 
   , globals
   , variable
@@ -35,7 +33,6 @@ module Sound.FMSS.SpecMonad
 
 import Sound.FMSS.AbstractSyntax
 import Sound.FMSS.ConfigMonad
-import Sound.FMSS.Datatypes
 import Sound.FMSS.Envelopes
 import Sound.FMSS.Utils.HList
 
@@ -48,7 +45,7 @@ import Data.Monoid
 data Params = Params { instr_num :: Int, sine_table :: Int } 
 
 
-data SpecAns = SpecAns { ans_body :: SynthBody, ans_out :: Stmt }
+-- data SpecAns = SpecAns { ans_body :: L2Body, ans_out :: Stmt }
 
 -- Note - potentially this can be implemented as an inner
 -- /connection spec/. With sharing for envelopes in an outer
@@ -57,7 +54,7 @@ data SpecAns = SpecAns { ans_body :: SynthBody, ans_out :: Stmt }
 
 type ErrMsg = String
 
-newtype W = W { w_decls :: H Decl }
+newtype W = W { getW :: H Stmt }
 newtype St = St { st_varnames :: [String] }
 
 stAddName :: String -> St -> St 
@@ -99,21 +96,20 @@ instance Monad Spec where
                            return (b, s2, w1 `mappend` w2)
 
 
-execSpec :: Params -> Spec SpecAns -> Either ErrMsg FMSynth
+execSpec :: Params -> Spec a -> Either ErrMsg Instr
 execSpec (Params {instr_num = i, sine_table = tnum }) mf = 
-    bimapE id post $ getSpec mf st_zero
+    bimapE id post $ getSpec (global_decls tnum >> mf) st_zero
   where
-    post (SpecAns {ans_body = body, ans_out = out},_ , w) = 
-        FMSynth { fm_instr_num  = i
-                , fm_sinetbl    = tnum
-                , fm_decls      = toListH $ w_decls w
-                , fm_synth_body = body 
-                , fm_out        = out
-                }
+    post (_,_,w) = Instr i $ toListH $ getW w
 
 
-throwErr :: ErrMsg -> Spec a
-throwErr msg = Spec $ \_ -> Left msg
+global_decls :: Int -> Spec ()
+global_decls tnum = 
+       variable "isinetbl" (fromIntegral tnum)
+    >> variable "idur"     (PField 3)
+    >> variable "iamp"     (PField 4)
+    >> variable "ifreq"    (PField 5)
+    >> return ()
 
 
 -- | returns - (idur, iamp, ifreq)
@@ -130,7 +126,7 @@ variable name expr = Spec $ \s ->
     if name `elem` st_varnames s 
       then Left err_msg
       else let s1 = stAddName name s
-           in Right (VarE name, s1, W $ wrapH $ Decl name expr)
+           in Right (VarE name, s1, W $ wrapH $ DeclStmt $ Decl name expr)
   where
     err_msg = "variable - var name '" ++ name ++ "' is already used."
 
@@ -143,12 +139,12 @@ envelope name env = Spec $ \s ->
       then Left err_msg
       else let (opcode,body) = deconsEnvelope env
                s1            = stAddName name s
-           in Right (VarE name, s1, W $ wrapH $ Envelope name opcode body)
+               decl          = Envelope name opcode body
+           in Right (VarE name, s1, W $ wrapH $ DeclStmt decl)
   where
     err_msg = "envelope - variable name '" ++ name ++ "' is already used."
 
-config :: (Config o) -> (o -> Expr) -> Spec SpecAns
-config cf k = Spec $ \s -> 
-    let (o,body) = runConfig cf
-        outexpr   = k o
-    in Right (SpecAns {ans_body = body, ans_out = Out outexpr}, s, mempty)
+
+
+config :: Config a -> Spec ()
+config cf = Spec $ \s -> let ans = runConfig cf in Right ((),s, W ans)
