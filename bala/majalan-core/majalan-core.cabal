@@ -26,7 +26,8 @@ extra-source-files:
 library
   hs-source-dirs:     src
   build-depends:      base              <  5,
-                      containers        >= 0.3      && <= 0.6
+                      containers        >= 0.3      && <= 0.6,
+                      bytestring        <  1.0
 
   exposed-modules:
     Majalan.Core,
