@@ -78,7 +78,7 @@ type AdvanceVec u = u
 --------------------------------------------------------------------------------
 -- AdvEvent
 
-type AdvDraw itbl u = u -> CatPrim itbl
+type AdvDraw u = u -> CatPrim
 
 
 
@@ -86,13 +86,13 @@ type AdvDraw itbl u = u -> CatPrim itbl
 -- /onset time/ for the next event by the advance vector of the 
 -- current event.
 --
-newtype AdvEvent itbl ctx u = AdvEvent 
-          { getAdvEvent :: Query itbl ctx u (AdvanceVec u, AdvDraw itbl u) }
+newtype AdvEvent ctx u = AdvEvent 
+          { getAdvEvent :: Query ctx u (AdvanceVec u, AdvDraw u) }
 
-type instance DUnit (AdvEvent itbl ctx u) = u
+type instance DUnit (AdvEvent ctx u) = u
 
 
-type DAdvEvent itbl ctx    = AdvEvent itbl ctx Double 
+type DAdvEvent ctx    = AdvEvent ctx Double 
 
 
 
@@ -101,7 +101,7 @@ type DAdvEvent itbl ctx    = AdvEvent itbl ctx Double
 
 --------------------------------------------------------------------------------
 
-instance (InterpretUnit u) => Monoid (AdvEvent itbl ctx u) where
+instance (InterpretUnit u) => Monoid (AdvEvent ctx u) where
   mempty  = blankAdvEvent 0
   mappend = advplus
 
@@ -109,7 +109,7 @@ instance (InterpretUnit u) => Monoid (AdvEvent itbl ctx u) where
 -- | Run an 'AdvEvent' turning it into an 'LocEvent'.
 --
 runAdvEvent :: InterpretUnit u
-            => AdvEvent itbl ctx u -> LocEvent itbl ctx u (AdvanceVec u)
+            => AdvEvent ctx u -> LocEvent ctx u (AdvanceVec u)
 runAdvEvent (AdvEvent mf) = promoteLoc $ \ot -> 
    askCtx >>= \ctx -> 
    let (v1,df) = runQuery ctx mf
@@ -120,8 +120,8 @@ runAdvEvent (AdvEvent mf) = promoteLoc $ \ot ->
 -- advance vector and a 'LocEvent' that generates the event.
 --
 makeAdvEvent :: InterpretUnit u
-             => Query itbl ctx u (AdvanceVec u) -> ULocEvent itbl ctx u 
-             -> AdvEvent itbl ctx u
+             => Query ctx u (AdvanceVec u) -> ULocEvent ctx u 
+             -> AdvEvent ctx u
 makeAdvEvent mq gf = AdvEvent body
   where
     body = askCtx >>= \ctx -> 
@@ -139,11 +139,11 @@ makeAdvEvent mq gf = AdvEvent body
 -- @Majalan-Core@ and has effect, the answer generated is
 -- the zero vector @0@.
 -- 
-emptyAdvEvent :: InterpretUnit u => AdvEvent itbl ctx u
+emptyAdvEvent :: InterpretUnit u => AdvEvent ctx u
 emptyAdvEvent = blankAdvEvent 0
 
 
-blankAdvEvent :: u -> AdvEvent itbl ctx u
+blankAdvEvent :: u -> AdvEvent ctx u
 blankAdvEvent v1 = AdvEvent $ pure (v1, const mempty)
 
 
@@ -157,9 +157,9 @@ blankAdvEvent v1 = AdvEvent $ pure (v1, const mempty)
 -- | Sequential append - one event after the other.
 -- 
 appendW :: Num u 
-        => (AdvanceVec u, AdvDraw itbl u) 
-        -> (AdvanceVec u, AdvDraw itbl u) 
-        -> (AdvanceVec u, AdvDraw itbl u)
+        => (AdvanceVec u, AdvDraw u) 
+        -> (AdvanceVec u, AdvDraw u) 
+        -> (AdvanceVec u, AdvDraw u)
 appendW (v0,tf0) (v1,tf1) = let tf = \ot -> tf0 ot `mappend` tf1 (ot + v0)
                             in (v0 + v1, tf)
 
@@ -172,7 +172,7 @@ appendW (v0,tf0) (v1,tf1) = let tf = \ot -> tf0 ot `mappend` tf1 (ot + v0)
 -- both advance vectors.
 --
 advplus :: Num u 
-        => AdvEvent itbl ctx u -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u
+        => AdvEvent ctx u -> AdvEvent ctx u -> AdvEvent ctx u
 advplus a b = AdvEvent body
   where 
     body = askCtx >>= \ctx ->
@@ -188,8 +188,8 @@ advplus a b = AdvEvent body
 -- Helper for list concatenation.
 -- 
 listcat :: InterpretUnit u 
-        => (AdvEvent itbl ctx u -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u)
-        -> [AdvEvent itbl ctx u] -> AdvEvent itbl ctx u
+        => (AdvEvent ctx u -> AdvEvent ctx u -> AdvEvent ctx u)
+        -> [AdvEvent ctx u] -> AdvEvent ctx u
 listcat _ []     = mempty
 listcat op (x:xs) = go x xs
   where
@@ -212,14 +212,14 @@ infixr 6 `advance`
 -- The final answer is the sum of both advance vectors.
 --
 advance :: Num u 
-        => AdvEvent itbl ctx u -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u
+        => AdvEvent ctx u -> AdvEvent ctx u -> AdvEvent ctx u
 advance = advplus
   
 
 -- | Concatenate the list of AdvEvents with 'advance'.
 --
 advances :: InterpretUnit u 
-         => [AdvEvent itbl ctx u] -> AdvEvent itbl ctx u
+         => [AdvEvent ctx u] -> AdvEvent ctx u
 advances = listcat advance
 
 
@@ -228,8 +228,8 @@ advances = listcat advance
 -- object. 
 --
 advspace :: InterpretUnit u 
-         => AdvanceVec u -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u 
-         -> AdvEvent itbl ctx u
+         => AdvanceVec u -> AdvEvent ctx u -> AdvEvent ctx u 
+         -> AdvEvent ctx u
 advspace sep a b = a `advplus` blank `advplus` b
   where
     blank = blankAdvEvent sep
@@ -237,7 +237,7 @@ advspace sep a b = a `advplus` blank `advplus` b
 -- | List version of 'nextSpace'.
 --
 evenspace :: InterpretUnit u 
-          => AdvanceVec u -> [AdvEvent itbl ctx u] -> AdvEvent itbl ctx u
+          => AdvanceVec u -> [AdvEvent ctx u] -> AdvEvent ctx u
 evenspace v = listcat (advspace v)
 
 
@@ -246,7 +246,7 @@ evenspace v = listcat (advspace v)
 -- 'advance'.
 --
 advrepeat :: InterpretUnit u 
-          => Int -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u
+          => Int -> AdvEvent ctx u -> AdvEvent ctx u
 advrepeat n = advances . replicate n
 
 
@@ -254,7 +254,7 @@ advrepeat n = advances . replicate n
 -- the separator at each step.
 --
 punctuate :: InterpretUnit u 
-          => AdvEvent itbl ctx u -> [AdvEvent itbl ctx u] -> AdvEvent itbl ctx u
+          => AdvEvent ctx u -> [AdvEvent ctx u] -> AdvEvent ctx u
 punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 
 
@@ -264,7 +264,7 @@ punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 -- to @fill@ in the @wl-pprint@ library.
 -- 
 advfill :: InterpretUnit u 
-        => AdvanceVec u -> AdvEvent itbl ctx u -> AdvEvent itbl ctx u
+        => AdvanceVec u -> AdvEvent ctx u -> AdvEvent ctx u
 advfill sv a = AdvEvent body
   where 
     body = askCtx >>= \ctx ->

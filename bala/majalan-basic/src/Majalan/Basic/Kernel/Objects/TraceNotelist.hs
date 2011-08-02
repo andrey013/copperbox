@@ -75,38 +75,36 @@ import Data.Monoid
 -- TraceM works much like a writer monad.
 --
 class TraceM (m :: * -> *) where
-  trace     :: (DUnit (m ()) ~ u, ITbl (m ()) ~ itbl) => HPrim itbl u -> m ()
+  trace     :: (DUnit (m ()) ~ u) => HPrim u -> m ()
 
 
 
 
-newtype Notelist itbl ctx u a   = Notelist { 
-          getNotelist :: Context ctx -> (a, HPrim itbl u) }
+newtype Notelist ctx u a   = Notelist { 
+          getNotelist :: Context ctx -> (a, HPrim u) }
 
-newtype NotelistT itbl ctx u m a = NotelistT { 
-          getNotelistT :: Context ctx -> m (a, HPrim itbl u) }
+newtype NotelistT ctx u m a = NotelistT { 
+          getNotelistT :: Context ctx -> m (a, HPrim u) }
 
-type instance DUnit (Notelist itbl ctx u a) = u
-type instance UCtx  (Notelist itbl ctx u)   = ctx
-type instance ITbl  (Notelist itbl ctx u a) = itbl
+type instance DUnit (Notelist ctx u a) = u
+type instance UCtx  (Notelist ctx u)   = ctx
 
-type instance DUnit (NotelistT itbl ctx u m a) = u
-type instance UCtx  (NotelistT itbl ctx u m)   = ctx
-type instance ITbl  (NotelistT itbl ctx u m a) = itbl
+type instance DUnit (NotelistT ctx u m a) = u
+type instance UCtx  (NotelistT ctx u m)   = ctx
 
-type DNotelist itbl ctx a    = Notelist itbl ctx Double a
-type DNotelistT itbl ctx m a = NotelistT itbl ctx Double m a
+type DNotelist ctx a    = Notelist ctx Double a
+type DNotelistT ctx m a = NotelistT ctx Double m a
 
 
 
 -- Functor
 
-instance Functor (Notelist itbl ctx u) where
+instance Functor (Notelist ctx u) where
   fmap f ma = Notelist $ \ctx -> 
                 let (a,w) = getNotelist ma ctx in (f a,w)
 
 
-instance Monad m => Functor (NotelistT itbl ctx u m) where
+instance Monad m => Functor (NotelistT ctx u m) where
   fmap f ma = NotelistT $ \ctx -> 
                 getNotelistT ma ctx >>= \(a,w) -> return (f a,w)
 
@@ -114,7 +112,7 @@ instance Monad m => Functor (NotelistT itbl ctx u m) where
 
 -- Applicative
 
-instance Applicative (Notelist itbl ctx u) where
+instance Applicative (Notelist ctx u) where
   pure a    = Notelist $ \_   -> (a, mempty)
   mf <*> ma = Notelist $ \ctx -> 
                 let (f,w1) = getNotelist mf ctx
@@ -122,7 +120,7 @@ instance Applicative (Notelist itbl ctx u) where
                 in (f a, w1 `mappend` w2)
 
 
-instance Monad m => Applicative (NotelistT itbl ctx u m) where
+instance Monad m => Applicative (NotelistT ctx u m) where
   pure a    = NotelistT $ \_   -> return (a,mempty)
   mf <*> ma = NotelistT $ \ctx -> 
                 getNotelistT mf ctx >>= \(f,w1) ->
@@ -131,7 +129,7 @@ instance Monad m => Applicative (NotelistT itbl ctx u m) where
 
 -- Monad
 
-instance Monad (Notelist itbl ctx u) where
+instance Monad (Notelist ctx u) where
   return a  = Notelist $ \_   -> (a, mempty)
   ma >>= k  = Notelist $ \ctx -> 
                 let (a,w1) = getNotelist ma ctx
@@ -141,7 +139,7 @@ instance Monad (Notelist itbl ctx u) where
 
 
 
-instance Monad m => Monad (NotelistT itbl ctx u m) where
+instance Monad m => Monad (NotelistT ctx u m) where
   return a  = NotelistT $ \_   -> return (a, mempty)
   ma >>= k  = NotelistT $ \ctx -> 
                 getNotelistT ma ctx      >>= \(a,w1) ->
@@ -161,23 +159,23 @@ instance Monad m => Monad (NotelistT itbl ctx u m) where
 -- the drawing model would be valuable. 
 -- 
 
-instance TraceM (Notelist itbl ctx u) where
+instance TraceM (Notelist ctx u) where
   trace a = Notelist $ \_ -> ((), a)
 
-instance Monad m => TraceM (NotelistT itbl ctx u m) where
+instance Monad m => TraceM (NotelistT ctx u m) where
   trace a = NotelistT $ \_ -> return ((), a)
 
 
 -- ContextM
 
-instance ContextM (Notelist itbl ctx u) where
+instance ContextM (Notelist ctx u) where
   askCtx          = Notelist $ \ctx -> (ctx, mempty)
   asksCtx f       = Notelist $ \ctx -> (f ctx, mempty)
   localize upd ma = Notelist $ \ctx -> getNotelist ma (upd ctx)
 
 
 
-instance Monad m => ContextM (NotelistT itbl ctx u m) where
+instance Monad m => ContextM (NotelistT ctx u m) where
   askCtx          = NotelistT $ \ctx -> return (ctx, mempty)
   asksCtx f       = NotelistT $ \ctx -> return (f ctx, mempty)
   localize upd ma = NotelistT $ \ctx -> getNotelistT ma (upd ctx)
@@ -185,13 +183,13 @@ instance Monad m => ContextM (NotelistT itbl ctx u m) where
 
 
 
-runNotelist :: Context ctx -> Notelist itbl ctx u a -> (a, HPrim itbl u)
+runNotelist :: Context ctx -> Notelist ctx u a -> (a, HPrim u)
 runNotelist ctx ma = getNotelist ma ctx
 
 -- | Run the notelist returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execNotelist :: Context ctx -> Notelist itbl ctx u a -> HPrim itbl u
+execNotelist :: Context ctx -> Notelist ctx u a -> HPrim u
 execNotelist ctx ma = snd $ runNotelist ctx ma
 
 -- | Run the notelist ignoring the output it produces, return the 
@@ -201,22 +199,22 @@ execNotelist ctx ma = snd $ runNotelist ctx ma
 -- opposite behaviour (return the notelist, ignore than the 
 -- answer).
 -- 
-evalNotelist :: Context ctx -> Notelist itbl ctx u a -> a
+evalNotelist :: Context ctx -> Notelist ctx u a -> a
 evalNotelist ctx ma = fst $ runNotelist ctx ma
 
 
 
 runNotelistT :: Monad m 
-             => Context ctx -> NotelistT itbl ctx u m a -> m (a, HPrim itbl u) 
+             => Context ctx -> NotelistT ctx u m a -> m (a, HPrim u) 
 runNotelistT ctx ma = getNotelistT ma ctx
 
 execNotelistT :: Monad m 
-              => Context ctx -> NotelistT itbl ctx u m a -> m (HPrim itbl u)
+              => Context ctx -> NotelistT ctx u m a -> m (HPrim u)
 execNotelistT ctx ma = liftM snd $ runNotelistT ctx ma
 
 
 evalNotelistT :: Monad m 
-              => Context ctx -> NotelistT itbl ctx u m a -> m a
+              => Context ctx -> NotelistT ctx u m a -> m a
 evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
 
 
@@ -238,8 +236,8 @@ evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
 -- have no /answer/.
 -- 
 event :: ( TraceM m, ContextM m
-         , ctx ~ UCtx m, u ~ DUnit (m ()), itbl ~ ITbl (m ())) 
-     => Event itbl ctx u a -> m ()
+         , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
+     => Event ctx u a -> m ()
 event gf = askCtx >>= \ctx -> 
            let (PrimW o _) = runEvent ctx gf
            in trace (singleH o) >> return ()
@@ -254,8 +252,8 @@ event gf = askCtx >>= \ctx ->
 -- returned.
 -- 
 eventi :: ( TraceM m, ContextM m
-          , ctx ~ UCtx m, u ~ DUnit (m ()), itbl ~ ITbl (m ())) 
-       => Event itbl ctx u a -> m a
+          , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
+       => Event ctx u a -> m a
 eventi gf = askCtx >>= \ctx -> 
             let (PrimW o a) = runEvent ctx gf 
             in trace (singleH o) >> return a
@@ -270,8 +268,8 @@ eventi gf = askCtx >>= \ctx ->
 -- have no /answer/.
 -- 
 eventl :: ( TraceM m, InterpretUnit u, ContextM m
-          , ctx ~ UCtx m, u ~ DUnit (m ()), itbl ~ ITbl (m ())) 
-      => u -> LocEvent itbl ctx u a -> m ()
+          , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
+      => u -> LocEvent ctx u a -> m ()
 eventl ot evt = eventli ot evt >> return ()
 
 
@@ -283,8 +281,8 @@ eventl ot evt = eventli ot evt >> return ()
 -- returned.
 -- 
 eventli :: ( TraceM m, InterpretUnit u, ContextM m
-           , ctx ~ UCtx m, u ~ DUnit (m ()), itbl ~ ITbl (m ()) ) 
-        => u -> LocEvent itbl ctx u a -> m a
+           , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
+        => u -> LocEvent ctx u a -> m a
 eventli ot gf = askCtx >>= \ctx -> 
                 let (PrimW o a) = runLocEvent ot ctx gf
                 in trace (singleH o) >> return a

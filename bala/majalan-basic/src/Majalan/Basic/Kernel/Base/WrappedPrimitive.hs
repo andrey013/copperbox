@@ -37,11 +37,11 @@ import Data.Monoid
 -- | CatPrim is paramteric on /itbl/ (instr table) which provides
 -- a lookup for instrument number.
 --
-data CatPrim itbl = CZero
-                  | Cat1 (JoinList (Note itbl))
+data CatPrim = CZero
+             | Cat1 (JoinList Note)
 
 
-instance Monoid (CatPrim itbl)  where
+instance Monoid CatPrim  where
   mempty                  = CZero
   CZero  `mappend` b      = b
   a      `mappend` CZero  = a
@@ -49,13 +49,13 @@ instance Monoid (CatPrim itbl)  where
 
 
 
-prim1 :: Note itbl -> CatPrim itbl
+prim1 :: Note -> CatPrim
 prim1 = Cat1 . JL.one
 
 
 -- | Map 
 --
-cpmap :: (Note itbl -> Note itbl) -> CatPrim itbl -> CatPrim itbl
+cpmap :: (Note -> Note) -> CatPrim -> CatPrim
 cpmap _ CZero    = CZero
 cpmap f (Cat1 a) = Cat1 $ fmap f a
 
@@ -67,12 +67,12 @@ cpmap f (Cat1 a) = Cat1 $ fmap f a
 -- representation to build musical objects upon must support 
 -- /concatenation/ of primitives. 
 -- 
-newtype HPrim itbl u = HPrim { getHPrim :: H (Note itbl) }
+newtype HPrim u = HPrim { getHPrim :: H Note }
 
 -- Note - only a Monoid instance for HPrim - they cannot be 
 -- shown, fmapped etc.
 
-instance Monoid (HPrim itbl u) where
+instance Monoid (HPrim u) where
   mempty          = HPrim emptyH
   ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
 
@@ -85,13 +85,13 @@ instance Monoid (HPrim itbl u) where
 
 -- | Extract the internal list of 'Event' from a 'HPrim'.
 --
-hprimToList :: HPrim itbl u -> [Note itbl]
+hprimToList :: HPrim u -> [Note]
 hprimToList = toListH . getHPrim
 
 
 -- | Form a 'HPrim' from a 'CatPrim'.
 --
-singleH :: CatPrim itbl -> HPrim itbl u
+singleH :: CatPrim -> HPrim u
 singleH CZero    = HPrim emptyH
 singleH (Cat1 a) = HPrim $ step emptyH (viewr a) 
   where

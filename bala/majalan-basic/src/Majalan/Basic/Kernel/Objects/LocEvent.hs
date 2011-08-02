@@ -54,6 +54,7 @@ import Majalan.Basic.Kernel.Objects.Basis
 import Majalan.Core                             -- package: majalan-core
 
 import Control.Applicative
+import qualified Data.ByteString.Char8 as B
 import Data.Monoid
 
 
@@ -61,41 +62,39 @@ import Data.Monoid
 -- | 'LocEvent' - function from onset time and Context to a 
 -- polymorphic /answer/ and a note /primitive/ (PrimW).
 --
-newtype LocEvent itbl ctx u a = LocEvent { 
-          getLocEvent :: OnsetDbl -> Event itbl ctx u a }
+newtype LocEvent ctx u a = LocEvent { 
+          getLocEvent :: OnsetDbl -> Event ctx u a }
 
 
-type instance DUnit (LocEvent itbl ctx u a) = u
-type instance UCtx  (LocEvent itbl ctx u)   = ctx
-type instance ITbl  (LocEvent itbl ctx u a) = itbl
-
+type instance DUnit (LocEvent ctx u a) = u
+type instance UCtx  (LocEvent ctx u)   = ctx
 
 
 -- | Type specialized version of 'LocImage'.
 --
-type DLocEvent itbl ctx a        = LocEvent itbl ctx Double a
+type DLocEvent ctx a        = LocEvent ctx Double a
 
 
-type ULocEvent itbl ctx u        = LocEvent itbl ctx u (UNil u)
+type ULocEvent ctx u        = LocEvent ctx u (UNil u)
 
 
 
 -- Functor
 
-instance Functor (LocEvent itbl ctx u) where
+instance Functor (LocEvent ctx u) where
   fmap f ma = LocEvent $ \pt -> fmap f $ getLocEvent ma pt
 
 
 -- Applicative
 
-instance Applicative (LocEvent itbl ctx u) where
+instance Applicative (LocEvent ctx u) where
   pure a    = LocEvent $ \_  -> pure a
   mf <*> ma = LocEvent $ \ot -> getLocEvent mf ot <*> getLocEvent ma ot
 
 
 -- Monad
 
-instance Monad (LocEvent itbl ctx u) where
+instance Monad (LocEvent ctx u) where
   return a  = LocEvent $ \_  -> return a
   ma >>= k  = LocEvent $ \ot -> getLocEvent ma ot >>= \ans -> 
                                   getLocEvent (k ans) ot
@@ -104,7 +103,7 @@ instance Monad (LocEvent itbl ctx u) where
 
 -- Monoid
 
-instance Monoid a => Monoid (LocEvent itbl ctx u a) where
+instance Monoid a => Monoid (LocEvent ctx u a) where
   mempty          = pure mempty
   ma `mappend` mb = LocEvent $ \ot -> 
                       getLocEvent ma ot `mappend` getLocEvent mb ot
@@ -112,7 +111,7 @@ instance Monoid a => Monoid (LocEvent itbl ctx u a) where
 
 -- DrawingCtxM
 
-instance ContextM (LocEvent itbl ctx u) where
+instance ContextM (LocEvent ctx u) where
   askCtx          = LocEvent $ \_  -> askCtx
   asksCtx fn      = LocEvent $ \_  -> asksCtx fn
   localize upd ma = LocEvent $ \ot -> localize upd (getLocEvent ma ot)
@@ -135,7 +134,7 @@ instance Decorate LocEvent where
 -- 
 
 runLocEvent :: InterpretUnit u
-            => u -> Context ctx -> LocEvent itbl ctx u a -> PrimW itbl u a
+            => u -> Context ctx -> LocEvent ctx u a -> PrimW u a
 runLocEvent start ctx mf = 
     let dzero = normalize (ctx_tempo ctx) start 
     in runEvent ctx (getLocEvent mf dzero)
@@ -143,12 +142,12 @@ runLocEvent start ctx mf =
 
 
 promoteLoc :: InterpretUnit u
-           => (u -> Event itbl ctx u a) -> LocEvent itbl ctx u a
+           => (u -> Event ctx u a) -> LocEvent ctx u a
 promoteLoc k = LocEvent $ \ot -> dinterpCtx ot >>= \uot -> k uot
 
 
 applyLoc :: InterpretUnit u
-         => LocEvent itbl ctx u a -> u -> Event itbl ctx u a
+         => LocEvent ctx u a -> u -> Event ctx u a
 applyLoc mq ot = normalizeCtx ot >>= \dot -> getLocEvent mq dot
 
 
@@ -164,7 +163,7 @@ instance UConvert LocEvent where
 -- answer.
 --
 uconvLocEventF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-               => LocEvent itbl ctx u (t u) -> LocEvent itbl ctx u1 (t u1)
+               => LocEvent ctx u (t u) -> LocEvent ctx u1 (t u1)
 uconvLocEventF ma = LocEvent $ \ot -> uconvF $ getLocEvent ma ot
 
 
@@ -172,23 +171,23 @@ uconvLocEventF ma = LocEvent $ \ot -> uconvF $ getLocEvent ma ot
 -- | Use this to convert 'LocEvent' with unit-less answer.
 --
 uconvLocEventZ :: (InterpretUnit u, InterpretUnit u1) 
-               => LocEvent itbl ctx u a -> LocEvent itbl ctx u1 a
+               => LocEvent ctx u a -> LocEvent ctx u1 a
 uconvLocEventZ ma = LocEvent $ \ot -> uconvZ $ getLocEvent ma ot
 
 
 
 -- | Having /empty/ at the specific 'LocEvent' type is useful.
 -- 
-emptyLocEvent :: Monoid a => LocEvent itbl ctx u a
+emptyLocEvent :: Monoid a => LocEvent ctx u a
 emptyLocEvent = mempty
 
 
 primULocEvent :: InterpretUnit u 
-              => (itbl -> Int) -> u -> [CsValue] -> ULocEvent itbl ctx u
-primULocEvent numF dur props = promoteLoc $ \start -> 
+              => B.ByteString -> u -> [CsValue] -> ULocEvent ctx u
+primULocEvent uniq_name dur props = promoteLoc $ \start -> 
     normalizeCtx start >>= \dstart -> 
     normalizeCtx dur   >>= \ddur -> 
-    primEvent $ prim1 $ absNote numF dstart ddur props
+    primEvent $ prim1 $ absNote uniq_name dstart ddur props
                           
 
 
@@ -196,7 +195,7 @@ primULocEvent numF dur props = promoteLoc $ \start ->
 --
 
 moveStart :: InterpretUnit u
-          => u -> LocEvent itbl ctx u a -> LocEvent itbl ctx u a
+          => u -> LocEvent ctx u a -> LocEvent ctx u a
 moveStart dt ma = LocEvent $ \t1 -> 
     zapQuery (normalizeCtx dt) >>= \ddt -> getLocEvent ma (t1 + ddt) 
 
@@ -209,7 +208,7 @@ infixr 1 `at`
 -- point, making an 'Event'. 
 -- 
 at :: InterpretUnit u
-   => LocEvent itbl ctx u a -> u -> Event itbl ctx u a
+   => LocEvent ctx u a -> u -> Event ctx u a
 at mf t1 = normalizeCtx t1 >>= \dt1 -> getLocEvent mf dt1
 
 
@@ -227,7 +226,7 @@ at mf t1 = normalizeCtx t1 >>= \dt1 -> getLocEvent mf dt1
 
 
 distrib :: (Monoid a, InterpretUnit u) 
-        => u -> [LocEvent itbl ctx u a]  -> LocEvent itbl ctx u a
+        => u -> [LocEvent ctx u a]  -> LocEvent ctx u a
 distrib _  []     = mempty
 distrib dt (x:xs) = promoteLoc $ \ot -> 
     go (applyLoc x ot) (ot + dt) xs
@@ -239,7 +238,7 @@ distrib dt (x:xs) = promoteLoc $ \ot ->
 -- | This is analogue to @replicate@ in the Prelude.
 --
 duplicate :: (Monoid a, InterpretUnit u) 
-          => Int -> u -> LocEvent itbl ctx u a -> LocEvent itbl ctx u a
+          => Int -> u -> LocEvent ctx u a -> LocEvent ctx u a
 duplicate n _  _   | n < 1 = mempty
 duplicate n dt evt         = go evt dt (n-1)
   where

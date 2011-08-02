@@ -47,39 +47,39 @@ import Data.Monoid
 -- | ConnectorImage - function from DrawingContext and start and 
 -- end points to a polymorphic /answer/ and a graphic /primitive/.
 --
-newtype Connector itbl ctx u a = Connector { 
-          getConnector :: Double -> Double -> Event itbl ctx u a }
+newtype Connector ctx u a = Connector { 
+          getConnector :: Double -> Double -> Event ctx u a }
 
 
-type instance DUnit (Connector itbl ctx u a) = u
-type instance UCtx  (Connector itbl ctx u)   = ctx
+type instance DUnit (Connector ctx u a) = u
+type instance UCtx  (Connector ctx u)   = ctx
 
 -- | Type specialized version of 'Connector'.
 --
-type DConnector itbl ctx a        = Connector itbl ctx Double a
+type DConnector ctx a        = Connector ctx Double a
 
 
-type UConnector itbl ctx u        = Connector itbl ctx u (UNil u)
+type UConnector ctx u        = Connector ctx u (UNil u)
 
 
 
 
 -- Functor 
 
-instance Functor (Connector itbl ctx u) where
+instance Functor (Connector ctx u) where
   fmap f ma = Connector $ \t0 t1 -> fmap f $ getConnector ma t0 t1
 
 
 -- Applicative
 
-instance Applicative (Connector itbl ctx u) where
+instance Applicative (Connector ctx u) where
   pure a    = Connector $ \_  _  -> pure a
   mf <*> ma = Connector $ \t0 t1 -> 
                 getConnector mf t0 t1 <*> getConnector ma t0 t1
 
 -- Monad 
 
-instance Monad (Connector itbl ctx u) where
+instance Monad (Connector ctx u) where
   return a  = Connector $ \_  _  -> return a
   ma >>= k  = Connector $ \t0 t1 -> 
                 getConnector ma t0 t1 >>= \ans -> 
@@ -88,7 +88,7 @@ instance Monad (Connector itbl ctx u) where
 
 -- Monoid
 
-instance Monoid a => Monoid (Connector itbl ctx u a) where
+instance Monoid a => Monoid (Connector ctx u a) where
   mempty          = pure mempty
   ma `mappend` mb = Connector $ \t0 t1 -> 
                       getConnector ma t0 t1 
@@ -97,7 +97,7 @@ instance Monoid a => Monoid (Connector itbl ctx u a) where
 
 -- DrawingCtxM
 
-instance ContextM (Connector itbl ctx u) where
+instance ContextM (Connector ctx u) where
   askCtx          = Connector $ \_  _  -> askCtx
   asksCtx f       = Connector $ \_  _  -> asksCtx f
   localize upd ma = Connector $ \t0 t1 -> 
@@ -119,8 +119,8 @@ instance Decorate Connector where
 
 
 runConnector :: InterpretUnit u
-             => u -> u -> Context ctx -> Connector itbl ctx u a 
-             -> PrimW itbl u a
+             => u -> u -> Context ctx -> Connector ctx u a 
+             -> PrimW u a
 runConnector t0 t1 ctx mf = 
     let dt0 = normalize (ctx_tempo ctx) t0
         dt1 = normalize (ctx_tempo ctx) t1 
@@ -128,7 +128,7 @@ runConnector t0 t1 ctx mf =
 
 
 connect :: InterpretUnit u
-        => u -> u -> Connector itbl ctx u a -> Event itbl ctx u a
+        => u -> u -> Connector ctx u a -> Event ctx u a
 connect t0 t1 mf = 
     normalizeCtx t0 >>= \dt0 -> 
     normalizeCtx t1 >>= \dt1 -> 
@@ -138,13 +138,13 @@ connect t0 t1 mf =
 
 
 promoteConn :: InterpretUnit u
-            => (u -> u -> Event itbl ctx u a) -> Connector itbl ctx u a
+            => (u -> u -> Event ctx u a) -> Connector ctx u a
 promoteConn k = Connector $ \t0 t1 ->
     dinterpCtx t0 >>= \ut0 -> dinterpCtx t1 >>= \ut1 -> k ut0 ut1
 
 
 applyConn :: InterpretUnit u 
-          => Connector itbl ctx u a -> u -> u -> Event itbl ctx u a
+          => Connector ctx u a -> u -> u -> Event ctx u a
 applyConn mf t0 t1 = connect t0 t1 mf
 
 
@@ -159,7 +159,7 @@ instance UConvert Connector where
 -- with Functor answer.
 --
 uconvConnectorF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
-                => Connector itbl ctx u (t u) -> Connector itbl ctx u1 (t u1)
+                => Connector ctx u (t u) -> Connector ctx u1 (t u1)
 uconvConnectorF ma = Connector $ \t0 t1 -> 
     uconvF $ getConnector ma t0 t1
 
@@ -169,14 +169,14 @@ uconvConnectorF ma = Connector $ \t0 t1 ->
 -- | Use this to convert 'Connector' with unit-less answer.
 --
 uconvConnectorZ :: (InterpretUnit u, InterpretUnit u1) 
-                => Connector itbl ctx u a -> Connector itbl ctx u1 a
+                => Connector ctx u a -> Connector ctx u1 a
 uconvConnectorZ ma = Connector $ \t0 t1 -> 
     uconvZ $ getConnector ma t0 t1
 
 
 -- | Having /empty/ at the specific 'Connector' type is useful.
 -- 
-emptyConnector :: Monoid a => Connector itbl ctx u a
+emptyConnector :: Monoid a => Connector ctx u a
 emptyConnector = mempty
 
 

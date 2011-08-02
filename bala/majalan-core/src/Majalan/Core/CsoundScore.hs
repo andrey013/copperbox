@@ -28,7 +28,7 @@ module Majalan.Core.CsoundScore
   , RScore
   , Note
   , runScoreM
-
+  , runScoreU
 
   -- * Re-exports
   , Score
@@ -115,6 +115,14 @@ instance Monad ScoreM where
 runScoreM :: InstrMap -> ScoreM a -> Either FailMsg a
 runScoreM instrs mf = getSM mf instrs
 
+
+
+-- | Unsafe version of 'runScoreM'.
+--
+runScoreU :: InstrMap -> ScoreM a -> a
+runScoreU instrs mf = either fk id $ getSM mf instrs
+  where
+    fk err = error $ "runScoreU - " ++ err
 
 
 

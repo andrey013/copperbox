@@ -18,8 +18,7 @@
 module Majalan.Basic.Kernel.Base.BaseDefs
   ( 
 
-    ITbl
-  , OnsetDbl
+    OnsetDbl
   , Tempo
   , UNil(..)
   
@@ -37,8 +36,6 @@ import Majalan.Core                             -- package: majalan-core
 import Data.Monoid
 
 
-
-type family ITbl tbl :: * 
 
 
 

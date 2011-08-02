@@ -37,11 +37,11 @@ import Majalan.Core                             -- package: majalan-core
 --
 
 
-traceNotelist :: Context ctx -> Notelist itbl ctx u a -> Maybe (Score itbl)
+traceNotelist :: Context ctx -> Notelist ctx u a -> Maybe RScore
 traceNotelist ctx mf = liftToScoreMb $ execNotelist ctx mf
 
 
-traceNotelistU :: Context ctx -> Notelist itbl ctx u a -> Score itbl
+traceNotelistU :: Context ctx -> Notelist ctx u a -> RScore
 traceNotelistU ctx mf = maybe fk id $ traceNotelist ctx mf
   where
     fk = error "traceNotelistU - emptyScore." 
@@ -53,7 +53,7 @@ traceNotelistU ctx mf = maybe fk id $ traceNotelist ctx mf
 -- | Promotion of @HPrim@ to @Picture@.
 --
 -- 
-liftToScoreMb :: HPrim itbl u -> Maybe (Score itbl)
+liftToScoreMb :: HPrim u -> Maybe RScore
 liftToScoreMb hf = let prims = hprimToList hf in 
                    if null prims then Nothing else Just (frame prims)
 

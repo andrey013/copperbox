@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -54,7 +55,7 @@ overlays (x:xs) = go x xs
     go acc (a:as) = go (acc `overlay` a) as
   
 
-instance Overlay (Score env) where
+instance Overlay (ScoreM Score) where
   overlay = scoOver
 
 infixr 6 `append`
@@ -68,7 +69,7 @@ infixr 6 `append`
 class Append o where
   append :: o -> o -> o
   
-instance Append (Score env) where
+instance Append (ScoreM Score) where
   append = scoBeside
 
 
@@ -99,7 +100,7 @@ spaces dx (x:xs) = go x xs
     go acc []     = acc
     go acc (a:as) = go (acc `op` a) as
   
-instance Space (Score env) where
+instance Space (ScoreM Score) where
   space dx s1 s2 = s1 `append` (scoMoveBy s2 dx)
 
 
