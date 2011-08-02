@@ -61,7 +61,7 @@ stAddName :: String -> St -> St
 stAddName s (St xs) = St (s:xs)
 
 st_zero :: St
-st_zero = St { st_varnames = ["idur", "iamp", "ifreq" ] }
+st_zero = St { st_varnames = [] }
 
 
 

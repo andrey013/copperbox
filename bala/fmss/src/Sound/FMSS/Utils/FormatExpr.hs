@@ -19,6 +19,8 @@ module Sound.FMSS.Utils.FormatExpr
 
     DocExpr(..)
   , Precedence
+  , Assoc(..)
+  , Fixity(..)
   , Rator
   , prefix
   , postfix

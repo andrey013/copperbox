@@ -30,10 +30,8 @@ library
     Sound.FMSS,
     Sound.FMSS.AbstractSyntax,
     Sound.FMSS.ConfigMonad,
-    Sound.FMSS.Datatypes,
     Sound.FMSS.Envelopes,
     Sound.FMSS.SpecMonad,
-    Sound.FMSS.Translate,
     Sound.FMSS.Utils.FormatCombinators,
     Sound.FMSS.Utils.FormatExpr,
     Sound.FMSS.Utils.HList

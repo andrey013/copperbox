@@ -113,6 +113,7 @@ instance Show Var where
 mkVar :: VarId -> Var
 mkVar = Var
 
+
 vexpr :: Var -> Expr 
 vexpr = VarE . getVar
 
@@ -262,7 +263,7 @@ buildSymExpr (SFuncall ss a) = Atom $ text ss <> parens (format a)
 -- | Note - this relies on being printed its own line...
 --
 commentDoc :: String -> Doc
-commentDoc ss = char ';' <+> text ss
+commentDoc ss = vcat [empty, char ';' <+> text ss]
 
 assignDoc :: String -> Doc -> Doc
 assignDoc name val = padr 11 (text name) <+> char '=' <+> val
