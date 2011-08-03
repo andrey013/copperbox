@@ -33,7 +33,7 @@ module Majalan.Basic.Kernel.Base.Context
 
   , get_tempo
   , set_tempo
-  , get_beat
+  , get_one_beat
 
 
   , get_amplitude
@@ -151,8 +151,8 @@ get_tempo = asksCtx ctx_tempo
 set_tempo :: Tempo -> ContextF uctx
 set_tempo bpm = (\s -> s { ctx_tempo = bpm})
 
-get_beat :: (ContextM m, InterpretUnit u) => m u
-get_beat = normalizeCtx (1::Beat) >>= dinterpCtx 
+get_one_beat :: (ContextM m, InterpretUnit u) => m u
+get_one_beat = normalizeCtx (1::Beat) >>= dinterpCtx 
 
 
 get_amplitude :: ContextM m => m Double 
