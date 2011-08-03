@@ -82,7 +82,7 @@ type ULocEvent ctx u        = LocEvent ctx u (UNil u)
 -- Functor
 
 instance Functor (LocEvent ctx u) where
-  fmap f ma = LocEvent $ \pt -> fmap f $ getLocEvent ma pt
+  fmap f ma = LocEvent $ \ot -> fmap f $ getLocEvent ma ot
 
 
 -- Applicative

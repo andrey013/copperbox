@@ -42,9 +42,9 @@ library
     Majalan.Basic.Kernel.Objects.Connector,
     Majalan.Basic.Kernel.Objects.LocEvent,
     Majalan.Basic.Kernel.Objects.PosEvent,
-    Majalan.Basic.Kernel.Objects.Score,
-    Majalan.Basic.Kernel.Objects.TraceLoc,
-    Majalan.Basic.Kernel.Objects.TraceNotelist,
+    Majalan.Basic.Kernel.Score.Chain,
+    Majalan.Basic.Kernel.Score.FreeEventlist,
+    Majalan.Basic.Kernel.Score.Turtle,
     Majalan.Basic.Utils.HList,
     Majalan.Basic.Utils.JoinList
 

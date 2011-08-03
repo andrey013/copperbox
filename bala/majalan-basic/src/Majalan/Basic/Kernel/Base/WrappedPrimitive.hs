@@ -22,6 +22,7 @@ module Majalan.Basic.Kernel.Base.WrappedPrimitive
 
   , HPrim
   , hprimToList
+  , hprimToScoreMb
   , singleH
 
   ) where
@@ -34,9 +35,9 @@ import Majalan.Core                             -- package: majalan-core
 
 import Data.Monoid
 
--- | CatPrim is paramteric on /itbl/ (instr table) which provides
--- a lookup for instrument number.
---
+
+-- NOTE - we could probably live with just one representation...
+
 data CatPrim = CZero
              | Cat1 (JoinList Note)
 
@@ -87,6 +88,17 @@ instance Monoid (HPrim u) where
 --
 hprimToList :: HPrim u -> [Note]
 hprimToList = toListH . getHPrim
+
+
+-- | Promotion of @HPrim@ to @RScore@.
+-- 
+-- Represented as a Maybe because empty Scores cannot be rendered
+-- so client code must deal with this case.
+-- 
+hprimToScoreMb :: HPrim u -> Maybe RScore
+hprimToScoreMb hf = let prims = hprimToList hf in 
+                    if null prims then Nothing else Just (frame prims)
+
 
 
 -- | Form a 'HPrim' from a 'CatPrim'.

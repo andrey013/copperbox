@@ -5,43 +5,42 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Majalan.Basic.Kernel.Objects.TraceNotelist
--- Copyright   :  (c) Stephen Tetley 2010-2011
+-- Module      :  Majalan.Basic.Kernel.Score.FreeEventlist
+-- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Generate a note list with a /trace/ - a Writer monad collecting 
--- intermediate events - and /context/ - a reader monad of 
--- attributes - amplitude or whatever.
---
--- The note list a timeline - events can be freely placed on the 
+-- Generate a event list. Events can be freely placed on the 
 -- timeline, they do not have to be sequential (the timeline is 
 -- sorted before rendering).
 -- 
 --------------------------------------------------------------------------------
 
-module Majalan.Basic.Kernel.Objects.TraceNotelist
+module Majalan.Basic.Kernel.Score.FreeEventlist
   (
 
+    renderEventlist
+  , renderEventlistU  
+
   -- * Collect primitives (output class) 
-    TraceM(..)
+  , TraceM(..)
 
-  -- * Note list
-  , Notelist
-  , DNotelist
-  , NotelistT
-  , DNotelistT
+  -- * Event list
+  , Eventlist
+  , DEventlist
+  , EventlistT
+  , DEventlistT
 
-  , runNotelist
-  , execNotelist
-  , evalNotelist
+  , runEventlist
+  , execEventlist
+  , evalEventlist
 
-  , runNotelistT
-  , execNotelistT
-  , evalNotelistT
+  , runEventlistT
+  , execEventlistT
+  , evalEventlistT
 
   , event
   , eventi
@@ -69,6 +68,19 @@ import Data.Monoid
 
 
 
+renderEventlist :: Context ctx -> Eventlist ctx u a -> Maybe RScore
+renderEventlist ctx mf = hprimToScoreMb $ execEventlist ctx mf
+
+
+renderEventlistU :: Context ctx -> Eventlist ctx u a -> RScore
+renderEventlistU ctx mf = maybe fk id $ renderEventlist ctx mf
+  where
+    fk = error "renderEventlistU - empty score." 
+
+
+
+
+
 
 -- | Collect elementary events as part of a larger score.
 --
@@ -80,70 +92,70 @@ class TraceM (m :: * -> *) where
 
 
 
-newtype Notelist ctx u a   = Notelist { 
-          getNotelist :: Context ctx -> (a, HPrim u) }
+newtype Eventlist ctx u a   = Eventlist { 
+          getEventlist :: Context ctx -> (a, HPrim u) }
 
-newtype NotelistT ctx u m a = NotelistT { 
-          getNotelistT :: Context ctx -> m (a, HPrim u) }
+newtype EventlistT ctx u m a = EventlistT { 
+          getEventlistT :: Context ctx -> m (a, HPrim u) }
 
-type instance DUnit (Notelist ctx u a) = u
-type instance UCtx  (Notelist ctx u)   = ctx
+type instance DUnit (Eventlist ctx u a) = u
+type instance UCtx  (Eventlist ctx u)   = ctx
 
-type instance DUnit (NotelistT ctx u m a) = u
-type instance UCtx  (NotelistT ctx u m)   = ctx
+type instance DUnit (EventlistT ctx u m a) = u
+type instance UCtx  (EventlistT ctx u m)   = ctx
 
-type DNotelist ctx a    = Notelist ctx Double a
-type DNotelistT ctx m a = NotelistT ctx Double m a
+type DEventlist ctx a    = Eventlist ctx Double a
+type DEventlistT ctx m a = EventlistT ctx Double m a
 
 
 
 -- Functor
 
-instance Functor (Notelist ctx u) where
-  fmap f ma = Notelist $ \ctx -> 
-                let (a,w) = getNotelist ma ctx in (f a,w)
+instance Functor (Eventlist ctx u) where
+  fmap f ma = Eventlist $ \ctx -> 
+                let (a,w) = getEventlist ma ctx in (f a,w)
 
 
-instance Monad m => Functor (NotelistT ctx u m) where
-  fmap f ma = NotelistT $ \ctx -> 
-                getNotelistT ma ctx >>= \(a,w) -> return (f a,w)
+instance Monad m => Functor (EventlistT ctx u m) where
+  fmap f ma = EventlistT $ \ctx -> 
+                getEventlistT ma ctx >>= \(a,w) -> return (f a,w)
 
 
 
 -- Applicative
 
-instance Applicative (Notelist ctx u) where
-  pure a    = Notelist $ \_   -> (a, mempty)
-  mf <*> ma = Notelist $ \ctx -> 
-                let (f,w1) = getNotelist mf ctx
-                    (a,w2) = getNotelist ma ctx
+instance Applicative (Eventlist ctx u) where
+  pure a    = Eventlist $ \_   -> (a, mempty)
+  mf <*> ma = Eventlist $ \ctx -> 
+                let (f,w1) = getEventlist mf ctx
+                    (a,w2) = getEventlist ma ctx
                 in (f a, w1 `mappend` w2)
 
 
-instance Monad m => Applicative (NotelistT ctx u m) where
-  pure a    = NotelistT $ \_   -> return (a,mempty)
-  mf <*> ma = NotelistT $ \ctx -> 
-                getNotelistT mf ctx >>= \(f,w1) ->
-                getNotelistT ma ctx >>= \(a,w2) ->
+instance Monad m => Applicative (EventlistT ctx u m) where
+  pure a    = EventlistT $ \_   -> return (a,mempty)
+  mf <*> ma = EventlistT $ \ctx -> 
+                getEventlistT mf ctx >>= \(f,w1) ->
+                getEventlistT ma ctx >>= \(a,w2) ->
                 return (f a, w1 `mappend` w2)
 
 -- Monad
 
-instance Monad (Notelist ctx u) where
-  return a  = Notelist $ \_   -> (a, mempty)
-  ma >>= k  = Notelist $ \ctx -> 
-                let (a,w1) = getNotelist ma ctx
-                    (b,w2) = (getNotelist . k) a ctx
+instance Monad (Eventlist ctx u) where
+  return a  = Eventlist $ \_   -> (a, mempty)
+  ma >>= k  = Eventlist $ \ctx -> 
+                let (a,w1) = getEventlist ma ctx
+                    (b,w2) = (getEventlist . k) a ctx
                 in (b,w1 `mappend` w2)
                                
 
 
 
-instance Monad m => Monad (NotelistT ctx u m) where
-  return a  = NotelistT $ \_   -> return (a, mempty)
-  ma >>= k  = NotelistT $ \ctx -> 
-                getNotelistT ma ctx      >>= \(a,w1) ->
-                (getNotelistT . k) a ctx >>= \(b,w2) -> 
+instance Monad m => Monad (EventlistT ctx u m) where
+  return a  = EventlistT $ \_   -> return (a, mempty)
+  ma >>= k  = EventlistT $ \ctx -> 
+                getEventlistT ma ctx      >>= \(a,w1) ->
+                (getEventlistT . k) a ctx >>= \(b,w2) -> 
                 return (b, w1 `mappend` w2)
                                  
 
@@ -159,38 +171,38 @@ instance Monad m => Monad (NotelistT ctx u m) where
 -- the drawing model would be valuable. 
 -- 
 
-instance TraceM (Notelist ctx u) where
-  trace a = Notelist $ \_ -> ((), a)
+instance TraceM (Eventlist ctx u) where
+  trace a = Eventlist $ \_ -> ((), a)
 
-instance Monad m => TraceM (NotelistT ctx u m) where
-  trace a = NotelistT $ \_ -> return ((), a)
+instance Monad m => TraceM (EventlistT ctx u m) where
+  trace a = EventlistT $ \_ -> return ((), a)
 
 
 -- ContextM
 
-instance ContextM (Notelist ctx u) where
-  askCtx          = Notelist $ \ctx -> (ctx, mempty)
-  asksCtx f       = Notelist $ \ctx -> (f ctx, mempty)
-  localize upd ma = Notelist $ \ctx -> getNotelist ma (upd ctx)
+instance ContextM (Eventlist ctx u) where
+  askCtx          = Eventlist $ \ctx -> (ctx, mempty)
+  asksCtx f       = Eventlist $ \ctx -> (f ctx, mempty)
+  localize upd ma = Eventlist $ \ctx -> getEventlist ma (upd ctx)
 
 
 
-instance Monad m => ContextM (NotelistT ctx u m) where
-  askCtx          = NotelistT $ \ctx -> return (ctx, mempty)
-  asksCtx f       = NotelistT $ \ctx -> return (f ctx, mempty)
-  localize upd ma = NotelistT $ \ctx -> getNotelistT ma (upd ctx)
+instance Monad m => ContextM (EventlistT ctx u m) where
+  askCtx          = EventlistT $ \ctx -> return (ctx, mempty)
+  asksCtx f       = EventlistT $ \ctx -> return (f ctx, mempty)
+  localize upd ma = EventlistT $ \ctx -> getEventlistT ma (upd ctx)
 
 
 
 
-runNotelist :: Context ctx -> Notelist ctx u a -> (a, HPrim u)
-runNotelist ctx ma = getNotelist ma ctx
+runEventlist :: Context ctx -> Eventlist ctx u a -> (a, HPrim u)
+runEventlist ctx ma = getEventlist ma ctx
 
 -- | Run the notelist returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execNotelist :: Context ctx -> Notelist ctx u a -> HPrim u
-execNotelist ctx ma = snd $ runNotelist ctx ma
+execEventlist :: Context ctx -> Eventlist ctx u a -> HPrim u
+execEventlist ctx ma = snd $ runEventlist ctx ma
 
 -- | Run the notelist ignoring the output it produces, return the 
 -- answer from the monadic computation.
@@ -199,23 +211,23 @@ execNotelist ctx ma = snd $ runNotelist ctx ma
 -- opposite behaviour (return the notelist, ignore than the 
 -- answer).
 -- 
-evalNotelist :: Context ctx -> Notelist ctx u a -> a
-evalNotelist ctx ma = fst $ runNotelist ctx ma
+evalEventlist :: Context ctx -> Eventlist ctx u a -> a
+evalEventlist ctx ma = fst $ runEventlist ctx ma
 
 
 
-runNotelistT :: Monad m 
-             => Context ctx -> NotelistT ctx u m a -> m (a, HPrim u) 
-runNotelistT ctx ma = getNotelistT ma ctx
+runEventlistT :: Monad m 
+             => Context ctx -> EventlistT ctx u m a -> m (a, HPrim u) 
+runEventlistT ctx ma = getEventlistT ma ctx
 
-execNotelistT :: Monad m 
-              => Context ctx -> NotelistT ctx u m a -> m (HPrim u)
-execNotelistT ctx ma = liftM snd $ runNotelistT ctx ma
+execEventlistT :: Monad m 
+              => Context ctx -> EventlistT ctx u m a -> m (HPrim u)
+execEventlistT ctx ma = liftM snd $ runEventlistT ctx ma
 
 
-evalNotelistT :: Monad m 
-              => Context ctx -> NotelistT ctx u m a -> m a
-evalNotelistT ctx ma = liftM fst $ runNotelistT ctx ma
+evalEventlistT :: Monad m 
+              => Context ctx -> EventlistT ctx u m a -> m a
+evalEventlistT ctx ma = liftM fst $ runEventlistT ctx ma
 
 
 

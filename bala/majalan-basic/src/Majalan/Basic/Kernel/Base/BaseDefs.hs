@@ -41,6 +41,9 @@ import Data.Monoid
 
 type OnsetDbl = Double
 
+
+-- | Tempo is beats-per-minute. 
+--
 newtype Tempo = Tempo { getTempo :: Double }
   deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
 
