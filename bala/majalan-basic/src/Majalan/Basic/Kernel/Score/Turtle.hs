@@ -26,7 +26,9 @@ module Majalan.Basic.Kernel.Score.Turtle
   , DTurtle
   
   , runTurtle
-
+  , runTurtle_
+  , renderTurtle
+  , renderTurtleU
 
   , insertl
   , insertl_
@@ -117,6 +119,29 @@ runTurtle mf = promoteLoc $ \ot ->
                  let (a, _, ca) = getTurtle mf ctx dot 
                      evt        = primEvent ca
                  in replaceAns a $ evt
+
+runTurtle_ :: InterpretUnit u => Turtle ctx u a -> ULocEvent ctx u
+runTurtle_ mf = promoteLoc $ \ot -> 
+                 askCtx  >>= \ctx ->
+                 normalizeCtx ot >>= \dot -> 
+                 let (_, _, ca) = getTurtle mf ctx dot 
+                 in primEvent ca
+
+
+renderTurtle :: InterpretUnit u 
+             => Context ctx -> Turtle ctx u a -> Maybe RScore
+renderTurtle ctx mf = 
+   let PrimW ca _ = runEvent ctx (applyLoc (runTurtle mf) 0)
+   in hprimToScoreMb $ singleH ca
+
+
+renderTurtleU :: InterpretUnit u 
+             => Context ctx -> Turtle ctx u a -> RScore
+renderTurtleU ctx mf = maybe fk id $ renderTurtle ctx mf
+  where
+    fk = error "renderTurtleU - empty score." 
+
+
 
 
 -- Note - there is no transformer version as I don\'t think there

@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE ExistentialQuantification  #-}
 {-# OPTIONS -Wall #-}
 
 
@@ -12,7 +13,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- /Chained/ scored (/chain/ is the TikZ drawing object).
+-- /Chained/ score object (/chain/ is the TikZ drawing object).
 --
 -- @Where-to-go-next@ is determined by the chain. Individual 
 -- events simply /consume/ their position. 
@@ -24,9 +25,16 @@ module Majalan.Basic.Kernel.Score.Chain
 
     Chain
   , DChain
+  , ChainScheme
+
   , runChain
+  , runChain_
+
+  , renderChain
+  , renderChainU
 
   , nextc
+  , setNextgen
 
   ) where
 
@@ -46,88 +54,126 @@ import Control.Monad
 import Data.Monoid
 
 
-data ChainSt u = ChainSt { chain_pos :: !OnsetDbl, chain_next :: (u -> u) }
-
-
-type instance DUnit (ChainSt u) = u
-
-
-newtype Chain ctx u a = Chain
-          { getChain :: Context ctx -> ChainSt u -> (a, ChainSt u, CatPrim) }
 
 
 
+newtype Chain st ctx u a = Chain
+          { getChain :: Context ctx -> OnsetDbl -> ChainSt st u 
+                     -> (a, OnsetDbl, ChainSt st u, CatPrim) }
 
 
-type instance DUnit (Chain ctx u a) = u
-type instance UCtx  (Chain ctx u)   = ctx
+
+type instance DUnit (Chain st ctx u a) = u
+type instance UCtx  (Chain st ctx u)   = ctx
 
 
-type DChain ctx a    = Chain ctx Double a
+type DChain st ctx a    = Chain st ctx Double a
+
+
+data ChainScheme st u = ChainScheme 
+      { _scheme_start    :: u -> st
+      , _scheme_step     :: u -> st -> (u,st)
+      }
+
+type instance DUnit (ChainScheme st u) = u
+
+
+data ChainSt st u = ChainSt { chain_st :: st, chain_next :: u -> st -> (u,st) }
+
+
+type instance DUnit (ChainSt st u) = u
 
 
 -- Functor 
 
-instance Functor (Chain ctx u) where
-  fmap f ma = Chain $ \r s -> let (a,s1,w) = getChain ma r s 
-                              in (f a, s1, w)
+instance Functor (Chain st ctx u) where
+  fmap f ma = Chain $ \r s t -> let (a,s1,t1,w) = getChain ma r s t
+                                in (f a, s1, t1, w)
 
 
 
 -- Applicative
 
-instance Applicative (Chain ctx u) where
-  pure a    = Chain $ \_ s -> (a, s, mempty)
-  mf <*> ma = Chain $ \r s -> 
-                let (f,s1,w1) = getChain mf r s
-                    (a,s2,w2) = getChain ma r s1
-                in (f a, s2, w1 `mappend` w2)
+instance Applicative (Chain st ctx u) where
+  pure a    = Chain $ \_ s t -> (a, s, t, mempty)
+  mf <*> ma = Chain $ \r s t -> 
+                let (f,s1,t1,w1) = getChain mf r s t
+                    (a,s2,t2,w2) = getChain ma r s1 t1
+                in (f a, s2, t2, w1 `mappend` w2)
 
 
 
 -- Monad
 
-instance Monad (Chain ctx u) where
-  return a  = Chain $ \_ s -> (a, s, mempty)
-  ma >>= k  = Chain $ \r s -> 
-                let (a,s1,w1) = getChain ma r s
-                    (b,s2,w2) = (getChain . k) a r s1
-                in (b, s2, w1 `mappend` w2)
+instance Monad (Chain st ctx u) where
+  return a  = Chain $ \_ s t -> (a, s, t, mempty)
+  ma >>= k  = Chain $ \r s t -> 
+                let (a,s1,t1,w1) = getChain ma r s t
+                    (b,s2,t2,w2) = (getChain . k) a r s1 t1
+                in (b, s2, t2, w1 `mappend` w2)
 
 
-instance ContextM (Chain ctx u) where
-  askCtx          = Chain $ \r s -> (r, s, mempty)
-  asksCtx fn      = Chain $ \r s -> (fn r, s, mempty)
-  localize upd ma = Chain $ \r s -> getChain ma (upd r) s
+instance ContextM (Chain st ctx u) where
+  askCtx          = Chain $ \r s t -> (r, s, t, mempty)
+  asksCtx fn      = Chain $ \r s t -> (fn r, s, t, mempty)
+  localize upd ma = Chain $ \r s t -> getChain ma (upd r) s t
 
 
 
 -- Monoid
 
-instance Monoid a => Monoid (Chain ctx u a) where
-  mempty           = Chain $ \_ s -> (mempty, s, mempty)
-  ma `mappend` mb  = Chain $ \r s -> 
-                       let (a,s1,w1) = getChain ma r s
-                           (b,s2,w2) = getChain mb r s1
-                       in (a `mappend` b, s2, w1 `mappend` w2)
+instance Monoid a => Monoid (Chain st ctx u a) where
+  mempty           = Chain $ \_ s t -> (mempty, s, t, mempty)
+  ma `mappend` mb  = Chain $ \r s t -> 
+                       let (a,s1,t1,w1) = getChain ma r s t
+                           (b,s2,t2,w2) = getChain mb r s1 t1
+                       in (a `mappend` b, s2, t2, w1 `mappend` w2)
 
 
-runChain :: InterpretUnit u => Chain ctx u a -> LocEvent ctx u a
-runChain mf = promoteLoc $ \ot -> 
+runChain :: InterpretUnit u 
+         => ChainScheme st u -> Chain st ctx u a -> LocEvent ctx u a
+runChain (ChainScheme csStart csNext) mf = promoteLoc $ \ot -> 
     askCtx  >>= \ctx ->
     normalizeCtx ot >>= \dot -> 
-    get_one_beat >>= \size1 -> 
-    let next       = \u -> size1 + u   
-        st_zero    = ChainSt { chain_pos = dot, chain_next = next }
-        (a, _, ca) = getChain mf ctx st_zero
-        evt        = primEvent ca
+    let st_zero      = ChainSt { chain_st = csStart ot, chain_next = csNext }
+        (a, _, _,ca) = getChain mf ctx dot st_zero
+        evt          = primEvent ca
     in replaceAns a $ evt
 
 
-nextc :: InterpretUnit u => LocEvent ctx u a -> Chain ctx u a
-nextc gf  = Chain $ \r s -> 
-    let sx         = dinterp (ctx_tempo r) (chain_pos s)
-        dx         = normalize (ctx_tempo r) $ chain_next s sx
-        PrimW ca a = runEvent r (applyLoc gf sx)
-    in (a, s { chain_pos = dx} , ca)
+runChain_ :: InterpretUnit u 
+          => ChainScheme st u -> Chain st ctx u a -> ULocEvent ctx u
+runChain_ cscm = ignoreAns . runChain cscm
+
+renderChain :: InterpretUnit u 
+            => ChainScheme st u -> Context ctx -> Chain st ctx u a 
+            -> Maybe RScore
+renderChain cscm ctx mf = 
+   let PrimW ca _ = runEvent ctx (applyLoc (runChain cscm mf) 0)
+   in hprimToScoreMb $ singleH ca
+
+
+renderChainU :: InterpretUnit u 
+             => ChainScheme st u -> Context ctx -> Chain st ctx u a -> RScore
+renderChainU cscm ctx mf = maybe fk id $ renderChain cscm ctx mf
+  where
+    fk = error "renderChainU - empty score." 
+
+
+
+nextc :: InterpretUnit u 
+      => LocEvent ctx u a -> Chain st ctx u a
+nextc gf  = Chain $ \r s t@(ChainSt s0 sf) -> 
+    let (ot,st1)   = sf (dinterp (ctx_tempo r) s) s0
+        dot        = normalize (ctx_tempo r) ot
+        PrimW ca a = runEvent r (applyLoc gf ot)
+    in (a, dot, t { chain_st = st1}, ca)
+
+
+setNextgen :: InterpretUnit u 
+           => ChainScheme st u -> Chain st ctx u ()
+setNextgen (ChainScheme cStart cNext) = Chain $ \r s _ -> 
+    let ot = dinterp (ctx_tempo r) s
+        t  = ChainSt { chain_st = cStart ot, chain_next = cNext}
+    in ((), s, t, mempty) 
 

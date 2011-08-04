@@ -45,7 +45,7 @@ import Majalan.Basic.Kernel.Objects.Concat
 import Majalan.Basic.Kernel.Objects.Connector
 import Majalan.Basic.Kernel.Objects.LocEvent
 import Majalan.Basic.Kernel.Objects.PosEvent
-import Majalan.Basic.Kernel.Score.Chain ()
+import Majalan.Basic.Kernel.Score.Chain
 import Majalan.Basic.Kernel.Score.FreeEventlist
 import Majalan.Basic.Kernel.Score.Turtle
 
