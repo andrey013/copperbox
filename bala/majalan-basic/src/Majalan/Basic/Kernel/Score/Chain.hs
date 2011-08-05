@@ -49,6 +49,7 @@ import Majalan.Basic.Kernel.Base.BaseDefs
 import Majalan.Basic.Kernel.Base.Context
 import Majalan.Basic.Kernel.Base.WrappedPrimitive
 import Majalan.Basic.Kernel.Objects.Basis
+import Majalan.Basic.Kernel.Objects.AdvEvent
 import Majalan.Basic.Kernel.Objects.LocEvent
 
 import Majalan.Core                             -- package: majalan-core
@@ -137,26 +138,29 @@ instance Monoid a => Monoid (Chain ctx u a) where
 
 
 runChain :: InterpretUnit u 
-         => ChainScheme st u -> Chain ctx u a -> LocEvent ctx u a
-runChain cscm mf = promoteLoc $ \ot -> 
+         => ChainScheme st u -> Chain ctx u a -> AdvEvent ctx u a
+runChain cscm mf = promoteAdv $ \ot -> 
     askCtx  >>= \ctx ->
     normalizeCtx ot >>= \dot -> 
     let st_zero      = ChainSt { chain_st = scheme_start cscm
                                , chain_next = scheme_step cscm }
-        (a, _, _,ca) = getChain mf ctx dot st_zero
+        (a, s, _,ca) = getChain mf ctx dot st_zero
         evt          = primEvent ca
-    in replaceAns a $ evt
+        v1           = (dinterp (ctx_tempo ctx) s) - ot
+    in replaceAns (a,v1) evt
+
 
 
 runChain_ :: InterpretUnit u 
-          => ChainScheme st u -> Chain ctx u a -> ULocEvent ctx u
+          => ChainScheme st u -> Chain ctx u a -> UAdvEvent ctx u
 runChain_ cscm = ignoreAns . runChain cscm
+
 
 renderChain :: InterpretUnit u 
             => ChainScheme st u -> Context ctx -> Chain ctx u a 
             -> Maybe RScore
 renderChain cscm ctx mf = 
-   let PrimW ca _ = runEvent ctx (applyLoc (runChain cscm mf) 0)
+   let PrimW ca _ = runEvent ctx (applyLoc (runAdvEvent $ runChain cscm mf) 0)
    in hprimToScoreMb $ singleH ca
 
 
