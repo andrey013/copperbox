@@ -160,8 +160,8 @@ renderChain :: InterpretUnit u
             => ChainScheme st u -> Context ctx -> Chain ctx u a 
             -> Maybe RScore
 renderChain cscm ctx mf = 
-   let PrimW ca _ = runEvent ctx (applyLoc (runAdvEvent $ runChain cscm mf) 0)
-   in hprimToScoreMb $ singleH ca
+   let (_,w1) = runEvent ctx (applyLoc (runAdvEvent $ runChain cscm mf) 0)
+   in hprimToScoreMb $ singleH w1
 
 
 renderChainU :: InterpretUnit u 
@@ -175,10 +175,10 @@ renderChainU cscm ctx mf = maybe fk id $ renderChain cscm ctx mf
 nextc :: InterpretUnit u 
       => LocEvent ctx u a -> Chain ctx u a
 nextc gf  = Chain $ \r s (ChainSt s0 sf) -> 
-    let (ot,st1)   = sf (dinterp (ctx_tempo r) s) s0
-        dot        = normalize (ctx_tempo r) ot
-        PrimW ca a = runEvent r (applyLoc gf ot)
-    in (a, dot, ChainSt { chain_st = st1, chain_next = sf }, ca)
+    let (ot,st1)= sf (dinterp (ctx_tempo r) s) s0
+        dot     = normalize (ctx_tempo r) ot
+        (a,w1)  = runEvent r (applyLoc gf ot)
+    in (a, dot, ChainSt { chain_st = st1, chain_next = sf }, w1)
 
 
 setNextgen :: ChainScheme st u -> Chain ctx u ()

@@ -17,7 +17,8 @@
 
 module Majalan.Basic.Kernel.Objects.Basis
   ( 
-    PrimW(..)
+  
+    PrimResult
   
   , Event
   , DEvent
@@ -52,62 +53,13 @@ import Control.Applicative
 import Data.Monoid
 
 
--- | Unit @u@ is a phantom - it is some unit of duration.
---
-data PrimW u a = PrimW (CatPrim) a
-
-
-instance Monoid a => Monoid (PrimW u a) where
-  mempty = PrimW mempty mempty
-  PrimW ca a `mappend` PrimW cb b = PrimW (ca `mappend` cb) (a `mappend` b)
-
-instance Functor (PrimW u) where
-  fmap f (PrimW ca a) = PrimW ca (f a)
-
-
-instance Applicative (PrimW u) where
-  pure a                        = PrimW mempty a
-  (PrimW c1 f) <*> (PrimW c2 a) = PrimW (c1 `mappend` c2) (f a) 
-
-
-instance Monad (PrimW u) where
-  return a            = PrimW mempty a
-  (PrimW c1 a) >>= mf = let (PrimW c2 b) = mf a
-                        in PrimW (c1 `mappend` c2) b
-
-
-
-
--- | Convert a PrimW where the answer is some functor type 
--- parametrized by the unit.
---
-szconvPrimF :: (Functor t, InterpretUnit u, InterpretUnit u1)
-            => Tempo -> PrimW u (t u)  -> PrimW u1 (t u1)
-szconvPrimF bpm (PrimW c a) = PrimW c (uconvertF bpm a)
-
--- | Convert a PrimW where the answer is oblivious to unit.
---
-szconvPrimZ :: (InterpretUnit u, InterpretUnit u1)
-            => Tempo -> PrimW u a  -> PrimW u1 a
-szconvPrimZ _ (PrimW c a) = PrimW c a
-
-
-
-
-
-
--- | For the moment the second fun is type preserving...
---
-
--- bimapPrimW :: (CatPrim -> CatPrim) -> (a -> a) -> PrimW u a -> PrimW u a
--- bimapPrimW f g (PrimW ca a) = PrimW (f ca) (g a)
-
+type PrimResult u a = (a,CatPrim)
 
 -- Note - instrument numbering is expected to be provided by the
 -- user-context.
 --
 newtype Event ctx u a = Event { 
-          getEvent :: Context ctx -> PrimW u a }
+          getEvent :: Context ctx -> (a, CatPrim) }
 
 type instance DUnit (Event ctx u a) = u
 type instance UCtx  (Event ctx u)   = ctx
@@ -127,7 +79,7 @@ type instance UCtx  (Query ctx u)   = ctx
 -- Functor
 
 instance Functor (Event ctx u) where
-  fmap f ma = Event $ \ctx -> fmap f $ getEvent ma ctx
+  fmap f ma = Event $ \ctx -> let (a,w1) = getEvent ma ctx in (f a, w1)
 
 instance Functor (Query ctx u) where
   fmap f ma = Query $ \ctx -> f $ getQuery ma ctx
@@ -136,9 +88,11 @@ instance Functor (Query ctx u) where
 -- Applicative
 
 instance Applicative (Event ctx u) where
-  pure a    = Event $ \_   -> pure a
-  mf <*> ma = Event $ \ctx -> 
-                getEvent mf ctx <*> getEvent ma ctx
+  pure a    = Event $ \_   -> (a,mempty)
+  mf <*> ma = Event $ \ctx -> let (f,w1) = getEvent mf ctx 
+                                  (a,w2) = getEvent ma ctx
+                              in (f a, w1 `mappend` w2)
+              
 
 instance Applicative (Query ctx u) where
   pure a    = Query $ \_   -> a
@@ -149,8 +103,10 @@ instance Applicative (Query ctx u) where
 -- Monad
 
 instance Monad (Event ctx u) where
-  return a = Event $ \_   -> return a
-  ma >>= k = Event $ \ctx -> getEvent ma ctx >>= \ans -> getEvent (k ans) ctx
+  return a = Event $ \_   -> (a, mempty)
+  ma >>= k = Event $ \ctx -> let (a,w1) = getEvent ma ctx 
+                                 (b,w2) = getEvent (k a) ctx
+                             in (b, w1 `mappend` w2)
 
 instance Monad (Query ctx u) where
   return a = Query $ \_   -> a
@@ -175,8 +131,8 @@ instance Monoid a => Monoid (Query ctx u a) where
 
 
 instance ContextM (Event ctx u) where
-  askCtx          = Event $ \ctx -> return ctx
-  asksCtx fn      = Event $ \ctx -> return (fn ctx)
+  askCtx          = Event $ \ctx -> (ctx, mempty)
+  asksCtx fn      = Event $ \ctx -> (fn ctx, mempty)
   localize upd ma = Event $ \ctx -> getEvent ma (upd ctx)
 
 instance ContextM (Query ctx u) where
@@ -185,7 +141,7 @@ instance ContextM (Query ctx u) where
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
-runEvent :: Context ctx -> Event ctx u a -> PrimW u a
+runEvent :: Context ctx -> Event ctx u a -> (a,CatPrim)
 runEvent ctx mf = getEvent mf ctx
 
 
@@ -202,7 +158,7 @@ zapQuery mq = askCtx >>= \ctx -> let a = runQuery ctx mq in return a
 -- | Constructor for Primtive graphics.
 --
 primEvent :: CatPrim -> UEvent ctx u
-primEvent ca = Event $ \_ -> PrimW ca UNil
+primEvent ca = Event $ \_ -> (UNil, ca)
 
 
 
@@ -221,14 +177,13 @@ instance UConvert Event where
 uconvEventF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
              => Event ctx u (t u) -> Event ctx u1 (t u1)
 uconvEventF ma = Event $ \ctx -> 
-    szconvPrimF (ctx_tempo ctx) $ getEvent ma ctx
+    let (t,w1) = getEvent ma ctx in (uconvertF (ctx_tempo ctx) t, w1)
 
 
 
 uconvEventZ :: (InterpretUnit u, InterpretUnit u1) 
              => Event ctx u a -> Event ctx u1 a
-uconvEventZ ma = Event $ \ctx -> 
-    szconvPrimZ (ctx_tempo ctx) $ getEvent ma ctx
+uconvEventZ ma = Event $ \ctx -> getEvent ma ctx
 
 
 
@@ -273,9 +228,9 @@ instance Decorate Event where
 --
 decorateEvent :: Event ctx u a -> Event ctx u z -> Event ctx u a
 decorateEvent ma mb = Event $ \ctx -> 
-    let (PrimW ca a) = getEvent ma ctx
-        (PrimW cb _) = getEvent mb ctx
-    in PrimW (cb `mappend` ca) a
+    let (a,w1) = getEvent ma ctx
+        (_,w2) = getEvent mb ctx
+    in (a, w1 `mappend` w2)
 
 
 -- | Elaborate Event.
@@ -283,17 +238,17 @@ decorateEvent ma mb = Event $ \ctx ->
 elaborateEvent :: Event ctx u a -> (a -> Event ctx u z) 
                -> Event ctx u a
 elaborateEvent ma k = Event $ \ ctx ->
-    let (PrimW ca a) = getEvent ma ctx
-        (PrimW cb _) = getEvent (k a) ctx
-    in PrimW (ca `mappend` cb) a
+    let (a,w1) = getEvent ma ctx
+        (_,w2) = getEvent (k a) ctx
+    in (a, w1 `mappend` w2)
 
 -- | Obliterate Event.
 --
 obliterateEvent :: Event ctx u a -> Event ctx u z -> Event ctx u a
 obliterateEvent ma mb = Event $ \ctx -> 
-    let (PrimW _  a) = getEvent ma ctx
-        (PrimW cb _) = getEvent mb ctx
-    in PrimW cb a
+    let (a,_) = getEvent ma ctx
+        (_,w) = getEvent mb ctx
+    in (a,w)
 
 
 

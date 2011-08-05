@@ -68,10 +68,15 @@ import Data.Monoid
 
 --------------------------------------------------------------------------------
 
--- | Advance vectors provide an idiom for consecutive events,
--- unlike LocEvent (which has no notion of end time as it is a 
--- functional type).
+-- Advance vectors provide an mechinism for consecutive events,
+-- unlike LocEvent.
 --
+-- If an Event produces its width, then a consecutive event can 
+-- start at the (comment) onset plus the width of the previous 
+-- event.
+--
+
+
 -- Type alias for u (duration).
 --
 type AdvanceVec u = u 
@@ -178,19 +183,20 @@ uconvAdvEventZ ma = AdvEvent $ \ r o s -> getAdvEvent ma r o s
 promoteAdv :: InterpretUnit u
            => (u -> Event ctx u (a,AdvanceVec u)) -> AdvEvent ctx u a
 promoteAdv k = AdvEvent $ \r o s -> 
-               let uo              = dinterp (ctx_tempo r) o
-                   us              = dinterp (ctx_tempo r) s
-                   PrimW ca (a,v1) = runEvent r (k $ uo + us)
-                   dv1             = normalize (ctx_tempo r) v1
-               in (a,s + dv1,ca)
+               let uo           = dinterp (ctx_tempo r) o
+                   us           = dinterp (ctx_tempo r) s
+                   ((a,v1),w1)  = runEvent r (k $ uo + us)
+                   dv1          = normalize (ctx_tempo r) v1
+               in (a, s + dv1, w1)
 
 --
 -- Note - dv1 is added to state (AdvanceVec).
 --
 -- The onset time is always static - it is the onset of the very
 -- first AdvEvent (possibly chained by mappend or monadic bind).
--- We need to add the current state (AdvanceVec) to it, so as to 
--- render it at the correct position.
+-- When we render the promoted event, we need to add the current 
+-- state (AdvanceVec) to the staic onset time, so the promoted 
+-- event will be rendered at the correct position.
 --
 
 -- | Build an 'AdvEvent' from a query that generates the answer 
@@ -200,12 +206,12 @@ makeAdvEvent :: InterpretUnit u
              => Query ctx u (AdvanceVec u) -> LocEvent ctx u a
              -> AdvEvent ctx u a
 makeAdvEvent mq gf = AdvEvent $ \r o s -> 
-      let v1         = runQuery r mq
-          dv1        = normalize (ctx_tempo r) v1
-          uo         = dinterp (ctx_tempo r) o
-          us         = dinterp (ctx_tempo r) s
-          PrimW ca a = runLocEvent (uo + us) r gf
-      in (a, s + dv1, ca)
+      let v1     = runQuery r mq
+          dv1    = normalize (ctx_tempo r) v1
+          uo     = dinterp (ctx_tempo r) o
+          us     = dinterp (ctx_tempo r) s
+          (a,w1) = runLocEvent (uo + us) r gf
+      in (a, s + dv1, w1)
 
 
 

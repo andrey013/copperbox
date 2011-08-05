@@ -134,7 +134,7 @@ instance Decorate LocEvent where
 -- 
 
 runLocEvent :: InterpretUnit u
-            => u -> Context ctx -> LocEvent ctx u a -> PrimW u a
+            => u -> Context ctx -> LocEvent ctx u a -> PrimResult u a
 runLocEvent start ctx mf = 
     let dzero = normalize (ctx_tempo ctx) start 
     in runEvent ctx (getLocEvent mf dzero)

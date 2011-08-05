@@ -150,10 +150,8 @@ makePosEvent qortt gf = PosEvent body
   where
     body = askCtx >>= \ctx -> 
            let v1   = runQuery ctx qortt
-               pf   = \ot -> getCP $ runLocEvent ot ctx gf
+               pf   = \ot -> snd $ runLocEvent ot ctx gf
            in return (v1,pf)
-
-    getCP (PrimW ca _) = ca
 
 
 
@@ -192,11 +190,9 @@ elaboratePosEvent fn po = PosEvent body
   where
     body = askCtx >>= \ctx -> 
            let (ortt,ptf) = runQuery ctx (getPosEvent po)
-               deco       = \pt -> getCP $ runLocEvent pt ctx (fn ortt)
+               deco       = \pt -> snd $ runLocEvent pt ctx (fn ortt)
                ptf2       = ptf  `mappend` deco
            in return (ortt, ptf2)
-
-    getCP (PrimW ca _) = ca
 
 
 

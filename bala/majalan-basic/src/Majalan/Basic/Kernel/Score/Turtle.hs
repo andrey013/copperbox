@@ -131,8 +131,8 @@ runTurtle_ mf = promoteLoc $ \ot ->
 renderTurtle :: InterpretUnit u 
              => Context ctx -> Turtle ctx u a -> Maybe RScore
 renderTurtle ctx mf = 
-   let PrimW ca _ = runEvent ctx (applyLoc (runTurtle mf) 0)
-   in hprimToScoreMb $ singleH ca
+   let (_,w1) = runEvent ctx (applyLoc (runTurtle mf) 0)
+   in hprimToScoreMb $ singleH w1
 
 
 renderTurtleU :: InterpretUnit u 
@@ -154,16 +154,16 @@ renderTurtleU ctx mf = maybe fk id $ renderTurtle ctx mf
 
 insertl :: InterpretUnit u => LocEvent ctx u a -> Turtle ctx u a
 insertl gf  = Turtle $ \r s -> 
-    let sx         = dinterp (ctx_tempo r) s
-        PrimW ca a = runEvent r (applyLoc gf sx)
-    in (a, s, ca)
+    let sx     = dinterp (ctx_tempo r) s
+        (a,w1) = runEvent r (applyLoc gf sx)
+    in (a, s, w1)
 
 insertl_  :: InterpretUnit u
           => LocEvent ctx u a -> Turtle ctx u ()
 insertl_ gf  = Turtle $ \r s -> 
-    let sx         = dinterp (ctx_tempo r) s
-        PrimW ca _ = runEvent r (applyLoc gf sx)
-    in ((), s, ca)
+    let sx     = dinterp (ctx_tempo r) s
+        (_,w1) = runEvent r (applyLoc gf sx)
+    in ((), s, w1)
 
   
 moveBy :: InterpretUnit u => u -> Turtle ctx u ()

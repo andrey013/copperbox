@@ -251,8 +251,8 @@ event :: ( TraceM m, ContextM m
          , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
      => Event ctx u a -> m ()
 event gf = askCtx >>= \ctx -> 
-           let (PrimW o _) = runEvent ctx gf
-           in trace (singleH o) >> return ()
+           let (_,w1) = runEvent ctx gf
+           in trace (singleH w1) >> return ()
 
 
 
@@ -267,8 +267,8 @@ eventi :: ( TraceM m, ContextM m
           , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
        => Event ctx u a -> m a
 eventi gf = askCtx >>= \ctx -> 
-            let (PrimW o a) = runEvent ctx gf 
-            in trace (singleH o) >> return a
+            let (a,w1) = runEvent ctx gf 
+            in trace (singleH w1) >> return a
             
 
 
@@ -296,8 +296,8 @@ eventli :: ( TraceM m, InterpretUnit u, ContextM m
            , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
         => u -> LocEvent ctx u a -> m a
 eventli ot gf = askCtx >>= \ctx -> 
-                let (PrimW o a) = runLocEvent ot ctx gf
-                in trace (singleH o) >> return a
+                let (a,w1) = runLocEvent ot ctx gf
+                in trace (singleH w1) >> return a
 
 
 --

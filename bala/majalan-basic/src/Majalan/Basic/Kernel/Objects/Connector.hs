@@ -120,7 +120,7 @@ instance Decorate Connector where
 
 runConnector :: InterpretUnit u
              => u -> u -> Context ctx -> Connector ctx u a 
-             -> PrimW u a
+             -> PrimResult u a
 runConnector t0 t1 ctx mf = 
     let dt0 = normalize (ctx_tempo ctx) t0
         dt1 = normalize (ctx_tempo ctx) t1 
