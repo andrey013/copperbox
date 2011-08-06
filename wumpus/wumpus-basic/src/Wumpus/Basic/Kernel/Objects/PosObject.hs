@@ -162,10 +162,9 @@ makePosObject qortt gf = PosObject body
   where
     body = askDC >>= \ctx -> 
            let v1   = runQuery ctx qortt
-               pf   = \pt -> getCP $ runLocImage pt ctx gf
+               pf   = \pt -> snd $ runLocImage pt ctx gf
            in return (v1,pf)
 
-    getCP (PrimW ca _) = ca
 
 
 -- | 'emptyPosObject' : @ PosObject @
@@ -207,13 +206,11 @@ decoPosObject zdec fn po = PosObject body
   where
     body = askDC >>= \ctx -> 
            let (ortt,ptf) = runQuery ctx (getPosObject po)
-               deco       = \pt -> getCP $ runLocImage pt ctx (fn ortt)
+               deco       = \pt -> snd $ runLocImage pt ctx (fn ortt)
                ptf2       = case zdec of
                               ANTERIOR -> deco `mappend` ptf
                               SUPERIOR -> ptf  `mappend` deco
            in return (ortt, ptf2)
-
-    getCP (PrimW ca _) = ca
 
 
 -- | Extend the orientation.

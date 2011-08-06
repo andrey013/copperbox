@@ -171,7 +171,7 @@ instance Decorate LocThetaImage where
 runLocThetaImage :: InterpretUnit u 
                  => Point2 u -> Radian -> DrawingContext 
                  -> LocThetaImage u a 
-                 -> PrimW u a
+                 -> PrimResult u a
 runLocThetaImage pt incl ctx mf = 
     let dpt = normalizeF (dc_font_size ctx) pt 
     in runImage ctx (getLocThetaImage mf dpt incl)

@@ -25,6 +25,7 @@ module Wumpus.Basic.Kernel.Base.WrappedPrimitive
     CatPrim
   , prim1
   , cpmap
+  , cpmove
 
   , HPrim
   , hprimToList
@@ -43,6 +44,13 @@ import Data.Monoid
 
 -- | A wrapped version of 'Primitive' from Wumpus-Core that 
 -- supports Monoid.
+-- 
+-- Note that CatPrim provides a /single-object/ that can be
+-- hyperlinked or whatever. 
+--
+-- It is different to 'HPrim' which is intended as a list type 
+-- with efficient concatenation to support building of multiple
+-- Primitives in a frame.
 --
 -- This type is essentially internal to Wumpus-Basic.
 --
@@ -64,6 +72,8 @@ instance Monoid CatPrim where
     where
       step ac []     = ac
       step ac (x:xs) = step (ac `mappend` x) xs
+
+
 
 
 --------------------------------------------------------------------------------
@@ -96,23 +106,17 @@ cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
 cpmap _ CZero    = CZero
 cpmap f (Cat1 a) = Cat1 $ f a
 
+
+cpmove :: Vec2 Double -> CatPrim -> CatPrim
+cpmove (V2 x y) = translate x y
+
+
 --------------------------------------------------------------------------------
 -- Lists of primitives...
 
 
--- | Graphics objects, even simple ones (line, arrow, dot) might 
--- need more than one primitive (path or text label) for their
--- construction. Hence, the primary representation that all the 
--- others are built upon must support /concatenation/ of 
--- primitives. 
---
--- Wumpus-Core has a type Picture - made from one or more 
--- Primitives - but Pictures include support for affine frames. 
--- For drawing many simple graphics (dots, connector lines...) 
--- that do not need individual affine transformations this is a 
--- penalty. A list of Primitives is therefore more suitable 
--- representation, and a Hughes list which supports
--- efficient concatenation is wise.
+-- | Collected primitives - this type is effectively an analogue
+-- to a @Frame@ in Wumpus-Core.
 --
 -- This type is essentially internal to Wumpus-Basic.
 -- 
@@ -133,6 +137,9 @@ instance Monoid (HPrim u) where
 
 
 -- | Extract the internal list of 'Primitive' from a 'HPrim'.
+-- 
+-- The expectation is that this Primitive list will be rendered
+-- by Wumpus-Core as a @frame@.
 --
 hprimToList :: HPrim u -> [Primitive]
 hprimToList = toListH . getHPrim

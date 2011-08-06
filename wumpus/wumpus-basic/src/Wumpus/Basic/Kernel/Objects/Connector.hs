@@ -172,7 +172,7 @@ instance Decorate ConnectorImage where
 runConnectorImage :: InterpretUnit u 
                   => Point2 u -> Point2 u 
                   -> DrawingContext -> ConnectorImage u a 
-                  -> PrimW u a
+                  -> PrimResult u a
 runConnectorImage p0 p1 ctx mf = 
     let dp0 = normalizeF (dc_font_size ctx) p0
         dp1 = normalizeF (dc_font_size ctx) p1 

@@ -181,7 +181,7 @@ instance TraceM (TraceDrawing u) where
 
 fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
 fontDeltaMon mf = TraceDrawing $ \ctx -> 
-    let (_,font_attrs) = primAnswer $ runImage ctx textAttr
+    let (_,font_attrs) = fst $ runImage ctx textAttr
         (a,hf)         = runTraceDrawing ctx mf
         prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
     in (a, singleH $ prim1 $ prim)
@@ -192,7 +192,7 @@ instance Monad m => TraceM (TraceDrawingT u m) where
 
 fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
 fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
-    let (_,font_props) = primAnswer $ runImage ctx textAttr
+    let (_,font_props) = fst $ runImage ctx textAttr
     in runTraceDrawingT ctx mf >>= \(a,hf) ->
        let prim  = fontDeltaContext font_props $ primGroup $ hprimToList hf
        in return (a, singleH $ prim1 $ prim)
@@ -321,8 +321,8 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
      => Image u a -> m ()
 draw gf = askDC >>= \ctx -> 
-          let (PrimW o _) = runImage ctx gf
-          in trace (singleH o) >> return ()
+          let (_,w) = runImage ctx gf
+          in trace (singleH w) >> return ()
 
 
 
@@ -336,8 +336,8 @@ draw gf = askDC >>= \ctx ->
 drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
       => Image u a -> m a
 drawi gf = askDC >>= \ctx -> 
-           let (PrimW o a) = runImage ctx gf 
-           in trace (singleH o) >> return a
+           let (a,w) = runImage ctx gf 
+           in trace (singleH w) >> return a
             
 
 
@@ -363,8 +363,8 @@ drawl ancr img = drawli ancr img >> return ()
 drawli :: (TraceM m, InterpretUnit u, DrawingCtxM m, u ~ MonUnit (m ()) ) 
        => Anchor u -> LocImage u a -> m a
 drawli pt gf = askDC >>= \ctx -> 
-               let (PrimW o a) = runLocImage pt ctx gf
-               in trace (singleH o) >> return a
+               let (a,w) = runLocImage pt ctx gf
+               in trace (singleH w) >> return a
 
 
 -- Design note - having @drawlti@ for LocThetaImage does not seem 
@@ -430,8 +430,8 @@ nodei :: ( Fractional u, InterpretUnit u
       => (Int,Int) -> LocImage u a -> m a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 let (PrimW o a) = runLocImage pt ctx gf
-                 in trace (singleH o) >> return a
+                 let (a,w) = runLocImage pt ctx gf
+                 in trace (singleH w) >> return a
  
 
 

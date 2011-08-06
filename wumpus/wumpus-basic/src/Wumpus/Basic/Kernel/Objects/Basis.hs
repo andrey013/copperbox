@@ -21,8 +21,7 @@
 module Wumpus.Basic.Kernel.Objects.Basis
   (
 
-    PrimW(..)
-  , primAnswer
+    PrimResult
 
   , Image
   , Graphic 
@@ -68,68 +67,15 @@ import Control.Applicative
 import Data.Monoid
 
 
+type PrimResult u a = (a, CatPrim)
 
--- | Unit @u@ is a phantom.
---
-data PrimW u a = PrimW CatPrim a
-
-type instance DUnit (PrimW u a) = u
-
-
-instance Monoid a => Monoid (PrimW u a) where
-  mempty = PrimW mempty mempty
-  PrimW ca a `mappend` PrimW cb b = PrimW (ca `mappend` cb) (a `mappend` b)
-
-instance Functor (PrimW u) where
-  fmap f (PrimW w a) = PrimW w (f a)
-
-
-instance Applicative (PrimW u) where
-  pure a                        = PrimW mempty a
-  (PrimW c1 f) <*> (PrimW c2 a) = PrimW (c1 `mappend` c2) (f a) 
-
-
-instance Monad (PrimW u) where
-  return a            = PrimW mempty a
-  (PrimW c1 a) >>= mf = let (PrimW c2 b) = mf a
-                        in PrimW (c1 `mappend` c2) b
-
-
-primAnswer :: PrimW u a -> a
-primAnswer (PrimW _ a) = a
-
-
--- | For the moment the second fun is type preserving...
---
-bimapPrimW :: (CatPrim -> CatPrim) -> (a -> a) -> PrimW u a -> PrimW u a
-bimapPrimW f g (PrimW ca a) = PrimW (f ca) (g a)
-
-
-
-
-
-
-
--- | Convert a PrimW where the answer is some functor type 
--- parametrized by the unit.
---
-szconvPrimF :: (Functor t, InterpretUnit u, InterpretUnit u1)
-            => FontSize -> PrimW u (t u)  -> PrimW u1 (t u1)
-szconvPrimF sz (PrimW c a) = PrimW c (uconvertF sz a)
-
-
--- | Convert a PrimW where the answer is oblivious to unit.
---
-szconvPrimZ :: (InterpretUnit u, InterpretUnit u1)
-            => FontSize -> PrimW u a  -> PrimW u1 a
-szconvPrimZ _ (PrimW c a) = PrimW c a
 
 
 --------------------------------------------------------------------------------
 
 
 newtype Image u a = Image { 
-          getImage :: DrawingContext -> PrimW u a }
+          getImage :: DrawingContext -> (a, CatPrim) }
 
 type instance DUnit (Image u a) = u
 
@@ -153,7 +99,7 @@ type instance DUnit (Query u a) = u
 -- Functor
 
 instance Functor (Image u) where
-  fmap f ma = Image $ \ctx -> fmap f $ getImage ma ctx
+  fmap f ma = Image $ \ctx -> let (a,w1) = getImage ma ctx in (f a, w1)
 
 instance Functor (Query u) where
   fmap f ma = Query $ \ctx -> f $ getQuery ma ctx
@@ -161,9 +107,10 @@ instance Functor (Query u) where
 -- Applicative
 
 instance Applicative (Image u) where
-  pure a    = Image $ \_   -> pure a
-  mf <*> ma = Image $ \ctx -> 
-                getImage mf ctx <*> getImage ma ctx
+  pure a    = Image $ \_   -> (a,mempty)
+  mf <*> ma = Image $ \ctx -> let (f,w1) = getImage mf ctx 
+                                  (a,w2) = getImage ma ctx
+                              in (f a, w1 `mappend` w2)
 
 instance Applicative (Query u) where
   pure a    = Query $ \_   -> a
@@ -175,8 +122,10 @@ instance Applicative (Query u) where
 -- Monad
 
 instance Monad (Image u) where
-  return a = Image $ \_ -> return a
-  ma >>= k = Image $ \ctx -> getImage ma ctx >>= \ans -> getImage (k ans) ctx
+  return a = Image $ \_   -> (a,mempty)
+  ma >>= k = Image $ \ctx -> let (a,w1) = getImage ma ctx 
+                                 (b,w2) = getImage (k a) ctx
+                             in (b,w1 `mappend` w2)
 
 
 instance Monad (Query u) where
@@ -200,8 +149,8 @@ instance Monoid a => Monoid (Query u a) where
 
 
 instance DrawingCtxM (Image u) where
-  askDC           = Image $ \ctx -> return ctx
-  asksDC fn       = Image $ \ctx -> return (fn ctx)
+  askDC           = Image $ \ctx -> (ctx, mempty)
+  asksDC fn       = Image $ \ctx -> (fn ctx, mempty)
   localize upd ma = Image $ \ctx -> getImage ma (upd ctx)
 
 instance DrawingCtxM (Query u) where
@@ -210,7 +159,7 @@ instance DrawingCtxM (Query u) where
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
-runImage :: DrawingContext -> Image u a -> PrimW u a
+runImage :: DrawingContext -> Image u a -> PrimResult u a
 runImage ctx mf = getImage mf ctx
 
 runQuery :: DrawingContext -> Query u a -> a
@@ -224,15 +173,14 @@ zapQuery mq = askDC >>= \ctx -> let a = runQuery ctx mq in return a
 -- | Constructor for Primtive graphics.
 --
 primGraphic :: CatPrim -> Graphic u
-primGraphic ca = Image $ \_ -> PrimW ca UNil
+primGraphic w = Image $ \_ -> (UNil, w)
 
 
 -- | Clip an Image.
 -- 
 clipImage :: PrimPath -> Image u a -> Image u a
-clipImage pp ma = Image $ \ctx -> step (getImage ma ctx)
-  where
-    step (PrimW ca a) = PrimW (cpmap (clip pp) ca) a
+clipImage pp ma = Image $ \ctx -> 
+     let (a,w) = getImage ma ctx in (a, cpmap (clip pp) w)
 
 
 
@@ -250,13 +198,14 @@ instance UConvert Image where
 uconvImageF :: (Functor t, InterpretUnit u, InterpretUnit u1) 
             => Image u (t u) -> Image u1 (t u1) 
 uconvImageF ma = Image $ \ctx -> 
-    szconvPrimF (dc_font_size ctx) $ getImage ma ctx
+    let (a,w) = getImage ma ctx
+        a'    = uconvertF (dc_font_size ctx) a
+    in (a',w)
 
 
 uconvImageZ :: (InterpretUnit u, InterpretUnit u1) 
             => Image u a -> Image u1 a
-uconvImageZ ma = Image $ \ctx -> 
-    szconvPrimZ (dc_font_size ctx) $ getImage ma ctx
+uconvImageZ ma = Image $ \ctx -> getImage ma ctx
 
 
 -- | Having /empty/ at the specific 'Image' type is useful.
@@ -309,42 +258,37 @@ aelaborate = elaborate ANTERIOR
 
 
 
--- | Do not export...
---
-getCatPrim :: PrimW u a -> CatPrim
-getCatPrim (PrimW ca _) = ca
-
 -- | Decorate Image.
 --
 decorateImage :: ZDeco -> Image u a -> Image u z -> Image u a
 decorateImage zo ma mb = Image $ \ctx -> 
     step zo (getImage ma ctx) (getImage mb ctx)
   where
-    step SUPERIOR (PrimW ca a) (PrimW cb _) = PrimW (ca `mappend` cb) a
-    step ANTERIOR (PrimW ca a) (PrimW cb _) = PrimW (cb `mappend` ca) a
+    step SUPERIOR (a,w1) (_,w2) = (a, w1 `mappend` w2)
+    step ANTERIOR (a,w1) (_,w2) = (a, w2 `mappend` w1)
 
 
 -- | Elaborate Image.
 --
 elaborateImage :: ZDeco -> Image u a -> (a -> Image u z) -> Image u a
 elaborateImage zo ma k = Image $ \ ctx ->
-    let (PrimW ca a) = getImage ma ctx
-        (PrimW cb _) = getImage (k a) ctx 
+    let (a,w1) = getImage ma ctx
+        (_,w2) = getImage (k a) ctx 
     in case zo of
-      SUPERIOR -> PrimW (ca `mappend` cb) a
-      ANTERIOR -> PrimW (cb `mappend` ca) a
+      SUPERIOR -> (a, w1 `mappend` w2)
+      ANTERIOR -> (a, w2 `mappend` w1)
 
 
 obliterateImage :: Image u a -> Image u z -> Image u a
 obliterateImage ma mb = Image $ \ctx -> 
-    let a  = primAnswer $ getImage ma ctx
-        cb = getCatPrim $ getImage mb ctx
-    in PrimW cb a
+    let (a,_) = getImage ma ctx
+        (_,w) = getImage mb ctx
+    in (a,w)
   
 hyperlinkImage :: XLink -> Image u a -> Image u a
 hyperlinkImage xl ma = Image $ \ctx -> step (getImage ma ctx)
   where
-    step (PrimW ca a) = PrimW (cpmap (xlinkPrim xl) ca) a
+    step (a,w) = (a, cpmap (xlinkPrim xl) w)
 
 
 
@@ -362,6 +306,7 @@ instance Decorate Image where
 --
 -- Are PrimW instances needed as Image cannot use them?
 -- 
+{-
 
 instance Rotate a => Rotate (PrimW u a) where
   rotate ang (PrimW ca a) = PrimW (rotate ang ca) (rotate ang a)
@@ -380,9 +325,10 @@ instance Scale a => Scale (PrimW u a) where
 
 
 instance (Translate a, ScalarUnit u, u ~ DUnit a) => 
-    Translate (PrimW u a) where
-  translate dx dy (PrimW cp a) = 
-    PrimW (translate (toPsPoint dx) (toPsPoint dy) cp) (translate dx dy a) 
+    Translate (u,a) where
+  translate dx dy (a,w) = let ddx = toPsPoint ddx
+                              ddy = toPsPoint ddy
+                          in  (translate dx dy a, translate ddx ddy w) 
 
 
 
@@ -392,19 +338,19 @@ instance (Translate a, ScalarUnit u, u ~ DUnit a) =>
 
 instance Rotate a => Rotate (Image u a) where
   rotate ang ma = Image $ \ctx -> 
-      bimapPrimW (rotate ang) (rotate ang) $ getImage ma ctx
+      bimapP (rotate ang) (rotate ang) $ getImage ma ctx
 
 
 instance (RotateAbout a, InterpretUnit u, u ~ DUnit a) => 
     RotateAbout (Image u a) where
   rotateAbout ang pt ma = Image $ \ctx -> 
       let ptu = uconvertF (dc_font_size ctx) pt
-      in bimapPrimW (rotateAbout ang ptu) (rotateAbout ang pt) $ getImage ma ctx
+      in bimapP (rotateAbout ang ptu) (rotateAbout ang pt) $ getImage ma ctx
 
 
 instance Scale a => Scale (Image u a) where
   scale sx sy ma = Image $ \ctx -> 
-      bimapPrimW (scale sx sy) (scale sx sy) $ getImage ma ctx
+      bimapP (scale sx sy) (scale sx sy) $ getImage ma ctx
 
 instance (Translate a, InterpretUnit u, u ~ DUnit a) => 
     Translate (Image u a) where
@@ -412,8 +358,9 @@ instance (Translate a, InterpretUnit u, u ~ DUnit a) =>
       let sz  = dc_font_size ctx
           ddx = uconvert1 sz dx
           ddy = uconvert1 sz dy
-      in bimapPrimW (translate ddx ddy) (translate dx dy) $ getImage ma ctx
+      in bimapP (translate ddx ddy) (translate dx dy) $ getImage ma ctx
 
+-}
 
 --------------------------------------------------------------------------------
 

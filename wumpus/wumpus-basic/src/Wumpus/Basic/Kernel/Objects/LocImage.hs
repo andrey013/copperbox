@@ -170,7 +170,7 @@ instance Decorate LocImage where
 
 
 runLocImage :: InterpretUnit u 
-            => Point2 u -> DrawingContext -> LocImage u a -> PrimW u a
+            => Point2 u -> DrawingContext -> LocImage u a -> PrimResult u a
 runLocImage pt ctx mf = 
     let dpt = normalizeF (dc_font_size ctx) pt in runImage ctx (getLocImage mf dpt)
 

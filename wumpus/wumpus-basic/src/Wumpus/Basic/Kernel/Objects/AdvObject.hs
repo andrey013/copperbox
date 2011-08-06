@@ -142,10 +142,9 @@ makeAdvObject mq gf = AdvObject body
   where
     body = askDC >>= \ctx -> 
            let v1   = runQuery ctx mq
-               pf   = \pt -> getCP $ runLocImage pt ctx gf
+               pf   = \pt -> snd $ runLocImage pt ctx gf
            in return (v1,pf)
 
-    getCP (PrimW ca _) = ca
 
 
 -- | 'emptyAdvObjectAU' : @ AdvObject @
