@@ -9,6 +9,7 @@ import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour
 
 import Data.List ( unfoldr )
+import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -35,19 +36,34 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (P2 0 0) $ chain_ (chainH 70) [text01, minidisk, text02, minidisk]
+    drawl (P2 0 0) $ runChain_ (chainH 70) 
+                               (mapM cnext [text01, minidisk, text02, minidisk])
+
     drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle FILL 4 4
 
-    drawl (P2 0 200) $ chain (tableRight 6 (30,18)) $ diskList 32
+    drawl (P2 0 200) $ runChain (tableRight 6 (30,18)) 
+                                (mapM cnext $ diskList 32)
 
-    drawl (P2 300 100) $ chain pchain $ diskList 30
+    drawl (P2 300 100) $ runChain pchain_start $ pchain (diskList 30)
+
+
+pchain_start :: ChainScheme Double 
+pchain_start = radialChain 50 (0.5*pi) (pi/8)
 
 
 
-pchain :: ChainAlg Double
-pchain = prefixChain 12 (radialChain 50 (0.5*pi) (pi/8)) 
-       $ prefixChain 15 (chainH 20) 
-       $ chainV 20
+pchain :: InterpretUnit u => [LocGraphic u] -> Chain u (UNil u)
+pchain xs = do 
+   ys <- ntimes 12 xs
+   setChainScheme (chainH 20)
+   zs <- ntimes 15 ys
+   setChainScheme (chainV 20)
+   mapM_ cnext zs
+   return UNil
+  where  
+    ntimes n (x:xs) | n > 0 = cnext x >> ntimes (n-1) xs
+    ntimes _ xs             = return xs
+
 
 
 -- Normally, text calculate the advance vector from the font 

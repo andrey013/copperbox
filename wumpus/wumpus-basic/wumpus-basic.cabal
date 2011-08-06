@@ -31,6 +31,9 @@ description:
   Changelog:
   .
   v0.19.0 to v0.20.0:
+  . 
+  * Changed representation of Chains to a monadic type with an 
+    explicit operation for next position.
   .
   * Removed @PrimW@ type - pairs are now used instead. 
   .
