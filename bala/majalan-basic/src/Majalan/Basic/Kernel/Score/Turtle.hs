@@ -132,7 +132,7 @@ renderTurtle :: InterpretUnit u
              => Context ctx -> Turtle ctx u a -> Maybe RScore
 renderTurtle ctx mf = 
    let (_,w1) = runEvent ctx (applyLoc (runTurtle mf) 0)
-   in hprimToScoreMb $ singleH w1
+   in catPrimToScoreMb w1
 
 
 renderTurtleU :: InterpretUnit u 

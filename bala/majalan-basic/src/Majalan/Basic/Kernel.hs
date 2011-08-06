@@ -28,6 +28,7 @@ module Majalan.Basic.Kernel
   , module Majalan.Basic.Kernel.Objects.Concat
   , module Majalan.Basic.Kernel.Objects.Connector
   , module Majalan.Basic.Kernel.Objects.LocEvent
+  , module Majalan.Basic.Kernel.Objects.Orientation
   , module Majalan.Basic.Kernel.Objects.PosEvent
   , module Majalan.Basic.Kernel.Score.Chain
   , module Majalan.Basic.Kernel.Score.FreeEventlist
@@ -44,6 +45,7 @@ import Majalan.Basic.Kernel.Objects.Basis
 import Majalan.Basic.Kernel.Objects.Concat
 import Majalan.Basic.Kernel.Objects.Connector
 import Majalan.Basic.Kernel.Objects.LocEvent
+import Majalan.Basic.Kernel.Objects.Orientation
 import Majalan.Basic.Kernel.Objects.PosEvent
 import Majalan.Basic.Kernel.Score.Chain
 import Majalan.Basic.Kernel.Score.FreeEventlist

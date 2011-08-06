@@ -81,8 +81,14 @@ import Data.Monoid
 --
 type AdvanceVec u = u 
 
-type DAdvVec = AdvanceVec Double
+-- | Newtype wrapper for monoid instance - mappend is (+).
+--
+newtype DAV = DAV { getDAV :: Double }
 
+
+instance Monoid DAV where
+  mempty = DAV 0
+  DAV a `mappend` DAV b = DAV $ a+b
 
 
 --------------------------------------------------------------------------------
@@ -94,8 +100,7 @@ type DAdvVec = AdvanceVec Double
 -- current event.
 --
 newtype AdvEvent ctx u a = AdvEvent 
-          { getAdvEvent :: Context ctx -> OnsetDbl -> DAdvVec 
-                        -> (a, DAdvVec, CatPrim) }
+          { getAdvEvent :: Context ctx -> OnsetDbl -> (a, DAV, CatPrim) }
 
 type instance DUnit (AdvEvent ctx u a) = u
 type instance UCtx  (AdvEvent ctx u)   = ctx
@@ -107,46 +112,40 @@ type UAdvEvent ctx u   = AdvEvent ctx u (UNil u)
 
 
 instance Num u => Functor (AdvEvent ctx u) where
-  fmap f mf = AdvEvent $ \r o s -> 
-              let (a,s1,w1) = getAdvEvent mf r o s in (f a,s1,w1)
-
---
--- AdvanceVec is constructed with the State monad.
---
--- The only place we need to be mindful of it as when we create 
--- fresh AdvEvents.
---
+  fmap f mf = AdvEvent $ \r o -> 
+              let (a,v1,w1) = getAdvEvent mf r o in (f a,v1,w1)
 
 
 instance InterpretUnit u => Applicative (AdvEvent ctx u) where
-  pure a    = AdvEvent $ \_ _ s -> (a,s,mempty)
-  mf <*> ma = AdvEvent $ \r o s -> 
-              let (f,s1,w1) = getAdvEvent mf r o s 
-                  (a,s2,w2) = getAdvEvent ma r o s1
-              in (f a, s2, w1 `mappend` w2)
+  pure a    = AdvEvent $ \_ _ -> (a,mempty,mempty)
+  mf <*> ma = AdvEvent $ \r o -> 
+              let (f,v1,w1) = getAdvEvent mf r o 
+                  (a,v2,w2) = getAdvEvent ma r o
+              in (f a, v1 `mappend` v2, w1 `mappend` w2)
 
 
 
 instance InterpretUnit u => Monad (AdvEvent ctx u) where
-  return a  = AdvEvent $ \_ _ s -> (a,s,mempty)
-  mf >>= k  = AdvEvent $ \r o s -> 
-              let (a,s1,w1) = getAdvEvent mf r o s
-                  (b,s2,w2) = getAdvEvent (k a) r o s1
-              in (b, s2, w1 `mappend` w2)
+  return a  = AdvEvent $ \_ _ -> (a,mempty,mempty)
+  mf >>= k  = AdvEvent $ \r o -> 
+              let (a,v1,w1) = getAdvEvent mf r o
+                  (b,v2,w2) = getAdvEvent (k a) r o
+              in (b, v1 `mappend` v2, w1 `mappend` w2)
 
 
 instance InterpretUnit u => ContextM (AdvEvent ctx u) where
-  askCtx          = AdvEvent $ \r _ s -> (r, s, mempty)
-  asksCtx fn      = AdvEvent $ \r _ s -> (fn r, s, mempty)
-  localize upd ma = AdvEvent $ \r o s -> getAdvEvent ma (upd r) o s
+  askCtx          = AdvEvent $ \r _ -> (r, mempty, mempty)
+  asksCtx fn      = AdvEvent $ \r _ -> (fn r, mempty, mempty)
+  localize upd ma = AdvEvent $ \r o -> getAdvEvent ma (upd r) o
 
 
 instance (Monoid a, InterpretUnit u) => Monoid (AdvEvent ctx u a) where
-  mempty = AdvEvent $ \_ _ s -> (mempty, s, mempty)
-  ma `mappend` mb = AdvEvent $ \r o s -> 
-                    let (a,s1,w1) = getAdvEvent ma r o s
-                        (b,s2,w2) = getAdvEvent mb r o s1
-                    in (a `mappend` b, s2, w1 `mappend` w2)
+  mempty = AdvEvent $ \_ _ -> (mempty, mempty, mempty)
+  ma `mappend` mb = AdvEvent $ \r o -> 
+                    let (a,v1,w1) = getAdvEvent ma r o
+                        (b,v2,w2) = getAdvEvent mb r o
+                        w2r       = moveCatPrim (getDAV v1) w2
+                    in (a `mappend` b, v1 `mappend` v2, w1 `mappend` w2r)
 
 
 
@@ -156,7 +155,7 @@ runAdvEvent :: InterpretUnit u => AdvEvent ctx u a -> LocEvent ctx u a
 runAdvEvent mf = promoteLoc $ \ot -> 
     askCtx >>= \ctx -> 
     let dot      = normalize (ctx_tempo ctx) ot
-        (a,_,ca) = getAdvEvent mf ctx dot 0
+        (a,_,ca) = getAdvEvent mf ctx dot
     in replaceAns a $ primEvent ca
   
 
@@ -167,14 +166,14 @@ instance UConvert AdvEvent where
 
 uconvAdvEventF :: (InterpretUnit u, InterpretUnit u1, Functor t) 
                => AdvEvent ctx u (t u) -> AdvEvent ctx u1 (t u1)
-uconvAdvEventF ma = AdvEvent $ \ r o s -> 
+uconvAdvEventF ma = AdvEvent $ \ r o -> 
                     let tempo = ctx_tempo r
-                        (a,s1,ca) = getAdvEvent ma r o s
-                    in (uconvertF tempo a, s1, ca)
+                        (a,v1,ca) = getAdvEvent ma r o
+                    in (uconvertF tempo a, v1, ca)
 
 uconvAdvEventZ :: (InterpretUnit u, InterpretUnit u1) 
                => AdvEvent ctx u a -> AdvEvent ctx u1 a
-uconvAdvEventZ ma = AdvEvent $ \ r o s -> getAdvEvent ma r o s
+uconvAdvEventZ ma = AdvEvent $ \ r o -> getAdvEvent ma r o
 
 
 
@@ -182,12 +181,11 @@ uconvAdvEventZ ma = AdvEvent $ \ r o s -> getAdvEvent ma r o s
 
 promoteAdv :: InterpretUnit u
            => (u -> Event ctx u (a,AdvanceVec u)) -> AdvEvent ctx u a
-promoteAdv k = AdvEvent $ \r o s -> 
+promoteAdv k = AdvEvent $ \r o -> 
                let uo           = dinterp (ctx_tempo r) o
-                   us           = dinterp (ctx_tempo r) s
-                   ((a,v1),w1)  = runEvent r (k $ uo + us)
-                   dv1          = normalize (ctx_tempo r) v1
-               in (a, s + dv1, w1)
+                   ((a,v1),w1)  = runEvent r (k uo)
+                   dv1          = DAV $ normalize (ctx_tempo r) v1
+               in (a, dv1, w1)
 
 --
 -- Note - dv1 is added to state (AdvanceVec).
@@ -205,13 +203,12 @@ promoteAdv k = AdvEvent $ \r o s ->
 makeAdvEvent :: InterpretUnit u
              => Query ctx u (AdvanceVec u) -> LocEvent ctx u a
              -> AdvEvent ctx u a
-makeAdvEvent mq gf = AdvEvent $ \r o s -> 
+makeAdvEvent mq gf = AdvEvent $ \r o -> 
       let v1     = runQuery r mq
-          dv1    = normalize (ctx_tempo r) v1
+          dv1    = DAV $ normalize (ctx_tempo r) v1
           uo     = dinterp (ctx_tempo r) o
-          us     = dinterp (ctx_tempo r) s
-          (a,w1) = runLocEvent (uo + us) r gf
-      in (a, s + dv1, w1)
+          (a,w1) = runLocEvent uo r gf
+      in (a, dv1, w1)
 
 
 
@@ -228,8 +225,8 @@ emptyAdvEvent = pure mempty
 
 
 blankAdvEvent :: (Monoid a, InterpretUnit u) => u -> AdvEvent ctx u a
-blankAdvEvent v1 = AdvEvent $ \r _ s -> 
-      let dv1 = normalize (ctx_tempo r) v1 in (mempty, s + dv1, mempty)
+blankAdvEvent v1 = AdvEvent $ \r _ -> 
+      let dv1 = DAV $ normalize (ctx_tempo r) v1 in (mempty, dv1, mempty)
 
 
 
@@ -314,9 +311,9 @@ punctuate sep =  listcat (\a b -> a `mappend` sep `mappend` b)
 -- 
 advfill :: InterpretUnit u 
         => AdvanceVec u -> AdvEvent ctx u a -> AdvEvent ctx u a
-advfill sv mf = AdvEvent $ \r o s -> 
-    let (a,_,ca) = getAdvEvent mf r o s
-        dv1      = normalize (ctx_tempo r) sv 
+advfill sv mf = AdvEvent $ \r o -> 
+    let (a,_,ca) = getAdvEvent mf r o
+        dv1      = DAV $ normalize (ctx_tempo r) sv 
     in (a,dv1,ca)
 
 

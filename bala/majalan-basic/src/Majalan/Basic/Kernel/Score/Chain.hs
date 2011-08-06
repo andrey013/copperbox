@@ -161,7 +161,7 @@ renderChain :: InterpretUnit u
             -> Maybe RScore
 renderChain cscm ctx mf = 
    let (_,w1) = runEvent ctx (applyLoc (runAdvEvent $ runChain cscm mf) 0)
-   in hprimToScoreMb $ singleH w1
+   in catPrimToScoreMb w1
 
 
 renderChainU :: InterpretUnit u 

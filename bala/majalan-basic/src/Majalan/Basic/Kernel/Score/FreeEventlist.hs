@@ -25,22 +25,14 @@ module Majalan.Basic.Kernel.Score.FreeEventlist
     renderEventlist
   , renderEventlistU  
 
-  -- * Collect primitives (output class) 
-  , TraceM(..)
 
   -- * Event list
   , Eventlist
   , DEventlist
-  , EventlistT
-  , DEventlistT
 
   , runEventlist
   , execEventlist
   , evalEventlist
-
-  , runEventlistT
-  , execEventlistT
-  , evalEventlistT
 
   , event
   , eventi
@@ -69,7 +61,7 @@ import Data.Monoid
 
 
 renderEventlist :: Context ctx -> Eventlist ctx u a -> Maybe RScore
-renderEventlist ctx mf = hprimToScoreMb $ execEventlist ctx mf
+renderEventlist ctx mf = catPrimToScoreMb $ execEventlist ctx mf
 
 
 renderEventlistU :: Context ctx -> Eventlist ctx u a -> RScore
@@ -81,32 +73,15 @@ renderEventlistU ctx mf = maybe fk id $ renderEventlist ctx mf
 
 
 
-
--- | Collect elementary events as part of a larger score.
---
--- TraceM works much like a writer monad.
---
-class TraceM (m :: * -> *) where
-  trace     :: (DUnit (m ()) ~ u) => HPrim u -> m ()
-
-
-
-
 newtype Eventlist ctx u a   = Eventlist { 
-          getEventlist :: Context ctx -> (a, HPrim u) }
+          getEventlist :: Context ctx -> (a, CatPrim) }
 
-newtype EventlistT ctx u m a = EventlistT { 
-          getEventlistT :: Context ctx -> m (a, HPrim u) }
 
 type instance DUnit (Eventlist ctx u a) = u
 type instance UCtx  (Eventlist ctx u)   = ctx
 
-type instance DUnit (EventlistT ctx u m a) = u
-type instance UCtx  (EventlistT ctx u m)   = ctx
 
 type DEventlist ctx a    = Eventlist ctx Double a
-type DEventlistT ctx m a = EventlistT ctx Double m a
-
 
 
 -- Functor
@@ -114,11 +89,6 @@ type DEventlistT ctx m a = EventlistT ctx Double m a
 instance Functor (Eventlist ctx u) where
   fmap f ma = Eventlist $ \ctx -> 
                 let (a,w) = getEventlist ma ctx in (f a,w)
-
-
-instance Monad m => Functor (EventlistT ctx u m) where
-  fmap f ma = EventlistT $ \ctx -> 
-                getEventlistT ma ctx >>= \(a,w) -> return (f a,w)
 
 
 
@@ -132,13 +102,6 @@ instance Applicative (Eventlist ctx u) where
                 in (f a, w1 `mappend` w2)
 
 
-instance Monad m => Applicative (EventlistT ctx u m) where
-  pure a    = EventlistT $ \_   -> return (a,mempty)
-  mf <*> ma = EventlistT $ \ctx -> 
-                getEventlistT mf ctx >>= \(f,w1) ->
-                getEventlistT ma ctx >>= \(a,w2) ->
-                return (f a, w1 `mappend` w2)
-
 -- Monad
 
 instance Monad (Eventlist ctx u) where
@@ -150,34 +113,6 @@ instance Monad (Eventlist ctx u) where
                                
 
 
-
-instance Monad m => Monad (EventlistT ctx u m) where
-  return a  = EventlistT $ \_   -> return (a, mempty)
-  ma >>= k  = EventlistT $ \ctx -> 
-                getEventlistT ma ctx      >>= \(a,w1) ->
-                (getEventlistT . k) a ctx >>= \(b,w2) -> 
-                return (b, w1 `mappend` w2)
-                                 
-
-
-
--- TraceM 
---
--- Note -  @ state `mappend` a @ means the first expression in a 
--- monadic drawing is the first element in the output file. It is
--- also \*\* at the back \*\* in the the Z-Order.
---
--- Some control over the Z-Order, possibly by adding /layers/ to 
--- the drawing model would be valuable. 
--- 
-
-instance TraceM (Eventlist ctx u) where
-  trace a = Eventlist $ \_ -> ((), a)
-
-instance Monad m => TraceM (EventlistT ctx u m) where
-  trace a = EventlistT $ \_ -> return ((), a)
-
-
 -- ContextM
 
 instance ContextM (Eventlist ctx u) where
@@ -187,21 +122,15 @@ instance ContextM (Eventlist ctx u) where
 
 
 
-instance Monad m => ContextM (EventlistT ctx u m) where
-  askCtx          = EventlistT $ \ctx -> return (ctx, mempty)
-  asksCtx f       = EventlistT $ \ctx -> return (f ctx, mempty)
-  localize upd ma = EventlistT $ \ctx -> getEventlistT ma (upd ctx)
 
 
-
-
-runEventlist :: Context ctx -> Eventlist ctx u a -> (a, HPrim u)
+runEventlist :: Context ctx -> Eventlist ctx u a -> (a, CatPrim)
 runEventlist ctx ma = getEventlist ma ctx
 
 -- | Run the notelist returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execEventlist :: Context ctx -> Eventlist ctx u a -> HPrim u
+execEventlist :: Context ctx -> Eventlist ctx u a -> CatPrim
 execEventlist ctx ma = snd $ runEventlist ctx ma
 
 -- | Run the notelist ignoring the output it produces, return the 
@@ -215,24 +144,8 @@ evalEventlist :: Context ctx -> Eventlist ctx u a -> a
 evalEventlist ctx ma = fst $ runEventlist ctx ma
 
 
-
-runEventlistT :: Monad m 
-             => Context ctx -> EventlistT ctx u m a -> m (a, HPrim u) 
-runEventlistT ctx ma = getEventlistT ma ctx
-
-execEventlistT :: Monad m 
-              => Context ctx -> EventlistT ctx u m a -> m (HPrim u)
-execEventlistT ctx ma = liftM snd $ runEventlistT ctx ma
-
-
-evalEventlistT :: Monad m 
-              => Context ctx -> EventlistT ctx u m a -> m a
-evalEventlistT ctx ma = liftM fst $ runEventlistT ctx ma
-
-
-
-
-
+trace :: CatPrim -> Eventlist ctx u ()
+trace a = Eventlist $ \_ -> ((), a)
 
 --------------------------------------------------------------------------------
 
@@ -247,12 +160,10 @@ evalEventlistT ctx ma = liftM fst $ runEventlistT ctx ma
 -- Commonly, it is used to add 'UEvent' objects which 
 -- have no /answer/.
 -- 
-event :: ( TraceM m, ContextM m
-         , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
-     => Event ctx u a -> m ()
+event :: Event ctx u a -> Eventlist ctx u ()
 event gf = askCtx >>= \ctx -> 
            let (_,w1) = runEvent ctx gf
-           in trace (singleH w1) >> return ()
+           in trace w1 >> return ()
 
 
 
@@ -263,12 +174,10 @@ event gf = askCtx >>= \ctx ->
 -- The event is logged in the Trace monad, and the result is 
 -- returned.
 -- 
-eventi :: ( TraceM m, ContextM m
-          , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
-       => Event ctx u a -> m a
+eventi :: Event ctx u a -> Eventlist ctx u a
 eventi gf = askCtx >>= \ctx -> 
             let (a,w1) = runEvent ctx gf 
-            in trace (singleH w1) >> return a
+            in trace w1 >> return a
             
 
 
@@ -279,9 +188,8 @@ eventi gf = askCtx >>= \ctx ->
 -- Commonly, it is used to add 'ULocEvent' objects which 
 -- have no /answer/.
 -- 
-eventl :: ( TraceM m, InterpretUnit u, ContextM m
-          , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
-      => u -> LocEvent ctx u a -> m ()
+eventl :: InterpretUnit u 
+       => u -> LocEvent ctx u a -> Eventlist ctx u ()
 eventl ot evt = eventli ot evt >> return ()
 
 
@@ -292,12 +200,11 @@ eventl ot evt = eventli ot evt >> return ()
 -- The event is logged in the Trace monad, and the result is 
 -- returned.
 -- 
-eventli :: ( TraceM m, InterpretUnit u, ContextM m
-           , ctx ~ UCtx m, u ~ DUnit (m ()) ) 
-        => u -> LocEvent ctx u a -> m a
+eventli :: InterpretUnit u 
+        => u -> LocEvent ctx u a -> Eventlist ctx u a
 eventli ot gf = askCtx >>= \ctx -> 
                 let (a,w1) = runLocEvent ot ctx gf
-                in trace (singleH w1) >> return a
+                in trace w1 >> return a
 
 
 --

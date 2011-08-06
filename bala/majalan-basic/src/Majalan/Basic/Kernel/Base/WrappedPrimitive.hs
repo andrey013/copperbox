@@ -18,17 +18,12 @@ module Majalan.Basic.Kernel.Base.WrappedPrimitive
   ( 
     CatPrim
   , prim1
-  , cpmap
-
-  , HPrim
-  , hprimToList
-  , hprimToScoreMb
-  , singleH
+  , moveCatPrim
+  , catPrimToScoreMb
 
   ) where
 
-import Majalan.Basic.Utils.HList
-import Majalan.Basic.Utils.JoinList ( JoinList, ViewR(..), viewr )
+import Majalan.Basic.Utils.JoinList ( JoinList )
 import qualified Majalan.Basic.Utils.JoinList as JL
 
 import Majalan.Core                             -- package: majalan-core
@@ -36,80 +31,40 @@ import Majalan.Core                             -- package: majalan-core
 import Data.Monoid
 
 
--- NOTE - we could probably live with just one representation...
-
-data CatPrim = CZero
-             | Cat1 (JoinList Note)
-
-
-instance Monoid CatPrim  where
-  mempty                  = CZero
-  CZero  `mappend` b      = b
-  a      `mappend` CZero  = a
-  Cat1 a `mappend` Cat1 b = Cat1 $ a `mappend` b 
 
 
 
-prim1 :: Note -> CatPrim
-prim1 = Cat1 . JL.one
+-- Cheap movement?
+
+data CatPrim = C1 (JoinList (Double -> Note))
+             | CRec Double CatPrim CatPrim
+
+instance Monoid CatPrim where
+  mempty = C1 mempty
+  C1 a `mappend` C1 b   = C1 $ a `mappend` b
+  ca   `mappend` cb     = CRec 0 ca cb
 
 
--- | Map 
---
-cpmap :: (Note -> Note) -> CatPrim -> CatPrim
-cpmap _ CZero    = CZero
-cpmap f (Cat1 a) = Cat1 $ fmap f a
+prim1 :: (Double -> Note) -> CatPrim
+prim1 = C1 . JL.one 
 
---------------------------------------------------------------------------------
--- Lists of Primitives
-
--- | Musical objects, such as arpegios need more than one 
--- primitive (note) for their construction. Hence, the primary 
--- representation to build musical objects upon must support 
--- /concatenation/ of primitives. 
--- 
-newtype HPrim u = HPrim { getHPrim :: H Note }
-
--- Note - only a Monoid instance for HPrim - they cannot be 
--- shown, fmapped etc.
-
-instance Monoid (HPrim u) where
-  mempty          = HPrim emptyH
-  ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
-
-  mconcat []      = mempty
-  mconcat (a:as)  = step a as
-    where
-      step ac []     = ac
-      step ac (x:xs) = step (ac `mappend` x) xs
+moveCatPrim :: Double -> CatPrim -> CatPrim
+moveCatPrim x (CRec y ca cb) = CRec (x+y) ca cb
+moveCatPrim x ca             = CRec x ca (C1 mempty)
 
 
--- | Extract the internal list of 'Event' from a 'HPrim'.
---
-hprimToList :: HPrim u -> [Note]
-hprimToList = toListH . getHPrim
-
-
--- | Promotion of @HPrim@ to @RScore@.
+-- | Promotion of @CatPrim@ to @RScore@.
 -- 
 -- Represented as a Maybe because empty Scores cannot be rendered
 -- so client code must deal with this case.
 -- 
-hprimToScoreMb :: HPrim u -> Maybe RScore
-hprimToScoreMb hf = let prims = hprimToList hf in 
-                    if null prims then Nothing else Just (frame prims)
-
-
-
--- | Form a 'HPrim' from a 'CatPrim'.
---
-singleH :: CatPrim -> HPrim u
-singleH CZero    = HPrim emptyH
-singleH (Cat1 a) = HPrim $ step emptyH (viewr a) 
+catPrimToScoreMb :: CatPrim -> Maybe RScore
+catPrimToScoreMb = final . step 0 
   where
-    step ac EmptyR    = ac
-    step ac (se :> e) = step (e `consH` ac) (viewr se)
+    step x (C1 fs)        = fmap ($ x) fs
+    step x (CRec y ca cb) = mappend (step (x+y) ca) (step (x+y) cb) 
 
-
+    final sx | JL.null sx  = Nothing
+             | otherwise   = Just $ frame $ JL.toList sx
 
 

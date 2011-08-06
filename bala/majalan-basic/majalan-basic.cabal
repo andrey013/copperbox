@@ -41,6 +41,7 @@ library
     Majalan.Basic.Kernel.Objects.Concat,
     Majalan.Basic.Kernel.Objects.Connector,
     Majalan.Basic.Kernel.Objects.LocEvent,
+    Majalan.Basic.Kernel.Objects.Orientation,
     Majalan.Basic.Kernel.Objects.PosEvent,
     Majalan.Basic.Kernel.Score.Chain,
     Majalan.Basic.Kernel.Score.FreeEventlist,

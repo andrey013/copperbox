@@ -187,7 +187,7 @@ primULocEvent :: InterpretUnit u
 primULocEvent uniq_name dur props = promoteLoc $ \start -> 
     normalizeCtx start >>= \dstart -> 
     normalizeCtx dur   >>= \ddur -> 
-    primEvent $ prim1 $ absNote uniq_name dstart ddur props
+    primEvent $ prim1 $ \x -> absNote uniq_name (x+dstart) ddur props
                           
 
 

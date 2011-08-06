@@ -34,13 +34,9 @@ module Majalan.Basic.Kernel.Objects.PosEvent
   -- * Operations
   , runPosEvent
 
+
   , makePosEvent
   , emptyPosEvent
-
-
-  , localPosEvent
-
-  , elaboratePosEvent
 
   , extendPosEvent
  
@@ -53,6 +49,7 @@ import Majalan.Basic.Kernel.Base.WrappedPrimitive
 import Majalan.Basic.Kernel.Objects.Basis
 import Majalan.Basic.Kernel.Objects.Concat
 import Majalan.Basic.Kernel.Objects.LocEvent
+import Majalan.Basic.Kernel.Objects.Orientation
 
 import Majalan.Core                             -- package: majalan-core
 
@@ -62,24 +59,19 @@ import Data.Monoid
 
 
 
--- | Helper for PosEvent - a LocEvent that is /pre-applied/ to 
--- the context.
---
--- This is somewhat contrived, but the bounds and the result
--- event from a PosEvent have to be generated within the same 
--- context.
---
-type PosDraw u = u -> CatPrim
 
-type Span u = u
+type DOrtt = Orientation Double
+
+-- Want to run a PosEvent and produce a LocEvent
 
 
 -- | A positionable event.
 --
-newtype PosEvent ctx u = PosEvent
-          { getPosEvent :: Query ctx u (Span u, PosDraw u) }
+newtype PosEvent ctx u a = PosEvent
+          { getPosEvent :: Context ctx -> OnsetDbl -> (a, DOrtt, CatPrim ) }
 
-type instance DUnit (PosEvent ctx u) = u
+type instance DUnit (PosEvent ctx u a) = u
+type instance UCtx  (PosEvent ctx u)   = ctx
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
@@ -87,55 +79,59 @@ type DPosEvent ctx = PosEvent ctx Double
 
 
 
+instance Num u => Functor (PosEvent ctx u) where
+  fmap f mf = PosEvent $ \r o -> 
+              let (a,v1,w1) = getPosEvent mf r o in (f a,v1,w1)
+
+
+
+
+
+instance InterpretUnit u => Applicative (PosEvent ctx u) where
+  pure a    = PosEvent $ \_ _ -> (a,mempty,mempty)
+  mf <*> ma = PosEvent $ \r o -> 
+              let (f,v1,w1) = getPosEvent mf r o
+                  (a,v2,w2) = getPosEvent ma r o
+              in (f a, v1 `mappend` v2, w1 `mappend` w2)
+
+
+
+instance InterpretUnit u => Monad (PosEvent ctx u) where
+  return a  = PosEvent $ \_ _ -> (a,mempty,mempty)
+  mf >>= k  = PosEvent $ \r o -> 
+              let (a,v1,w1) = getPosEvent mf r o
+                  (b,v2,w2) = getPosEvent (k a) r o
+              in (b, v1 `mappend` v2, w1 `mappend` w2)
+
+
+instance InterpretUnit u => ContextM (PosEvent ctx u) where
+  askCtx          = PosEvent $ \r _ -> (r, mempty, mempty)
+  asksCtx fn      = PosEvent $ \r _ -> (fn r, mempty, mempty)
+  localize upd ma = PosEvent $ \r o -> getPosEvent ma (upd r) o
+
+
+instance (Monoid a, InterpretUnit u) => Monoid (PosEvent ctx u a) where
+  mempty = PosEvent $ \_ _ -> (mempty, mempty, mempty)
+  ma `mappend` mb = PosEvent $ \r o -> 
+                    let (a,v1,w1) = getPosEvent ma r o
+                        (b,v2,w2) = getPosEvent mb r o
+                    in (a `mappend` b, v1 `mappend` v2, w1 `mappend` w2)
+
+
+
+
+runPosEvent :: InterpretUnit u => PosEvent ctx u a -> LocEvent ctx u a
+runPosEvent mf = promoteLoc $ \ot -> 
+    askCtx >>= \ctx -> 
+    let dot      = normalize (ctx_tempo ctx) ot
+        (a,_,ca) = getPosEvent mf ctx dot
+    in replaceAns a $ primEvent ca
+  
+
+
 
 
 --------------------------------------------------------------------------------
-
-
--- Monoid
-instance (Fractional u, Ord u, InterpretUnit u) => 
-    Monoid (PosEvent ctx u) where
-  mempty  = emptyPosEvent
-  mappend = poconcat
-
-
--- | This is /overlay/ concatenation - but events start at the 
--- same time, the result span is the longest.
--- 
-poconcat :: (Fractional u, Ord u) 
-         => PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
-poconcat a b = PosEvent body
-   where
-    body = askCtx >>= \ctx ->
-           let a1 = runQuery ctx (getPosEvent a)
-               a2 = runQuery ctx (getPosEvent b)
-           in pure (appendW a1 a2)
-
-
-
-appendW :: (Fractional u, Ord u)
-        => (Span u, PosDraw u) 
-        -> (Span u, PosDraw u) 
-        -> (Span u, PosDraw u)
-appendW (s0,pf0) (s1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 pt
-                            in (max s0 s1, pf)
-
-
-
--- | Version of 'runPosEvent' that produces a 
--- 'LocImage' that returns a bounding box. 
--- 
--- The 'PosEvent' is run with only rect-address as an explicit 
--- argument (start-point is implicit). The corresponding answer is 
--- an /arity one/ Graphic that needs drawing with the start-point.
---
-runPosEvent :: (Ord u, Fractional u, InterpretUnit u) 
-            => PosEvent ctx u -> LocEvent ctx u (Timespan u)
-runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
-   askCtx >>= \ctx -> 
-   let (s0,df) = runQuery ctx mf
-       bb      = timespan ot (ot + s0)
-   in replaceAns bb $ primEvent (df ot)
 
 
 
@@ -144,14 +140,15 @@ runPosEvent (PosEvent mf) = promoteLoc $ \ot ->
 -- Create a 'PosEvent' from its length and 'LocEvent'.
 --
 makePosEvent :: InterpretUnit u
-             => Query ctx u (Span u) -> ULocEvent ctx u 
-             -> PosEvent ctx u
-makePosEvent qortt gf = PosEvent body
-  where
-    body = askCtx >>= \ctx -> 
-           let v1   = runQuery ctx qortt
-               pf   = \ot -> snd $ runLocEvent ot ctx gf
-           in return (v1,pf)
+             => Query ctx u (Orientation u) -> ULocEvent ctx u 
+             -> PosEvent ctx u (UNil u)
+makePosEvent qortt gf = PosEvent $ \r o -> 
+      let ortt   = runQuery r qortt
+          dxmin  = normalize (ctx_tempo r) $ or_x_minor ortt
+          dxmaj  = normalize (ctx_tempo r) $ or_x_major ortt
+          uo     = dinterp (ctx_tempo r) o
+          (a,w1) = runLocEvent uo r gf
+      in (a, Orientation dxmin dxmaj, w1)
 
 
 
@@ -159,54 +156,22 @@ makePosEvent qortt gf = PosEvent body
 --
 -- Build an empty 'PosGraphicObject'.
 --
-emptyPosEvent :: InterpretUnit u => PosEvent ctx u
-emptyPosEvent = PosEvent $ pure (0, const mempty)
-
-    
-
-
-
--- | Apply a context update to a 'PosEvent'.
---
-localPosEvent :: ContextF ctx -> PosEvent ctx u -> PosEvent ctx u
-localPosEvent upd = PosEvent . localize upd . getPosEvent
-
-
---
--- decorate  - oblivious to /answer/.
--- elaborate - derives annotation from the /answer/ and makes a 
---             cumulative graphic.
---
-
-
-
--- | Note the decoration does not modify the span (duration)
--- even if it may sound for longer.
---
-elaboratePosEvent :: InterpretUnit u
-                  => (Span u -> ULocEvent ctx u) -> PosEvent ctx u 
-                  -> PosEvent ctx u
-elaboratePosEvent fn po = PosEvent body
-  where
-    body = askCtx >>= \ctx -> 
-           let (ortt,ptf) = runQuery ctx (getPosEvent po)
-               deco       = \pt -> snd $ runLocEvent pt ctx (fn ortt)
-               ptf2       = ptf  `mappend` deco
-           in return (ortt, ptf2)
+emptyPosEvent :: (Monoid a, InterpretUnit u)  => PosEvent ctx u a
+emptyPosEvent = PosEvent $ \_ _ -> (mempty, mempty, mempty)
 
 
 
 -- | Extend the orientation.
 --
 extendPosEvent :: InterpretUnit u 
-               => u -> u -> PosEvent ctx u -> PosEvent ctx u
-extendPosEvent t0 t1 po = PosEvent body
-  where
-    body = askCtx >>= \ctx -> 
-           let (b0,pf0) = runQuery ctx (getPosEvent po)
-               b1       = t0 + b0 + t1 
-               pf1      = \ot -> pf0 (ot + t0) 
-           in return (b1,pf1)
+               => u -> u -> PosEvent ctx u a -> PosEvent ctx u a
+extendPosEvent t0 t1 po = PosEvent $ \r o -> 
+    let (a,v1,w1) = getPosEvent po r o
+        dt0       = normalize (ctx_tempo r) t0
+        dt1       = normalize (ctx_tempo r) t1
+        v2        = extendOrientation dt0 dt1 v1         
+        w2        = moveCatPrim (negate dt0) w1
+    in (a,v2,w2)
 
 
 
@@ -215,34 +180,44 @@ extendPosEvent t0 t1 po = PosEvent body
 -- Combining PosEvent
 
 
-instance (Fractional u, Ord u, InterpretUnit u) => 
-    Overlay (PosEvent ctx u) where
-  overlay = mappend
+instance Monoid a => Overlay (PosEvent ctx u a) where
+  overlay = centerOverlay
+
+
+centerOverlay :: (Monoid a) 
+              => PosEvent ctx u a -> PosEvent ctx u a -> PosEvent ctx u a
+centerOverlay pa pb = PosEvent $ \r o -> 
+    let (a,v1,w1) = getPosEvent pa r o
+        (b,v2,w2) = getPosEvent pb r o
+        (dv,ortt) = mergeCenters v1 v2
+        w2'       = moveCatPrim dv w2
+    in (a `mappend` b, ortt, w1 `mappend` w2')
+        
 
 
 
-instance Num u => Append (PosEvent ctx u) where
-  append = appendPE
+instance Monoid a => Append (PosEvent ctx u a) where
+  append = appendEndToEnd
 
 
-appendPE :: (Num u)   
-         => PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
-appendPE pe0 pe1 = PosEvent body
+appendEndToEnd :: (Monoid a)
+               => PosEvent ctx u a -> PosEvent ctx u a -> PosEvent ctx u a
+appendEndToEnd pa pb = PosEvent $ \ r o ->
+    let (a,v1,w1) = getPosEvent pa r o
+        (b,v2,w2) = getPosEvent pb r o
+        (dv,ortt) = mergeHLine v1 v2
+        w2'       = moveCatPrim dv w2
+    in (a `mappend` b, ortt, w1 `mappend` w2')
+
+
+
+instance (Monoid a, InterpretUnit u) => Space (PosEvent ctx u a) where
+  space = spaceEndToEnd
+
+
+spaceEndToEnd :: (Monoid a, InterpretUnit u)
+              => u -> PosEvent ctx u a -> PosEvent ctx u a -> PosEvent ctx u a
+spaceEndToEnd u a b = a `append` blank `append` b
   where
-    body = askCtx >>= \ctx -> 
-          let (s0,pf0) = runQuery ctx (getPosEvent pe0)
-              (s1,pf1) = runQuery ctx (getPosEvent pe1)
-              pf       = \ot -> pf0 ot `mappend` (pf1 $ ot + s0)
-          in return (s0 + s1, pf)
-
-
-instance InterpretUnit u => Space (PosEvent ctx u) where
-  space = spacePE
-
-
-spacePE :: InterpretUnit u
-        => u -> PosEvent ctx u -> PosEvent ctx u -> PosEvent ctx u
-spacePE u a b = a `append` blank `append` b
-  where
-    blank = makePosEvent (pure u) mempty
+    blank = replaceAns mempty $ makePosEvent (pure $ Orientation 0 u) mempty
 
