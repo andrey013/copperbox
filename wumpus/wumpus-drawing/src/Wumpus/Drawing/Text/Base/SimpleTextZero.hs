@@ -72,7 +72,7 @@ type LocRectTextLine u  = RectAddress -> LocTextLine u
 -- supports concatentation etc.), but consequently it has a more 
 -- complicated API.
 -- 
-type PosTextLine u       = PosObject u
+type PosTextLine u       = PosObject u (UNil u)
 
 
 
@@ -228,7 +228,8 @@ rescTextline ang esc = makeRotEscText CAP_HEIGHT_PLUS_DESCENDER ang esc
 
 makeRotEscText :: (Real u, Floating u, Ord u, InterpretUnit u) 
                => TextVSize -> Radian -> EscapedText -> LocRectTextLine u
-makeRotEscText vsz ang esc = \raddr -> runPosObject raddr $ makePosObject ortt body
+makeRotEscText vsz ang esc = \raddr -> 
+    runPosObjectBBox raddr $ makePosObject ortt body
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero vsz esc
     body = incline (dcREscapedlabel esc) ang

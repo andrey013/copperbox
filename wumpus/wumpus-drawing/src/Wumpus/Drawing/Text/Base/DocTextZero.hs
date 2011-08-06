@@ -319,7 +319,7 @@ runEvalM ctx mf = getEvalM mf ctx
 
 
 interpret :: (Fractional u, Ord u, InterpretUnit u) 
-          => Doc u -> EvalM u (PosObject u)
+          => Doc u -> EvalM u (PosObject u (UNil u))
 interpret Empty             = interpEmpty
 interpret Space             = interpSpace
 interpret (Text esc)        = interpText esc
@@ -328,15 +328,15 @@ interpret (VCat va a b)     =
     valignSpace va  <$> lineSpace <*> interpret a <*> interpret b
 
 interpret (Fill va w a)     = ppad va w <$> interpret a
-interpret (DLocal upd a)    = localPosObject upd <$> interpret a
+interpret (DLocal upd a)    = localize upd <$> interpret a
 interpret (TLocal upd a)    = local upd (interpret a)
 interpret (Mono q1 xs)      = interpMono q1 xs
-interpret (AElab fn a)      = decoPosObject ANTERIOR fn <$> interpret a
+interpret (AElab fn a)      = decoratePosObject ANTERIOR fn <$> interpret a
 
 
 
 
-interpEmpty :: InterpretUnit u => EvalM u (PosObject u)
+interpEmpty :: InterpretUnit u => EvalM u (PosObject u (UNil u))
 interpEmpty = 
     return $ makePosObject (pure $ Orientation 0 0 0 0) emptyLocImage
 
@@ -349,7 +349,7 @@ interpEmpty =
 -- DrawingContext...
 --
 interpText :: (Fractional u, InterpretUnit u) 
-           => EscapedText -> EvalM u (PosObject u)
+           => EscapedText -> EvalM u (PosObject u (UNil u))
 interpText esc = interpretLeaf $
     makePosObject (textOrientationZero CAP_HEIGHT_PLUS_DESCENDER esc) 
                   (dcEscapedlabel esc)
@@ -362,14 +362,14 @@ interpText esc = interpretLeaf $
 -- the current font.
 --
 interpSpace :: InterpretUnit u 
-            => EvalM u (PosObject u)
+            => EvalM u (PosObject u (UNil u))
 interpSpace = return $ makePosObject qy1  emptyLocImage
   where
     qy1 = charOrientationZero CAP_HEIGHT_PLUS_DESCENDER $ CharEscInt $ ord ' '
 
 
-ppad :: (Fractional u, Ord u) 
-     => VAlign -> u -> PosObject u -> PosObject u
+ppad :: (Fractional u, Ord u, InterpretUnit u) 
+     => VAlign -> u -> PosObject u a -> PosObject u a
 ppad VALIGN_LEFT   du = mapOrientation (padXMinor du)
 ppad VALIGN_CENTER du = mapOrientation (padHEven $ 0.5 * du)
 ppad VALIGN_RIGHT  du = mapOrientation (padXMajor du)
@@ -377,7 +377,7 @@ ppad VALIGN_RIGHT  du = mapOrientation (padXMajor du)
 
 interpMono :: (Fractional u, InterpretUnit u)
            => Query u (AdvanceVec u) -> [EscapedChar] 
-           -> EvalM u (PosObject u)
+           -> EvalM u (PosObject u (UNil u))
 interpMono avq chs = 
     interpretLeaf $ makePosObject 
         (qChars >>= hkernOrientationZero CAP_HEIGHT_PLUS_DESCENDER ) 
@@ -389,14 +389,14 @@ interpMono avq chs =
 
 
 interpretLeaf :: (Fractional u, InterpretUnit u)
-              => PosObject u -> EvalM u (PosObject u)
+              => PosObject u a -> EvalM u (PosObject u a)
 interpretLeaf po = 
-    (\f1 f2 sty -> f1 $ f2 $ localPosObject sty po) 
+    (\f1 f2 sty -> f1 $ f2 $ localize sty po) 
        <$> (fmap (condE drawUnderline)       $ asks text_underline)
        <*> (fmap (condE drawStrikethrough)   $ asks text_strikethrough)
        <*> textstyle
    where
-     condE fn b = if b then decoPosObject SUPERIOR fn else id
+     condE fn b = if b then decoratePosObject SUPERIOR fn else id
 
 textstyle :: EvalM u DrawingContextF
 textstyle = 

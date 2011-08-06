@@ -56,7 +56,7 @@ type LocRectChar u = RectAddress -> LocImage u (BoundingBox u)
 -- concatentation etc.), but consequently it has a more 
 -- complicated API.
 -- 
-type PosChar u = PosObject u
+type PosChar u = PosObject u (UNil u)
 
 
 
@@ -81,7 +81,7 @@ charLabel ch = escCharLabel $ CharLiteral ch
 escCharLabel :: (Floating u, InterpretUnit u) 
              => EscapedChar -> LocRectChar u
 escCharLabel esc = \raddr -> 
-    runPosObject raddr (makePosChar CAP_HEIGHT_PLUS_DESCENDER esc) 
+    runPosObjectBBox raddr (makePosChar CAP_HEIGHT_PLUS_DESCENDER esc) 
 
 
 
@@ -103,7 +103,7 @@ charLabelUp ch = escCharLabel $ CharLiteral ch
 escCharLabelUp :: (Floating u, InterpretUnit u) 
                => EscapedChar -> LocRectChar u
 escCharLabelUp esc = \raddr -> 
-    runPosObject raddr (makePosChar JUST_CAP_HEIGHT esc) 
+    runPosObjectBBox raddr (makePosChar JUST_CAP_HEIGHT esc) 
 
 
 
@@ -145,7 +145,7 @@ posEscCharUp = makePosChar CAP_HEIGHT_PLUS_DESCENDER
 -- | Helper.
 --
 makePosChar :: InterpretUnit u 
-            => TextVSize -> EscapedChar -> PosObject u
+            => TextVSize -> EscapedChar -> PosObject u (UNil u)
 makePosChar vsz esc = 
     makePosObject (charOrientationZero vsz esc) 
                   (dcEscapedlabel $ wrapEscChar esc)

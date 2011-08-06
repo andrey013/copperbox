@@ -32,10 +32,13 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   -- * Operations
   , runPosObject
-
+  , runPosObjectBBox
 
   , makePosObject
   , emptyPosObject
+
+  , elaboratePosObject
+  , decoratePosObject
 
   , extendPosObject
   , mapOrientation
@@ -133,6 +136,18 @@ runPosObject addr mf = promoteLoc $ \ot ->
 
 
 
+-- | Run a PosObject producing a LocImage (BoundingBox u).
+--
+runPosObjectBBox :: InterpretUnit u 
+                 => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
+runPosObjectBBox addr mf = promoteLoc $ \ot -> 
+    askDC >>= \ctx -> 
+    let dot       = normalizeF (dc_font_size ctx) ot
+        (_,o1,ca) = getPosObject mf ctx dot
+        v1        = vtoOrigin addr o1
+        bb        = dinterpF (dc_font_size ctx) $ orientationBounds o1 dot
+    in replaceAns bb $ primGraphic $ cpmove v1 ca
+
 
 
 
@@ -168,8 +183,6 @@ emptyPosObject = PosObject $ \_ _ -> (mempty, mempty, mempty)
 
     
 
-{-
-
 --
 -- decorate  - oblivious to /answer/.
 -- elaborate - derives annotation from the /answer/ and makes a 
@@ -177,29 +190,29 @@ emptyPosObject = PosObject $ \_ _ -> (mempty, mempty, mempty)
 --
 
 
-elabPosObject :: (Fractional u, Ord u, InterpretUnit u)
-              => ZDeco -> RectAddress -> LocGraphic u -> PosObject u 
-              -> PosObject u
-elabPosObject zdec raddr gf po = decoPosObject zdec fn po
+elaboratePosObject :: (Fractional u, Ord u, InterpretUnit u)
+                   => ZDeco -> RectAddress -> LocGraphic u -> PosObject u a
+                   -> PosObject u a
+elaboratePosObject zdec raddr gf ma = decoratePosObject zdec fn ma
   where
     fn ortt = moveStart (vtoOrigin raddr ortt) gf
 
 
 
-decoPosObject :: InterpretUnit u 
-              => ZDeco -> (Orientation u -> LocGraphic u) -> PosObject u 
-              -> PosObject u
-decoPosObject zdec fn po = PosObject body
-  where
-    body = askDC >>= \ctx -> 
-           let (ortt,ptf) = runQuery ctx (getPosObject po)
-               deco       = \pt -> snd $ runLocImage pt ctx (fn ortt)
-               ptf2       = case zdec of
-                              ANTERIOR -> deco `mappend` ptf
-                              SUPERIOR -> ptf  `mappend` deco
-           in return (ortt, ptf2)
+decoratePosObject :: InterpretUnit u 
+                  => ZDeco -> (Orientation u -> LocGraphic u) -> PosObject u a
+                  -> PosObject u a
+decoratePosObject zdec fn ma = PosObject $ \ctx pt -> 
+    let (a,o1,w1) = getPosObject ma ctx pt
+        uortt     = dinterpF (dc_font_size ctx) o1
+        upt       = dinterpF (dc_font_size ctx) pt
+        (_,w2)    = runLocImage upt ctx (fn uortt)
+        wout      = case zdec of
+                         ANTERIOR -> w2 `mappend` w1
+                         SUPERIOR -> w1  `mappend` w2
+    in (a,o1,wout)
 
--}
+
 
 
 -- | Extend the orientation.

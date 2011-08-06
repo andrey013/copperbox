@@ -66,11 +66,11 @@ data TextVSize = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
 
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
-                   => PosObject u -> (RectAddress -> LocImage u (BoundingBox u))
+                   => PosObject u a -> (RectAddress -> LocImage u (BoundingBox u))
 posTextWithMargins obj = \raddr ->
     textMargin >>= \(xsep,ysep) -> 
     let body = extendPosObject xsep xsep ysep ysep obj
-    in runPosObject raddr body
+    in runPosObjectBBox raddr body
 
 
 --------------------------------------------------------------------------------

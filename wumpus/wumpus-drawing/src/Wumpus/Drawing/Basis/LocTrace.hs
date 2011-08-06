@@ -56,6 +56,19 @@ import Control.Applicative
 import Control.Monad
 import Data.Monoid
 
+--
+-- Note - there are no instances of DrawingCtxM for LocTrace or
+-- LocTraceT. 
+-- 
+-- The type is not directly compatible as we are collecting 
+-- LocGraphic in a triple, but also localize would change the 
+-- interpretation of the vector cursor if the font-size changes.
+--
+
+
+
+
+
 -- | LocTrace is a writer state monad.
 --
 -- The writer accumulates a LocGraphic the state is a cumulative
@@ -212,6 +225,7 @@ class LocTraceM m => LocForkTraceM (m :: * -> *) where
 
   -- Branch is like @local@ in the Reader monad.
   branch    :: m a -> m a
+
 
 
 
