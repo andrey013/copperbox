@@ -23,7 +23,8 @@ module Wumpus.Basic.Kernel.Objects.Orientation
     RectAddress(..)
   , Orientation(..)
 
-  , orientationStart
+  , vtoRectAddress
+  , vtoOrigin
   , orientationBounds
   , orientationWidth
   , orientationHeight
@@ -65,6 +66,8 @@ module Wumpus.Basic.Kernel.Objects.Orientation
 
 
 import Wumpus.Core                              -- package: wumpus-core
+
+import Data.VectorSpace                         -- package: vector-space
 
 import Data.Monoid
 
@@ -122,75 +125,75 @@ instance Functor Orientation where
     Orientation (f xmin) (f xmaj) (f ymin) (f ymaj)
 
 
-
+-- | Concatenation coalesces the origins.
+--
 instance (Fractional u, Ord u) => Monoid (Orientation u) where
   mempty  = Orientation 0 0 0 0
-  mappend = concatOrientation
+  a `mappend` b = 
+     Orientation { or_x_minor = max (or_x_minor a) (or_x_minor b)
+                 , or_x_major = max (or_x_major a) (or_x_major b)
+                 , or_y_minor = max (or_y_minor a) (or_y_minor b)
+                 , or_y_major = max (or_y_major a) (or_y_major b)
+                 }
 
--- | Concatenation here essentially turns both Orientation objects
--- into /center-form/ then finds the maximum rectangle.
+
+-- Helper types for calculating vector from Origin 
+-- (not exported).
+
+data HDist = HCENTER | HLEFT | HRIGHT
+  deriving (Eq,Ord,Show)
+
+data VDist = VCENTER | VBASE | VTOP
+  deriving (Eq,Ord,Show)
+
+
+
+-- | The vector from a origin ro a 'RectAddress'.
 --
-concatOrientation :: (Fractional u, Ord u) 
-                => Orientation u -> Orientation u -> Orientation u
-concatOrientation op0 op1 = Orientation hw hw hh hh
+vtoRectAddress :: (Fractional u, Ord u) 
+               => Orientation u -> RectAddress -> Vec2 u
+vtoRectAddress (Orientation xmin xmaj ymin ymaj) = go
   where
-    (hw0,hh0) = halfDists op0
-    (hw1,hh1) = halfDists op1
-    hw        = max hw0 hw1
-    hh        = max hh0 hh1
-
-
-
-
--- | Find the half-width and half-height of an Orientation.
--- 
--- Essentially this is /center-form/ of an Orientation, but 
--- in /center-form/ there is duplication: 
---
--- > xminor == xmajor
--- > yminor == ymajor
--- 
--- So instead, the result type is just a pair.
---
-halfDists :: Fractional u => Orientation u -> (u,u)
-{-# INLINE halfDists #-}
-halfDists (Orientation xmin xmaj ymin ymaj) = 
-    (0.5 * (xmin+xmaj), 0.5 * (ymin+ymaj))
-
-
-
-
-
--- | The vector from a 'RectAddress' to the start point.
---
--- Negate the vector to get from start point to 'RectAddress'.
---
-orientationStart :: Fractional u => RectAddress -> Orientation u -> Vec2 u
-orientationStart raddr (Orientation xmin xmaj ymin ymaj) = go raddr
-  where
-    w         = xmin + xmaj
-    h         = ymin + ymaj
-    hw        = 0.5  * w
-    hh        = 0.5  * h
+    hw        = 0.5  * (xmin + xmaj)
+    hh        = 0.5  * (ymin + ymaj)
    
     -- CENTER, NN, SS, EE, WW all go to bottomleft then add back 
     -- the minors.
 
-    go CENTER = V2 ((-hw) + xmin) ((-hh) + ymin)
+    go CENTER = V2 (hdist HCENTER) (vdist VCENTER)
     go ORIGIN = zeroVec
-    go NN     = V2 ((-hw) + xmin) ((-h)  + ymin)
-    go SS     = V2 ((-hw) + xmin)   ymin
-    go EE     = V2 ((-w)  + xmin) ((-hh) + ymin)
-    go WW     = V2 xmin           ((-hh) + ymin)
-    go NE     = V2 (-xmaj)        (-ymaj)
-    go SE     = V2 (-xmaj)          ymin
-    go SW     = V2 xmin             ymin
-    go NW     = V2 xmin           (-ymaj)
-    go BLL    = V2 xmin             0
-    go BLC    = V2 ((-hw) + xmin)   0
-    go BLR    = V2 ((-w)  + xmin)   0 
+    go NN     = V2 (hdist HCENTER) (vdist VTOP)
+    go SS     = V2 (hdist HCENTER) (vdist VBASE)
+    go EE     = V2 (hdist HRIGHT)  (vdist VCENTER)
+    go WW     = V2 (hdist HLEFT)   (vdist VCENTER)
+    go NE     = V2 (hdist HRIGHT)  (vdist VTOP)
+    go SE     = V2 (hdist HRIGHT)  (vdist VBASE)
+    go SW     = V2 (hdist HLEFT)   (vdist VBASE)
+    go NW     = V2 (hdist HLEFT)   (vdist VTOP)
+    go BLL    = V2 (hdist HLEFT)   0
+    go BLC    = V2 (hdist HCENTER) 0
+    go BLR    = V2 (hdist HRIGHT)  0 
+
+    -- > [..o..^.....]  , o -> ^
+    --
+    hdist HCENTER = if xmin < xmaj then hw - xmin else negate (xmin - hw)
+
+    -- > [..o..^.....]  , o -> [
+    --
+    hdist HLEFT   = negate xmin
+    
+    -- > [..o..^.....]  , o -> ]
+    --
+    hdist HRIGHT  = xmaj
+
+    vdist VCENTER = if ymin < ymaj then hh - ymin else negate (ymin - hh)
+    vdist VBASE   = negate ymin
+    vdist VTOP    = ymaj
 
 
+vtoOrigin :: (Fractional u, Ord u) 
+          => RectAddress -> Orientation u -> Vec2 u
+vtoOrigin addr ortt = negateV $ vtoRectAddress ortt addr
 
 -- | Calculate the bounding box formed by locating the 'Orientation'
 -- at the supplied point.
@@ -429,12 +432,12 @@ valignRightO (Orientation xmin0 xmaj0 ymin0 ymaj0)
 --------------------------------------------------------------------------------
 -- Binary start pos displacement
 
+-- Note - these can be made a lot clearer...
+
 upDown :: Num u => u -> u -> u
-{-# INLINE upDown #-}
 upDown u d = u - d
 
 downUp :: Num u => u -> u -> u
-{-# INLINE downUp #-}
 downUp d u = negate d + u
 
 -- | Move second right.
@@ -483,12 +486,10 @@ binmoveHTop op0 op1 = V2 hdist vdist
 
 
 leftRight :: Num u => u -> u -> u
-{-# INLINE leftRight #-}
 leftRight l r = negate l + r
 
 
 rightLeft :: Num u => u -> u -> u
-{-# INLINE rightLeft #-}
 rightLeft r l = r - l
 
 

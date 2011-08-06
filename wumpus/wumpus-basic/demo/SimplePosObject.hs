@@ -59,12 +59,11 @@ mf = do
     draw $ testDrawBl    BLR    `at` (P2 225  0)
     
 
-testDrawBl :: (Floating u, InterpretUnit u) => RectAddress -> LocGraphic u
+testDrawBl :: RectAddress -> LocGraphic Double
 testDrawBl raddr = dcDisk FILL 2 `mappend` rectBl raddr
 
 
-rectBl :: (Fractional u, InterpretUnit u) 
-       => RectAddress -> LocGraphic u
+rectBl :: RectAddress -> LocGraphic Double
 rectBl raddr = 
     ignoreAns $ runPosObject raddr $ makePosObject (return ortt) (mkRectBl w h)
   where
@@ -82,14 +81,12 @@ mkRectBl w h = dcRectangle STROKE w h
 
 
 
-testDrawMinor :: (Floating u, InterpretUnit u) 
-              => RectAddress -> LocGraphic u
+testDrawMinor :: RectAddress -> LocGraphic Double
 testDrawMinor raddr = 
     dcDisk FILL 2 `mappend` (ignoreAns $ rectMinor raddr)
 
 
-rectMinor :: (Fractional u, InterpretUnit u) 
-          => RectAddress -> LocImage u (BoundingBox u)
+rectMinor :: RectAddress -> LocGraphic Double
 rectMinor raddr = 
     runPosObject raddr $ makePosObject (return ortt) (mkRectMinor m w h)
   where

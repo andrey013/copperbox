@@ -38,8 +38,11 @@ description:
     in TraceDrawing are now specialized to work only on the 
     @TraceDrawing@ type.
   .
-  * Changed the internals of the AdvObject data type so it is more
-    idiomatic - it is now essentially a reader-writer monad.
+  * Changed the internals of @AdvObject@ so it is more idiomatic - 
+    it is now essentially a reader-writer monad.
+  . 
+  * Changed the internals of @PosObject@ so it is more idiomatic - 
+    it is now essentially a reader-writer monad.
   .
   v0.18.0 to v0.19.0:
   .

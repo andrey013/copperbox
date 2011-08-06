@@ -114,8 +114,7 @@ instance Monoid DAV where
 -- advance (width) vector as each character is drawn.
 --
 newtype AdvObject u a = AdvObject 
-          { getAdvObject :: DrawingContext -> Point2 Double 
-                         -> (a, DAV, CatPrim) }
+          { getAdvObject :: DrawingContext -> DPoint2 -> (a, DAV, CatPrim) }
 
 type instance DUnit (AdvObject u a) = u
 
@@ -126,12 +125,12 @@ type AdvGraphic u = AdvObject u (UNil u)
 type DAdvGraphic  = AdvGraphic Double
 
 
-instance Num u => Functor (AdvObject u) where
+instance Functor (AdvObject u) where
   fmap f mf = AdvObject $ \ctx pt -> 
               let (a,v1,w1) = getAdvObject mf ctx pt in (f a,v1,w1)
 
 
-instance InterpretUnit u => Applicative (AdvObject u) where
+instance Applicative (AdvObject u) where
   pure a    = AdvObject $ \_   _  -> (a,mempty,mempty)
   mf <*> ma = AdvObject $ \ctx pt -> 
               let (f,v1,w1) = getAdvObject mf ctx pt
@@ -140,7 +139,7 @@ instance InterpretUnit u => Applicative (AdvObject u) where
 
 
 
-instance InterpretUnit u => Monad (AdvObject u) where
+instance Monad (AdvObject u) where
   return a  = AdvObject $ \_   _  -> (a,mempty,mempty)
   mf >>= k  = AdvObject $ \ctx pt -> 
               let (a,v1,w1) = getAdvObject mf ctx pt
@@ -149,7 +148,7 @@ instance InterpretUnit u => Monad (AdvObject u) where
 
 
 
-instance InterpretUnit u => DrawingCtxM (AdvObject u) where
+instance DrawingCtxM (AdvObject u) where
   askDC           = AdvObject $ \ctx _ -> (ctx, mempty, mempty)
   asksDC fn       = AdvObject $ \ctx _ -> (fn ctx, mempty, mempty)
   localize upd ma = AdvObject $ \ctx pt -> getAdvObject ma (upd ctx) pt
@@ -170,7 +169,7 @@ instance (Monoid a, InterpretUnit u) => Monoid (AdvObject u a) where
 -- | Running an AdvObject produces a LocImage.
 --
 runAdvObject :: InterpretUnit u 
-            => AdvObject u a -> LocImage u a
+             => AdvObject u a -> LocImage u a
 runAdvObject mf = promoteLoc $ \ot -> 
     askDC >>= \ctx -> 
     let dot      = normalizeF (dc_font_size ctx) ot
