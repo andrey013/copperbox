@@ -29,6 +29,9 @@ module Wumpus.Basic.Kernel.Objects.AdvObject
   -- * Advance-vector object and graphic
   , AdvObject
   , DAdvObject
+
+  , AdvGraphic
+  , DAdvGraphic
   
   , runAdvObject
 
@@ -57,8 +60,7 @@ import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
+import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
@@ -97,53 +99,103 @@ advanceV (V2 _ h)  = h
 --------------------------------------------------------------------------------
 -- AdvObject
 
-type AdvDraw u = Point2 u -> CatPrim
+-- | Internal newtype wrapper so we can have a monoid instance 
+-- with vector plus (^+^) for mappend.
+--
+newtype DAV = DAV { getDAV :: AdvanceVec Double }
 
 
+instance Monoid DAV where
+  mempty = DAV $ V2 0 0
+  DAV v1 `mappend` DAV v2 = DAV $ v1 ^+^ v2
 
 -- | /Advance vector/ graphic - this partially models the 
 -- PostScript @show@ command which moves the /current point/ by the
 -- advance (width) vector as each character is drawn.
 --
-newtype AdvObject u = AdvObject { getAdvObject :: Query u (Vec2 u, AdvDraw u) }
+newtype AdvObject u a = AdvObject 
+          { getAdvObject :: DrawingContext -> Point2 Double 
+                         -> (a, DAV, CatPrim) }
 
-type instance DUnit (AdvObject u) = u
+type instance DUnit (AdvObject u a) = u
 
-type DAdvObject     = AdvObject Double
+type DAdvObject a   = AdvObject Double a
 
+
+type AdvGraphic u = AdvObject u (UNil u)
+type DAdvGraphic  = AdvGraphic Double
+
+
+instance Num u => Functor (AdvObject u) where
+  fmap f mf = AdvObject $ \ctx pt -> 
+              let (a,v1,w1) = getAdvObject mf ctx pt in (f a,v1,w1)
+
+
+instance InterpretUnit u => Applicative (AdvObject u) where
+  pure a    = AdvObject $ \_   _  -> (a,mempty,mempty)
+  mf <*> ma = AdvObject $ \ctx pt -> 
+              let (f,v1,w1) = getAdvObject mf ctx pt
+                  (a,v2,w2) = getAdvObject ma ctx pt
+              in (f a, v1 `mappend` v2, w1 `mappend` w2)
+
+
+
+instance InterpretUnit u => Monad (AdvObject u) where
+  return a  = AdvObject $ \_   _  -> (a,mempty,mempty)
+  mf >>= k  = AdvObject $ \ctx pt -> 
+              let (a,v1,w1) = getAdvObject mf ctx pt
+                  (b,v2,w2) = getAdvObject (k a) ctx pt
+              in (b, v1 `mappend` v2, w1 `mappend` w2)
+
+
+
+instance InterpretUnit u => DrawingCtxM (AdvObject u) where
+  askDC           = AdvObject $ \ctx _ -> (ctx, mempty, mempty)
+  asksDC fn       = AdvObject $ \ctx _ -> (fn ctx, mempty, mempty)
+  localize upd ma = AdvObject $ \ctx pt -> getAdvObject ma (upd ctx) pt
+
+
+
+
+instance (Monoid a, InterpretUnit u) => Monoid (AdvObject u a) where
+  mempty = AdvObject $ \_ _ -> (mempty, mempty, mempty)
+  ma `mappend` mb = AdvObject $ \ctx pt -> 
+                    let (a,v1,w1) = getAdvObject ma ctx pt
+                        (b,v2,w2) = getAdvObject mb ctx pt
+                        w2r       = cpmove (getDAV v1) w2
+                    in (a `mappend` b, v1 `mappend` v2, w1 `mappend` w2r)
+
+
+
+-- | Running an AdvObject produces a LocImage.
+--
+runAdvObject :: InterpretUnit u 
+            => AdvObject u a -> LocImage u a
+runAdvObject mf = promoteLoc $ \ot -> 
+    askDC >>= \ctx -> 
+    let dot      = normalizeF (dc_font_size ctx) ot
+        (a,_,ca) = getAdvObject mf ctx dot
+    in replaceAns a $ primGraphic ca
 
 
 
 --------------------------------------------------------------------------------
 
-instance (InterpretUnit u) => Monoid (AdvObject u) where
-  mempty  = blankAdvObject (V2 0 0)
-  mappend = advplus
 
-
--- | Run an 'AdvObject' turning it into an 'LocImage'.
---
-runAdvObject :: InterpretUnit u => AdvObject u -> LocImage u (Vec2 u)
-runAdvObject (AdvObject mf) = promoteLoc $ \pt -> 
-   askDC >>= \ctx -> 
-   let (v1,df) = runQuery ctx mf
-   in replaceAns v1 $ primGraphic (df pt)
-
-
--- | 'makeAdvObject' : @ loc_context_function * graphic -> AdvObject @
+-- | 'makeAdvObject' : @ loc_context_function * image -> AdvObject @
 --
 -- Build an 'AdvObject' from a context function ('CF') that 
 -- generates the answer displacement vector and a 'LocGraphic' 
 -- that draws the 'AdvObject'.
 --
 makeAdvObject :: InterpretUnit u 
-              => Query u (Vec2 u) -> LocGraphic u -> AdvObject u
-makeAdvObject mq gf = AdvObject body
-  where
-    body = askDC >>= \ctx -> 
-           let v1   = runQuery ctx mq
-               pf   = \pt -> snd $ runLocImage pt ctx gf
-           in return (v1,pf)
+              => Query u (Vec2 u) -> LocImage u a -> AdvObject u a
+makeAdvObject mq gf = AdvObject $ \ctx pt -> 
+    let v1    = runQuery ctx mq
+        dav1  = DAV $ normalizeF (dc_font_size ctx) v1
+        upt   = dinterpF (dc_font_size ctx) pt
+        (a,w) = runLocImage upt ctx gf
+    in (a,dav1,w)
 
 
 
@@ -155,12 +207,16 @@ makeAdvObject mq gf = AdvObject body
 -- @Wumpus-Core@ and is not drawn, the answer vector generated is
 -- the zero vector @(V2 0 0)@.
 -- 
-emptyAdvObject :: InterpretUnit u => AdvObject u
-emptyAdvObject = blankAdvObject (V2 0 0)
+emptyAdvObject :: (Monoid a, InterpretUnit u) => AdvObject u a
+emptyAdvObject = mempty
 
 
-blankAdvObject :: Vec2 u -> AdvObject u
-blankAdvObject v1 = AdvObject $ pure (v1, const mempty)
+
+blankAdvObject :: (Monoid a, InterpretUnit u) 
+               => Vec2 u -> AdvObject u a
+blankAdvObject v1 = AdvObject $ \ctx _ ->
+                    let dav1  = DAV $ normalizeF (dc_font_size ctx) v1
+                    in (mempty, dav1, mempty)
 
 
 
@@ -170,47 +226,12 @@ blankAdvObject v1 = AdvObject $ pure (v1, const mempty)
 -- Combining AdvObjects
 
 
--- | Design note - this is rather /uncool/.
---
--- Here it would be nicer if PrimW didn\'t cover two cases - 
--- queries (Pure) and images (PrimW). However implementing this 
--- would double the amount of code and then require extra 
--- bind-like combinators to promote queries to images.
---
--- This is simulated in @appendW@ by dropping any graphic embedded 
--- in a PrimW (everything should be a query anyway). But it would 
--- be nicer in this particular case, if the type system enforced 
--- this.
---
-appendW :: Num u 
-        => (Vec2 u, AdvDraw u) 
-        -> (Vec2 u, AdvDraw u) 
-        -> (Vec2 u, AdvDraw u)
-appendW (v0,pf0) (v1,pf1) = let pf = \pt -> pf0 pt `mappend` pf1 (pt .+^ v0)
-                            in (v0 ^+^ v1, pf)
-
-
--- | Primitive combination.
--- 
--- Move second object by the advance vector of the first. Sum 
--- both advance vectors.
---
-advplus :: Num u => AdvObject u -> AdvObject u -> AdvObject u
-advplus a b = AdvObject body
-  where 
-    body = askDC >>= \ctx ->
-           let ans1 = runQuery ctx (getAdvObject a)
-               ans2 = runQuery ctx (getAdvObject b)
-           in return (appendW ans1 ans2)
-
-
-
 
 -- Helper for list concatenation.
 -- 
-listcat :: InterpretUnit u 
-        => (AdvObject u -> AdvObject u -> AdvObject u)
-        -> [AdvObject u] -> AdvObject u
+listcat :: (Monoid a, InterpretUnit u)
+        => (AdvObject u a -> AdvObject u a -> AdvObject u a)
+        -> [AdvObject u a] -> AdvObject u a
 listcat _ []     = mempty
 listcat op (x:xs) = go x xs
   where
@@ -232,28 +253,33 @@ infixr 6 `advance`
 --
 -- The final answer is the sum of both advance vectors.
 --
-advance :: Num u => AdvObject u -> AdvObject u -> AdvObject u
-advance = advplus
+advance :: (Monoid a, InterpretUnit u) 
+        => AdvObject u a -> AdvObject u a -> AdvObject u a
+advance = mappend
   
 
 -- | Concatenate the list of AdvObjects with 'advance'.
 --
-advances :: InterpretUnit u => [AdvObject u] -> AdvObject u
-advances = listcat advance
+advances :: (Monoid a, InterpretUnit u) 
+         => [AdvObject u a] -> AdvObject u a
+advances = mconcat
 
 
 -- | Combine the AdvObjects using the answer vector of the 
 -- first object plus the separator to move the start of the second
 -- object. 
 --
-advspace :: Num u => Vec2 u -> AdvObject u -> AdvObject u -> AdvObject u
-advspace sep a b = a `advplus` blank `advplus` b
+advspace :: (Monoid a, InterpretUnit u) 
+         => Vec2 u -> AdvObject u a -> AdvObject u a -> AdvObject u a
+advspace sep a b = a `mappend` blank `mappend` b
   where
     blank = blankAdvObject sep
 
+
 -- | List version of 'nextSpace'.
 --
-evenspace :: InterpretUnit u => Vec2 u -> [AdvObject u] -> AdvObject u
+evenspace :: (Monoid a, InterpretUnit u) 
+          => Vec2 u -> [AdvObject u a] -> AdvObject u a
 evenspace v = listcat (advspace v)
 
 
@@ -261,14 +287,16 @@ evenspace v = listcat (advspace v)
 -- | Repeat the AdvObject @n@ times, moving each time with 
 -- 'advance'.
 --
-advrepeat :: InterpretUnit u => Int -> AdvObject u -> AdvObject u
+advrepeat :: (Monoid a, InterpretUnit u)
+          => Int -> AdvObject u a -> AdvObject u a
 advrepeat n = advances . replicate n
 
 
 -- | Concatenate the list of AdvObjects, going next and adding
 -- the separator at each step.
 --
-punctuate :: InterpretUnit u => AdvObject u -> [AdvObject u] -> AdvObject u
+punctuate :: (Monoid a, InterpretUnit u)
+          => AdvObject u a -> [AdvObject u a] -> AdvObject u a
 punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 
 
@@ -277,11 +305,11 @@ punctuate sep =  listcat (\a b -> a `advance` sep `advance` b)
 -- for the supplied vector. This function has behaviour analogue 
 -- to @fill@ in the @wl-pprint@ library.
 -- 
-advfill :: Num u => Vec2 u -> AdvObject u -> AdvObject u
-advfill sv a = AdvObject body
-  where 
-    body = askDC >>= \ctx ->
-           let (_,df) = runQuery ctx (getAdvObject a)
-           in return (sv,df)
+advfill :: InterpretUnit u 
+        => Vec2 u -> AdvObject u a -> AdvObject u a
+advfill sv mf = AdvObject $ \ctx pt -> 
+    let (a,_,ca) = getAdvObject mf ctx pt
+        dav1     = DAV $ normalizeF (dc_font_size ctx) sv 
+    in (a,dav1,ca)
 
 

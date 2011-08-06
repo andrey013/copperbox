@@ -34,6 +34,13 @@ description:
   .
   * Removed @PrimW@ type - pairs are now used instead. 
   .
+  * Removed transformer version of @TraceDrawing@. All operations 
+    in TraceDrawing are now specialized to work only on the 
+    @TraceDrawing@ type.
+  .
+  * Changed the internals of the AdvObject data type so it is more
+    idiomatic - it is now essentially a reader-writer monad.
+  .
   v0.18.0 to v0.19.0:
   .
   * Removed the Semigroup (OPlus) and Bifunctor classes. They are 
