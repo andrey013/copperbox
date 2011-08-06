@@ -1,6 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,26 +20,20 @@
 module Wumpus.Basic.Kernel.Objects.TraceDrawing
   (
 
-  -- * Collect primitives (writer monad) 
-    TraceM(..)
-
-  , TraceDrawing
+  -- * Collect primitives (writer-like monad) 
+    TraceDrawing
   , DTraceDrawing
-  , TraceDrawingT
-  , DTraceDrawingT
 
   , runTraceDrawing
   , execTraceDrawing
   , evalTraceDrawing
-  , runTraceDrawingT
-  , execTraceDrawingT
-  , evalTraceDrawingT
 
   , liftToPictureU
   , liftToPictureMb
   , mbPictureU
  
-
+  , trace
+  , fontDelta
   , evalQuery
 
   , draw
@@ -81,13 +73,6 @@ import Data.Monoid
 
 
 
--- | Collect elementary graphics as part of a larger drawing.
---
--- TraceM works much like a writer monad.
---
-class TraceM (m :: * -> *) where
-  trace     :: MonUnit (m ()) ~ u => HPrim u -> m ()
-  fontDelta :: m a -> m a
 
 -- Note - TraceDrawing run \once\ - it is supplied with the starting
 -- environment (DrawingContext) and returns a Picture.
@@ -101,16 +86,11 @@ class TraceM (m :: * -> *) where
 newtype TraceDrawing u a   = TraceDrawing { 
           getTraceDrawing :: DrawingContext -> (a, HPrim u) }
 
-newtype TraceDrawingT u m a = TraceDrawingT { 
-          getTraceDrawingT :: DrawingContext -> m (a, HPrim u) }
 
 type instance MonUnit (TraceDrawing u a) = u
-type instance MonUnit (TraceDrawingT u m a) = u
 
 
 type DTraceDrawing a    = TraceDrawing Double a
-type DTraceDrawingT m a = TraceDrawingT Double m a
-
 
 
 -- Functor
@@ -118,12 +98,6 @@ type DTraceDrawingT m a = TraceDrawingT Double m a
 instance Functor (TraceDrawing u) where
   fmap f ma = TraceDrawing $ \ctx -> 
                 let (a,w) = getTraceDrawing ma ctx in (f a,w)
-
-
-instance Monad m => Functor (TraceDrawingT u m) where
-  fmap f ma = TraceDrawingT $ \ctx -> 
-                getTraceDrawingT ma ctx >>= \(a,w) -> return (f a,w)
-
 
 
 -- Applicative
@@ -135,13 +109,6 @@ instance Applicative (TraceDrawing u) where
                     (a,w2) = getTraceDrawing ma ctx
                 in (f a, w1 `mappend` w2)
 
-
-instance Monad m => Applicative (TraceDrawingT u m) where
-  pure a    = TraceDrawingT $ \_   -> return (a,mempty)
-  mf <*> ma = TraceDrawingT $ \ctx -> 
-                getTraceDrawingT mf ctx >>= \(f,w1) ->
-                getTraceDrawingT ma ctx >>= \(a,w2) ->
-                return (f a, w1 `mappend` w2)
 
 -- Monad
 
@@ -155,49 +122,6 @@ instance Monad (TraceDrawing u) where
 
 
 
-instance Monad m => Monad (TraceDrawingT u m) where
-  return a  = TraceDrawingT $ \_   -> return (a, mempty)
-  ma >>= k  = TraceDrawingT $ \ctx -> 
-                getTraceDrawingT ma ctx      >>= \(a,w1) ->
-                (getTraceDrawingT . k) a ctx >>= \(b,w2) -> 
-                return (b, w1 `mappend` w2)
-                                 
-
-
-
--- TraceM 
---
--- Note -  @ state `mappend` a @ means the first expression in a 
--- monadic drawing is the first element in the output file. It is
--- also \*\* at the back \*\* in the the Z-Order.
---
--- Some control over the Z-Order, possibly by adding /layers/ to 
--- the drawing model would be valuable. 
--- 
-
-instance TraceM (TraceDrawing u) where
-  trace a = TraceDrawing $ \_ -> ((), a)
-  fontDelta = fontDeltaMon
-
-fontDeltaMon :: TraceDrawing u a -> TraceDrawing u a
-fontDeltaMon mf = TraceDrawing $ \ctx -> 
-    let (_,font_attrs) = fst $ runImage ctx textAttr
-        (a,hf)         = runTraceDrawing ctx mf
-        prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
-    in (a, singleH $ prim1 $ prim)
-
-instance Monad m => TraceM (TraceDrawingT u m) where
-  trace a = TraceDrawingT $ \_ -> return ((), a)
-  fontDelta = fontDeltaTrans
-
-fontDeltaTrans :: Monad m => TraceDrawingT u m a -> TraceDrawingT u m a
-fontDeltaTrans mf = TraceDrawingT $ \ctx -> 
-    let (_,font_props) = fst $ runImage ctx textAttr
-    in runTraceDrawingT ctx mf >>= \(a,hf) ->
-       let prim  = fontDeltaContext font_props $ primGroup $ hprimToList hf
-       in return (a, singleH $ prim1 $ prim)
-
-
 
 -- DrawingCtxM
 
@@ -206,12 +130,6 @@ instance DrawingCtxM (TraceDrawing u) where
   asksDC f        = TraceDrawing $ \ctx -> (f ctx, mempty)
   localize upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
 
-
-
-instance Monad m => DrawingCtxM (TraceDrawingT u m) where
-  askDC           = TraceDrawingT $ \ctx -> return (ctx, mempty)
-  asksDC f        = TraceDrawingT $ \ctx -> return (f ctx, mempty)
-  localize upd ma = TraceDrawingT $ \ctx -> getTraceDrawingT ma (upd ctx)
 
 
 
@@ -245,20 +163,6 @@ execTraceDrawing ctx ma = snd $ runTraceDrawing ctx ma
 evalTraceDrawing :: DrawingContext -> TraceDrawing u a -> a
 evalTraceDrawing ctx ma = fst $ runTraceDrawing ctx ma
 
-
-
-runTraceDrawingT :: Monad m 
-                 => DrawingContext -> TraceDrawingT u m a -> m (a, HPrim u) 
-runTraceDrawingT ctx ma = getTraceDrawingT ma ctx
-
-execTraceDrawingT :: Monad m 
-                  => DrawingContext -> TraceDrawingT u m a -> m (HPrim u)
-execTraceDrawingT ctx ma = liftM snd $ runTraceDrawingT ctx ma
-
-
-evalTraceDrawingT :: Monad m 
-                  => DrawingContext -> TraceDrawingT u m a -> m a
-evalTraceDrawingT ctx ma = liftM fst $ runTraceDrawingT ctx ma
 
 
 
@@ -306,6 +210,32 @@ mbPictureU (Just a) = a
 --------------------------------------------------------------------------------
 
 
+
+-- TraceM 
+--
+-- Note -  @ state `mappend` a @ means the first expression in a 
+-- monadic drawing is the first element in the output file. It is
+-- also \*\* at the back \*\* in the the Z-Order.
+--
+-- Some control over the Z-Order, possibly by adding /layers/ to 
+-- the drawing model would be valuable. 
+-- 
+
+-- | Primitive operation - cf. tell in Reader monad.
+--
+trace     :: HPrim u -> TraceDrawing u ()
+trace a = TraceDrawing $ \_ -> ((), a)
+
+
+
+fontDelta :: TraceDrawing u a -> TraceDrawing u a
+fontDelta mf = TraceDrawing $ \ctx -> 
+    let (_,font_attrs) = runQuery ctx textAttr
+        (a,hf)         = runTraceDrawing ctx mf
+        prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
+    in (a, singleH $ prim1 $ prim)
+
+
 evalQuery :: DrawingCtxM m => Query u a -> m a
 evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 
@@ -318,8 +248,7 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 -- Commonly, it is used to draw 'Graphic' objects which 
 -- have no /answer/.
 -- 
-draw :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => Image u a -> m ()
+draw :: Image u a -> TraceDrawing u ()
 draw gf = askDC >>= \ctx -> 
           let (_,w) = runImage ctx gf
           in trace (singleH w) >> return ()
@@ -333,8 +262,7 @@ draw gf = askDC >>= \ctx ->
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawi :: (TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Image u a -> m a
+drawi :: Image u a -> TraceDrawing u a
 drawi gf = askDC >>= \ctx -> 
            let (a,w) = runImage ctx gf 
            in trace (singleH w) >> return a
@@ -348,8 +276,8 @@ drawi gf = askDC >>= \ctx ->
 -- Commonly, it is used to draw 'LocGraphic' objects which 
 -- have no /answer/.
 -- 
-drawl :: (TraceM m, InterpretUnit u, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Anchor u -> LocImage u a -> m ()
+drawl :: InterpretUnit u
+      => Anchor u -> LocImage u a -> TraceDrawing u ()
 drawl ancr img = drawli ancr img >> return ()
 
 
@@ -360,8 +288,8 @@ drawl ancr img = drawli ancr img >> return ()
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawli :: (TraceM m, InterpretUnit u, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Anchor u -> LocImage u a -> m a
+drawli :: InterpretUnit u
+       => Anchor u -> LocImage u a -> TraceDrawing u a
 drawli pt gf = askDC >>= \ctx -> 
                let (a,w) = runLocImage pt ctx gf
                in trace (singleH w) >> return a
@@ -385,8 +313,8 @@ drawli pt gf = askDC >>= \ctx ->
 -- Commonly, it is used to draw 'ConnectorGraphic' objects which 
 -- have no /answer/.
 -- 
-drawc :: (InterpretUnit u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => Anchor u -> Anchor u -> ConnectorImage u a -> m ()
+drawc :: InterpretUnit u
+      => Anchor u -> Anchor u -> ConnectorImage u a -> TraceDrawing u ()
 drawc an0 an1 img = drawci an0 an1 img >> return () 
 
 
@@ -396,8 +324,8 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawci :: (InterpretUnit u, TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-       => Anchor u -> Anchor u -> ConnectorImage u a -> m a
+drawci :: InterpretUnit u 
+       => Anchor u -> Anchor u -> ConnectorImage u a -> TraceDrawing u a
 drawci p0 p1 img = drawi (connect p0 p1 img)
 
 
@@ -415,9 +343,8 @@ drawci p0 p1 img = drawi (connect p0 p1 img)
 -- Commonly, it is used to draw 'LocGraphic' objects which 
 -- have no /answer/.
 -- 
-node :: ( Fractional u, InterpretUnit u
-        , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-     => (Int,Int) -> LocImage u a -> m ()
+node :: ( Fractional u, InterpretUnit u)
+     => (Int,Int) -> LocImage u a -> TraceDrawing u ()
 node coord gf = nodei coord gf >> return ()
 
 
@@ -425,9 +352,8 @@ node coord gf = nodei coord gf >> return ()
 -- actual position is scaled according to the 
 -- @snap_grid_factors@ in the /drawing context/.
 -- 
-nodei :: ( Fractional u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) ) 
-      => (Int,Int) -> LocImage u a -> m a
+nodei :: (Fractional u, InterpretUnit u) 
+      => (Int,Int) -> LocImage u a -> TraceDrawing u a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
                  let (a,w) = runLocImage pt ctx gf
@@ -448,12 +374,11 @@ nodei coord gf = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawrc :: ( Real u, Floating u, InterpretUnit u
-          , DrawingCtxM m, TraceM m 
-          , CenterAnchor a, RadialAnchor a
-          , CenterAnchor b, RadialAnchor b
-          , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b 
+          , CenterAnchor a1, RadialAnchor a1
+          , CenterAnchor a2, RadialAnchor a2
+          , u ~ DUnit a1, u ~ DUnit a2
           ) 
-       => a -> b -> ConnectorImage u ans -> m ()
+       => a1 -> a2 -> ConnectorImage u a -> TraceDrawing u ()
 drawrc a b gf = drawrci a b gf >> return ()
 
 
@@ -464,12 +389,11 @@ drawrc a b gf = drawrci a b gf >> return ()
 -- projected line.
 -- 
 drawrci :: ( Real u, Floating u, InterpretUnit u
-           , DrawingCtxM m, TraceM m
-           , CenterAnchor a, RadialAnchor  a
-           , CenterAnchor b, RadialAnchor  b
-           , u ~ MonUnit (m ()), u ~ DUnit a, u ~ DUnit b
+           , CenterAnchor a1, RadialAnchor  a1
+           , CenterAnchor a2, RadialAnchor  a2
+           , u ~ DUnit a1, u ~ DUnit a2
            ) 
-        => a -> b -> ConnectorImage u ans -> m ans
+        => a1 -> a2 -> ConnectorImage u a -> TraceDrawing u a
 drawrci a b gf = 
     let (p0,p1) = radialConnectorPoints a b in drawi (connect p0 p1 gf)
 
