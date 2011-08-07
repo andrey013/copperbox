@@ -36,15 +36,17 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (P2 0 0) $ runChain_ (chainH 70) 
-                               (mapM cnext [text01, minidisk, text02, minidisk])
+    drawl (P2 0 0) $ runChain_ (mapM cnext [text01, minidisk, text02, minidisk])
+                               (chainH 70) 
+                               
 
     drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle FILL 4 4
 
-    drawl (P2 0 200) $ runChain (tableRight 6 (30,18)) 
-                                (mapM cnext $ diskList 32)
+    drawl (P2 0 200) $ runChain (mapM cnext $ diskList 32)
+                                (tableRight 6 (30,18)) 
+                                
 
-    drawl (P2 300 100) $ runChain pchain_start $ pchain (diskList 30)
+    drawl (P2 300 100) $ runChain (pchain $ diskList 30) pchain_start 
 
 
 pchain_start :: ChainScheme Double 
@@ -54,12 +56,12 @@ pchain_start = radialChain 50 (0.5*pi) (pi/8)
 
 pchain :: InterpretUnit u => [LocGraphic u] -> Chain u (UNil u)
 pchain xs = do 
-   ys <- ntimes 12 xs
-   setChainScheme (chainH 20)
-   zs <- ntimes 15 ys
-   setChainScheme (chainV 20)
-   mapM_ cnext zs
-   return UNil
+    ys <- ntimes 12 xs
+    setChainScheme (chainH 20)
+    zs <- ntimes 15 ys
+    setChainScheme (chainV 20)
+    mapM_ cnext zs
+    return UNil
   where  
     ntimes n (x:xs) | n > 0 = cnext x >> ntimes (n-1) xs
     ntimes _ xs             = return xs

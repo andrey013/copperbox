@@ -19,8 +19,9 @@
 
 module Wumpus.Basic.Kernel.Objects.Chain
   (
-
-    Chain
+  
+    GenChain
+  , Chain
   , DChain
   , ChainScheme(..)
 
@@ -45,6 +46,7 @@ module Wumpus.Basic.Kernel.Objects.Chain
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
@@ -57,117 +59,145 @@ import Data.Monoid
 
 
 
-newtype Chain u a = Chain
-          { getChain :: DrawingContext -> DPoint2 -> ChainSt u 
-                     -> (a, DPoint2, ChainSt u, CatPrim) }
+newtype GenChain st u a = GenChain
+          { getGenChain :: DrawingContext -> DPoint2 -> ChainSt st u 
+                        -> (a, DPoint2, ChainSt st u, CatPrim) }
 
 
-type instance DUnit (Chain u a) = u
+type instance DUnit (GenChain st u a) = u
+type instance UState  (GenChain st u) = st
 
+type Chain u a   = GenChain () u a
 
 type DChain a    = Chain Double a
 
 -- | scheme_start is a function from the origin to state.
 -- 
 -- For instance, we might want to cache the origin - this would
--- not be possible if start was just a pure @st@ value. 
+-- not be possible if start was just a pure @cst@ value. 
 --
-data ChainScheme u = forall st. ChainScheme 
-      { scheme_start    :: Point2 u -> st
-      , scheme_step     :: Point2 u -> st -> (Point2 u,st)
+data ChainScheme u = forall cst. ChainScheme 
+      { scheme_start    :: Point2 u -> cst
+      , scheme_step     :: Point2 u -> cst -> (Point2 u,cst)
       }
 
 type instance DUnit (ChainScheme u) = u
 
 
-data ChainSt u = forall st. ChainSt 
-       { chain_st   :: st
-       , chain_next :: Point2 u -> st -> (Point2 u,st) 
+data ChainSt st u = forall cst. ChainSt 
+       { chain_st         :: cst
+       , chain_next       :: Point2 u -> cst -> (Point2 u,cst) 
+       , chain_user_state :: st
        }
 
 
-type instance DUnit (ChainSt u) = u
+type instance DUnit (ChainSt st u) = u
 
 
 -- Functor 
 
-instance Functor (Chain u) where
-  fmap f ma = Chain $ \r s t -> let (a,s1,t1,w) = getChain ma r s t
-                                in (f a, s1, t1, w)
+instance Functor (GenChain st u) where
+  fmap f ma = GenChain $ \r s t -> let (a,s1,t1,w) = getGenChain ma r s t
+                                   in (f a, s1, t1, w)
 
 
 
 -- Applicative
 
-instance Applicative (Chain u) where
-  pure a    = Chain $ \_ s t -> (a, s, t, mempty)
-  mf <*> ma = Chain $ \r s t -> 
-                let (f,s1,t1,w1) = getChain mf r s t
-                    (a,s2,t2,w2) = getChain ma r s1 t1
+instance Applicative (GenChain st u) where
+  pure a    = GenChain $ \_ s t -> (a, s, t, mempty)
+  mf <*> ma = GenChain $ \r s t -> 
+                let (f,s1,t1,w1) = getGenChain mf r s t
+                    (a,s2,t2,w2) = getGenChain ma r s1 t1
                 in (f a, s2, t2, w1 `mappend` w2)
 
 
 
 -- Monad
 
-instance Monad (Chain u) where
-  return a  = Chain $ \_ s t -> (a, s, t, mempty)
-  ma >>= k  = Chain $ \r s t -> 
-                let (a,s1,t1,w1) = getChain ma r s t
-                    (b,s2,t2,w2) = (getChain . k) a r s1 t1
+instance Monad (GenChain st u) where
+  return a  = GenChain $ \_ s t -> (a, s, t, mempty)
+  ma >>= k  = GenChain $ \r s t -> 
+                let (a,s1,t1,w1) = getGenChain ma r s t
+                    (b,s2,t2,w2) = (getGenChain . k) a r s1 t1
                 in (b, s2, t2, w1 `mappend` w2)
 
 
-instance DrawingCtxM (Chain u) where
-  askDC           = Chain $ \r s t -> (r, s, t, mempty)
-  asksDC fn       = Chain $ \r s t -> (fn r, s, t, mempty)
-  localize upd ma = Chain $ \r s t -> getChain ma (upd r) s t
+-- DrawingCtxM
+
+instance DrawingCtxM (GenChain st u) where
+  askDC           = GenChain $ \r s t -> (r, s, t, mempty)
+  asksDC fn       = GenChain $ \r s t -> (fn r, s, t, mempty)
+  localize upd ma = GenChain $ \r s t -> getGenChain ma (upd r) s t
+
+
+
+-- UserStateM 
+
+instance UserStateM (GenChain st u) where
+  getState        = GenChain $ \_ s t@(ChainSt _ _ ust) -> 
+                      (ust, s, t, mempty)
+  setState ust    = GenChain $ \_ s (ChainSt a b _) -> 
+                      ((), s, ChainSt a b ust, mempty)
+  updateState upd = GenChain $ \_ s (ChainSt a b ust) -> 
+                      ((), s, ChainSt a b (upd ust), mempty)
 
 
 
 -- Monoid
 
-instance Monoid a => Monoid (Chain u a) where
-  mempty           = Chain $ \_ s t -> (mempty, s, t, mempty)
-  ma `mappend` mb  = Chain $ \r s t -> 
-                       let (a,s1,t1,w1) = getChain ma r s t
-                           (b,s2,t2,w2) = getChain mb r s1 t1
+instance Monoid a => Monoid (GenChain st u a) where
+  mempty           = GenChain $ \_ s t -> (mempty, s, t, mempty)
+  ma `mappend` mb  = GenChain $ \r s t -> 
+                       let (a,s1,t1,w1) = getGenChain ma r s t
+                           (b,s2,t2,w2) = getGenChain mb r s1 t1
                        in (a `mappend` b, s2, t2, w1 `mappend` w2)
 
 
-runChain :: InterpretUnit u 
-         => ChainScheme u -> Chain u a -> LocImage u a
-runChain (ChainScheme start step) ma = promoteLoc $ \pt -> 
+runGenChain :: InterpretUnit u 
+         => GenChain st u a -> ChainScheme u -> st -> LocImage u a
+runGenChain ma (ChainScheme start step) ust = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
-    let st_zero    = ChainSt { chain_st   = start pt
-                             , chain_next = step }
+    let st_zero    = ChainSt { chain_st         = start pt
+                             , chain_next       = step
+                             , chain_user_state = ust }
         dpt        = normalizeF (dc_font_size ctx) pt
-        (a,_,_,w1) = getChain ma ctx dpt st_zero
+        (a,_,_,w1) = getGenChain ma ctx dpt st_zero
     in replaceAns a $ primGraphic w1
 
 
+
+runChain :: InterpretUnit u 
+         => Chain u a -> ChainScheme u -> LocImage u a
+runChain ma cscm = runGenChain ma cscm ()
+
 runChain_ :: InterpretUnit u 
-          => ChainScheme u -> Chain u a -> LocGraphic u
-runChain_ cscm ma = ignoreAns $ runChain cscm ma
+          => Chain u a -> ChainScheme u -> LocGraphic u
+runChain_ ma cscm = ignoreAns $ runChain ma cscm
 
 
 cnext :: InterpretUnit u 
-      => LocImage u a -> Chain u a
-cnext gf  = Chain $ \ctx pt (ChainSt s0 sf) -> 
+      => LocImage u a -> GenChain st u a
+cnext gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
     let dpt       = dinterpF (dc_font_size ctx) pt
         (pt1,st1) = sf dpt s0
         dpt1      = normalizeF (dc_font_size ctx) pt1
         (a,w1)    = runImage ctx (applyLoc gf pt1)
-    in (a, dpt1, ChainSt { chain_st = st1, chain_next = sf }, w1)
+        new_st    = ChainSt { chain_st = st1
+                            , chain_next = sf
+                            , chain_user_state = ust }
+    in (a, dpt1, new_st, w1)
 
 
 setChainScheme :: InterpretUnit u 
-               => ChainScheme u -> Chain u ()
-setChainScheme (ChainScheme start step) = Chain $ \ctx pt _ -> 
-    let upt = dinterpF (dc_font_size ctx) pt
-        st  = ChainSt { chain_st = start upt
-                      , chain_next = step }
-    in ((), pt, st, mempty) 
+               => ChainScheme u -> GenChain st u ()
+setChainScheme (ChainScheme start step) = 
+    GenChain $ \ctx pt (ChainSt _ _ ust) -> 
+      let upt     = dinterpF (dc_font_size ctx) pt
+          new_st  = ChainSt { chain_st = start upt
+                            , chain_next = step
+                            , chain_user_state = ust }
+      in ((), pt, new_st, mempty) 
 
 
 
