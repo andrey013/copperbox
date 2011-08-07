@@ -21,12 +21,16 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
   (
 
   -- * Collect primitives (writer-like monad) 
-    TraceDrawing
+    GenTraceDrawing
+  , TraceDrawing
   , DTraceDrawing
 
   , runTraceDrawing
   , execTraceDrawing
   , evalTraceDrawing
+
+  , runGenTraceDrawing
+
 
   , liftToPictureU
   , liftToPictureMb
@@ -56,6 +60,7 @@ module Wumpus.Basic.Kernel.Objects.TraceDrawing
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
@@ -83,55 +88,61 @@ import Data.Monoid
 --
 
 
-newtype TraceDrawing u a   = TraceDrawing { 
-          getTraceDrawing :: DrawingContext -> (a, HPrim u) }
+newtype GenTraceDrawing st u a   = GenTraceDrawing { 
+          getGenTraceDrawing :: DrawingContext -> st -> (a, st, HPrim u) }
 
 
-type instance MonUnit (TraceDrawing u a) = u
+type instance MonUnit (GenTraceDrawing st u a) = u
+type instance UState  (GenTraceDrawing st u)   = st
 
+type TraceDrawing u a = GenTraceDrawing () u a
 
 type DTraceDrawing a    = TraceDrawing Double a
 
 
 -- Functor
 
-instance Functor (TraceDrawing u) where
-  fmap f ma = TraceDrawing $ \ctx -> 
-                let (a,w) = getTraceDrawing ma ctx in (f a,w)
+instance Functor (GenTraceDrawing st u) where
+  fmap f ma = GenTraceDrawing $ \ctx s -> 
+                let (a,s1,w1) = getGenTraceDrawing ma ctx s in (f a,s1,w1)
 
 
 -- Applicative
 
-instance Applicative (TraceDrawing u) where
-  pure a    = TraceDrawing $ \_   -> (a, mempty)
-  mf <*> ma = TraceDrawing $ \ctx -> 
-                let (f,w1) = getTraceDrawing mf ctx
-                    (a,w2) = getTraceDrawing ma ctx
-                in (f a, w1 `mappend` w2)
+instance Applicative (GenTraceDrawing st u) where
+  pure a    = GenTraceDrawing $ \_   s -> (a, s, mempty)
+  mf <*> ma = GenTraceDrawing $ \ctx s -> 
+                let (f,s1,w1) = getGenTraceDrawing mf ctx s
+                    (a,s2,w2) = getGenTraceDrawing ma ctx s1
+                in (f a, s2, w1 `mappend` w2)
 
 
 -- Monad
 
-instance Monad (TraceDrawing u) where
-  return a  = TraceDrawing $ \_   -> (a, mempty)
-  ma >>= k  = TraceDrawing $ \ctx -> 
-                let (a,w1) = getTraceDrawing ma ctx
-                    (b,w2) = (getTraceDrawing . k) a ctx
-                in (b,w1 `mappend` w2)
+instance Monad (GenTraceDrawing st u) where
+  return a  = GenTraceDrawing $ \_   s -> (a, s, mempty)
+  ma >>= k  = GenTraceDrawing $ \ctx s -> 
+                let (a,s1,w1) = getGenTraceDrawing ma ctx s
+                    (b,s2,w2) = (getGenTraceDrawing . k) a ctx s1
+                in (b,s2,w1 `mappend` w2)
                                
-
-
-
 
 -- DrawingCtxM
 
-instance DrawingCtxM (TraceDrawing u) where
-  askDC           = TraceDrawing $ \ctx -> (ctx, mempty)
-  asksDC f        = TraceDrawing $ \ctx -> (f ctx, mempty)
-  localize upd ma = TraceDrawing $ \ctx -> getTraceDrawing ma (upd ctx)
+instance DrawingCtxM (GenTraceDrawing st u) where
+  askDC           = GenTraceDrawing $ \ctx s -> (ctx, s, mempty)
+  asksDC f        = GenTraceDrawing $ \ctx s -> (f ctx, s, mempty)
+  localize upd ma = GenTraceDrawing $ \ctx s -> 
+                      getGenTraceDrawing ma (upd ctx) s
 
 
+-- UserStateM 
 
+instance UserStateM (GenTraceDrawing st u) where
+  getState        = GenTraceDrawing $ \_ s -> (s, s, mempty)
+  setState s      = GenTraceDrawing $ \_ _ -> ((), s, mempty)
+  updateState upd = GenTraceDrawing $ \_ s -> ((), upd s, mempty)
+ 
 
 -- Note - the result type of runTraceDrawing and friends needs more 
 -- thought and may change. 
@@ -144,14 +155,18 @@ instance DrawingCtxM (TraceDrawing u) where
 -- 
 
 
-runTraceDrawing :: DrawingContext -> TraceDrawing u a -> (a, HPrim u)
-runTraceDrawing ctx ma = getTraceDrawing ma ctx
+runTraceDrawing :: TraceDrawing u a -> DrawingContext -> (a, HPrim u)
+runTraceDrawing ma ctx = post $ getGenTraceDrawing ma ctx ()
+  where
+    post (a,_,w1) = (a,w1)
+
+
 
 -- | Run the drawing returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execTraceDrawing :: DrawingContext -> TraceDrawing u a -> HPrim u
-execTraceDrawing ctx ma = snd $ runTraceDrawing ctx ma
+execTraceDrawing :: TraceDrawing u a -> DrawingContext -> HPrim u
+execTraceDrawing ma ctx = snd $ runTraceDrawing ma ctx
 
 -- | Run the drawing ignoring the output it produces, return the 
 -- answer from the monadic computation.
@@ -160,8 +175,14 @@ execTraceDrawing ctx ma = snd $ runTraceDrawing ctx ma
 -- opposite behaviour (return the drawing, ignore than the 
 -- answer).
 -- 
-evalTraceDrawing :: DrawingContext -> TraceDrawing u a -> a
-evalTraceDrawing ctx ma = fst $ runTraceDrawing ctx ma
+evalTraceDrawing :: TraceDrawing u a -> DrawingContext -> a
+evalTraceDrawing ma ctx = fst $ runTraceDrawing ma ctx
+
+
+runGenTraceDrawing :: GenTraceDrawing st u a -> DrawingContext -> st 
+                   -> (a,st,HPrim u)
+runGenTraceDrawing = getGenTraceDrawing
+
 
 
 
@@ -223,19 +244,20 @@ mbPictureU (Just a) = a
 
 -- | Primitive operation - cf. tell in Reader monad.
 --
-trace     :: HPrim u -> TraceDrawing u ()
-trace a = TraceDrawing $ \_ -> ((), a)
+trace     :: HPrim u -> GenTraceDrawing st u ()
+trace a = GenTraceDrawing $ \_ s -> ((), s, a)
 
 
 
-fontDelta :: TraceDrawing u a -> TraceDrawing u a
-fontDelta mf = TraceDrawing $ \ctx -> 
+fontDelta :: GenTraceDrawing st u a -> GenTraceDrawing st u a
+fontDelta mf = GenTraceDrawing $ \ctx s -> 
     let (_,font_attrs) = runQuery ctx textAttr
-        (a,hf)         = runTraceDrawing ctx mf
-        prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList hf
-    in (a, singleH $ prim1 $ prim)
+        (a,s1,w1)      = getGenTraceDrawing mf ctx s
+        prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList w1
+    in (a, s1, singleH $ prim1 $ prim)
 
-
+-- Note - this function is in the wrong module....
+--
 evalQuery :: DrawingCtxM m => Query u a -> m a
 evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 
@@ -248,7 +270,7 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 -- Commonly, it is used to draw 'Graphic' objects which 
 -- have no /answer/.
 -- 
-draw :: Image u a -> TraceDrawing u ()
+draw :: Image u a -> GenTraceDrawing st u ()
 draw gf = askDC >>= \ctx -> 
           let (_,w) = runImage ctx gf
           in trace (singleH w) >> return ()
@@ -262,7 +284,7 @@ draw gf = askDC >>= \ctx ->
 -- The graphic representation of the Image is drawn in the Trace 
 -- monad, and the result is returned.
 -- 
-drawi :: Image u a -> TraceDrawing u a
+drawi :: Image u a -> GenTraceDrawing st u a
 drawi gf = askDC >>= \ctx -> 
            let (a,w) = runImage ctx gf 
            in trace (singleH w) >> return a
@@ -277,7 +299,7 @@ drawi gf = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawl :: InterpretUnit u
-      => Anchor u -> LocImage u a -> TraceDrawing u ()
+      => Anchor u -> LocImage u a -> GenTraceDrawing st u ()
 drawl ancr img = drawli ancr img >> return ()
 
 
@@ -289,7 +311,7 @@ drawl ancr img = drawli ancr img >> return ()
 -- monad, and the result is returned.
 -- 
 drawli :: InterpretUnit u
-       => Anchor u -> LocImage u a -> TraceDrawing u a
+       => Anchor u -> LocImage u a -> GenTraceDrawing st u a
 drawli pt gf = askDC >>= \ctx -> 
                let (a,w) = runLocImage pt ctx gf
                in trace (singleH w) >> return a
@@ -314,7 +336,7 @@ drawli pt gf = askDC >>= \ctx ->
 -- have no /answer/.
 -- 
 drawc :: InterpretUnit u
-      => Anchor u -> Anchor u -> ConnectorImage u a -> TraceDrawing u ()
+      => Anchor u -> Anchor u -> ConnectorImage u a -> GenTraceDrawing st u ()
 drawc an0 an1 img = drawci an0 an1 img >> return () 
 
 
@@ -325,7 +347,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- monad, and the result is returned.
 -- 
 drawci :: InterpretUnit u 
-       => Anchor u -> Anchor u -> ConnectorImage u a -> TraceDrawing u a
+       => Anchor u -> Anchor u -> ConnectorImage u a -> GenTraceDrawing st u a
 drawci p0 p1 img = drawi (connect p0 p1 img)
 
 
@@ -344,7 +366,7 @@ drawci p0 p1 img = drawi (connect p0 p1 img)
 -- have no /answer/.
 -- 
 node :: ( Fractional u, InterpretUnit u)
-     => (Int,Int) -> LocImage u a -> TraceDrawing u ()
+     => (Int,Int) -> LocImage u a -> GenTraceDrawing st u ()
 node coord gf = nodei coord gf >> return ()
 
 
@@ -353,7 +375,7 @@ node coord gf = nodei coord gf >> return ()
 -- @snap_grid_factors@ in the /drawing context/.
 -- 
 nodei :: (Fractional u, InterpretUnit u) 
-      => (Int,Int) -> LocImage u a -> TraceDrawing u a
+      => (Int,Int) -> LocImage u a -> GenTraceDrawing st u a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
                  let (a,w) = runLocImage pt ctx gf
@@ -378,7 +400,7 @@ drawrc :: ( Real u, Floating u, InterpretUnit u
           , CenterAnchor a2, RadialAnchor a2
           , u ~ DUnit a1, u ~ DUnit a2
           ) 
-       => a1 -> a2 -> ConnectorImage u a -> TraceDrawing u ()
+       => a1 -> a2 -> ConnectorImage u a -> GenTraceDrawing st u ()
 drawrc a b gf = drawrci a b gf >> return ()
 
 
@@ -393,7 +415,6 @@ drawrci :: ( Real u, Floating u, InterpretUnit u
            , CenterAnchor a2, RadialAnchor  a2
            , u ~ DUnit a1, u ~ DUnit a2
            ) 
-        => a1 -> a2 -> ConnectorImage u a -> TraceDrawing u a
+        => a1 -> a2 -> ConnectorImage u a -> GenTraceDrawing st u a
 drawrci a b gf = 
     let (p0,p1) = radialConnectorPoints a b in drawi (connect p0 p1 gf)
-

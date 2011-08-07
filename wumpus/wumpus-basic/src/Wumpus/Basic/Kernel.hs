@@ -23,6 +23,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.QueryDC
   , module Wumpus.Basic.Kernel.Base.Units
   , module Wumpus.Basic.Kernel.Base.UpdateDC
+  , module Wumpus.Basic.Kernel.Base.UserState
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
   , module Wumpus.Basic.Kernel.Objects.AdvObject
   , module Wumpus.Basic.Kernel.Objects.Anchors
@@ -48,6 +49,7 @@ import Wumpus.Basic.Kernel.Base.FontSupport
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.Units 
 import Wumpus.Basic.Kernel.Base.UpdateDC
+import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.AdvObject
 import Wumpus.Basic.Kernel.Objects.Anchors

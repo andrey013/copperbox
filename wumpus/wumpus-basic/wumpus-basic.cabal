@@ -32,6 +32,10 @@ description:
   .
   v0.19.0 to v0.20.0:
   . 
+  * Changed argument order of @run@ functions to follow the usual
+    style - monadic action first then arguments (initial state, 
+    reader environment etc.).
+  . 
   * Changed representation of Chains to a monadic type with an 
     explicit operation for next position.
   .
@@ -39,7 +43,9 @@ description:
   .
   * Removed transformer version of @TraceDrawing@. All operations 
     in TraceDrawing are now specialized to work only on the 
-    @TraceDrawing@ type.
+    @TraceDrawing@ type. Added @UserState@ to TraceDrawing and
+    other drawing monads to compensate for the loss of
+    expressiveness.
   .
   * Changed the internals of @AdvObject@ so it is more idiomatic - 
     it is now essentially a reader-writer monad.
@@ -118,6 +124,7 @@ library
     Wumpus.Basic.Kernel.Base.QueryDC,
     Wumpus.Basic.Kernel.Base.Units,
     Wumpus.Basic.Kernel.Base.UpdateDC,
+    Wumpus.Basic.Kernel.Base.UserState,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
     Wumpus.Basic.Kernel.Objects.AdvObject,
     Wumpus.Basic.Kernel.Objects.Anchors,

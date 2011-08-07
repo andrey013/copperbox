@@ -130,7 +130,7 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 --
 drawTracing :: TraceDrawing u a -> CtxPicture
 drawTracing mf = 
-    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing mf ctx
 
 -- | 'udrawTracing' : @ scalar_unit_value * trace_drawing  -> CtxPicture @
 --
@@ -141,10 +141,10 @@ drawTracing mf =
 --
 udrawTracing :: u -> TraceDrawing u a -> CtxPicture
 udrawTracing _ mf = 
-    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx mf
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing mf ctx
 
 
-
+-- Note need Gen versions with user state...
 
 
 -- | 'mapCtxPicture' : @ trafo * ctx_picture -> CtxPicture @
