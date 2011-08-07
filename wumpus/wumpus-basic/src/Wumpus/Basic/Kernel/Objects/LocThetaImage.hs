@@ -169,18 +169,18 @@ instance Decorate LocThetaImage where
 
 
 runLocThetaImage :: InterpretUnit u 
-                 => Point2 u -> Radian -> DrawingContext 
-                 -> LocThetaImage u a 
+                 => LocThetaImage u a -> DrawingContext 
+                 -> Point2 u -> Radian
                  -> PrimResult u a
-runLocThetaImage pt incl ctx mf = 
+runLocThetaImage ma ctx pt incl = 
     let dpt = normalizeF (dc_font_size ctx) pt 
-    in runImage ctx (getLocThetaImage mf dpt incl)
+    in runImage (getLocThetaImage ma dpt incl) ctx
 
 
-runLocThetaQuery :: Point2 u -> Radian -> DrawingContext 
-                 -> LocThetaQuery u a 
+runLocThetaQuery :: LocThetaQuery u a -> DrawingContext 
+                 -> Point2 u -> Radian  
                  -> a
-runLocThetaQuery pt incl ctx mf = runQuery ctx (getLocThetaQuery mf pt incl)
+runLocThetaQuery ma ctx pt incl = runQuery (getLocThetaQuery ma pt incl) ctx
 
 
 promoteLocTheta ::  InterpretUnit u 
@@ -204,8 +204,8 @@ qapplyLocTheta mq pt ang = getLocThetaQuery mq pt ang
 -- | \"zero-apply\" a LocThetaQuery.
 --
 zapLocThetaQuery :: LocThetaQuery u a -> Point2 u -> Radian -> Image u a
-zapLocThetaQuery mq pt ang = askDC >>= \ctx -> 
-    let a = runLocThetaQuery pt ang ctx mq in return a
+zapLocThetaQuery ma pt ang = askDC >>= \ctx -> 
+    let a = runLocThetaQuery ma ctx pt ang in return a
 
 
 

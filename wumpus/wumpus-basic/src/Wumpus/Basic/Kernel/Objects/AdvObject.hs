@@ -170,10 +170,10 @@ instance (Monoid a, InterpretUnit u) => Monoid (AdvObject u a) where
 --
 runAdvObject :: InterpretUnit u 
              => AdvObject u a -> LocImage u a
-runAdvObject mf = promoteLoc $ \ot -> 
+runAdvObject ma = promoteLoc $ \ot -> 
     askDC >>= \ctx -> 
     let dot      = normalizeF (dc_font_size ctx) ot
-        (a,_,ca) = getAdvObject mf ctx dot
+        (a,_,ca) = getAdvObject ma ctx dot
     in replaceAns a $ primGraphic ca
 
 
@@ -189,11 +189,11 @@ runAdvObject mf = promoteLoc $ \ot ->
 --
 makeAdvObject :: InterpretUnit u 
               => Query u (Vec2 u) -> LocImage u a -> AdvObject u a
-makeAdvObject mq gf = AdvObject $ \ctx pt -> 
-    let v1    = runQuery ctx mq
+makeAdvObject ma gf = AdvObject $ \ctx pt -> 
+    let v1    = runQuery ma ctx
         dav1  = DAV $ normalizeF (dc_font_size ctx) v1
         upt   = dinterpF (dc_font_size ctx) pt
-        (a,w) = runLocImage upt ctx gf
+        (a,w) = runLocImage gf ctx upt
     in (a,dav1,w)
 
 

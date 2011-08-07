@@ -47,11 +47,9 @@ description:
     other drawing monads to compensate for the loss of
     expressiveness.
   .
-  * Changed the internals of @AdvObject@ so it is more idiomatic - 
-    it is now essentially a reader-writer monad.
-  . 
-  * Changed the internals of @PosObject@ so it is more idiomatic - 
-    it is now essentially a reader-writer monad.
+  * Changed the internals of @AdvObject@ and @PosObject@ so they 
+    are more idiomatic - both are now essentially reader-writer 
+    monads.
   .
   v0.18.0 to v0.19.0:
   .

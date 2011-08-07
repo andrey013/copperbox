@@ -159,16 +159,16 @@ instance DrawingCtxM (Query u) where
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
-runImage :: DrawingContext -> Image u a -> PrimResult u a
-runImage ctx mf = getImage mf ctx
+runImage :: Image u a -> DrawingContext -> PrimResult u a
+runImage = getImage
 
-runQuery :: DrawingContext -> Query u a -> a
-runQuery ctx mf = getQuery mf ctx
+runQuery :: Query u a -> DrawingContext -> a
+runQuery = getQuery
 
 
 
 zapQuery :: Query u a -> Image u a
-zapQuery mq = askDC >>= \ctx -> let a = runQuery ctx mq in return a
+zapQuery ma = askDC >>= \ctx -> let a = runQuery ma ctx in return a
 
 -- | Constructor for Primtive graphics.
 --

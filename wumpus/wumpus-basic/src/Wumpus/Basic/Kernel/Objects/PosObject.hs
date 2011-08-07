@@ -139,11 +139,11 @@ instance (Monoid a, InterpretUnit u) => Monoid (PosObject u a) where
 -- | Running an PosObject produces a LocImage.
 --
 runPosObject :: InterpretUnit u 
-             => RectAddress -> PosObject u a -> LocImage u a
-runPosObject addr mf = promoteLoc $ \ot -> 
+             => PosObject u a -> RectAddress -> LocImage u a
+runPosObject ma addr = promoteLoc $ \ot -> 
     askDC >>= \ctx -> 
     let dot       = normalizeF (dc_font_size ctx) ot
-        (a,o1,ca) = getPosObject mf ctx dot
+        (a,o1,ca) = getPosObject ma ctx dot
         v1        = vtoOrigin addr o1
     in replaceAns a $ primGraphic $ cpmove v1 ca
 
@@ -152,12 +152,12 @@ runPosObject addr mf = promoteLoc $ \ot ->
 -- | Run a PosObject producing a LocImage (BoundingBox u).
 --
 runPosObjectBBox :: InterpretUnit u 
-                 => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
-runPosObjectBBox addr mf = promoteLoc $ \pt -> 
+                 => PosObject u a -> RectAddress -> LocImage u (BoundingBox u)
+runPosObjectBBox ma addr = promoteLoc $ \pt -> 
     askDC >>= \ctx -> 
     let sz        = dc_font_size ctx 
         dpt       = normalizeF sz pt
-        (_,o1,w1) = getPosObject mf ctx dpt
+        (_,o1,w1) = getPosObject ma ctx dpt
         v1        = vtoOrigin addr o1
         bb        = dinterpF sz $ orientationBounds o1 (dpt .+^ v1)
     in replaceAns bb $ primGraphic $ cpmove v1 w1
@@ -180,11 +180,11 @@ runPosObjectBBox addr mf = promoteLoc $ \pt ->
 -- 
 makePosObject :: InterpretUnit u
               => Query u (Orientation u) -> LocImage u a -> PosObject u a
-makePosObject mq gf = PosObject $ \ctx pt -> 
-    let ort1  = runQuery ctx mq
+makePosObject ma gf = PosObject $ \ctx pt -> 
+    let ort1  = runQuery ma ctx
         dort1 = normalizeF (dc_font_size ctx) ort1
         upt   = dinterpF (dc_font_size ctx) pt
-        (a,w) = runLocImage upt ctx gf
+        (a,w) = runLocImage gf ctx upt
     in (a,dort1,w)
 
 
@@ -220,7 +220,7 @@ decoratePosObject zdec fn ma = PosObject $ \ctx pt ->
     let (a,o1,w1) = getPosObject ma ctx pt
         uortt     = dinterpF (dc_font_size ctx) o1
         upt       = dinterpF (dc_font_size ctx) pt
-        (_,w2)    = runLocImage upt ctx (fn uortt)
+        (_,w2)    = runLocImage (fn uortt) ctx upt
         wout      = case zdec of
                          ANTERIOR -> w2 `mappend` w1
                          SUPERIOR -> w1  `mappend` w2
@@ -233,8 +233,8 @@ decoratePosObject zdec fn ma = PosObject $ \ctx pt ->
 --
 extendPosObject :: InterpretUnit u 
                 => u -> u -> u -> u -> PosObject u a -> PosObject u a
-extendPosObject x0 x1 y0 y1 mf = PosObject $ \ctx pt ->
-    let (a,o1,w1) = getPosObject mf ctx pt
+extendPosObject x0 x1 y0 y1 ma = PosObject $ \ctx pt ->
+    let (a,o1,w1) = getPosObject ma ctx pt
         sz        = dc_font_size ctx        
         ux0       = normalize sz x0
         ux1       = normalize sz x1

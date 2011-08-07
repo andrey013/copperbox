@@ -170,19 +170,19 @@ instance Decorate ConnectorImage where
 
 
 runConnectorImage :: InterpretUnit u 
-                  => Point2 u -> Point2 u 
-                  -> DrawingContext -> ConnectorImage u a 
+                  => ConnectorImage u a -> DrawingContext 
+                  -> Point2 u -> Point2 u
                   -> PrimResult u a
-runConnectorImage p0 p1 ctx mf = 
+runConnectorImage ma ctx p0 p1= 
     let dp0 = normalizeF (dc_font_size ctx) p0
         dp1 = normalizeF (dc_font_size ctx) p1 
-    in runImage ctx (getConnectorImage mf dp0 dp1)
+    in runImage (getConnectorImage ma dp0 dp1) ctx
 
 
-runConnectorQuery :: Point2 u -> Point2 u 
-                  -> DrawingContext -> ConnectorQuery u a 
+runConnectorQuery :: ConnectorQuery u a -> DrawingContext 
+                  -> Point2 u -> Point2 u 
                   -> a
-runConnectorQuery p0 p1 ctx mf = runQuery ctx (getConnectorQuery mf p0 p1)
+runConnectorQuery ma ctx p0 p1 = runQuery (getConnectorQuery ma p0 p1) ctx
 
 
 connect :: InterpretUnit u 
@@ -218,8 +218,8 @@ qapplyConn mf p0 p1   = getConnectorQuery mf p0 p1
 -- | \"zero-apply\" a Connector.
 --
 zapConnectorQuery :: ConnectorQuery u a -> Point2 u -> Point2 u -> Image u a
-zapConnectorQuery mq p0 p1  = askDC >>= \ctx -> 
-    let a = runConnectorQuery p0 p1 ctx mq in return a
+zapConnectorQuery ma p0 p1  = askDC >>= \ctx -> 
+    let a = runConnectorQuery ma ctx p0 p1 in return a
 
 
 

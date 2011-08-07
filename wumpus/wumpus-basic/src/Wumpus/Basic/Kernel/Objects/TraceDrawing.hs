@@ -251,7 +251,7 @@ trace a = GenTraceDrawing $ \_ s -> ((), s, a)
 
 fontDelta :: GenTraceDrawing st u a -> GenTraceDrawing st u a
 fontDelta mf = GenTraceDrawing $ \ctx s -> 
-    let (_,font_attrs) = runQuery ctx textAttr
+    let (_,font_attrs) = runQuery textAttr ctx
         (a,s1,w1)      = getGenTraceDrawing mf ctx s
         prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList w1
     in (a, s1, singleH $ prim1 $ prim)
@@ -259,7 +259,7 @@ fontDelta mf = GenTraceDrawing $ \ctx s ->
 -- Note - this function is in the wrong module....
 --
 evalQuery :: DrawingCtxM m => Query u a -> m a
-evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
+evalQuery df = askDC >>= \ctx -> return $ runQuery df ctx
 
 
 
@@ -272,7 +272,7 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 -- 
 draw :: Image u a -> GenTraceDrawing st u ()
 draw gf = askDC >>= \ctx -> 
-          let (_,w) = runImage ctx gf
+          let (_,w) = runImage gf ctx 
           in trace (singleH w) >> return ()
 
 
@@ -286,7 +286,7 @@ draw gf = askDC >>= \ctx ->
 -- 
 drawi :: Image u a -> GenTraceDrawing st u a
 drawi gf = askDC >>= \ctx -> 
-           let (a,w) = runImage ctx gf 
+           let (a,w) = runImage gf ctx
            in trace (singleH w) >> return a
             
 
@@ -313,7 +313,7 @@ drawl ancr img = drawli ancr img >> return ()
 drawli :: InterpretUnit u
        => Anchor u -> LocImage u a -> GenTraceDrawing st u a
 drawli pt gf = askDC >>= \ctx -> 
-               let (a,w) = runLocImage pt ctx gf
+               let (a,w) = runLocImage gf ctx pt
                in trace (singleH w) >> return a
 
 
@@ -378,7 +378,7 @@ nodei :: (Fractional u, InterpretUnit u)
       => (Int,Int) -> LocImage u a -> GenTraceDrawing st u a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 let (a,w) = runLocImage pt ctx gf
+                 let (a,w) = runLocImage gf ctx pt
                  in trace (singleH w) >> return a
  
 
