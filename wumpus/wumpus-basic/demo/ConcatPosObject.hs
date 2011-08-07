@@ -58,7 +58,7 @@ mf = do
   where
     ipo = illustratePosObject
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosObject u 
+rectCenter :: PosGraphic Double 
 rectCenter = makePosObject (return opos) (mkRectCenter w h)
   where
     w    = 50
@@ -75,7 +75,7 @@ mkRectCenter w h = moveStart v1 $ dcRectangle STROKE w h
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosObject u
+rectBl :: PosGraphic Double
 rectBl = makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40  
@@ -92,7 +92,7 @@ mkRectBl w h = dcRectangle STROKE w h
 
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosObject u 
+rectMinor :: PosGraphic Double
 rectMinor = makePosObject (return opos) (mkRectMinor w h)
   where
     w    = 30 

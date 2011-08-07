@@ -6,7 +6,7 @@ module PadPosObject where
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                      -- package: wumpus-core
-import Wumpus.Core.Colour ( red )
+import Wumpus.Core.Colour
 
 import Control.Applicative 
 import Data.Monoid
@@ -32,60 +32,61 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    draw $ testDraw lPad   NN `at` (P2   0 0)
-    draw $ testDraw rPad   NN `at` (P2 100 0)
-    draw $ testDraw uPad   NN `at` (P2 200 0)
-    draw $ testDraw dPad   NN `at` (P2 300 0)
 
-    draw $ testDraw hPad   NN `at` (P2   0 100)
-    draw $ testDraw vPad   NN `at` (P2 100 100)
-    draw $ testDraw shrink NN `at` (P2 200 100)
+    draw $ testDraw id     CENTER `at` (P2   0 0)
+    draw $ testDraw lPad   CENTER `at` (P2 100 0)
+    draw $ testDraw rPad   CENTER `at` (P2 200 0)
+    draw $ testDraw uPad   CENTER `at` (P2 300 0)
+    draw $ testDraw dPad   CENTER `at` (P2 400 0)
+
+    draw $ testDraw hPad   CENTER `at` (P2   0 100)
+    draw $ testDraw vPad   CENTER `at` (P2 100 100)
+    draw $ testDraw shrink CENTER `at` (P2 200 100)
     
+--
+-- NOTE - The output is wrong and @mapOrientation@ looks 
+-- troublesome. The best thing to do is re-implement padding and
+-- filling and remove mapOrientation.
+--
 
 lPad :: Trafo
-lPad = mapOrientation (padXMinor 80)
+lPad = mapOrientation (fillXMinor 60)
 
 rPad :: Trafo
-rPad = mapOrientation (padXMajor 80)
+rPad = mapOrientation (fillXMajor 60)
 
 uPad :: Trafo
-uPad = mapOrientation (padYMajor 36)
+uPad = mapOrientation (fillYMajor 30)
 
 dPad :: Trafo
-dPad = mapOrientation (padYMinor 36)
+dPad = mapOrientation (fillYMinor 40)
 
 hPad :: Trafo
-hPad = mapOrientation (padHEven 90)
+hPad = mapOrientation (fillHEven 60)
 
 vPad :: Trafo
-vPad = mapOrientation (padVEven 48)
+vPad = mapOrientation (fillVEven 40)
 
 shrink :: Trafo
-shrink = mapOrientation (padYMinor (-10))
+shrink = mapOrientation (fillYMinor (-10))
 
-type Trafo = PosObject Double -> PosObject Double
+type Trafo = PosGraphic Double -> PosGraphic Double
 
 testDraw :: Trafo -> RectAddress -> LocGraphic Double
 testDraw trafo rpos = dcDisk FILL 2 `mappend` bbobj
   where
-    bbobj = ignoreAns $ illustrateBoundedLocGraphic $ 
-              lrgBox trafo rpos
+    bbobj = ignoreAns $ illustrateBoundedLocGraphic $ lrgBox trafo rpos
 
 
 
 
 lrgBox :: Trafo -> (RectAddress -> BoundedLocGraphic Double)
-lrgBox trafo = \raddr -> runPosObject raddr $ trafo poBox 
+lrgBox trafo = \raddr -> runPosObjectBBox raddr $ trafo poBox 
 
-poBox :: PosObject Double
-poBox = makePosObject  mkOrtt mkRect
+poBox :: PosGraphic Double
+poBox = makePosObject mkOrtt mkRect
   where
-    mkOrtt = (\ch dd -> Orientation 0 (5*ch) (-dd) ch) 
-                <$> capHeight <*> descender
+    mkOrtt = pure (Orientation 20 20 10 10) 
+    mkRect = moveStart (V2 (-20) (-10)) $ dcRectangle STROKE 40 20 
 
-    mkRect = capHeight >>= \ch -> 
-             descender >>= \dd -> 
-             moveStart (go_down (abs dd)) 
-                           $ dcRectangle FILL_STROKE (5*ch) (ch + abs dd)
-
-
+    -- dcRectangle is start point bottom left

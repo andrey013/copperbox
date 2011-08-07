@@ -306,81 +306,35 @@ instance Decorate Image where
 --
 -- Are PrimW instances needed as Image cannot use them?
 -- 
-{-
-
-instance Rotate a => Rotate (PrimW u a) where
-  rotate ang (PrimW ca a) = PrimW (rotate ang ca) (rotate ang a)
-
-
-instance (RotateAbout a, ScalarUnit u, u ~ DUnit a) => 
-    RotateAbout (PrimW u a) where
-  rotateAbout ang pt@(P2 x y) (PrimW ca a) = 
-    PrimW (rotateAbout ang (P2 (toPsPoint x) (toPsPoint y)) ca)
-          (rotateAbout ang pt a) 
-        
-
-
-instance Scale a => Scale (PrimW u a) where
-  scale sx sy (PrimW ca a) = PrimW (scale sx sy ca) (scale sx sy a)
-
-
-instance (Translate a, ScalarUnit u, u ~ DUnit a) => 
-    Translate (u,a) where
-  translate dx dy (a,w) = let ddx = toPsPoint ddx
-                              ddy = toPsPoint ddy
-                          in  (translate dx dy a, translate ddx ddy w) 
-
-
-
--- Image
--- Cannot use /fmap/ as it does not touch the CatPrim (w)
-
 
 instance Rotate a => Rotate (Image u a) where
   rotate ang ma = Image $ \ctx -> 
-      bimapP (rotate ang) (rotate ang) $ getImage ma ctx
-
+      let (a,w) = getImage ma ctx
+      in (rotate ang a, rotate ang w)
 
 instance (RotateAbout a, InterpretUnit u, u ~ DUnit a) => 
     RotateAbout (Image u a) where
   rotateAbout ang pt ma = Image $ \ctx -> 
-      let ptu = uconvertF (dc_font_size ctx) pt
-      in bimapP (rotateAbout ang ptu) (rotateAbout ang pt) $ getImage ma ctx
+      let ptu   = uconvertF (dc_font_size ctx) pt
+          (a,w) = getImage ma ctx
+      in (rotateAbout ang pt a, rotateAbout ang ptu w)
 
 
 instance Scale a => Scale (Image u a) where
   scale sx sy ma = Image $ \ctx -> 
-      bimapP (scale sx sy) (scale sx sy) $ getImage ma ctx
+      let (a,w) = getImage ma ctx
+      in (scale sx sy a, scale sx sy w)
+
 
 instance (Translate a, InterpretUnit u, u ~ DUnit a) => 
     Translate (Image u a) where
   translate dx dy ma = Image $ \ctx -> 
-      let sz  = dc_font_size ctx
-          ddx = uconvert1 sz dx
-          ddy = uconvert1 sz dy
-      in bimapP (translate ddx ddy) (translate dx dy) $ getImage ma ctx
-
--}
-
---------------------------------------------------------------------------------
+      let sz    = dc_font_size ctx
+          ddx   = uconvert1 sz dx
+          ddy   = uconvert1 sz dy
+          (a,w) = getImage ma ctx
+      in (translate dx dy a, translate ddx ddy w)
 
 
 
-
-
-{-
-
--- OLD STUFF
-
-
--- | Downcast a LocThetaQuery function by applying it to the 
--- supplied point and angle, making an arity-zero Context Function 
--- (a CF). 
---
-atIncline :: LocThetaQuery u a -> Point2 u -> Radian -> CF a
-atIncline = apply2R2
-
-
-
--}
 

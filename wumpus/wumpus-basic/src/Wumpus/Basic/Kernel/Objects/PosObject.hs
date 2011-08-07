@@ -29,6 +29,8 @@ module Wumpus.Basic.Kernel.Objects.PosObject
     PosObject
   , DPosObject
 
+  , PosGraphic
+  , DPosGraphic
 
   -- * Operations
   , runPosObject
@@ -81,6 +83,17 @@ type instance DUnit (PosObject u a) = u
 -- | Version of PosObject specialized to Double for the unit type.
 --
 type DPosObject a = PosObject Double a
+
+
+-- | Version of PosObject with answer specialized to UNil.
+--
+type PosGraphic u = PosObject u (UNil u)
+
+-- | Version of PosGraphic specialized to Double for the unit type.
+--
+type DPosGraphic = PosGraphic Double
+
+
 
 
 instance Functor (PosObject u) where
@@ -140,13 +153,14 @@ runPosObject addr mf = promoteLoc $ \ot ->
 --
 runPosObjectBBox :: InterpretUnit u 
                  => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
-runPosObjectBBox addr mf = promoteLoc $ \ot -> 
+runPosObjectBBox addr mf = promoteLoc $ \pt -> 
     askDC >>= \ctx -> 
-    let dot       = normalizeF (dc_font_size ctx) ot
-        (_,o1,ca) = getPosObject mf ctx dot
+    let sz        = dc_font_size ctx 
+        dpt       = normalizeF sz pt
+        (_,o1,w1) = getPosObject mf ctx dpt
         v1        = vtoOrigin addr o1
-        bb        = dinterpF (dc_font_size ctx) $ orientationBounds o1 dot
-    in replaceAns bb $ primGraphic $ cpmove v1 ca
+        bb        = dinterpF sz $ orientationBounds o1 (dpt .+^ v1)
+    in replaceAns bb $ primGraphic $ cpmove v1 w1
 
 
 
@@ -230,7 +244,9 @@ extendPosObject x0 x1 y0 y1 mf = PosObject $ \ctx pt ->
     in (a,o2,w1)
 
 
-
+-- | Note - this is a bad API, it would be better to have padders
+-- and fillers and not expose the orientation directly.
+-- 
 mapOrientation :: InterpretUnit u
                => (Orientation u -> Orientation u) 
                -> PosObject u a -> PosObject u a

@@ -69,7 +69,7 @@ mf = do
  
 ---
 
-rectCenter :: (Fractional u, InterpretUnit u) => PosObject u 
+rectCenter :: DPosGraphic
 rectCenter = makePosObject (return opos) (mkRectCenter w h)
   where
     w    = 50
@@ -80,13 +80,13 @@ rectCenter = makePosObject (return opos) (mkRectCenter w h)
                        , or_y_major = 0.5 * h }
  
 
-mkRectCenter :: (Fractional u, InterpretUnit u) => u -> u -> LocGraphic u
+mkRectCenter :: Double -> Double -> DLocGraphic
 mkRectCenter w h = moveStart v1 $ dcRectangle STROKE w h
   where
     v1 = V2 (negate $ 0.5 * w) (negate $ 0.5 * h)
     
 
-rectBl :: (Fractional u, InterpretUnit u) => PosObject u
+rectBl :: DPosGraphic
 rectBl = makePosObject (return opos) (mkRectBl w h)
   where
     w    = 40  
@@ -103,7 +103,7 @@ mkRectBl w h = dcRectangle STROKE w h
 
 
 
-rectMinor :: (Fractional u, InterpretUnit u) => PosObject u 
+rectMinor :: DPosGraphic
 rectMinor = makePosObject (return opos) (mkRectMinor w h)
   where
     w    = 30 
@@ -114,7 +114,7 @@ rectMinor = makePosObject (return opos) (mkRectMinor w h)
                        , or_y_major = (h-10) }
  
 
-mkRectMinor :: InterpretUnit u => u -> u -> LocGraphic u
+mkRectMinor :: Double -> Double -> DLocGraphic
 mkRectMinor w h = moveStart v1 $ dcRectangle STROKE w h
   where
     v1 = V2 (-10) (-10)

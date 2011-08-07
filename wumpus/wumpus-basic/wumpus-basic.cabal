@@ -51,7 +51,7 @@ description:
   .
   * Removed the Semigroup (OPlus) and Bifunctor classes. They are 
     no longer so pertinent now that Image, LocImage etc. are 
-    newtypes rther than /ContextFuns/.
+    newtypes rather than /ContextFuns/.
   .
   * Changed internals of LocImage, LocThetaImage and  Connector 
     types so the internal points always have Double (PostScript 
