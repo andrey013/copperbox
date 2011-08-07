@@ -336,7 +336,7 @@ dotTriangle = intoLocImage (triangleLDO 1) SD.dotTriangle
 
 intoLocImage :: InterpretUnit u 
              => LocQuery u a -> LocImage u z -> LocImage u a
-intoLocImage mq gf = promoteLoc $ \pt -> 
+intoLocImage ma gf = promoteLoc $ \pt -> 
                      askDC >>= \ctx -> 
-                     let ans = runLocQuery pt ctx mq
+                     let ans = runLocQuery ma ctx pt
                      in replaceAns ans $ applyLoc gf pt

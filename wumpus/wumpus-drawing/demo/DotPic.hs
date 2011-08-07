@@ -69,7 +69,7 @@ dottable =
 
 tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    draw $ chain_ chn_alg (map makeDotDrawing imgs) `at` pt
+    draw $ runChain_ (mapM (cnext . makeDotDrawing) imgs) chn_alg `at` pt
   where
     row_count   = 18
     chn_alg     = tableDown row_count (180,36)

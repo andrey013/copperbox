@@ -65,7 +65,7 @@ testDrawBl raddr = dcDisk FILL 2 `mappend` rectBl raddr
 
 rectBl :: RectAddress -> LocGraphic Double
 rectBl raddr = 
-    ignoreAns $ runPosObject raddr $ makePosObject (return ortt) (mkRectBl w h)
+    ignoreAns $ runPosObject (makePosObject (return ortt) (mkRectBl w h)) raddr
   where
     w    = 40 
     h    = 30
@@ -88,7 +88,7 @@ testDrawMinor raddr =
 
 rectMinor :: RectAddress -> LocGraphic Double
 rectMinor raddr = 
-    runPosObject raddr $ makePosObject (return ortt) (mkRectMinor m w h)
+    runPosObject (makePosObject (return ortt) (mkRectMinor m w h)) raddr
   where
     m    = 10
     w    = 40 

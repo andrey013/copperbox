@@ -77,24 +77,21 @@ body = do
 
     -- Note - need a variant of /bar/ that draws UDLR only.
 
-connWith :: ( TraceM m, DrawingCtxM m, u ~ MonUnit (m ())
-            , Real u, Floating u, InterpretUnit u ) 
-         => Connector u -> Anchor u -> Anchor u -> m ()
+connWith :: ( Real u, Floating u, InterpretUnit u ) 
+         => Connector u -> Anchor u -> Anchor u -> TraceDrawing u ()
 connWith con a0 a1 = localize double_point_size $ 
     drawc a0 a1 (rightArrow tri45 con)
 
 
-atext :: ( CenterAnchor (t u)
-         , Real u, Floating u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()), u ~ DUnit (t u) )
-      => t u -> String -> m ()
+atext :: ( CenterAnchor (t u), u ~ DUnit (t u)
+         , Real u, Floating u, InterpretUnit u)
+      => t u -> String -> TraceDrawing u ()
 atext ancr ss = 
     draw $ ccTextline ss `at` (center ancr)
 
 
-ptext :: ( Real u, Floating u, InterpretUnit u
-         , TraceM m, DrawingCtxM m, u ~ MonUnit (m ()) )
-      => Point2 u -> String -> m ()
+ptext :: (Floating u, InterpretUnit u) 
+      => Point2 u -> String -> TraceDrawing u ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
     draw $ ccTextline ss `at` pt
 

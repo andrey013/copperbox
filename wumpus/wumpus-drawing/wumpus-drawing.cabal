@@ -40,7 +40,7 @@ description:
   .
   v0.4.0 to v0.5.0
   .
-  * ??
+  * Updates to work with Wumpus-Basic 0.20.0.
   .
   v0.3.0 to v0.4.0:
   .
@@ -86,12 +86,11 @@ library
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.51.0  && <  0.52.0,
-                      wumpus-basic    == 0.19.0
+                      wumpus-basic    == 0.20.0
 
   
   exposed-modules:
     Wumpus.Drawing.Basis.DrawingPrimitives,
-    Wumpus.Drawing.Basis.TraceGraphic,
     Wumpus.Drawing.Basis.LocTrace,
     Wumpus.Drawing.Basis.RefTrace,
     Wumpus.Drawing.Colour.SVGColours,

@@ -229,7 +229,7 @@ rescTextline ang esc = makeRotEscText CAP_HEIGHT_PLUS_DESCENDER ang esc
 makeRotEscText :: (Real u, Floating u, Ord u, InterpretUnit u) 
                => TextVSize -> Radian -> EscapedText -> LocRectTextLine u
 makeRotEscText vsz ang esc = \raddr -> 
-    runPosObjectBBox raddr $ makePosObject ortt body
+    runPosObjectBBox (makePosObject ortt body) raddr
   where
     ortt = fmap (rotOrientation ang) $ textOrientationZero vsz esc
     body = incline (dcREscapedlabel esc) ang

@@ -63,7 +63,7 @@ conntable =
 
 tableGraphic :: [(String, Connector Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    draw $ chain_ chn_alg (map makeConnDrawing conns) `at` start
+    draw $ runChain (mapM (cnext .  makeConnDrawing) conns) chn_alg `at` start
   where
     chn_alg   = tableDown 8 (180,64) 
     start     = P2 0 520 

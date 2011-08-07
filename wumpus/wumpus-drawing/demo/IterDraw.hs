@@ -36,19 +36,19 @@ hdist :: Num u => (Vec2 u)
 hdist = hvec 28
 
 
-redA :: AdvObject Double
+redA :: AdvGraphic Double
 redA = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "A")
   where
     background = localize (fill_colour tomato) 
                           (moveStart bldisplace $ dcRectangle FILL 24 24)
 
-greenB :: AdvObject Double
+greenB :: AdvGraphic Double
 greenB = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "B")
   where
     background = localize (fill_colour yellow_green) 
                           (moveStart bldisplace $ dcRectangle FILL 24 24)
 
-blueC :: AdvObject Double
+blueC :: AdvGraphic Double
 blueC = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "C")
   where
     background = localize (fill_colour light_sky_blue) 

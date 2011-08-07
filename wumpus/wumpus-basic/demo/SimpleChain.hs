@@ -9,7 +9,6 @@ import Wumpus.Core                      -- package: wumpus-core
 import Wumpus.Core.Colour
 
 import Data.List ( unfoldr )
-import Data.Monoid
 import System.Directory
 
 main :: IO ()
@@ -55,8 +54,8 @@ pchain_start = radialChain 50 (0.5*pi) (pi/8)
 
 
 pchain :: InterpretUnit u => [LocGraphic u] -> Chain u (UNil u)
-pchain xs = do 
-    ys <- ntimes 12 xs
+pchain gs = do 
+    ys <- ntimes 12 gs
     setChainScheme (chainH 20)
     zs <- ntimes 15 ys
     setChainScheme (chainV 20)

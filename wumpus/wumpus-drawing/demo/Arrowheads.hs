@@ -76,7 +76,7 @@ arrtable =
 
 tableGraphic :: [(String, ArrowTip)] -> TraceDrawing Double ()
 tableGraphic tips = 
-    drawl start $ chain_ chn_alg (map makeArrowDrawing tips)
+    drawl start $ runChain_ (mapM makeArrowDrawing tips) chn_alg 
   where
     chn_alg = tableDown 18 (180,24)
     start   = P2 0 480
@@ -87,8 +87,10 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeArrowDrawing :: (String, ArrowTip) -> LocGraphic Double
-makeArrowDrawing (name, utip) = aconn `mappend` lbl
+-- Note - /null/ chain action needs a better type synonym name.
+--
+makeArrowDrawing :: (String, ArrowTip) -> Chain Double (UNil Double)
+makeArrowDrawing (name, utip) = cnext (aconn `mappend` lbl)
   where
     aconn = ignoreAns $ promoteLoc $ \pt ->
               connect pt (displace (hvec 60) pt) (uniformArrow utip connline)

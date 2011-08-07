@@ -55,7 +55,8 @@ background :: RGBi -> LocGraphic Double
 background rgb = promoteLoc $ \_ -> 
     ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = chain (tableDown 18 (86,16)) (replicate 112 iheartHaskell)
+    ihh = runChain (mapM cnext $ replicate 112 iheartHaskell) 
+                   (tableDown 18 (86,16)) 
 
 
 

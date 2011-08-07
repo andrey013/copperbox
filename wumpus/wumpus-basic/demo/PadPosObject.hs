@@ -81,7 +81,7 @@ testDraw trafo rpos = dcDisk FILL 2 `mappend` bbobj
 
 
 lrgBox :: Trafo -> (RectAddress -> BoundedLocGraphic Double)
-lrgBox trafo = \raddr -> runPosObjectBBox raddr $ trafo poBox 
+lrgBox trafo = \addr -> runPosObjectBBox (trafo poBox) addr
 
 poBox :: PosGraphic Double
 poBox = makePosObject mkOrtt mkRect

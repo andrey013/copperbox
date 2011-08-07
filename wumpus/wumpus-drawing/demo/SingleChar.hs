@@ -62,7 +62,7 @@ mf = localize (text_margin 6.0 6.0)  $ do
     draw $ redPlus `at` P2 200 0
 
   where
-    fn addr obj = illustrateBoundedLocGraphic $ (runPosObject addr obj)
+    fn addr obj = illustrateBoundedLocGraphic $ runPosObjectBBox obj addr
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u

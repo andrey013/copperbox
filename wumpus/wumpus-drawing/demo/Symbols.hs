@@ -31,13 +31,13 @@ std_ctx = set_font times_roman $ standardContext 12
 symbols :: CtxPicture
 symbols = udrawTracing (0::Double) $ do
     localize (set_font symbol) $ fontDelta $ draw $
-               chain_ chn_alg (map sdraw all_letters) `at` start
-    fontDelta $ draw $ chain chn_alg (map ldraw all_letters) `at` start
+               runChain_ (mapM sdraw all_letters) chn_alg  `at` start
+    fontDelta $ draw $ runChain (mapM ldraw all_letters) chn_alg  `at` start
   where
     chn_alg         = tableDown 30 (100,20) 
     start           = P2 0 (30*20)
-    sdraw (s,_)     = dcTextlabel s
-    ldraw (_,name)  = moveStart (hvec 16) (dcTextlabel name)
+    sdraw (s,_)     = cnext $ dcTextlabel s
+    ldraw (_,name)  = cnext $ moveStart (hvec 16) (dcTextlabel name)
 
 
 all_letters :: [(String, String)]

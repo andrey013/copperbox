@@ -1,4 +1,38 @@
 
+0.18.0 to 0.19.0:
+
+  * Removed the Semigroup (OPlus) and Bifunctor classes. They are 
+    no longer so pertinent now that Image, LocImage etc. are 
+    newtypes rather than /ContextFuns/.
+
+  * Changed internals of LocImage, LocThetaImage and  Connector 
+    types so the internal points always have Double (PostScript 
+    point) as the unit. This fixes a bug where otherwise changing
+    the font size for drawings with Em or En units would break the
+    layout.
+
+  * Added @ORIGIN@ to the @RectAddress@ enumeration. I had 
+    overlooked that @BLC /= ORIGIN@.
+
+  * Added underline-position and underline-thickness to the font 
+    metrics read by the font loader.
+
+0.17.0 to 0.18.0:
+ 
+  * Major change - removed @ContextFun@ from @Kernel.Base@. Now 
+    the drawing objects (Image, LocImage, Connector...) are 
+    newtype wrapped Reader-Writer monads rather than aliases to 
+    one of the arity family of ContextFuns. Being newtypes gives
+    a lot better opportunities for overloading.
+
+  * Changed Displacement API - it is smaller, and the function 
+    naming is more uniform.
+  
+  * Changed @DrawingPimitives@ to use @DrawStyle@.
+  
+  * Moved vertices generating functions from @Geometry.Path@ to 
+    @Geometry.Vertices@.
+ 
 0.16.0 to 0.17.0:
 
   * Changed representation of ContextFuns - context funs are no 

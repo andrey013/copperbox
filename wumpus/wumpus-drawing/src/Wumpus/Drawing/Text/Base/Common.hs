@@ -70,7 +70,7 @@ posTextWithMargins :: (Fractional u, InterpretUnit u)
 posTextWithMargins obj = \raddr ->
     textMargin >>= \(xsep,ysep) -> 
     let body = extendPosObject xsep xsep ysep ysep obj
-    in runPosObjectBBox raddr body
+    in runPosObjectBBox body raddr
 
 
 --------------------------------------------------------------------------------

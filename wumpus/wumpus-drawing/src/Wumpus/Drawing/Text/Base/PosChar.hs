@@ -81,7 +81,7 @@ charLabel ch = escCharLabel $ CharLiteral ch
 escCharLabel :: (Floating u, InterpretUnit u) 
              => EscapedChar -> LocRectChar u
 escCharLabel esc = \raddr -> 
-    runPosObjectBBox raddr (makePosChar CAP_HEIGHT_PLUS_DESCENDER esc) 
+    runPosObjectBBox (makePosChar CAP_HEIGHT_PLUS_DESCENDER esc) raddr
 
 
 
@@ -103,7 +103,7 @@ charLabelUp ch = escCharLabel $ CharLiteral ch
 escCharLabelUp :: (Floating u, InterpretUnit u) 
                => EscapedChar -> LocRectChar u
 escCharLabelUp esc = \raddr -> 
-    runPosObjectBBox raddr (makePosChar JUST_CAP_HEIGHT esc) 
+    runPosObjectBBox (makePosChar JUST_CAP_HEIGHT esc) raddr
 
 
 

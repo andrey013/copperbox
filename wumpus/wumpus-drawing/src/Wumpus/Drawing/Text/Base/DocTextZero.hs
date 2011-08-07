@@ -370,9 +370,9 @@ interpSpace = return $ makePosObject qy1  emptyLocImage
 
 ppad :: (Fractional u, Ord u, InterpretUnit u) 
      => VAlign -> u -> PosObject u a -> PosObject u a
-ppad VALIGN_LEFT   du = mapOrientation (padXMinor du)
-ppad VALIGN_CENTER du = mapOrientation (padHEven $ 0.5 * du)
-ppad VALIGN_RIGHT  du = mapOrientation (padXMajor du)
+ppad VALIGN_LEFT   du = mapOrientation (fillXMinor du)
+ppad VALIGN_CENTER du = mapOrientation (fillHEven $ 0.5 * du)
+ppad VALIGN_RIGHT  du = mapOrientation (fillXMajor du)
 
 
 interpMono :: (Fractional u, InterpretUnit u)
