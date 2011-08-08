@@ -38,6 +38,10 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , intraMapPoint
   , intraMapFunctor
 
+
+  -- * KernChar
+  , KernChar
+
   -- * Drawing paths
   , DrawStyle(..)
 
@@ -47,6 +51,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Alignment
   , HAlign(..)
   , VAlign(..)  
+
+  -- * Text height
+  , TextHeight(..)
 
   -- * Cardinal (compass) positions
   , Cardinal(..)
@@ -199,6 +206,15 @@ intraMapFunctor sz fn ma = dinterpF sz $ fn $ normalizeF sz ma
 
 
 --------------------------------------------------------------------------------
+-- KernChar
+
+
+-- | Unit parametric version of KerningChar from Wumpus-Core.
+--
+type KernChar u = (u,EscapedChar)
+
+
+--------------------------------------------------------------------------------
 -- Drawing closed paths
 
 
@@ -238,6 +254,28 @@ data HAlign = HALIGN_TOP | HALIGN_CENTER | HALIGN_BASE
 --
 data VAlign = VALIGN_LEFT | VALIGN_CENTER | VALIGN_RIGHT
   deriving (Enum,Eq,Ord,Show)
+
+
+--------------------------------------------------------------------------------
+-- Text height
+
+
+-- | Wumpus distinguishes two use-cases for displaying vertically 
+-- centered text.
+-- 
+-- Arbitrary text that is expected to contain lower case letters 
+-- with descenders, show take the vertical center as the mid-point 
+-- between the cap height and the descender depth.
+--
+-- Unfortunately including the descender depth can produce 
+-- unbalanced results for text which is not expected to have 
+-- descenders - e.g. numbers within an bordered box. Including the 
+-- descender depth in this case makes the center visually too high.
+-- 
+data TextHeight = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
+  deriving (Enum,Eq,Ord,Show)
+
+
 
 --------------------------------------------------------------------------------
 

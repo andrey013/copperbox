@@ -31,6 +31,9 @@ description:
   Changelog:
   .
   v0.19.0 to v0.20.0:
+  .
+  * Added text advance-vector calculations to @QueryDC@ - 
+    previously they were in Wumpus-Drawing.
   . 
   * Changed argument order of @run@ functions to follow the usual
     style - monadic action first then arguments (initial state, 

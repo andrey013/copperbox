@@ -47,6 +47,8 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   , illustratePosObject
 
+  , poChar
+  , poEscChar 
 
   ) where
 
@@ -286,6 +288,40 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteLoc $ \pt ->
         vln = upd $ locStraightLine (vvec $ ymin+ymaj) `at` pt .-^ vvec ymin
         bdr = upd $ dcRectangle STROKE (xmin+xmaj) (ymin+ymaj) `at` bl
     in mconcat [ bdr, hln, vln, dot ]
+
+
+
+--------------------------------------------------------------------------------
+
+-- Note - because the TextHeight constructors are so long winded,
+-- using them directly makes for a bad API...
+
+poChar :: InterpretUnit u 
+       => TextHeight -> Char -> PosObject u (UNil u)
+poChar hspec ch = poEscChar hspec (CharLiteral ch)
+
+
+poEscChar :: InterpretUnit u 
+          => TextHeight -> EscapedChar -> PosObject u (UNil u)
+poEscChar hspec esc = 
+    makePosObject (charOrientationZero hspec esc) 
+                  (dcEscapedlabel $ wrapEscChar esc)
+
+
+
+
+-- | Build the Orientation of an EscapedChar.
+-- 
+-- The locus of the Orientation is baseline left - margins are 
+-- added.
+--
+charOrientationZero :: (DrawingCtxM m, InterpretUnit u)
+                    => TextHeight -> EscapedChar -> m (Orientation u)
+charOrientationZero hspec esc = 
+    (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
+      <$> escCharVector esc <*> heightSpan hspec
+
+
 
 
 --------------------------------------------------------------------------------

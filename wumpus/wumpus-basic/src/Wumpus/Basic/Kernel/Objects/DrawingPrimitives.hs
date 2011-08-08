@@ -37,7 +37,6 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , dcEscapedlabel
   , dcREscapedlabel
 
-  , KernChar
   , hkernLine
   , vkernLine
 
@@ -70,7 +69,6 @@ import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Connector
--- import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 
@@ -312,9 +310,6 @@ dcREscapedlabel esc =
 
 
 
--- | Unit parametric version of KerningChar from Wumpus-Core.
---
-type KernChar u = (u,EscapedChar)
 
 uconvKernChar :: InterpretUnit u => [KernChar u] -> Query u [KerningChar]
 uconvKernChar = mapM mf

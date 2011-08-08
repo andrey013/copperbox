@@ -56,6 +56,12 @@ module Wumpus.Basic.Kernel.Base.QueryDC
   , underlinePosition
   , underlineThickness
   , verticalSpan
+  , heightSpan
+
+  -- * Text metrics
+  , escTextVector
+  , escCharVector
+  , hkernVector
 
   , cwLookupTable
 
@@ -78,8 +84,14 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.FontSupport
 
 import Wumpus.Core                              -- package: wumpus-core
+import Wumpus.Core.Text.GlyphIndices
+
+import Data.VectorSpace                         -- package: vector-space
  
 import Control.Applicative
+import Data.Char
+import qualified Data.Map               as Map
+import Data.Maybe 
 
 
 --
@@ -248,6 +260,79 @@ underlineThickness =
 verticalSpan :: (DrawingCtxM m, InterpretUnit u) => m u
 verticalSpan = 
     (\ch dd -> ch - dd) <$> capHeight <*> descender
+
+
+
+-- | Variant of 'verticalSpan' that accounts for the specified
+-- 'TextHeight'.
+--
+-- This returns a pair of @(yminor, ymajor)@.
+-- 
+heightSpan :: (DrawingCtxM m, InterpretUnit u )
+           => TextHeight -> m (u,u)
+heightSpan JUST_CAP_HEIGHT           = (\ymaj -> (0, ymaj)) <$> capHeight
+heightSpan CAP_HEIGHT_PLUS_DESCENDER = 
+    (\ymin ymaj -> (abs ymin, ymaj)) <$> descender <*> capHeight
+
+
+
+--------------------------------------------------------------------------------
+
+
+
+-- | Find the advance vector for the supplied 'EscapedText'.
+--
+-- Note - the text assumed to be a single line.
+-- 
+escTextVector :: (DrawingCtxM m, InterpretUnit u) 
+              => EscapedText -> m (Vec2 u)
+escTextVector esc = 
+    cwLookupTable >>= \table -> 
+    pointSize     >>= \sz    -> 
+    let cs = destrEscapedText id esc 
+    in return $ foldr (step sz table) (vec 0 0) cs
+  where
+    step sz table ch v = let cv = escCharWidth sz table ch in v ^+^ cv
+
+
+
+-- | Find the advance vector for the supplied 'EscapedChar'.
+--
+escCharVector :: (DrawingCtxM m, InterpretUnit u) 
+           => EscapedChar -> m (Vec2 u)
+escCharVector ch = 
+    (\table sz -> escCharWidth sz table ch) <$> cwLookupTable <*> pointSize
+
+
+-- | This is outside the Drawing context as we don\'t want to get
+-- the @cwLookupTable@ for every char.
+--
+escCharWidth :: InterpretUnit u 
+             => FontSize -> CharWidthLookup -> EscapedChar -> Vec2 u
+escCharWidth sz fn (CharLiteral c) = fmap (dinterp sz) $ fn $ ord c
+escCharWidth sz fn (CharEscInt i)  = fmap (dinterp sz) $ fn i
+escCharWidth sz fn (CharEscName s) = fmap (dinterp sz) $ fn ix
+  where
+    ix = fromMaybe (-1) $ Map.lookup s ps_glyph_indices
+
+
+
+
+-- | 'hkernVector' : @ [kerning_char] -> AdvanceVec @
+-- 
+-- 'hkernvector' takes whatever length is paired with the 
+-- EscapedChar for the init of the the list, for the last element 
+-- it takes the charVector.
+--
+hkernVector :: (DrawingCtxM m, InterpretUnit u) 
+            => [KernChar u] -> m (Vec2 u)
+hkernVector = go 0
+  where
+    go w []             = return $ V2 w 0
+    go w [(dx,ch)]      = fmap (addWidth $ w + dx) (escCharVector ch)
+    go w ((dx,_ ):xs)   = go (w + dx) xs
+    
+    addWidth w (V2 x y) = V2 (w+x) y
 
 
 
