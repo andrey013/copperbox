@@ -22,8 +22,8 @@ module Wumpus.Drawing.Paths.Vamps
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.PathBuilder
-import Wumpus.Drawing.Paths.Base.RelPath
+import Wumpus.Drawing.Paths.Base.PathBuilder ( Vamp(..) )
+import Wumpus.Drawing.Paths.Base.AbsPath
 
 import Wumpus.Basic.Kernel
 
@@ -35,12 +35,18 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 
-
-squareWE :: (Fractional u, Floating u) => u -> Vamp u
-squareWE diam = makeVamp (hvec diam) rpath (SUBPATH_CLOSED STROKE)
+-- Note - actual square TODO...
+--
+squareWE :: (Real u, Floating  u, Ord u, Tolerance u, InterpretUnit u) 
+         => u -> Vamp u
+squareWE diam = Vamp { vamp_move = hvec diam
+                     , vamp_conn = conn }
   where
-    hdiam = 0.5 * diam
-    rpath = vertexPath [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]
+    conn = promoteConn $ \p1 p2 -> 
+           -- TODO ...
+           drawClosedPath_ STROKE $ vertexPath $ [ p1, p2 ]
+
+     -- vertexPath [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]
 
 
--- Drawing a cirle is probably best done with 90deg arcs.
+-- Drawing a cirle picks the half point on the vamp_move vector...

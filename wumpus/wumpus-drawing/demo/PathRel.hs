@@ -40,30 +40,43 @@ path1 = localize (stroke_colour dark_red) $ execPathSpec path_spec1
 
 path2 :: DLocGraphic 
 path2 = ignoreAns $ localize (stroke_colour red) $ 
-    drawClosedPath FILL $ evalPathSpec path_spec1 
+    obliterate2 (evalPathSpec path_spec1) >>= drawClosedPath FILL
 
-makePD :: PathSpec Double () -> DLocGraphic
-makePD spec = localize (stroke_colour red) $ execPathSpec spec
-
-
-
-path_spec1 :: PathSpec Double ()
-path_spec1 =  
-       lineto   (V2 0 50)
-    >> lineto   (V2 50 0)
-    >> insertl  disk1
-    >> moveBy   (V2 0 (-50))
-    >> lineto   (V2 100 0) 
-    >> vamp     vamp1  
-    >> lineto   (V2 20 0)
+makePD :: PathSpec Double a -> DLocGraphic
+makePD spec = localize (stroke_colour red) $ ignoreAns $ execPathSpec spec
 
 
-    >> pen_colour blue
-    >> lineto   (V2 50 0)
-    >> lineto   (V2 0 (-40))
-    >> cycleSubPath FILL_STROKE           
+-- Note - current definition of @obliterate@ in Wumpus-Basic is
+-- not satisfactory. A better definition would replace the 
+-- collected CatPrim with mempty.
+--
+-- This is a place holder.
+--
+obliterate2 :: a -> a
+obliterate2 = id
+
+path_spec1 :: PathSpec Double (UNil Double)
+path_spec1 = do
+    lineto   (V2 0 50)
+    lineto   (V2 50 0)
+    insertl  disk1
+    moveBy   (V2 0 (-50))
+    lineto   (V2 100 0) 
+    vamp     vamp1  
+    lineto   (V2 20 0)
+
+    localPen (stroke_colour blue) $ do 
+         { breakPath 
+         ; lineto   (V2 50 0)
+         ; lineto   (V2 0 (-40))
+         ; cycleSubPath FILL_STROKE
+         }
+    ureturn
   where
     disk1 = dcDisk STROKE 10
 
     vamp1 = squareWE 40 
 
+
+ureturn :: Monad m => m (UNil u)
+ureturn = return UNil
