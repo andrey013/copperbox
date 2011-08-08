@@ -163,8 +163,7 @@ instance Decorate LocImage where
   elaborate zo ma f = LocImage $ \pt -> 
     elaborate zo (getLocImage ma pt) (\a -> getLocImage (f a) pt)
 
-  obliterate ma mz = LocImage $ \pt -> 
-    getLocImage ma pt `obliterate` getLocImage mz pt 
+  obliterate ma = LocImage $ \pt -> obliterate $ getLocImage ma pt 
 
   hyperlink xl ma = LocImage $ \pt -> hyperlink xl $ getLocImage ma pt 
 

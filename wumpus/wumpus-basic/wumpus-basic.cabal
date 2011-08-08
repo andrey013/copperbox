@@ -51,6 +51,7 @@ description:
     are more idiomatic - both are now essentially reader-writer 
     monads.
   .
+  * Changed the @obliterate@ method of the @Decorate@ class.
   .
 build-type:         Simple
 stability:          highly unstable

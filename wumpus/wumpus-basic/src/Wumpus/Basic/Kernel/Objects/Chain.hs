@@ -97,61 +97,61 @@ type instance DUnit (ChainSt st u) = u
 -- Functor 
 
 instance Functor (GenChain st u) where
-  fmap f ma = GenChain $ \r s t -> let (a,s1,t1,w) = getGenChain ma r s t
-                                   in (f a, s1, t1, w)
+  fmap f ma = GenChain $ \ctx pt s -> 
+              let (a,p1,s1,w) = getGenChain ma ctx pt s in (f a, p1, s1, w)
 
 
 
 -- Applicative
 
 instance Applicative (GenChain st u) where
-  pure a    = GenChain $ \_ s t -> (a, s, t, mempty)
-  mf <*> ma = GenChain $ \r s t -> 
-                let (f,s1,t1,w1) = getGenChain mf r s t
-                    (a,s2,t2,w2) = getGenChain ma r s1 t1
-                in (f a, s2, t2, w1 `mappend` w2)
+  pure a    = GenChain $ \_   pt s -> (a, pt, s, mempty)
+  mf <*> ma = GenChain $ \ctx pt s -> 
+                let (f,p1,s1,w1) = getGenChain mf ctx pt s
+                    (a,p2,s2,w2) = getGenChain ma ctx p1 s1
+                in (f a, p2, s2, w1 `mappend` w2)
 
 
 
 -- Monad
 
 instance Monad (GenChain st u) where
-  return a  = GenChain $ \_ s t -> (a, s, t, mempty)
-  ma >>= k  = GenChain $ \r s t -> 
-                let (a,s1,t1,w1) = getGenChain ma r s t
-                    (b,s2,t2,w2) = (getGenChain . k) a r s1 t1
-                in (b, s2, t2, w1 `mappend` w2)
+  return a  = GenChain $ \_   pt s -> (a, pt, s, mempty)
+  ma >>= k  = GenChain $ \ctx pt s -> 
+                let (a,p1,s1,w1) = getGenChain ma ctx pt s
+                    (b,p2,s2,w2) = (getGenChain . k) a ctx p1 s1
+                in (b, p2, s2, w1 `mappend` w2)
 
 
 -- DrawingCtxM
 
 instance DrawingCtxM (GenChain st u) where
-  askDC           = GenChain $ \r s t -> (r, s, t, mempty)
-  asksDC fn       = GenChain $ \r s t -> (fn r, s, t, mempty)
-  localize upd ma = GenChain $ \r s t -> getGenChain ma (upd r) s t
+  askDC           = GenChain $ \ctx pt s -> (ctx, pt, s, mempty)
+  asksDC fn       = GenChain $ \ctx pt s -> (fn ctx, pt, s, mempty)
+  localize upd ma = GenChain $ \ctx pt s -> getGenChain ma (upd ctx) pt s
 
 
 
 -- UserStateM 
 
 instance UserStateM (GenChain st u) where
-  getState        = GenChain $ \_ s t@(ChainSt _ _ ust) -> 
-                      (ust, s, t, mempty)
-  setState ust    = GenChain $ \_ s (ChainSt a b _) -> 
-                      ((), s, ChainSt a b ust, mempty)
-  updateState upd = GenChain $ \_ s (ChainSt a b ust) -> 
-                      ((), s, ChainSt a b (upd ust), mempty)
+  getState        = GenChain $ \_ pt s@(ChainSt _ _ ust) -> 
+                      (ust, pt, s, mempty)
+  setState ust    = GenChain $ \_ pt (ChainSt a b _) -> 
+                      ((), pt, ChainSt a b ust, mempty)
+  updateState upd = GenChain $ \_ pt (ChainSt a b ust) -> 
+                      ((), pt, ChainSt a b (upd ust), mempty)
 
 
 
 -- Monoid
 
 instance Monoid a => Monoid (GenChain st u a) where
-  mempty           = GenChain $ \_ s t -> (mempty, s, t, mempty)
-  ma `mappend` mb  = GenChain $ \r s t -> 
-                       let (a,s1,t1,w1) = getGenChain ma r s t
-                           (b,s2,t2,w2) = getGenChain mb r s1 t1
-                       in (a `mappend` b, s2, t2, w1 `mappend` w2)
+  mempty           = GenChain $ \_   pt s -> (mempty, pt, s, mempty)
+  ma `mappend` mb  = GenChain $ \ctx pt s -> 
+                       let (a,p1,s1,w1) = getGenChain ma ctx pt s
+                           (b,p2,s2,w2) = getGenChain mb ctx p1 s1
+                       in (a `mappend` b, p2, s2, w1 `mappend` w2)
 
 
 runGenChain :: InterpretUnit u 

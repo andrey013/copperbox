@@ -238,7 +238,7 @@ replaceAns a = fmap (const a)
 class Decorate (f :: * -> * -> *) where
   decorate   :: ZDeco -> f u a -> f u z -> f u a
   elaborate  :: ZDeco -> f u a -> (a -> f u z) -> f u a
-  obliterate :: f u a -> f u z -> f u a
+  obliterate :: f u a -> f u a
   hyperlink  :: XLink -> f u a -> f u a
 
 
@@ -279,11 +279,9 @@ elaborateImage zo ma k = Image $ \ ctx ->
       ANTERIOR -> (a, w2 `mappend` w1)
 
 
-obliterateImage :: Image u a -> Image u z -> Image u a
-obliterateImage ma mb = Image $ \ctx -> 
-    let (a,_) = getImage ma ctx
-        (_,w) = getImage mb ctx
-    in (a,w)
+obliterateImage :: Image u a -> Image u a
+obliterateImage ma = Image $ \ctx -> 
+    let (a,_) = getImage ma ctx in (a,mempty)
   
 hyperlinkImage :: XLink -> Image u a -> Image u a
 hyperlinkImage xl ma = Image $ \ctx -> step (getImage ma ctx)

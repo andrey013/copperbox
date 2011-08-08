@@ -159,8 +159,8 @@ instance Decorate LocThetaImage where
     elaborate zo (getLocThetaImage ma pt ang) 
                  (\a -> getLocThetaImage (f a) pt ang)
 
-  obliterate ma mz = LocThetaImage $ \pt ang -> 
-    getLocThetaImage ma pt ang `obliterate` getLocThetaImage mz pt ang
+  obliterate ma = LocThetaImage $ \pt ang -> 
+    obliterate $ getLocThetaImage ma pt ang
 
   hyperlink xl ma = LocThetaImage $ \pt ang -> 
     hyperlink xl $ getLocThetaImage ma pt ang

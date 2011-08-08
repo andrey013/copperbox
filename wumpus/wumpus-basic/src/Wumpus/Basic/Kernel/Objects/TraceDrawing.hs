@@ -144,15 +144,6 @@ instance UserStateM (GenTraceDrawing st u) where
   updateState upd = GenTraceDrawing $ \_ s -> ((), upd s, mempty)
  
 
--- Note - the result type of runTraceDrawing and friends needs more 
--- thought and may change. 
---
--- Possibly a wrapped HPrim that only supports concat and safe
--- extraction is best.
---
--- Or it could generate a picture, but then separate drawings
--- need the picture combinators to put them together. 
--- 
 
 
 runTraceDrawing :: TraceDrawing u a -> DrawingContext -> (a, HPrim u)

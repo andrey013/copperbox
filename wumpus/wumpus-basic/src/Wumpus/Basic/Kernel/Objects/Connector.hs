@@ -161,8 +161,8 @@ instance Decorate ConnectorImage where
     elaborate zo (getConnectorImage ma p0 p1) 
                  (\a -> getConnectorImage (f a) p0 p1)
 
-  obliterate ma mz = ConnectorImage $ \p0 p1 -> 
-    getConnectorImage ma p0 p1 `obliterate` getConnectorImage mz p0 p1
+  obliterate ma = ConnectorImage $ \p0 p1 -> 
+    obliterate $ getConnectorImage ma p0 p1
 
   hyperlink xl ma = ConnectorImage $ \p0 p1 -> 
     hyperlink xl $ getConnectorImage ma p0 p1
