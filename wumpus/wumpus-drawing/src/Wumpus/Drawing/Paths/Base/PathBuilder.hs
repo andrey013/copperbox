@@ -404,32 +404,3 @@ localPen upd ma = GenPathSpec $ \ctx pt s ->
         w2           = let wcp2 = wcp `mappend` w_trace w1 in w1 { w_trace = wcp2 }
     in (a, p1, s1 { st_active_pen = PEN_UP }, w2)
 
-
- 
---------------------------------------------------------------------------------
-
--- BuildSt modifiers.
-
-
-{-
-
-
-
---------------------------------------------------------------------------------
--- Derived operators
-
-
-
-
-pen_colour :: PathOpM m
-           => RGBi -> m ()
-pen_colour rgb = updatePen (stroke_colour rgb)
-
-pen_width  :: PathOpM m 
-           => Double -> m ()
-pen_width d = updatePen (set_line_width d)
-
-
-
-
--}

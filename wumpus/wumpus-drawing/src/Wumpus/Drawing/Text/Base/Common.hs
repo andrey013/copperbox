@@ -21,16 +21,18 @@
 module Wumpus.Drawing.Text.Base.Common
   ( 
 
-    TextVSize(..)
-  , posTextWithMargins
+{-
+    posTextWithMargins
   , advtext
   , textVector
   , textOrientationZero
 
   , charVector
   , charOrientationZero
+
   , hkernVector
   , hkernOrientationZero
+-}
 
   ) where
 
@@ -48,22 +50,17 @@ import qualified Data.Map               as Map
 import Data.Maybe 
 
 
--- | Wumpus distinguishes two use-cases for displaying vertically 
--- centered text.
+
+
+
+-- What is Text?
 -- 
--- Arbitrary text that is expected to contain lower case letters 
--- with descenders, show take the vertical center as the mid-point 
--- between the cap height and the descender depth.
+-- Being addressable by RectAddress is essential for drawing, 
+-- therefore Text is either a PosObject, or it is run to make 
+-- a PosObject.
 --
--- Unfortunately including the descender depth can produce 
--- unbalanced results for text which is not expected to have 
--- descenders - e.g. numbers within an bordered box. Including the 
--- descender depth in this case makes the center visually too high.
--- 
-data TextVSize = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
-  deriving (Enum,Eq,Ord,Show)
 
-
+{-
 
 posTextWithMargins :: (Fractional u, InterpretUnit u) 
                    => PosObject u a -> (RectAddress -> LocImage u (BoundingBox u))
@@ -185,3 +182,4 @@ hkernOrientationZero :: (DrawingCtxM m, InterpretUnit u )
 hkernOrientationZero vsz xs = hkernVector xs >>= bllOrientationZero vsz
  
 
+-}

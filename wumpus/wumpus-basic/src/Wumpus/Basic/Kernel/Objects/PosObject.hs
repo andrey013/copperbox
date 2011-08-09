@@ -51,17 +51,26 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , posEscChar 
   , posCharUpright
   , posEscCharUpright
+  
+  , posCharPrim
 
   , posText
   , posEscText 
   , posTextUpright
   , posEscTextUpright
 
+  , posTextPrim
+
   , multilinePosText
   , multilinePosEscText
 
   , rposText
   , rposEscText
+
+  , posHKernText
+
+  , monospaceText
+  , monospaceEscText
 
   ) where
 
@@ -332,6 +341,13 @@ posEscCharUpright   :: InterpretUnit u => EscapedChar -> PosGraphic u
 posEscCharUpright   = makeCharPO JUST_CAP_HEIGHT
 
 
+-- | Primtive builder that does not add margins.
+--
+posCharPrim         :: InterpretUnit u 
+                    => Either Char EscapedChar -> PosGraphic u
+posCharPrim = makeCharPO CAP_HEIGHT_PLUS_DESCENDER . either CharLiteral id
+
+
 makeCharPO :: InterpretUnit u 
            => TextHeight -> EscapedChar -> PosGraphic u
 makeCharPO hspec esc = 
@@ -347,7 +363,7 @@ makeCharPO hspec esc =
 -- added.
 --
 charOrientation :: (DrawingCtxM m, InterpretUnit u)
-                    => TextHeight -> EscapedChar -> m (Orientation u)
+                => TextHeight -> EscapedChar -> m (Orientation u)
 charOrientation hspec esc = 
     (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
       <$> escCharVector esc <*> heightSpan hspec
@@ -370,6 +386,12 @@ posTextUpright      = addMargins . makeTextPO JUST_CAP_HEIGHT . escapeString
 
 posEscTextUpright   :: InterpretUnit u => EscapedText -> PosGraphic u
 posEscTextUpright   = addMargins . makeTextPO JUST_CAP_HEIGHT
+
+-- | Primtive builder that does not add margins.
+--
+posTextPrim         :: InterpretUnit u 
+                    => Either String EscapedText -> PosGraphic u
+posTextPrim = makeTextPO CAP_HEIGHT_PLUS_DESCENDER . either escapeString id
 
 
 multilinePosText :: (Fractional u, InterpretUnit u)
@@ -439,6 +461,54 @@ makeRotatedPO ang esc = makePosObject qry body
 
     body = incline (dcREscapedlabel esc) ang
 
+
+--------------------------------------------------------------------------------
+-- Kerned text
+
+
+posHKernText :: InterpretUnit u
+            => [KernChar u] -> PosGraphic u
+posHKernText xs = makePosObject (hkernOrientationZero xs) (hkernLine xs)
+
+-- | The query should retrieve the width of one char.
+--
+monospaceText :: InterpretUnit u 
+              => Query u u -> String -> PosGraphic u
+monospaceText qry = monospaceEscText qry . escapeString
+
+
+-- | The query should retrieve the width of one char.
+--
+monospaceEscText :: InterpretUnit u 
+                 => Query u u -> EscapedText -> PosGraphic u
+monospaceEscText qry esc = PosObject $ \ctx pt ->
+    let upt    = dinterpF (dc_font_size ctx) pt
+        uw     = runQuery qry ctx
+        ks     = monos uw $ destrEscapedText id esc
+        ortt   = runQuery (hkernOrientationZero  ks) ctx
+        dort   = normalizeF (dc_font_size ctx) ortt
+        (_,w1) = runLocImage (hkernLine ks) ctx upt
+    in (UNil, dort, w1)
+
+
+
+
+
+monos :: Num u => u -> [EscapedChar] -> [KernChar u]
+monos w1 (c:cs) = (0,c) : map (\ch -> (w1,ch)) cs
+monos _  []     = []
+
+
+
+-- | Note - always CAP_HEIGHT_PLUS_DESCENDER for this one.
+--
+hkernOrientationZero :: (DrawingCtxM m, InterpretUnit u )
+                     => [KernChar u] -> m (Orientation u)
+hkernOrientationZero xs = 
+    (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
+      <$> hkernVector xs <*> heightSpan CAP_HEIGHT_PLUS_DESCENDER
+
+ 
 
 --------------------------------------------------------------------------------
 -- Combining PosObject

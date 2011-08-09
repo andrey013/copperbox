@@ -42,29 +42,29 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = localize text_margin_tight  $ do
-    draw $ (fn SS leftAlign)   `at` P2 0 300
+    draw $ (fn SS VALIGN_LEFT)   `at` P2 0 300
     draw $ redPlus `at` zeroPt
 
-    draw $ (fn SS centerAlign) `at` P2 0 150
+    draw $ (fn SS VALIGN_CENTER) `at` P2 0 150
     draw $ redPlus `at` P2 0 150
 
-    draw $ (fn SS rightAlign)  `at` P2 0 0
+    draw $ (fn SS VALIGN_RIGHT)  `at` P2 0 0
     draw $ redPlus `at` P2 0 300
   where
-    fn addr af = illustrateBoundedLocGraphic $ 
-                   render helvetica_family (af body) addr
+    fn addr va = illustrateBoundedLocGraphic $ 
+                   runPosObjectBBox (runDoc doc1 va helvetica_family) addr
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
 redPlus = localize (stroke_colour red) dotPlus
 
-
-body :: (Fractional u, Ord u, InterpretUnit u) => [Doc u]
-body = [ string "Further work"
-       , underline $ (textSize 36 $ string "on")
-           <+> (fontColour red $ string "multiline")
+doc1 :: DocGraphic Double
+doc1 = vcat $ 
+    [ string "Further work"
+    , underline $ (localize (set_font_size 36) $ string "on")
+           <+> (localize (text_colour red) $ string "multiline")
            <+> string "text"
-       , ( lfill 50 $ string "and") <> highlight light_blue (string "other things.")
-       , strikethrough $ float (sin (0.5::Double))
-       , bold (string "Now with bold") <+> italic (string "and italic.") 
-       ] 
+    , string "and" <> highlight light_blue (string "other things.")
+    , strikethrough $ float (sin (0.5::Double))
+    , bold (string "Now with bold") <+> italic (string "and italic.") 
+    ] 

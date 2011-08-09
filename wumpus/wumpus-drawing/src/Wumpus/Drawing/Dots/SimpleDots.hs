@@ -42,6 +42,9 @@ module Wumpus.Drawing.Dots.SimpleDots
 
   , dotChar
   , dotText
+  , dotEscChar
+  , dotEscText
+
 
   , dotHLine
   , dotVLine
@@ -65,7 +68,6 @@ module Wumpus.Drawing.Dots.SimpleDots
   ) where
 
 
-import Wumpus.Drawing.Text.Base.SimpleTextZero
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
@@ -143,8 +145,17 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
-dotText ss = ignoreAns $ ccTextline ss
+dotText ss = ignoreAns $ runPosObject (posText ss) CENTER
 
+dotEscChar :: (Real u, Floating u, InterpretUnit u) 
+           => EscapedChar -> LocGraphic u
+dotEscChar = dotEscText . wrapEscChar
+
+dotEscText :: (Real u, Floating u, InterpretUnit u) 
+           => EscapedText -> LocGraphic u
+dotEscText esc = ignoreAns $ runPosObject (posEscText esc) CENTER
+
+-- TODO - need Upright versions of dots...
 
 
 

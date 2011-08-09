@@ -40,7 +40,10 @@ description:
   .
   v0.4.0 to v0.5.0
   .
-  * Updates to work with Wumpus-Basic 0.20.0.
+  * Re-implemented Text drawing. Some functionality moved to 
+    Wumpus-Basic.
+  .
+  * Re-implemented monadic Path Builder.
   .
   v0.3.0 to v0.4.0:
   .
