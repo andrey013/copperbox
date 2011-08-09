@@ -65,7 +65,6 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
 import qualified Wumpus.Drawing.Dots.SimpleDots as SD
-import Wumpus.Drawing.Text.Base.SimpleTextZero
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel               
@@ -265,7 +264,8 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
-dotText ss = fmap bboxRectAnchor $ ccTextline ss
+dotText ss = 
+    fmap bboxRectAnchor $ runPosObjectBBox (posText ss) CENTER
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 

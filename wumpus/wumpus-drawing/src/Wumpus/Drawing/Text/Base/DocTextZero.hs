@@ -49,7 +49,6 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
   ) where
 
--- import Wumpus.Drawing.Basis.DrawingPrimitives
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -60,11 +59,9 @@ import Data.Monoid
 import Numeric
 
 
--- Note - I think we can incrementally `valign`, but I\'ll need
--- visual evidence to be sure.
-
  
-
+-- | Doc type.
+--
 newtype Doc u a = Doc { getDoc :: DocEnv -> PosObject u a } 
 
 type instance DUnit (Doc u a) = u

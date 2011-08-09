@@ -129,11 +129,8 @@ library
     Wumpus.Drawing.Shapes.Semicircle,
     Wumpus.Drawing.Shapes.Semiellipse,
     Wumpus.Drawing.Shapes.Triangle,
-    Wumpus.Drawing.Text.Base.Common,
     Wumpus.Drawing.Text.Base.DocTextZero,
     Wumpus.Drawing.Text.Base.Label,
-    Wumpus.Drawing.Text.Base.PosChar,
-    Wumpus.Drawing.Text.Base.SimpleTextZero,
     Wumpus.Drawing.Text.DirectionZero,
     Wumpus.Drawing.Text.StandardFontDefs,
     Wumpus.Drawing.VersionNumber

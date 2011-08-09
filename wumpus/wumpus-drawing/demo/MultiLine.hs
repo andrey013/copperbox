@@ -76,14 +76,14 @@ testDrawL :: (Real u, Floating u, Ord u, InterpretUnit u)
 testDrawL rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignLeft sample_text rpos
+            runPosObjectBBox (multilinePosText VALIGN_LEFT sample_text) rpos
 
 testDrawC :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
 testDrawC rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignCenter sample_text rpos
+            runPosObjectBBox (multilinePosText VALIGN_CENTER sample_text) rpos
 
 
 testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u) 
@@ -91,7 +91,8 @@ testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u)
 testDrawR rpos = dcDisk FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multiAlignRight sample_text rpos
+            runPosObjectBBox (multilinePosText VALIGN_RIGHT sample_text) rpos
+
 
 sample_text :: String
 sample_text = "Is\nthis\nokay&question;"
