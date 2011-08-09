@@ -36,8 +36,8 @@ description:
     previously they were in Wumpus-Drawing.
   . 
   * Changed argument order of @run@ functions to follow the usual
-    style - monadic action first then arguments (initial state, 
-    reader environment etc.).
+    style - monadic action first and then dependent parameters 
+    (initial state, reader environment etc.).
   . 
   * Changed representation of Chains to a monadic type with an 
     explicit operation for next position.
@@ -52,7 +52,8 @@ description:
   .
   * Changed the internals of @AdvObject@ and @PosObject@ so they 
     are more idiomatic - both are now essentially reader-writer 
-    monads.
+    monads. Added PosObject functions for text primitives (moved 
+    from Wumpus-Drawing).
   .
   * Changed the @obliterate@ method of the @Decorate@ class.
   .

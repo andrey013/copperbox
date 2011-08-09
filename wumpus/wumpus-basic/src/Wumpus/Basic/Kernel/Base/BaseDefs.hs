@@ -24,6 +24,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
   -- * Unit phantom type
   , UNil(..)
+  , ureturn
 
   -- * Non-contextual unit conversion.
   , ScalarUnit(..)
@@ -119,6 +120,27 @@ instance Scale (UNil u) where
 
 instance Translate (UNil u) where
   translate _ _         = id
+
+-- | Return a 'UNil' rather than @()@ at the end of sequence of
+-- monadic commands.
+--
+-- Many Wumpus objects are usefully constructed in the 
+-- @do-notation@, but due to the need to type their unit
+-- must finish the do-block with:
+--
+-- > ureturn
+-- 
+-- or:
+-- 
+-- return UNil
+--
+-- rather than:
+--
+-- > return ()
+--
+--
+ureturn :: Monad m => m (UNil u)
+ureturn = return UNil
 
 --------------------------------------------------------------------------------
 -- Non-contextual units
@@ -267,10 +289,10 @@ data VAlign = VALIGN_LEFT | VALIGN_CENTER | VALIGN_RIGHT
 -- with descenders, show take the vertical center as the mid-point 
 -- between the cap height and the descender depth.
 --
--- Unfortunately including the descender depth can produce 
+-- Unfortunately, including the descender depth can produce 
 -- unbalanced results for text which is not expected to have 
--- descenders - e.g. numbers within an bordered box. Including the 
--- descender depth in this case makes the center visually too high.
+-- descenders (e.g. numbers within a bordered box), visually this 
+-- makes the center too high.
 -- 
 data TextHeight = JUST_CAP_HEIGHT | CAP_HEIGHT_PLUS_DESCENDER
   deriving (Enum,Eq,Ord,Show)

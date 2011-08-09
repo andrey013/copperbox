@@ -47,8 +47,18 @@ module Wumpus.Basic.Kernel.Objects.PosObject
 
   , illustratePosObject
 
-  , poChar
-  , poEscChar 
+  , posChar
+  , posEscChar 
+  , posCharUpright
+  , posEscCharUpright
+
+  , posText
+  , posEscText 
+  , posTextUpright
+  , posEscTextUpright
+
+  , multilinePosText
+  , multilinePosEscText
 
   ) where
 
@@ -292,19 +302,36 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteLoc $ \pt ->
 
 
 --------------------------------------------------------------------------------
+-- Char PosObjects
+
 
 -- Note - because the TextHeight constructors are so long winded,
--- using them directly makes for a bad API...
+-- using them directly makes for a bad API. Instead we have two 
+-- versions for each function.
 
-poChar :: InterpretUnit u 
-       => TextHeight -> Char -> PosObject u (UNil u)
-poChar hspec ch = poEscChar hspec (CharLiteral ch)
+-- | Note - no margins are added to the containing rectangle.
+-- 
+-- To get a Char with margins, use 'posText' instead:
+--
+-- > posText ['1']
+-- 
+posChar             :: InterpretUnit u => Char -> PosGraphic u
+posChar             = makeCharPO CAP_HEIGHT_PLUS_DESCENDER . CharLiteral
+
+posEscChar          :: InterpretUnit u => EscapedChar -> PosGraphic u
+posEscChar          = makeCharPO CAP_HEIGHT_PLUS_DESCENDER
+
+posCharUpright      :: InterpretUnit u => Char -> PosGraphic u
+posCharUpright      = makeCharPO JUST_CAP_HEIGHT . CharLiteral
+
+posEscCharUpright   :: InterpretUnit u => EscapedChar -> PosGraphic u
+posEscCharUpright   = makeCharPO JUST_CAP_HEIGHT
 
 
-poEscChar :: InterpretUnit u 
-          => TextHeight -> EscapedChar -> PosObject u (UNil u)
-poEscChar hspec esc = 
-    makePosObject (charOrientationZero hspec esc) 
+makeCharPO :: InterpretUnit u 
+           => TextHeight -> EscapedChar -> PosGraphic u
+makeCharPO hspec esc = 
+    makePosObject (charOrientation hspec esc) 
                   (dcEscapedlabel $ wrapEscChar esc)
 
 
@@ -315,13 +342,72 @@ poEscChar hspec esc =
 -- The locus of the Orientation is baseline left - margins are 
 -- added.
 --
-charOrientationZero :: (DrawingCtxM m, InterpretUnit u)
+charOrientation :: (DrawingCtxM m, InterpretUnit u)
                     => TextHeight -> EscapedChar -> m (Orientation u)
-charOrientationZero hspec esc = 
+charOrientation hspec esc = 
     (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
       <$> escCharVector esc <*> heightSpan hspec
 
 
+--------------------------------------------------------------------------------
+-- Text PosObjects
+
+
+
+posText     :: InterpretUnit u => String -> PosGraphic u
+posText     = addMargins . makeTextPO CAP_HEIGHT_PLUS_DESCENDER . escapeString
+
+posEscText  :: InterpretUnit u => EscapedText -> PosGraphic u
+posEscText  = addMargins . makeTextPO CAP_HEIGHT_PLUS_DESCENDER
+
+
+posTextUpright      :: InterpretUnit u => String -> PosGraphic u
+posTextUpright      = addMargins . makeTextPO JUST_CAP_HEIGHT . escapeString
+
+posEscTextUpright   :: InterpretUnit u => EscapedText -> PosGraphic u
+posEscTextUpright   = addMargins . makeTextPO JUST_CAP_HEIGHT
+
+
+multilinePosText :: (Fractional u, InterpretUnit u)
+                 => VAlign -> String -> PosGraphic u
+multilinePosText vspec xs = 
+    multilinePosEscText vspec $ map escapeString $ lines xs
+
+multilinePosEscText :: (Fractional u, InterpretUnit u)
+                    => VAlign -> [EscapedText] -> PosGraphic u
+multilinePosEscText vspec xs = 
+    addMargins $ PosObject $ \ctx pt -> 
+      let sep    = runQuery textlineSpace ctx
+      in getPosObject (body sep) ctx pt
+  where
+    body sp = alignColumnSep vspec sp $ 
+                map (makeTextPO CAP_HEIGHT_PLUS_DESCENDER) xs
+
+
+
+-- | Note - this does not add margins.
+--
+makeTextPO :: InterpretUnit u 
+           => TextHeight -> EscapedText -> PosGraphic u
+makeTextPO hspec esc = 
+    makePosObject (textOrientationZero hspec esc) (dcEscapedlabel esc)
+
+
+addMargins :: InterpretUnit u => PosObject u a -> PosObject u a
+addMargins ma = 
+   textMargin >>= \(xsep,ysep) -> extendPosObject xsep xsep ysep ysep ma
+
+-- | Build the Orientation of a single line of EscapedText - 
+-- writing direction zero (left-to-right).
+-- 
+-- The locus of the Orientation is baseline left - margins are 
+-- added.
+--
+textOrientationZero :: (DrawingCtxM m, InterpretUnit u )
+                    => TextHeight -> EscapedText -> m (Orientation u)
+textOrientationZero hspec esc = 
+    (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
+      <$> escTextVector esc <*> heightSpan hspec
 
 
 --------------------------------------------------------------------------------

@@ -58,6 +58,10 @@ mf = do
     draw $ testDrawBl    BLC    `at` (P2 150  0)
     draw $ testDrawBl    BLR    `at` (P2 225  0)
     
+    drawl (P2 300 0) $ runPosObject msg SW
+  where
+    msg = multilinePosText VALIGN_RIGHT "Red dot represents the\nrectangle address."
+
 
 testDrawBl :: RectAddress -> LocGraphic Double
 testDrawBl raddr = dcDisk FILL 2 `mappend` rectBl raddr
