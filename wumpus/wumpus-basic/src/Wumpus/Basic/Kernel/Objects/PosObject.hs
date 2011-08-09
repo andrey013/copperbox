@@ -60,6 +60,9 @@ module Wumpus.Basic.Kernel.Objects.PosObject
   , multilinePosText
   , multilinePosEscText
 
+  , rposText
+  , rposEscText
+
   ) where
 
 
@@ -72,6 +75,7 @@ import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.Orientation
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -408,6 +412,32 @@ textOrientationZero :: (DrawingCtxM m, InterpretUnit u )
 textOrientationZero hspec esc = 
     (\(V2 x _ ) (ymin,ymaj) -> Orientation 0 x ymin ymaj) 
       <$> escTextVector esc <*> heightSpan hspec
+
+
+--------------------------------------------------------------------------------
+-- Rotated text
+
+-- | Note - for single line text.
+--
+rposText        :: (Real u, Floating u, InterpretUnit u) 
+                => Radian -> String -> PosGraphic u
+rposText ang    = addMargins . makeRotatedPO ang . escapeString
+
+-- | Note - for single line text.
+--
+rposEscText     :: (Real u, Floating u, InterpretUnit u) 
+                => Radian -> EscapedText -> PosGraphic u
+rposEscText ang = addMargins . makeRotatedPO ang
+
+
+makeRotatedPO :: (Real u, Floating u, InterpretUnit u) 
+              => Radian -> EscapedText -> PosGraphic u
+makeRotatedPO ang esc = makePosObject qry body
+  where
+    qry  = rotateOrientation ang <$> 
+             textOrientationZero CAP_HEIGHT_PLUS_DESCENDER esc
+
+    body = incline (dcREscapedlabel esc) ang
 
 
 --------------------------------------------------------------------------------

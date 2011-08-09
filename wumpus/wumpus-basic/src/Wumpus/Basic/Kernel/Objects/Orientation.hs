@@ -28,6 +28,8 @@ module Wumpus.Basic.Kernel.Objects.Orientation
   , orientationBounds
   , orientationWidth
   , orientationHeight
+
+  , rotateOrientation
  
   , extendOrientation
   , extendOLeft
@@ -215,6 +217,43 @@ orientationWidth (Orientation xmin xmaj _ _) = xmin + xmaj
 --
 orientationHeight :: Num u => Orientation u -> u
 orientationHeight (Orientation _ _ ymin ymaj) = ymin + ymaj
+
+--------------------------------------------------------------------------------
+-- Rotation
+
+-- | Rotate an Orientation about its origin (locus).
+--
+rotateOrientation :: (Real u, Floating u, Ord u) 
+               => Radian -> Orientation u -> Orientation u
+rotateOrientation ang (Orientation { or_x_minor = xmin
+                                   , or_x_major = xmaj
+                                   , or_y_minor = ymin
+                                   , or_y_major = ymaj }) = 
+    orthoOrientation bl br tl tr  
+  where
+    bl  = rotateAbout ang zeroPt $ P2 (-xmin) (-ymin)
+    br  = rotateAbout ang zeroPt $ P2   xmaj  (-ymin)
+    tr  = rotateAbout ang zeroPt $ P2   xmaj    ymaj
+    tl  = rotateAbout ang zeroPt $ P2 (-xmin)   ymaj
+  
+
+orthoOrientation :: (Num u, Ord u)
+                 => Point2 u -> Point2 u -> Point2 u -> Point2 u 
+                 -> Orientation u
+orthoOrientation (P2 x0 y0) (P2 x1 y1) (P2 x2 y2) (P2 x3 y3) = 
+    Orientation { or_x_minor = abs $ min4 x0 x1 x2 x3
+                , or_x_major = max4 x0 x1 x2 x3
+                , or_y_minor = abs $ min4 y0 y1 y2 y3
+                , or_y_major = max4 y0 y1 y2 y3
+                }
+
+
+min4 :: Ord u => u -> u -> u -> u -> u
+min4 a b c d = min (min a b) (min c d)
+
+max4 :: Ord u => u -> u -> u -> u -> u
+max4 a b c d = max (max a b) (max c d)
+
 
 --------------------------------------------------------------------------------
 -- Extending an arm of the orientation
