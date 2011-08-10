@@ -1,5 +1,30 @@
 
-0.18.0 to 0.19.0:
+0.18.0 to 0.20.0 (no release numbered v0.19.0):
+
+  * Added text advance-vector calculations to @QueryDC@ - 
+    previously they were in Wumpus-Drawing.
+ 
+  * Changed argument order of @run@ functions to follow the usual
+    style - monadic action first and then dependent parameters 
+    (initial state, reader environment etc.).
+ 
+  * Changed representation of Chains to a monadic type with an 
+    explicit operation for next position.
+
+  * Removed @PrimW@ type - pairs are now used instead. 
+
+  * Removed transformer version of @TraceDrawing@. All operations 
+    in TraceDrawing are now specialized to work only on the 
+    @TraceDrawing@ type. Added @UserState@ to TraceDrawing and
+    other drawing monads to compensate for the loss of
+    expressiveness.
+
+  * Changed the internals of @AdvObject@ and @PosObject@ so they 
+    are more idiomatic - both are now essentially reader-writer 
+    monads. Added PosObject functions for text primitives (moved 
+    from Wumpus-Drawing).
+
+  * Changed the @obliterate@ method of the @Decorate@ class.
 
   * Removed the Semigroup (OPlus) and Bifunctor classes. They are 
     no longer so pertinent now that Image, LocImage etc. are 

@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.CtxPicture
   , module Wumpus.Basic.Kernel.Objects.Displacement
   , module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
+  , module Wumpus.Basic.Kernel.Objects.Image
   , module Wumpus.Basic.Kernel.Objects.LocImage
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
   , module Wumpus.Basic.Kernel.Objects.Orientation
@@ -61,6 +62,7 @@ import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.CtxPicture
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
+import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.Orientation

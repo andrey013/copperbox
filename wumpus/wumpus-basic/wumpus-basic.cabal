@@ -1,5 +1,5 @@
 name:             wumpus-basic
-version:          0.20.0
+version:          0.21.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -30,7 +30,12 @@ description:
   .
   Changelog:
   .
-  v0.19.0 to v0.20.0:
+  v0.20.0 to v0.21.0:
+  .
+  * Moved @Image@ and @Query@ from @Objects.Basis@ to new module
+    @Objects.Image@.
+  .
+  v0.18.0 to v0.20.0:
   .
   * Added text advance-vector calculations to @QueryDC@ - 
     previously they were in Wumpus-Drawing.
@@ -106,6 +111,7 @@ library
     Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Displacement,
     Wumpus.Basic.Kernel.Objects.DrawingPrimitives,
+    Wumpus.Basic.Kernel.Objects.Image,
     Wumpus.Basic.Kernel.Objects.LocImage,
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
     Wumpus.Basic.Kernel.Objects.Orientation,
