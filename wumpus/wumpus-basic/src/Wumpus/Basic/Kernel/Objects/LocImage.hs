@@ -30,12 +30,13 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , runLocImage
    , runLocQuery
 
+   , stripLocImage
+   , liftLocQuery
+
    , promoteLoc
    , applyLoc
    , qpromoteLoc
    , qapplyLoc
-   , zapLocQuery
-   , extrLoc
 
    , emptyLocImage
 
@@ -94,7 +95,7 @@ type DLocImage a        = LocImage Double a
 type DLocGraphic        = LocGraphic Double 
 
 newtype LocQuery u a = LocQuery { 
-          getLocQuery :: Point2 u -> Query u a }
+          getLocQuery :: DPoint2 -> Query u a }
 
 -- Functor
 
@@ -176,59 +177,38 @@ runLocImage ma ctx pt =
     let dpt = normalizeF (dc_font_size ctx) pt 
     in runImage (getLocImage ma dpt) ctx
 
-runLocQuery :: LocQuery u a -> DrawingContext -> Point2 u -> a
-runLocQuery ma ctx pt = runQuery (getLocQuery ma pt) ctx
+runLocQuery :: InterpretUnit u 
+            => LocQuery u a -> DrawingContext -> Point2 u -> a
+runLocQuery ma ctx pt = 
+    let dpt = normalizeF (dc_font_size ctx) pt 
+    in runQuery (getLocQuery ma dpt) ctx
 
+
+stripLocImage :: LocImage u a -> LocQuery u a
+stripLocImage ma = LocQuery $ \pt -> 
+    stripImage $ getLocImage ma pt
+
+
+liftLocQuery :: LocQuery u a -> LocImage u a
+liftLocQuery ma = LocImage $ \pt -> 
+    liftQuery $ getLocQuery ma pt
 
 
 promoteLoc ::  InterpretUnit u => (Point2 u -> Image u a) -> LocImage u a
-promoteLoc k = LocImage $ \pt -> dinterpCtxF pt >>= \upt -> k upt
+promoteLoc k = LocImage $ \pt -> dinterpCtxF pt >>= k 
 
 applyLoc :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
-applyLoc mq pt = zapQuery (normalizeCtxF pt) >>= \dpt -> getLocImage mq dpt
+applyLoc ma pt = normalizeCtxF pt >>= getLocImage ma
 
 
-qpromoteLoc :: (Point2 u -> Query u a) -> LocQuery u a
-qpromoteLoc k = LocQuery $ \pt -> k pt
+qpromoteLoc :: InterpretUnit u 
+            => (Point2 u -> Query u a) -> LocQuery u a
+qpromoteLoc k = LocQuery $ \pt -> dinterpCtxF pt >>= k
 
-qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
-qapplyLoc mq pt = getLocQuery mq pt
+qapplyLoc :: InterpretUnit u
+          => LocQuery u a -> Point2 u -> Query u a
+qapplyLoc ma pt = normalizeCtxF pt >>= getLocQuery ma
 
-
--- | Design Note - the set of combinators to shift between Images 
--- and Queries needs sorting out - @zapLocQuery@ probably has the 
--- wrong type signature - show be LocQuery to LocImage.
---
-
-extrLoc :: InterpretUnit u => LocImage u a -> LocQuery u a
-extrLoc ma = LocQuery $ \pt ->
-     askDC >>= \ctx -> 
-     let (a,_) = runLocImage ma ctx pt
-     in return a
-     
-
--- qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
--- qapplyLoc mq pt = getLocQuery mq pt
-
--- | \"zero-apply\" a LocQuery.
---
-zapLocQuery :: LocQuery u a -> Point2 u -> Image u a
-zapLocQuery ma pt = askDC >>= \ctx -> 
-                    let a = runLocQuery ma ctx pt in return a
-
-
-
--- Maybe there is need for a function line qapplyLoc of this type:
---
--- > blankLoc :: LocQuery u a -> Point2 u -> Image u a
--- 
--- This then means we can have monadic bind back for the notation:
---
--- > qapplyLocTheta (rellipsePath rx ry) pt ang  `bindQ` dcClosedPath style
--- 
--- becomes
---
--- > blankLoc (rellipsePath rx ry) pt ang >>= dcClosedPath style
 
 
 --------------------------------------------------------------------------------
@@ -237,32 +217,31 @@ zapLocQuery ma pt = askDC >>= \ctx ->
 instance (Real u, Floating u, InterpretUnit u, Rotate a) => 
     Rotate (LocImage u a) where
   rotate ang ma = promoteLoc $ \pt -> 
-                     zapQuery (normalizeCtxF pt) >>= \dpt ->  
-                     fmap (rotate ang) $ getLocImage ma (rotate ang dpt)
+      normalizeCtxF pt >>= \dpt ->  
+      fmap (rotate ang) $ getLocImage ma (rotate ang dpt)
 
 
 instance (Real u, Floating u, InterpretUnit u, RotateAbout a, u ~ DUnit a) => 
     RotateAbout (LocImage u a) where
   rotateAbout ang pt ma = promoteLoc $ \p0 ->
-                            zapQuery (normalizeCtxF p0) >>= \dp0 ->  
-                            zapQuery (normalizeCtxF pt) >>= \dpt ->  
-                            fmap (rotateAbout ang pt) $ 
-                              getLocImage ma (rotateAbout ang dpt dp0)
+      normalizeCtxF p0 >>= \dp0 ->  
+      normalizeCtxF pt >>= \dpt ->  
+      fmap (rotateAbout ang pt) $ 
+          getLocImage ma (rotateAbout ang dpt dp0)
 
 
 instance (Fractional u, InterpretUnit u, Scale a) => Scale (LocImage u a) where
   scale sx sy ma = promoteLoc $ \pt -> 
-                     zapQuery (normalizeCtxF pt) >>= \dpt -> 
-                     fmap (scale sx sy) $ getLocImage ma (scale sx sy dpt)
+      normalizeCtxF pt >>= \dpt -> 
+      fmap (scale sx sy) $ getLocImage ma (scale sx sy dpt)
 
 instance (InterpretUnit u, Translate a, ScalarUnit u, u ~ DUnit a) => 
     Translate (LocImage u a) where
   translate dx dy ma = promoteLoc $ \pt -> 
-                         zapQuery (normalizeCtxF pt) >>= \dpt -> 
-                         zapQuery (normalizeCtx dx)  >>= \ddx ->
-                         zapQuery (normalizeCtx dy)  >>= \ddy ->
-                         fmap (translate dx dy) $ 
-                             getLocImage ma (translate ddx ddy dpt)
+      normalizeCtxF pt >>= \dpt -> 
+      normalizeCtx dx  >>= \ddx ->
+      normalizeCtx dy  >>= \ddy ->
+      translate dx dy $ getLocImage ma (translate ddx ddy dpt)
 
 --------------------------------------------------------------------------------
 
@@ -300,7 +279,7 @@ emptyLocImage = mempty
 
 moveStart :: InterpretUnit u => Vec2 u -> LocImage u a -> LocImage u a
 moveStart v1 ma = LocImage $ \pt -> 
-    zapQuery (normalizeCtxF v1) >>= \dv -> getLocImage ma (pt .+^ dv) 
+    normalizeCtxF v1 >>= \dv -> getLocImage ma (pt .+^ dv) 
 
 
 
@@ -311,7 +290,7 @@ infixr 1 `at`
 -- point, making an 'Image'. 
 -- 
 at :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
-at mf pt = zapQuery (normalizeCtxF pt) >>= \dpt -> getLocImage mf dpt
+at mf pt = normalizeCtxF pt >>= \dpt -> getLocImage mf dpt
 
 
 --------------------------------------------------------------------------------

@@ -32,7 +32,9 @@ module Wumpus.Basic.Kernel.Objects.Image
 
   , runImage
   , runQuery
-  , zapQuery
+
+  , stripImage
+  , liftQuery
 
   , emptyImage
   , primGraphic
@@ -148,8 +150,18 @@ runQuery = getQuery
 
 
 
-zapQuery :: Query u a -> Image u a
-zapQuery ma = askDC >>= \ctx -> let a = runQuery ma ctx in return a
+-- | Strip the graphic content from an 'Image' making a 'Query'.
+-- 
+stripImage :: Image u a -> Query u a
+stripImage ma = Query $ \ctx -> fst $ getImage ma ctx
+
+
+-- | Turn a 'Query' into an 'Image' without graphic content.
+--
+liftQuery :: Query u a -> Image u a
+liftQuery ma = askDC >>= \ctx -> let a = runQuery ma ctx in return a
+
+
 
 -- | Constructor for Primtive graphics.
 --

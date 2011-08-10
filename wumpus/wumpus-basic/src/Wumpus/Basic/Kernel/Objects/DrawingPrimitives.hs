@@ -331,8 +331,7 @@ uconvKernChar = mapM mf
 --
 hkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
 hkernLine ks = promoteLoc $ \pt -> 
-               normalizeCtxF pt >>= \dpt -> 
-               zapQuery (uconvKernChar ks) >>= body dpt
+    normalizeCtxF pt >>= \dpt -> liftQuery (uconvKernChar ks) >>= body dpt
   where
     body pt ans = textPrim (\rgb attr -> hkernlabel rgb attr ans pt)
 
@@ -351,8 +350,7 @@ hkernLine ks = promoteLoc $ \pt ->
 --
 vkernLine :: InterpretUnit u => [KernChar u] -> LocGraphic u
 vkernLine ks = promoteLoc $ \pt -> 
-               normalizeCtxF pt >>= \dpt -> 
-               zapQuery (uconvKernChar ks) >>= body dpt
+    normalizeCtxF pt >>= \dpt -> liftQuery (uconvKernChar ks) >>= body dpt
   where
     body pt ans = textPrim (\rgb attr -> vkernlabel rgb attr ans pt)
 
@@ -368,7 +366,7 @@ vkernLine ks = promoteLoc $ \pt ->
 -- from the implicit 'DrawingContext'.
 -- 
 straightLine :: InterpretUnit u => Point2 u -> Point2 u -> Graphic u
-straightLine p1 p2 = zapQuery (vertexPP [p1,p2]) >>= dcOpenPath
+straightLine p1 p2 = liftQuery (vertexPP [p1,p2]) >>= dcOpenPath
 
 
 -- | 'locStraightLine' : @ vec_to -> LocGraphic @ 
@@ -384,7 +382,8 @@ straightLine p1 p2 = zapQuery (vertexPP [p1,p2]) >>= dcOpenPath
 -- from the implicit 'DrawingContext'.
 -- 
 locStraightLine :: InterpretUnit u => Vec2 u -> LocGraphic u
-locStraightLine v = promoteLoc $ \pt -> zapLocQuery (locPP [v]) pt >>= dcOpenPath
+locStraightLine v = promoteLoc $ \pt -> 
+    liftQuery (qapplyLoc (locPP [v]) pt) >>= dcOpenPath
 
 
 
@@ -399,8 +398,7 @@ locStraightLine v = promoteLoc $ \pt -> zapLocQuery (locPP [v]) pt >>= dcOpenPat
 -- 
 curvedLine :: InterpretUnit u
            => Point2 u -> Point2 u -> Point2 u -> Point2 u -> Graphic u
-curvedLine p0 p1 p2 p3 = 
-    zapQuery (curvePP [p0,p1,p2,p3]) >>= dcOpenPath
+curvedLine p0 p1 p2 p3 = liftQuery (curvePP [p0,p1,p2,p3]) >>= dcOpenPath
 
 
 
@@ -415,7 +413,7 @@ curvedLine p0 p1 p2 p3 =
 -- 
 straightConnector :: InterpretUnit u => ConnectorGraphic u
 straightConnector = promoteConn $ \p0 p1 -> 
-    zapQuery (vertexPP [p0,p1]) >>= dcOpenPath
+    liftQuery (vertexPP [p0,p1]) >>= dcOpenPath
 
 
 
@@ -441,7 +439,7 @@ circlePath r = qpromoteLoc $ \pt ->
 -- 
 dcCircle :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
 dcCircle style r = promoteLoc $ \pt -> 
-    zapLocQuery (circlePath r) pt >>= dcClosedPath style
+    liftQuery (qapplyLoc (circlePath r) pt) >>= dcClosedPath style
 
 
 
@@ -477,7 +475,7 @@ rellipsePath rx ry = qpromoteLocTheta $ \pt ang ->
 -- 
 dcEllipse :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
 dcEllipse style rx ry = promoteLoc $ \pt ->
-   zapLocQuery (ellipsePath rx ry) pt >>= dcClosedPath style 
+   liftQuery (qapplyLoc (ellipsePath rx ry) pt) >>= dcClosedPath style 
 
 
 -- | 'dcREllipse' : @ x_radius * y_radius -> LocGraphic @
@@ -492,7 +490,8 @@ dcEllipse style rx ry = promoteLoc $ \pt ->
 dcREllipse :: InterpretUnit u
            => DrawStyle -> u -> u -> LocThetaGraphic u
 dcREllipse style rx ry = promoteLocTheta $ \pt ang -> 
-    zapLocThetaQuery (rellipsePath rx ry) pt ang >>= dcClosedPath style
+    liftQuery (qapplyLocTheta (rellipsePath rx ry) pt ang) >>= 
+    dcClosedPath style
 
 
 -- Note - clipping needs some higher level path object than is defined here.
@@ -518,7 +517,7 @@ rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 -- 
 dcRectangle :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
 dcRectangle style w h = promoteLoc $ \pt -> 
-    zapLocQuery (rectanglePath w h) pt >>= dcClosedPath style
+    liftQuery (qapplyLoc (rectanglePath w h) pt) >>= dcClosedPath style
 
 
 ---------------------------------------------------------------------------

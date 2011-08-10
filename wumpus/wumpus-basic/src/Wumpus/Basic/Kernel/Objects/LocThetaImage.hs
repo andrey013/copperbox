@@ -30,11 +30,13 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    , runLocThetaImage
    , runLocThetaQuery
 
+   , stripLocThetaImage
+   , liftLocThetaQuery
+   
    , promoteLocTheta
    , applyLocTheta
    , qpromoteLocTheta
    , qapplyLocTheta
-   , zapLocThetaQuery
 
    , emptyLocThetaImage
 
@@ -79,7 +81,7 @@ type DLocThetaGraphic        = LocThetaGraphic Double
 
 
 newtype LocThetaQuery u a = LocThetaQuery { 
-          getLocThetaQuery :: Point2 u -> Radian -> Query u a }
+          getLocThetaQuery :: DPoint2 -> Radian -> Query u a }
 
 -- Functor
 
@@ -178,35 +180,49 @@ runLocThetaImage ma ctx pt incl =
     in runImage (getLocThetaImage ma dpt incl) ctx
 
 
-runLocThetaQuery :: LocThetaQuery u a -> DrawingContext 
+runLocThetaQuery :: InterpretUnit u 
+                 => LocThetaQuery u a -> DrawingContext 
                  -> Point2 u -> Radian  
                  -> a
-runLocThetaQuery ma ctx pt incl = runQuery (getLocThetaQuery ma pt incl) ctx
+runLocThetaQuery ma ctx pt incl = 
+    let dpt = normalizeF (dc_font_size ctx) pt 
+    in runQuery (getLocThetaQuery ma dpt incl) ctx
+
+
+
+stripLocThetaImage :: LocThetaImage u a -> LocThetaQuery u a
+stripLocThetaImage ma = LocThetaQuery $ \pt ang -> 
+    stripImage $ getLocThetaImage ma pt ang
+
+
+liftLocThetaQuery :: LocThetaQuery u a -> LocThetaImage u a
+liftLocThetaQuery ma = LocThetaImage $ \pt ang -> 
+    liftQuery $ getLocThetaQuery ma pt ang
+
+
 
 
 promoteLocTheta ::  InterpretUnit u 
                 => (Point2 u -> Radian -> Image u a) -> LocThetaImage u a
 promoteLocTheta k = LocThetaImage $ \pt ang -> 
-                      dinterpCtxF pt >>= \upt -> k upt ang
+    dinterpCtxF pt >>= \upt -> k upt ang
 
 applyLocTheta :: InterpretUnit u 
               => LocThetaImage u a -> Point2 u -> Radian -> Image u a
 applyLocTheta mq pt ang = 
-    zapQuery (normalizeCtxF pt) >>= \dpt -> getLocThetaImage mq dpt ang
+    normalizeCtxF pt >>= \dpt -> getLocThetaImage mq dpt ang
 
 
-qpromoteLocTheta :: (Point2 u -> Radian -> Query u a) -> LocThetaQuery u a
-qpromoteLocTheta k = LocThetaQuery $ \pt ang -> k pt ang
+qpromoteLocTheta :: InterpretUnit u 
+                 => (Point2 u -> Radian -> Query u a) -> LocThetaQuery u a
+qpromoteLocTheta k = LocThetaQuery $ \pt ang ->
+    dinterpCtxF pt >>= \upt -> k upt ang
 
 
-qapplyLocTheta :: LocThetaQuery u a -> Point2 u -> Radian -> Query u a
-qapplyLocTheta mq pt ang = getLocThetaQuery mq pt ang
-
--- | \"zero-apply\" a LocThetaQuery.
---
-zapLocThetaQuery :: LocThetaQuery u a -> Point2 u -> Radian -> Image u a
-zapLocThetaQuery ma pt ang = askDC >>= \ctx -> 
-    let a = runLocThetaQuery ma ctx pt ang in return a
+qapplyLocTheta :: InterpretUnit u
+               => LocThetaQuery u a -> Point2 u -> Radian -> Query u a
+qapplyLocTheta ma pt ang = 
+    normalizeCtxF pt >>= \dpt -> getLocThetaQuery ma dpt ang
 
 
 
@@ -253,10 +269,9 @@ infixr 1 `incline`
 -- 
 incline :: InterpretUnit u => LocThetaImage u a -> Radian -> LocImage u a
 incline ma incl = promoteLoc $ \pt -> 
-                    zapQuery (normalizeCtxF pt) >>= \dpt ->
-                    getLocThetaImage ma dpt incl
+    normalizeCtxF pt >>= \dpt -> getLocThetaImage ma dpt incl
 
 atIncline :: InterpretUnit u 
           => LocThetaImage u a -> Point2 u -> Radian -> Image u a
-atIncline ma pt incl = zapQuery (normalizeCtxF pt) >>= \dpt -> 
-                       getLocThetaImage ma dpt incl
+atIncline ma pt incl = 
+    normalizeCtxF pt >>= \dpt -> getLocThetaImage ma dpt incl

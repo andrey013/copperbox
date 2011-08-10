@@ -36,6 +36,9 @@ description:
     @Objects.Image@. Moved @Chain@, @CtxPicture@ and 
     @TraceDrawing@ into the new @Drawing@ folder.
   .
+  * Rationalized the combinators exposed by the drawing objects 
+    @Image@, @LocImage@, @LocThetaImage@ and @Connector@.
+  . 
   v0.18.0 to v0.20.0:
   .
   * Added text advance-vector calculations to @QueryDC@ - 

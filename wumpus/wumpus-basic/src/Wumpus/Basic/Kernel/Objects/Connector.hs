@@ -31,11 +31,14 @@ module Wumpus.Basic.Kernel.Objects.Connector
    , runConnectorQuery
    , connect
 
+   , stripConnectorImage
+   , liftConnectorQuery
+
    , promoteConn
    , applyConn
+
    , qpromoteConn
    , qapplyConn
-   , zapConnectorQuery
 
    , emptyConnectorImage
 
@@ -78,7 +81,7 @@ type DConnectorGraphic        = ConnectorGraphic Double
 
 
 newtype ConnectorQuery u a = ConnectorQuery { 
-          getConnectorQuery :: Point2 u -> Point2 u -> Query u a }
+          getConnectorQuery :: DPoint2 -> DPoint2 -> Query u a }
 
 
 -- Functor 
@@ -174,55 +177,71 @@ runConnectorImage :: InterpretUnit u
                   => ConnectorImage u a -> DrawingContext 
                   -> Point2 u -> Point2 u
                   -> PrimResult u a
-runConnectorImage ma ctx p0 p1= 
+runConnectorImage ma ctx p0 p1 = 
     let dp0 = normalizeF (dc_font_size ctx) p0
         dp1 = normalizeF (dc_font_size ctx) p1 
     in runImage (getConnectorImage ma dp0 dp1) ctx
 
 
-runConnectorQuery :: ConnectorQuery u a -> DrawingContext 
+runConnectorQuery :: InterpretUnit u 
+                  => ConnectorQuery u a -> DrawingContext 
                   -> Point2 u -> Point2 u 
                   -> a
-runConnectorQuery ma ctx p0 p1 = runQuery (getConnectorQuery ma p0 p1) ctx
+runConnectorQuery ma ctx p0 p1 = 
+    let dp0 = normalizeF (dc_font_size ctx) p0
+        dp1 = normalizeF (dc_font_size ctx) p1 
+    in runQuery (getConnectorQuery ma dp0 dp1) ctx
 
 
 connect :: InterpretUnit u 
         => Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
-connect p0 p1 mf = 
-    zapQuery (normalizeCtxF p0) >>= \dp0 -> 
-    zapQuery (normalizeCtxF p1) >>= \dp1 -> 
-    getConnectorImage mf dp0 dp1
+connect p0 p1 ma = normalizeCtxF p0 >>= \dp0 -> 
+                   normalizeCtxF p1 >>= \dp1 -> 
+                   getConnectorImage ma dp0 dp1
 
 
+stripConnectorImage :: ConnectorImage u a -> ConnectorQuery u a
+stripConnectorImage ma = ConnectorQuery $ \p1 p2 -> 
+    stripImage $ getConnectorImage ma p1 p2
+
+
+liftConnectorQuery :: ConnectorQuery u a -> ConnectorImage u a
+liftConnectorQuery ma = ConnectorImage $ \p1 p2 -> 
+    liftQuery $ getConnectorQuery ma p1 p2
 
 
 promoteConn :: InterpretUnit u 
             => (Point2 u -> Point2 u -> Image u a) -> ConnectorImage u a
 promoteConn k = ConnectorImage $ \p0 p1 ->
-    dinterpCtxF p0 >>= \up0 -> dinterpCtxF p1 >>= \up1 -> k up0 up1
+    dinterpCtxF p0 >>= \up0 -> 
+    dinterpCtxF p1 >>= \up1 -> 
+    k up0 up1
 
 applyConn :: InterpretUnit u 
           => ConnectorImage u a -> Point2 u -> Point2 u -> Image u a
-applyConn mf p0 p1 = 
-    zapQuery (normalizeCtxF p0) >>= \dp0 -> 
-    zapQuery (normalizeCtxF p1) >>= \dp1 -> 
-    getConnectorImage mf dp0 dp1
+applyConn ma p0 p1 = normalizeCtxF p0 >>= \dp0 -> 
+                     normalizeCtxF p1 >>= \dp1 -> 
+                     getConnectorImage ma dp0 dp1
 
 
-qpromoteConn :: (Point2 u -> Point2 u -> Query u a) -> ConnectorQuery u a
-qpromoteConn fn      = ConnectorQuery $ \p0 p1 -> fn p0 p1
-
-qapplyConn :: ConnectorQuery u a -> Point2 u -> Point2 u -> Query u a
-qapplyConn mf p0 p1   = getConnectorQuery mf p0 p1
 
 
--- | \"zero-apply\" a Connector.
---
-zapConnectorQuery :: ConnectorQuery u a -> Point2 u -> Point2 u -> Image u a
-zapConnectorQuery ma p0 p1  = askDC >>= \ctx -> 
-    let a = runConnectorQuery ma ctx p0 p1 in return a
+qpromoteConn :: InterpretUnit u 
+             => (Point2 u -> Point2 u -> Query u a) -> ConnectorQuery u a
+qpromoteConn k = ConnectorQuery $ \p0 p1 ->
+    dinterpCtxF p0 >>= \up0 -> 
+    dinterpCtxF p1 >>= \up1 -> 
+    k up0 up1
+
+qapplyConn :: InterpretUnit u
+           => ConnectorQuery u a -> Point2 u -> Point2 u -> Query u a
+qapplyConn ma p0 p1 = normalizeCtxF p0 >>= \dp0 -> 
+                      normalizeCtxF p1 >>= \dp1 -> 
+                      getConnectorQuery ma dp0 dp1
 
 
+--------------------------------------------------------------------------------
+-- UConvert instance
 
 instance UConvert ConnectorImage where
   uconvF = uconvConnectorImageF
