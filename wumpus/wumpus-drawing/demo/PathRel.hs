@@ -77,6 +77,3 @@ path_spec1 = do
 
     vamp1 = squareWE 40 
 
-
-ureturn :: Monad m => m (UNil u)
-ureturn = return UNil

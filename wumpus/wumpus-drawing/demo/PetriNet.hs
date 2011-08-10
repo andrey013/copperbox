@@ -124,15 +124,15 @@ connectorD' =
 
 lblParensParens :: DLocGraphic
 lblParensParens = 
-    ignoreAns $ localize (set_font helvetica) $ ccTextline "(),()"
+    ignoreAns $ localize (set_font helvetica) $ textline "(),()" CENTER
 
 lblParensParensParens :: DLocGraphic
 lblParensParensParens = 
-    ignoreAns $ localize (set_font helvetica) $ ccTextline "(),(),()"
+    ignoreAns $ localize (set_font helvetica) $ textline "(),(),()" CENTER
 
 
 
 lblBold :: String -> DLocGraphic
 lblBold ss = 
-    ignoreAns $ localize (set_font helvetica_bold) $ ccTextline ss
+    ignoreAns $ localize (set_font helvetica_bold) $ textline ss CENTER
 

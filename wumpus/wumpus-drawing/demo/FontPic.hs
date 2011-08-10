@@ -56,14 +56,14 @@ positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
 -- Note - this chain might be worth putting in a library...
-pointChain :: (Int -> DLocGraphic) -> DLocImage DPoint2
-pointChain fn = chain chn_alg $ map fn point_sizes
+pointChain :: (Int -> DLocGraphic) -> DLocGraphic
+pointChain fn = runChain_ (mapM (cnext . fn) point_sizes) chn_alg
   where
-    chn_alg = linearChain $ iterationScheme start step
+    chn_alg = ChainScheme start step
     start   = \pt -> (pt,point_sizes)
 
-    step (pt,[])     = ((displace (vvec 50) pt, []), pt)
-    step (pt,(y:ys)) = ((displace (vvec $ fromIntegral $ 2 + y)  pt, ys), pt)
+    step _ (pt,[])     = (pt, (displace (vvec 50) pt, []))
+    step _ (pt,(y:ys)) = (pt, (displace (vvec $ fromIntegral $ 2 + y)  pt, ys))
 
 fontGraphic :: RGBi -> FontDef -> DLocGraphic 
 fontGraphic rgb ft = ignoreAns $ pointChain mkGF
@@ -77,7 +77,7 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
-    draw $ chain_ chn_alg (map (uncurry fontGraphic) xs) `at` start
+    draw $ runChain_  (mapM (cnext . uncurry fontGraphic) xs) chn_alg `at` start
   where
     chn_alg   = tableDown 4 (1,180)
     start     = P2 0 (4*180)

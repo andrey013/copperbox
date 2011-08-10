@@ -40,16 +40,16 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl zeroPt $ render times_roman_family doc CENTER
+    drawl zeroPt $ runPosObject (runDoc doc VALIGN_LEFT times_roman_family) CENTER
     return ()
   where
-    doc = leftAlign [ float  (0.12112 :: Double)
-                    , string "0.12112"
-                    , string "12113111411115111116"
-                    , string "00000000000000000000" 
-                    , integer 12113111411115111116
-                    , integer 10000000000000000000
-                    ]
+    doc = vcat [ float  (0.12112 :: Double)
+               , string "0.12112"
+               , string "12113111411115111116"
+               , string "00000000000000000000" 
+               , integer 12113111411115111116
+               , integer 10000000000000000000
+               ]
 
 dZero :: Double
 dZero = 0

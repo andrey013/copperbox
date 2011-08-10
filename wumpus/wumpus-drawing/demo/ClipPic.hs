@@ -39,12 +39,16 @@ std_ctx :: DrawingContext
 std_ctx = standardContext 14
 
 
+-- Note - currently the code is quite messy, path drawing needs 
+-- some convenience combinators.
+
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    drawl (P2   0 320) $ drawClosedPath FILL path01
-    drawl (P2 112 320) $ localize (fill_colour powder_blue) $ drawClosedPath FILL path02
-    drawl (P2 384 416) $ drawClosedPath FILL path03
-    drawl (P2 328 512) $ drawClosedPath FILL path04
+    drawl (P2   0 320) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path01))
+    drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
+                         (drawClosedPath FILL =<< zapLocQ (extrPathSpec path02))
+    drawl (P2 384 416) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path03))
+    drawl (P2 328 512) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path04))
     drawl (P2   0   0) $ clip1
     drawl (P2 112   0) $ clip2
     drawl (P2 384  96) $ clip3
@@ -58,19 +62,29 @@ background rgb = promoteLoc $ \_ ->
     ihh = runChain (mapM cnext $ replicate 112 iheartHaskell) 
                    (tableDown 18 (86,16)) 
 
+-- | This is one for Wumpus-Basic - the set of combinators to 
+-- shift between Images and Queries needs sorting out
+--
 
+zapLocQ :: InterpretUnit u => LocQuery u a-> LocImage u a
+zapLocQ ma = promoteLoc $ \pt -> 
+   askDC >>= \ctx ->
+   let a = runLocQuery ma ctx pt
+   in return a
 
 clip1 :: LocGraphic Double
-clip1 = locClip path01 $ background black
+clip1 = zapLocQ (extrPathSpec path01) >>= \a -> 
+        ignoreAns $ locClip a (background black)
   
 clip2 :: LocGraphic Double
-clip2 = locClip path02 $ background medium_violet_red
+clip2 = zapLocQ (extrPathSpec path02) >>= \a -> 
+        locClip a (background medium_violet_red)
 
 clip3 :: LocGraphic Double
-clip3 = locClip path03 $ background black
+clip3 = zapLocQ (extrPathSpec path03) >>= \a -> locClip a (background black)
 
 clip4 :: LocGraphic Double
-clip4 = locClip path04 $ background black
+clip4 = zapLocQ (extrPathSpec path04) >>= \a -> locClip a (background black)
 
 
 iheartHaskell :: LocGraphic Double
@@ -80,32 +94,42 @@ iheartHaskell = promoteLoc $ \pt ->
                   dcTextlabel "&heart;" `at` (pt .+^ hvec 7)
     in body `mappend` heart
 
+-- Note - this needs a more uniform name. In Wumpus an object 
+-- that produces a @UNil@ is called a __Graphic but that 
+-- convention seems misleading here.
+--
+type UPathSpec u = PathSpec u (UNil u)
 
 -- zeroPt
-path01 :: RelPath Double
-path01 = evalPathSpec $  hlineto 80 
-                      >> lineto (vec 112 160) 
-                      >> lineto (vec (-112) 160)
-                      >> hlineto (-80)
-                      >> lineto (vec 112 (-160))
-                      >> lineto (vec (-112) (-160))
- 
+path01 :: UPathSpec Double
+path01 =  do 
+    hlineto 80 
+    lineto (vec 112 160) 
+    lineto (vec (-112) 160)
+    hlineto (-80)
+    lineto (vec 112 (-160))
+    lineto (vec (-112) (-160))
+    ureturn 
+
+
 -- (P2 112 0)
-path02 :: RelPath Double
-path02 = evalPathSpec  $  hlineto 80 
-                       >> lineto (vec 72 112)
-                       >> lineto (vec 72 (-112))
-                       >> hlineto 80
-                       >> lineto (vec (-224) 320)
-                       >> hlineto (-80)
-                       >> lineto (vec 112 (-160))
-                       >> lineto (vec (-112) (-160))
+path02 :: UPathSpec Double
+path02 = do 
+    hlineto 80 
+    lineto (vec 72 112)
+    lineto (vec 72 (-112))
+    hlineto 80
+    lineto (vec (-224) 320)
+    hlineto (-80)
+    lineto (vec 112 (-160))
+    lineto (vec (-112) (-160))
+    ureturn
 
 -- (P2 384 96) 
-path03 :: RelPath Double
-path03 = evalPathSpec $ hlineto 96 >> vlineto 56 >> hlineto (-136) 
+path03 :: UPathSpec Double
+path03 = hlineto 96 >> vlineto 56 >> hlineto (-136) >> ureturn
 
 -- (P2 328 192)
-path04 :: RelPath Double
-path04 = evalPathSpec  $ hlineto 152 >> vlineto 56 >> hlineto (-192) 
+path04 :: UPathSpec Double
+path04 = hlineto 152 >> vlineto 56 >> hlineto (-192) >> ureturn
 

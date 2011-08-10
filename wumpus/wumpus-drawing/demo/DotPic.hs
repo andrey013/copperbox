@@ -82,9 +82,12 @@ makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic
 makeDotDrawing (name,df) = 
     drawing `mappend` moveStart (vec 86 14) lbl
   where
-    drawing     = execPathSpec $ 
-                    updatePen path_style >> 
-                    insertl dot >> mapM (\v -> lineto v >> insertl dot) steps
+    drawing     = execPathSpec $ localize path_style $ 
+                    insertl dot >> 
+                    mapM (\v -> lineto v >> insertl dot) steps >>
+                    ureturn
+                                
+                           
 
     lbl         = ignoreAns $ promoteLoc $ \pt -> 
                     textline name WW `at` pt

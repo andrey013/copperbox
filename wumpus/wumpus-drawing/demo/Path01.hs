@@ -35,11 +35,12 @@ path_pic = drawTracing $ do
 
 triangles :: LocGraphic Double
 triangles = localize (set_line_width 8) $ execPathSpec $ 
-    pen_colour dark_slate_blue >>
+    localize (stroke_colour dark_slate_blue) $ 
     moveBy (hvec 60) >> tristeps >>
     moveBy (hvec 60) >> tristeps >>
     moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE >>
-    moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE
+    moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE >>
+    ureturn
   where
     tristeps :: PathSpec Double ()
     tristeps = lineto (V2 40 0) >> lineto (V2 0 40) >> lineto (V2 (-40) (-40))

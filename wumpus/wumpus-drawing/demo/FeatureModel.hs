@@ -74,7 +74,7 @@ makeBox :: (Real u, Floating u, InterpretUnit u, Tolerance u)
         => u -> String -> Point2 u -> TraceDrawing u (Box u)
 makeBox w ss pt = do 
     a <- drawi $ (strokedShape $ rectangle w 20) `at` pt
-    drawl (center a) $ ccTextline ss
+    drawl (center a) $ textline ss CENTER
     return a
 
 box :: (Real u, Floating u, InterpretUnit u, Tolerance u) 

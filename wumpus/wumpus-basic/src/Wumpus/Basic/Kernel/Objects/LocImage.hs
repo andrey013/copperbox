@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
    , qpromoteLoc
    , qapplyLoc
    , zapLocQuery
+   , extrLoc
 
    , emptyLocImage
 
@@ -192,6 +193,18 @@ qpromoteLoc k = LocQuery $ \pt -> k pt
 qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
 qapplyLoc mq pt = getLocQuery mq pt
 
+
+-- | Design Note - the set of combinators to shift between Images 
+-- and Queries needs sorting out - @zapLocQuery@ probably has the 
+-- wrong type signature - show be LocQuery to LocImage.
+--
+
+extrLoc :: InterpretUnit u => LocImage u a -> LocQuery u a
+extrLoc ma = LocQuery $ \pt ->
+     askDC >>= \ctx -> 
+     let (a,_) = runLocImage ma ctx pt
+     in return a
+     
 
 -- qapplyLoc :: LocQuery u a -> Point2 u -> Query u a
 -- qapplyLoc mq pt = getLocQuery mq pt

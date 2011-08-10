@@ -98,3 +98,4 @@ makeArrowDrawing (name, utip) = cnext (aconn `mappend` lbl)
     lbl   = ignoreAns $ promoteLoc $ \pt -> 
               textline name WW `at` (displace (hvec 66) pt)
 
+

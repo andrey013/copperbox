@@ -117,22 +117,22 @@ ner_single = rtextline (0.25*pi)  "north east rot45" NE
 
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = ccTextline "Center-center..."
+cc_oneline = textline "Center-center..." CENTER
 
 
 blank_text :: BoundedLocGraphic Double
-blank_text = blcTextline ""
+blank_text = textline "" BLC
 
 
 left_text :: BoundedLocGraphic Double
-left_text = multiAlignLeft dummy_text CENTER
+left_text = multilineText VALIGN_LEFT dummy_text CENTER
 
 
 right_text :: BoundedLocGraphic Double
-right_text = multiAlignRight dummy_text CENTER
+right_text = multilineText VALIGN_RIGHT dummy_text CENTER
 
 center_text :: BoundedLocGraphic Double
-center_text = multiAlignCenter dummy_text CENTER
+center_text = multilineText VALIGN_CENTER dummy_text CENTER
 
 dummy_text :: String 
 dummy_text = unlines $ [ "The quick brown"

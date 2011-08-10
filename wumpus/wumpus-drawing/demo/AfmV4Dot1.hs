@@ -66,21 +66,22 @@ redPlus = localize (stroke_colour red) dotPlus
 bl_oneline :: BoundedLocGraphic Double
 bl_oneline = 
     localize (set_font times_roman . stroke_colour dark_slate_gray) $ 
-             bllTextline "Times-Roman"
+      textline "Times-Roman" BLL
 
 
 cc_oneline :: BoundedLocGraphic Double
 cc_oneline = 
-    localize (stroke_colour dark_slate_gray) $ ccTextline "Center-center..."
+    localize (stroke_colour dark_slate_gray) $ 
+      textline "Center-center..." CENTER
 
 blank_text :: BoundedLocGraphic Double
 blank_text = 
-    localize (stroke_colour dark_slate_gray) $ bllTextline ""
+    localize (stroke_colour dark_slate_gray) $ textline "" BLC
 
 
 left_text :: BoundedLocGraphic Double
 left_text = 
-    localize (stroke_colour dark_slate_gray) $ bllTextline dummy_text
+    localize (stroke_colour dark_slate_gray) $ textline dummy_text BLL
 
 
 right_text :: BoundedLocGraphic Double
@@ -89,7 +90,7 @@ right_text =
 
 center_text :: BoundedLocGraphic Double
 center_text = 
-    localize (stroke_colour dark_slate_gray) $ blcTextline dummy_text
+    localize (stroke_colour dark_slate_gray) $ textline dummy_text BLC
 
 
 dummy_text :: String 
