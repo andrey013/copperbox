@@ -4,7 +4,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.CtxPicture
+-- Module      :  Wumpus.Basic.Kernel.Drawing.CtxPicture
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -28,7 +28,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.CtxPicture
+module Wumpus.Basic.Kernel.Drawing.CtxPicture
   (
 
     CtxPicture
@@ -49,9 +49,9 @@ module Wumpus.Basic.Kernel.Objects.CtxPicture
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Drawing.TraceDrawing
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Concat
-import Wumpus.Basic.Kernel.Objects.TraceDrawing
 
 import Wumpus.Core                              -- package: wumpus-core
 

@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.TraceDrawing
+-- Module      :  Wumpus.Basic.Kernel.Drawing.TraceDrawing
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.TraceDrawing
+module Wumpus.Basic.Kernel.Drawing.TraceDrawing
   (
 
   -- * Collect primitives (writer-like monad) 

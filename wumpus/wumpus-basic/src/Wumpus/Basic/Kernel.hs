@@ -25,14 +25,15 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Base.UpdateDC
   , module Wumpus.Basic.Kernel.Base.UserState
   , module Wumpus.Basic.Kernel.Base.WrappedPrimitive
+  , module Wumpus.Basic.Kernel.Drawing.Chain
+  , module Wumpus.Basic.Kernel.Drawing.CtxPicture
+  , module Wumpus.Basic.Kernel.Drawing.TraceDrawing
   , module Wumpus.Basic.Kernel.Objects.AdvObject
   , module Wumpus.Basic.Kernel.Objects.Anchors
   , module Wumpus.Basic.Kernel.Objects.Basis
   , module Wumpus.Basic.Kernel.Objects.Bounded
-  , module Wumpus.Basic.Kernel.Objects.Chain
   , module Wumpus.Basic.Kernel.Objects.Concat
   , module Wumpus.Basic.Kernel.Objects.Connector
-  , module Wumpus.Basic.Kernel.Objects.CtxPicture
   , module Wumpus.Basic.Kernel.Objects.Displacement
   , module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , module Wumpus.Basic.Kernel.Objects.Image
@@ -40,7 +41,6 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
   , module Wumpus.Basic.Kernel.Objects.Orientation
   , module Wumpus.Basic.Kernel.Objects.PosObject
-  , module Wumpus.Basic.Kernel.Objects.TraceDrawing
 
   ) where
 
@@ -52,14 +52,15 @@ import Wumpus.Basic.Kernel.Base.Units
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Drawing.Chain
+import Wumpus.Basic.Kernel.Drawing.CtxPicture
+import Wumpus.Basic.Kernel.Drawing.TraceDrawing
 import Wumpus.Basic.Kernel.Objects.AdvObject
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Bounded
-import Wumpus.Basic.Kernel.Objects.Chain
 import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.Connector
-import Wumpus.Basic.Kernel.Objects.CtxPicture
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Image
@@ -67,4 +68,3 @@ import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.Orientation
 import Wumpus.Basic.Kernel.Objects.PosObject
-import Wumpus.Basic.Kernel.Objects.TraceDrawing

@@ -33,7 +33,8 @@ description:
   v0.20.0 to v0.21.0:
   .
   * Moved @Image@ and @Query@ from @Objects.Basis@ to new module
-    @Objects.Image@.
+    @Objects.Image@. Moved @Chain@, @CtxPicture@ and 
+    @TraceDrawing@ into the new @Drawing@ folder.
   .
   v0.18.0 to v0.20.0:
   .
@@ -101,14 +102,15 @@ library
     Wumpus.Basic.Kernel.Base.UpdateDC,
     Wumpus.Basic.Kernel.Base.UserState,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
+    Wumpus.Basic.Kernel.Drawing.Chain,
+    Wumpus.Basic.Kernel.Drawing.CtxPicture,
+    Wumpus.Basic.Kernel.Drawing.TraceDrawing,
     Wumpus.Basic.Kernel.Objects.AdvObject,
     Wumpus.Basic.Kernel.Objects.Anchors,
     Wumpus.Basic.Kernel.Objects.Basis,
     Wumpus.Basic.Kernel.Objects.Bounded,
-    Wumpus.Basic.Kernel.Objects.Chain,
     Wumpus.Basic.Kernel.Objects.Concat,
     Wumpus.Basic.Kernel.Objects.Connector,
-    Wumpus.Basic.Kernel.Objects.CtxPicture,
     Wumpus.Basic.Kernel.Objects.Displacement,
     Wumpus.Basic.Kernel.Objects.DrawingPrimitives,
     Wumpus.Basic.Kernel.Objects.Image,
@@ -116,7 +118,6 @@ library
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
     Wumpus.Basic.Kernel.Objects.Orientation,
     Wumpus.Basic.Kernel.Objects.PosObject,
-    Wumpus.Basic.Kernel.Objects.TraceDrawing,
     Wumpus.Basic.System.FontLoader,
     Wumpus.Basic.System.FontLoader.AfmParserBase,
     Wumpus.Basic.System.FontLoader.AfmTopLevel,

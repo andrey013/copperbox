@@ -5,7 +5,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.Chain
+-- Module      :  Wumpus.Basic.Kernel.Drawing.Chain
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.Chain
+module Wumpus.Basic.Kernel.Drawing.Chain
   (
   
     GenChain
