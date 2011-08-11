@@ -110,5 +110,5 @@ mkRectMinor m w h = promoteLoc $ \pt ->
         br = displace (hvec w) bl
         tr = displace (vvec h) br
         tl = displace (vvec h) bl
-    in zapQuery (vertexPP [bl, br, tr, tl]) >>= dcClosedPath STROKE
+    in liftQuery (vertexPP [bl, br, tr, tl]) >>= dcClosedPath STROKE
 

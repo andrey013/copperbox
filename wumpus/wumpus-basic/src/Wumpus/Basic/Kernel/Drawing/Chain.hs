@@ -25,6 +25,11 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , DChain
   , ChainScheme(..)
 
+  , runGenChain
+  , evalGenChain
+  , execGenChain
+  , stripGenChain
+
   , runChain
   , runChain_
 
@@ -46,8 +51,8 @@ module Wumpus.Basic.Kernel.Drawing.Chain
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
-import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Drawing.Basis
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
@@ -144,6 +149,13 @@ instance UserStateM (GenChain st u) where
                       ((), pt, ChainSt a b (upd ust), mempty)
 
 
+-- LocationM
+
+instance InterpretUnit u => LocationM (GenChain st u) where
+  location = GenChain $ \ctx pt s ->
+      let upt = dinterpF (dc_font_size ctx) pt in (upt, pt, s, mempty) 
+
+
 
 -- Monoid
 
@@ -154,28 +166,54 @@ instance Monoid a => Monoid (GenChain st u a) where
                            (b,p2,s2,w2) = getGenChain mb ctx p1 s1
                        in (a `mappend` b, p2, s2, w1 `mappend` w2)
 
+--------------------------------------------------------------------------------
+-- Run functions
 
 runGenChain :: InterpretUnit u 
-         => GenChain st u a -> ChainScheme u -> st -> LocImage u a
+         => GenChain st u a -> ChainScheme u -> st -> LocImage u (a,st)
 runGenChain ma (ChainScheme start step) ust = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
-    let st_zero    = ChainSt { chain_st         = start pt
-                             , chain_next       = step
-                             , chain_user_state = ust }
-        dpt        = normalizeF (dc_font_size ctx) pt
-        (a,_,_,w1) = getGenChain ma ctx dpt st_zero
-    in replaceAns a $ primGraphic w1
+    let st_zero     = ChainSt { chain_st         = start pt
+                              , chain_next       = step
+                              , chain_user_state = ust }
+        dpt         = normalizeF (dc_font_size ctx) pt
+        (a,_,s1,w1) = getGenChain ma ctx dpt st_zero
+    in replaceAns (a, chain_user_state s1) $ primGraphic w1
+
+
+
+-- | Forget the user state LocImage, just return the /answer/.
+--
+evalGenChain :: InterpretUnit u 
+             => GenChain st u a -> ChainScheme u -> st -> LocImage u a
+evalGenChain ma cscm st = fmap fst $ runGenChain ma cscm st
+
+
+-- | Forget the /answer/, just return the user state.
+--
+execGenChain :: InterpretUnit u 
+             => GenChain st u a -> ChainScheme u -> st -> LocImage u st 
+execGenChain ma cscm st = fmap snd $ runGenChain ma cscm st
+
+
+stripGenChain :: InterpretUnit u 
+              => GenChain st u a -> ChainScheme u -> st -> LocQuery u (a,st)
+stripGenChain ma cscm st = stripLocImage $ runGenChain ma cscm st 
 
 
 
 runChain :: InterpretUnit u 
          => Chain u a -> ChainScheme u -> LocImage u a
-runChain ma cscm = runGenChain ma cscm ()
+runChain ma cscm = evalGenChain ma cscm ()
 
 runChain_ :: InterpretUnit u 
           => Chain u a -> ChainScheme u -> LocGraphic u
 runChain_ ma cscm = ignoreAns $ runChain ma cscm
 
+
+
+--------------------------------------------------------------------------------
+-- Operations
 
 cnext :: InterpretUnit u 
       => LocImage u a -> GenChain st u a

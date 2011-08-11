@@ -19,11 +19,9 @@
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
   
-    MonUnit 
-
 
   -- * Unit phantom type
-  , UNil(..)
+    UNil(..)
   , ureturn
 
   -- * Non-contextual unit conversion.
@@ -80,11 +78,6 @@ import Data.Monoid
 
 
 
--- | Type family to access the unit parameter of a TraceDrawing
--- or a promoted TraceDrawingT transformer.
---
-type family MonUnit m :: *
-
 
 
 --------------------------------------------------------------------------------
@@ -125,8 +118,9 @@ instance Translate (UNil u) where
 -- monadic commands.
 --
 -- Many Wumpus objects are usefully constructed in the 
--- @do-notation@, but due to the need to type their unit
--- must finish the do-block with:
+-- @do-notation@, but because Wumpus has to expose the type of 
+-- the @unit@ to the type checker we must finish the do-block 
+-- with:
 --
 -- > ureturn
 -- 

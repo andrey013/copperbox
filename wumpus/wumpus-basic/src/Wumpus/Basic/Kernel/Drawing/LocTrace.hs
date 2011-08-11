@@ -1,0 +1,222 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# OPTIONS -Wall #-}
+
+
+--------------------------------------------------------------------------------
+-- |
+-- Module      :  Wumpus.Basic.Kernel.Drawing.LocTrace
+-- Copyright   :  (c) Stephen Tetley 2011
+-- License     :  BSD3
+--
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  highly unstable
+-- Portability :  GHC 
+--
+-- Writer monad with imperative /turtle/ style movement to build 
+-- LocGraphics.
+--
+--------------------------------------------------------------------------------
+
+module Wumpus.Basic.Kernel.Drawing.LocTrace
+  (
+
+  -- * GenLocTrace monad
+    GenLocTrace
+  , LocTrace
+
+  , runGenLocTrace
+  , evalGenLocTrace
+  , execGenLocTrace
+  , stripGenLocTrace
+
+  , runLocTrace
+  , runLocTrace_ 
+
+  )
+
+  where
+
+import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.DrawingContext
+import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Drawing.Basis
+import Wumpus.Basic.Kernel.Objects.Basis
+import Wumpus.Basic.Kernel.Objects.Image
+import Wumpus.Basic.Kernel.Objects.LocImage
+
+
+import Wumpus.Core                              -- package: wumpus-core
+
+import Data.AffineSpace                         -- package: vector-space
+
+import Control.Applicative
+import Control.Monad
+import Data.Monoid
+
+--
+-- Note - there are no instances of DrawingCtxM for LocTrace or
+-- LocTraceT. 
+-- 
+-- The type is not directly compatible as we are collecting 
+-- LocGraphic in a triple, but also localize would change the 
+-- interpretation of the vector cursor if the font-size changes.
+--
+
+
+
+
+
+-- | GenLocTrace is a writer state monad.
+--
+-- The writer accumulates a LocGraphic the state is a cumulative
+-- displacement vector (called a cursor below).
+--
+newtype GenLocTrace st u a = GenLocTrace { 
+          getGenLocTrace :: DrawingContext -> DPoint2 -> st 
+                      -> (a, DPoint2, st, CatPrim)}
+
+type instance DUnit  (GenLocTrace st u a) = u
+type instance UState (GenLocTrace st u)   = st
+
+type LocTrace u a = GenLocTrace () u a
+
+
+-- Functor
+
+instance Functor (GenLocTrace st u) where
+  fmap f ma = GenLocTrace $ \ctx pt s -> 
+    let (a,p1,s1,o) = getGenLocTrace ma ctx pt s in (f a, p1, s1, o)
+
+
+-- Applicative
+
+instance Applicative (GenLocTrace st u) where
+  pure a    = GenLocTrace $ \_   pt s -> (a, pt, s, mempty)
+  mf <*> ma = GenLocTrace $ \ctx pt s -> 
+                let (f,p1,s1,o1) = getGenLocTrace mf ctx pt s
+                    (a,p2,s2,o2) = getGenLocTrace ma ctx p1 s1
+                in (f a, p2, s2, o1 `mappend` o2)
+
+
+
+-- Monad
+
+instance Monad (GenLocTrace st u) where
+  return a  = GenLocTrace $ \_   pt s -> (a, pt, s, mempty)
+  ma >>= k  = GenLocTrace $ \ctx pt s -> 
+                let (a,p1,s1,o1) = getGenLocTrace ma ctx pt s
+                    (b,p2,s2,o2) = (getGenLocTrace . k) a ctx p1 s1
+                in (b, p2, s2, o1 `mappend` o2)
+
+
+
+-- DrawingCtxM
+
+instance DrawingCtxM (GenLocTrace st u) where
+  askDC           = GenLocTrace $ \ctx pt s -> (ctx, pt, s, mempty)
+  asksDC fn       = GenLocTrace $ \ctx pt s -> (fn ctx, pt, s, mempty)
+  localize upd ma = GenLocTrace $ \ctx pt s -> getGenLocTrace ma (upd ctx) pt s
+
+
+
+-- UserStateM 
+
+instance UserStateM (GenLocTrace st u) where
+  getState        = GenLocTrace $ \_ pt s -> (s, pt, s, mempty)
+  setState s      = GenLocTrace $ \_ pt _ -> ((), pt, s, mempty)
+  updateState upd = GenLocTrace $ \_ pt s -> ((), pt, upd s, mempty)
+
+
+-- Monoid
+
+instance Monoid a => Monoid (GenLocTrace st u a) where
+  mempty           = GenLocTrace $ \_   pt s -> (mempty, pt, s, mempty)
+  ma `mappend` mb  = GenLocTrace $ \ctx pt s -> 
+                       let (a,p1,s1,w1) = getGenLocTrace ma ctx pt s
+                           (b,p2,s2,w2) = getGenLocTrace mb ctx p1 s1
+                       in (a `mappend` b, p2, s2, w1 `mappend` w2)
+
+
+-- LocationM
+
+instance InterpretUnit u => LocationM (GenLocTrace st u) where
+  location = GenLocTrace $ \ctx pt s ->
+      let upt = dinterpF (dc_font_size ctx) pt in (upt, pt, s, mempty) 
+
+
+-- CursorM 
+
+instance InterpretUnit u => CursorM (GenLocTrace st u) where
+  insertl   = insertlImpl
+  moveby    = movebyImpl
+
+
+insertlImpl :: InterpretUnit u => LocImage u a -> GenLocTrace st u a
+insertlImpl gf = GenLocTrace $ \ctx pt s ->
+    let upt    = dinterpF (dc_font_size ctx) pt 
+        (a,w1) = runLocImage gf ctx upt
+    in (a,pt,s,w1) 
+
+
+movebyImpl :: InterpretUnit u => Vec2 u -> GenLocTrace st u ()
+movebyImpl v1 = GenLocTrace $ \ctx pt s ->
+    let dv1 = normalizeF (dc_font_size ctx) v1 
+    in ((), pt .+^ dv1, s, mempty) 
+
+
+
+-- BranchCursorM 
+
+instance InterpretUnit u => BranchCursorM (GenLocTrace st u) where
+  branchCursor ma = GenLocTrace $ \ctx pt s ->
+    let (a,_,s1,w1) = getGenLocTrace ma ctx pt s
+    in (a, pt, s1, w1)  -- re-instate pt          
+
+
+
+--------------------------------------------------------------------------------
+-- Run functions
+
+
+runGenLocTrace :: InterpretUnit u 
+               => GenLocTrace st u a -> st -> LocImage u (a,st)
+runGenLocTrace ma st = promoteLoc $ \pt -> 
+    askDC >>= \ctx ->
+    let dpt         = normalizeF (dc_font_size ctx) pt
+        (a,_,s1,w1) = getGenLocTrace ma ctx dpt st
+    in replaceAns (a,s1) $ primGraphic w1
+
+
+
+
+-- | Forget the user state LocImage, just return the /answer/.
+--
+evalGenLocTrace :: InterpretUnit u 
+                => GenLocTrace st u a -> st -> LocImage u a
+evalGenLocTrace ma st = fmap fst $ runGenLocTrace ma st
+
+
+-- | Forget the /answer/, just return the user state.
+--
+execGenLocTrace :: InterpretUnit u 
+                => GenLocTrace st u a -> st -> LocImage u st 
+execGenLocTrace ma st = fmap snd $ runGenLocTrace ma st
+
+
+stripGenLocTrace :: InterpretUnit u 
+                 => GenLocTrace st u a -> st -> LocQuery u (a,st)
+stripGenLocTrace ma st = stripLocImage $ runGenLocTrace ma st 
+
+
+-- | Simple version of 'runGenLocTrace' - run a 'LocTrace' without
+-- user state.
+--
+runLocTrace :: InterpretUnit u 
+            => LocTrace u a -> LocImage u a
+runLocTrace ma = evalGenLocTrace ma ()
+
+
+runLocTrace_ :: InterpretUnit u 
+             => LocTrace u a -> LocGraphic u 
+runLocTrace_ ma = ignoreAns $ runLocTrace ma
+

@@ -60,8 +60,8 @@ module Wumpus.Basic.Kernel.Drawing.TraceDrawing
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
-import Wumpus.Basic.Kernel.Base.UserState
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Drawing.Basis
 import Wumpus.Basic.Kernel.Objects.Anchors
 import Wumpus.Basic.Kernel.Objects.Connector
 import Wumpus.Basic.Kernel.Objects.Image
@@ -92,7 +92,7 @@ newtype GenTraceDrawing st u a   = GenTraceDrawing {
           getGenTraceDrawing :: DrawingContext -> st -> (a, st, HPrim u) }
 
 
-type instance MonUnit (GenTraceDrawing st u a) = u
+type instance DUnit   (GenTraceDrawing st u a) = u
 type instance UState  (GenTraceDrawing st u)   = st
 
 type TraceDrawing u a = GenTraceDrawing () u a

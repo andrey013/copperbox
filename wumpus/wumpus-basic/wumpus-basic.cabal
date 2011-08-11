@@ -32,6 +32,9 @@ description:
   .
   v0.20.0 to v0.21.0:
   .
+  * The code from the @Kernel.Base.UserState@ module has been 
+    moved to the module @Kernel.Drawing.Basis@.
+  .
   * Moved @Image@ and @Query@ from @Objects.Basis@ to new module
     @Objects.Image@. Moved @Chain@, @CtxPicture@ and 
     @TraceDrawing@ into the new @Drawing@ folder.
@@ -103,10 +106,11 @@ library
     Wumpus.Basic.Kernel.Base.QueryDC,
     Wumpus.Basic.Kernel.Base.Units,
     Wumpus.Basic.Kernel.Base.UpdateDC,
-    Wumpus.Basic.Kernel.Base.UserState,
     Wumpus.Basic.Kernel.Base.WrappedPrimitive,
+    Wumpus.Basic.Kernel.Drawing.Basis,
     Wumpus.Basic.Kernel.Drawing.Chain,
     Wumpus.Basic.Kernel.Drawing.CtxPicture,
+    Wumpus.Basic.Kernel.Drawing.LocTrace,
     Wumpus.Basic.Kernel.Drawing.TraceDrawing,
     Wumpus.Basic.Kernel.Objects.AdvObject,
     Wumpus.Basic.Kernel.Objects.Anchors,
