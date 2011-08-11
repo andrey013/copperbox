@@ -459,7 +459,7 @@ curveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               zapQuery (toPrimPath $ curveTipPath pt theta) >>= dcOpenPath
+               liftQuery (toPrimPath $ curveTipPath pt theta) >>= dcOpenPath
 
 
 
@@ -485,7 +485,7 @@ revcurveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               zapQuery (toPrimPath $ curveTipRevPath pt theta) >>= dcOpenPath
+               liftQuery (toPrimPath $ curveTipRevPath pt theta) >>= dcOpenPath
 
 
     

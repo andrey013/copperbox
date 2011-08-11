@@ -97,7 +97,7 @@ runPathAlgVec (PathAlg _ vs)                  = (Nothing, vs)
 drawVertexPathAlg :: InterpretUnit u 
                   => DrawStyle -> PathAlg u -> LocGraphic u
 drawVertexPathAlg style alg = promoteLoc $ \pt -> 
-    zapQuery (vertexPP $ runPathAlgPoint pt alg) >>= dcClosedPath style
+    liftQuery (vertexPP $ runPathAlgPoint pt alg) >>= dcClosedPath style
 
 
 -- | Create a PathAlg from the vertex list.

@@ -101,12 +101,12 @@ pivotLine lu ru ang = promoteLoc $ \pt ->
 -- | Draw an open path formed from straight line segments.
 --
 oStraightLines :: InterpretUnit u => [Point2 u] -> Graphic u
-oStraightLines ps = zapQuery (vertexPP ps) >>= dcOpenPath
+oStraightLines ps = liftQuery (vertexPP ps) >>= dcOpenPath
 
 -- | Draw an closed path formed from straight line segments.
 --
 cStraightLines :: InterpretUnit u => DrawStyle -> [Point2 u] -> Graphic u
-cStraightLines sty ps = zapQuery (vertexPP ps) >>= dcClosedPath sty
+cStraightLines sty ps = liftQuery (vertexPP ps) >>= dcClosedPath sty
 
 
 --------------------------------------------------------------------------------
@@ -142,7 +142,7 @@ ctrRectangle sty w h =
 arc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
 arc radius ang = promoteLocTheta $ \pt inclin -> 
     let ps = bezierArcPoints ang radius inclin pt
-    in zapQuery (curvePP ps) >>= dcOpenPath
+    in liftQuery (curvePP ps) >>= dcOpenPath
 
 -- | wedge : radius * apex_angle
 -- 

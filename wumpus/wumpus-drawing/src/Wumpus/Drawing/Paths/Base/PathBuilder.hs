@@ -32,7 +32,7 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
   , runPathSpec
   , execPathSpec
   , evalPathSpec
-  , extrPathSpec
+  , stripPathSpec
 
 --  , execPivot
 
@@ -234,9 +234,9 @@ execPathSpec ma = fst <$> runPathSpec ma
 
 
 
-extrPathSpec :: InterpretUnit u
+stripPathSpec :: InterpretUnit u
              => PathSpec u a -> LocQuery u (RelPath u)
-extrPathSpec ma = extrLoc $ evalPathSpec ma
+stripPathSpec ma = stripLocImage $ evalPathSpec ma
 
 
 -- Monad run function nomenclature:

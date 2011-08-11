@@ -80,7 +80,7 @@ runArrowTip (ArrowTip df len deco) =
 rightArrow :: (Real u, Floating u, InterpretUnit u) 
             => ArrowTip -> Connector u -> ArrowConnector u
 rightArrow alg conn = promoteConn $ \p0 p1 ->
-    zapConnectorQuery conn p0 p1 >>= \full_path -> 
+    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     rightArrowPath alg full_path 
 
 
@@ -90,7 +90,7 @@ rightArrow alg conn = promoteConn $ \p0 p1 ->
 leftArrow :: (Real u, Floating u, InterpretUnit u) 
             => ArrowTip -> Connector u -> ArrowConnector u
 leftArrow alg conn = promoteConn $ \p0 p1 ->
-    zapConnectorQuery conn p0 p1 >>= \full_path -> 
+    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftArrowPath alg full_path 
 
 
@@ -100,7 +100,7 @@ leftArrow alg conn = promoteConn $ \p0 p1 ->
 leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip -> ArrowTip ->  Connector u -> ArrowConnector u
 leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
-    zapConnectorQuery conn p0 p1 >>= \full_path -> 
+    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftRightArrowPath algl algr full_path 
 
 
@@ -111,7 +111,7 @@ leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
 uniformArrow :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip ->  Connector u -> ArrowConnector u
 uniformArrow alg conn = promoteConn $ \p0 p1 ->
-    zapConnectorQuery conn p0 p1 >>= \full_path -> 
+    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftRightArrowPath alg alg full_path 
 
 
@@ -128,7 +128,7 @@ uniformArrow alg conn = promoteConn $ \p0 p1 ->
 leftArrowPath :: (Real u, Floating u, InterpretUnit u) 
               => ArrowTip -> AbsPath u -> Image u (AbsPath u)
 leftArrowPath alg full_path =
-    zapQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
+    liftQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
     let short_path      = if retract > 0 then shortenL retract full_path 
                                          else full_path
         mid_ang         = tipDirectionL len full_path
@@ -146,7 +146,7 @@ leftArrowPath alg full_path =
 rightArrowPath :: (Real u, Floating u, InterpretUnit u) 
                => ArrowTip -> AbsPath u -> Image u (AbsPath u)
 rightArrowPath alg full_path =
-    zapQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
+    liftQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
     let short_path      = if retract > 0 then shortenR retract full_path 
                                          else full_path
         mid_ang         = tipDirectionR len full_path
@@ -165,8 +165,8 @@ rightArrowPath alg full_path =
 leftRightArrowPath :: (Real u, Floating u, InterpretUnit u) 
                    => ArrowTip -> ArrowTip -> AbsPath u -> Image u (AbsPath u)
 leftRightArrowPath algl algr full_path =
-    zapQuery (runArrowTip algl) >>= \(retractl, lenl, decol) -> 
-    zapQuery (runArrowTip algr) >>= \(retractr, lenr, decor) -> 
+    liftQuery (runArrowTip algl) >>= \(retractl, lenl, decol) -> 
+    liftQuery (runArrowTip algr) >>= \(retractr, lenr, decor) -> 
     let short_path      = shortenPath retractl retractr full_path
         mid_angl        = tipDirectionL lenl full_path
         mid_angr        = tipDirectionR lenr full_path

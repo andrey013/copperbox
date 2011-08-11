@@ -190,7 +190,7 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
    in rectangleAnchor hw hh (bl .+^ vec hw hh)
 
 
-zeroLDO :: LocQuery u (DotAnchor u)
+zeroLDO :: InterpretUnit u => LocQuery u (DotAnchor u)
 zeroLDO = qpromoteLoc $ \pt -> return $ zeroAnchor pt
 
 rectangleLDO :: (Real u, Floating u, InterpretUnit u) 

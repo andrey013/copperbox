@@ -214,7 +214,8 @@ semiellipse rx ry =
 
 
 
-mkSemiellipse :: u -> u -> LocThetaQuery u (Semiellipse u)
+mkSemiellipse :: InterpretUnit u 
+              => u -> u -> LocThetaQuery u (Semiellipse u)
 mkSemiellipse rx ry = qpromoteLocTheta $ \ctr theta -> 
     pure $ Semiellipse { se_ctm = makeShapeCTM ctr theta
                        , se_rx = rx
@@ -222,7 +223,7 @@ mkSemiellipse rx ry = qpromoteLocTheta $ \ctr theta ->
                        }
 
 
-mkSemiellipsePath :: (Real u, Floating u, Tolerance u) 
+mkSemiellipsePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
                   => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkSemiellipsePath rx ry hminor = qpromoteLocTheta $ \pt theta ->
     let ctr = dispPerpendicular (-hminor) theta pt

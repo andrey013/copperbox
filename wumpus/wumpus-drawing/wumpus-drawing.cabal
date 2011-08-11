@@ -1,5 +1,5 @@
 name:             wumpus-drawing
-version:          0.5.0
+version:          0.6.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -38,25 +38,9 @@ description:
   .
   Changelog:
   .
-  v0.4.0 to v0.5.0
+  v0.5.0 to v0.6.0
   .
-  * Re-implemented Text drawing. Some functionality moved to 
-    Wumpus-Basic.
-  .
-  * Re-implemented monadic Path Builder.
-  .
-  v0.3.0 to v0.4.0:
-  .
-  * Simplified Trapezium shape so it only produces isosceles
-    Trapeziums.
-  .
-  * Added Basis modules. These are \"mid-level\" modules similar 
-    to ones in @Wumpus.Basic.Kernel.Objects@, however they are 
-    considered less general so there are put here where they can 
-    be imported individually (and so not pollute the namespace).
-  .
-  * Removed the Turtle modules. The new @LocTrace@ and @RefTrace@ 
-    modules supercede the Turtle modules.
+  * ??
   .
   .
 build-type:         Simple
@@ -89,13 +73,11 @@ library
                       containers      >= 0.3     && <= 0.6,
                       vector-space    >= 0.6     && <  1.0,
                       wumpus-core     >= 0.51.0  && <  0.52.0,
-                      wumpus-basic    == 0.20.0
+                      wumpus-basic    == 0.21.0
 
   
   exposed-modules:
     Wumpus.Drawing.Basis.DrawingPrimitives,
-    Wumpus.Drawing.Basis.LocTrace,
-    Wumpus.Drawing.Basis.RefTrace,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Connectors,

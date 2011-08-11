@@ -1,5 +1,24 @@
 
-
+0.4.0 to 0.5.0
+  
+  * Re-implemented Text drawing. Some functionality moved to 
+    Wumpus-Basic.
+  
+  * Re-implemented monadic Path Builder.
+  
+0.3.0 to 0.4.0:
+  
+  * Simplified Trapezium shape so it only produces isosceles
+    Trapeziums.
+  
+  * Added Basis modules. These are \"mid-level\" modules similar 
+    to ones in @Wumpus.Basic.Kernel.Objects@, however they are 
+    considered less general so there are put here where they can 
+    be imported individually (and so not pollute the namespace).
+  
+  * Removed the Turtle modules. The new @LocTrace@ and @RefTrace@ 
+    modules supercede the Turtle modules.
+  
 0.2.0 to 0.3.0:
 
   * Moved Turtle and Grids into the @Wumpus.Drawing.Extras@

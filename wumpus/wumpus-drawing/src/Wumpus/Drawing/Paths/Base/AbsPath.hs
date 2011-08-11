@@ -408,23 +408,23 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
 drawOpenPath :: InterpretUnit u 
              => AbsPath u -> Image u (AbsPath u)
 drawOpenPath rp = replaceAns rp $
-    zapQuery (toPrimPath rp) >>= dcOpenPath
+    liftQuery (toPrimPath rp) >>= dcOpenPath
 
 
 drawOpenPath_ :: InterpretUnit u 
               => AbsPath u -> Graphic u
-drawOpenPath_ rp = zapQuery (toPrimPath rp) >>= dcOpenPath
+drawOpenPath_ rp = liftQuery (toPrimPath rp) >>= dcOpenPath
 
 
 drawClosedPath :: InterpretUnit u 
                => DrawStyle -> AbsPath u -> Image u (AbsPath u)
 drawClosedPath sty rp = replaceAns rp $ 
-    zapQuery (toPrimPath rp) >>= dcClosedPath sty
+    liftQuery (toPrimPath rp) >>= dcClosedPath sty
 
 
 drawClosedPath_ :: InterpretUnit u 
                 => DrawStyle -> AbsPath u -> Graphic u
-drawClosedPath_ sty rp = zapQuery (toPrimPath rp) >>= dcClosedPath sty
+drawClosedPath_ sty rp = liftQuery (toPrimPath rp) >>= dcClosedPath sty
 
 
 -- | Turn a Path into an ordinary PrimPath.

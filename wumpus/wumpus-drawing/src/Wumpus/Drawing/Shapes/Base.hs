@@ -89,7 +89,8 @@ type DShape t = Shape t Double
 
 --------------------------------------------------------------------------------
 
-shapeMap :: (t u -> t' u) -> Shape t u -> Shape t' u
+shapeMap :: InterpretUnit u 
+         => (t u -> t' u) -> Shape t u -> Shape t' u
 shapeMap f = (\s sf -> s { shape_ans_fun = qpromoteLocTheta $ \pt ang -> 
                                            fmap f $ qapplyLocTheta sf pt ang }) 
                 <*> shape_ans_fun
@@ -151,10 +152,10 @@ borderedShape = shapeToLoc (dcClosedPath FILL_STROKE)
 shapeToLoc :: InterpretUnit u
            => (PrimPath -> Graphic u) -> Shape t u -> LocImage u (t u)
 shapeToLoc drawF sh = promoteLoc $ \pt -> 
-    zapLocThetaQuery (shape_ans_fun sh)  pt 0 >>= \a -> 
-    zapLocThetaQuery (shape_path_fun sh) pt 0 >>= \spath -> 
+    applyLocTheta (liftLocThetaQuery $ shape_ans_fun sh)  pt 0 >>= \a -> 
+    applyLocTheta (liftLocThetaQuery $ shape_path_fun sh) pt 0 >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt 0 
-    in replaceAns a (sdecorate g2 $ zapQuery (toPrimPath spath) >>= drawF)
+    in replaceAns a (sdecorate g2 $ liftQuery (toPrimPath spath) >>= drawF)
 
 
 
@@ -173,10 +174,10 @@ rborderedShape = shapeToLocTheta (dcClosedPath FILL_STROKE)
 shapeToLocTheta :: InterpretUnit u
                 => (PrimPath -> Graphic u) -> Shape t u -> LocThetaImage u (t u)
 shapeToLocTheta drawF sh = promoteLocTheta $ \pt theta -> 
-    zapLocThetaQuery (shape_ans_fun  sh) pt theta >>= \a -> 
-    zapLocThetaQuery (shape_path_fun sh) pt theta >>= \spath -> 
+    applyLocTheta (liftLocThetaQuery $ shape_ans_fun sh) pt theta >>= \a -> 
+    applyLocTheta (liftLocThetaQuery $ shape_path_fun sh) pt theta >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt theta
-    in replaceAns a $ sdecorate g2 (zapQuery (toPrimPath spath) >>= drawF)
+    in replaceAns a $ sdecorate g2 (liftQuery (toPrimPath spath) >>= drawF)
 
 
 
@@ -196,7 +197,8 @@ roundCornerShapePath sz xs =
 -- angle. The anchors are typically implemented by rotating the 
 -- correspoding anchor of the wrapped Shape about its center.
 -- 
-updatePathAngle :: (Radian -> Radian) -> Shape t u -> Shape t u
+updatePathAngle :: InterpretUnit u 
+                => (Radian -> Radian) -> Shape t u -> Shape t u
 updatePathAngle f = 
     (\s fi -> s { shape_path_fun = qpromoteLocTheta $ \pt ang -> 
                                    qapplyLocTheta fi pt (mvTheta ang) })
