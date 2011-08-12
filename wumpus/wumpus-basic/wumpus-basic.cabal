@@ -110,6 +110,7 @@ library
     Wumpus.Basic.Kernel.Drawing.Basis,
     Wumpus.Basic.Kernel.Drawing.Chain,
     Wumpus.Basic.Kernel.Drawing.CtxPicture,
+    Wumpus.Basic.Kernel.Drawing.LocDrawing,
     Wumpus.Basic.Kernel.Drawing.LocTrace,
     Wumpus.Basic.Kernel.Drawing.TraceDrawing,
     Wumpus.Basic.Kernel.Objects.AdvObject,

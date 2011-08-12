@@ -53,27 +53,17 @@ import Control.Applicative
 import Control.Monad
 import Data.Monoid
 
+
+
+
+-- | GenLocTrace is a reader-writer-state monad.
 --
--- Note - there are no instances of DrawingCtxM for LocTrace or
--- LocTraceT. 
--- 
--- The type is not directly compatible as we are collecting 
--- LocGraphic in a triple, but also localize would change the 
--- interpretation of the vector cursor if the font-size changes.
---
-
-
-
-
-
--- | GenLocTrace is a writer state monad.
---
--- The writer accumulates a LocGraphic the state is a cumulative
--- displacement vector (called a cursor below).
+-- The writer accumulates a graphical trace and the state is 
+-- the current point.
 --
 newtype GenLocTrace st u a = GenLocTrace { 
-          getGenLocTrace :: DrawingContext -> DPoint2 -> st 
-                      -> (a, DPoint2, st, CatPrim)}
+    getGenLocTrace :: DrawingContext -> DPoint2 -> st 
+                   -> (a, DPoint2, st, CatPrim)}
 
 type instance DUnit  (GenLocTrace st u a) = u
 type instance UState (GenLocTrace st u)   = st
@@ -146,8 +136,10 @@ instance InterpretUnit u => LocationM (GenLocTrace st u) where
 
 -- CursorM 
 
-instance InterpretUnit u => CursorM (GenLocTrace st u) where
+instance InterpretUnit u => InsertlM (GenLocTrace st u) where
   insertl   = insertlImpl
+
+instance InterpretUnit u => CursorM (GenLocTrace st u) where
   moveby    = movebyImpl
 
 

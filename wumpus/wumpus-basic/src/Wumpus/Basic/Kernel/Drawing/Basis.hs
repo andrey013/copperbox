@@ -21,6 +21,7 @@ module Wumpus.Basic.Kernel.Drawing.Basis
     UState
   , UserStateM(..)
 
+  , InsertlM(..)
   , LocationM(..)
   , CursorM(..)
   , BranchCursorM(..)
@@ -48,20 +49,27 @@ class (Applicative m, Monad m) => UserStateM (m :: * -> *) where
 
 
 
+
+-- | Monad that collects a graphic trace, 'insertl' is analogue 
+-- to the Writer monad\'s @tell@.
+--
+class InsertlM (m :: * -> *) where
+  insertl   :: u ~ DUnit (m ()) => LocImage u a -> m a
+  insertl_  :: u ~ DUnit (m ()) => LocImage u a -> m (UNil u)
+
+  insertl_ = insertl . ignoreAns 
+
+
+-- | Monad with notion of location - i.e. the current point.
+--
 class Monad m => LocationM (m :: * -> *) where
   location  :: u ~ DUnit (m ()) => m (Point2 u)
 
 
--- | 'insertl' analogue to Writer monad @tell@.
+-- | Monad with turtle-like cursor movememnt.
 --
-class LocationM m => CursorM (m :: * -> *) where
-  insertl   :: u ~ DUnit (m ()) => LocImage u a -> m a
-  insertl_  :: u ~ DUnit (m ()) => LocImage u a -> m (UNil u)
-  
+class LocationM m => CursorM (m :: * -> *) where  
   moveby    :: u ~ DUnit (m ()) => Vec2 u -> m ()
-
-
-  insertl_ = insertl . ignoreAns 
 
 
 

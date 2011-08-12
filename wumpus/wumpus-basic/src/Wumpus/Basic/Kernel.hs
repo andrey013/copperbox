@@ -27,6 +27,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Drawing.Basis
   , module Wumpus.Basic.Kernel.Drawing.Chain
   , module Wumpus.Basic.Kernel.Drawing.CtxPicture
+  , module Wumpus.Basic.Kernel.Drawing.LocDrawing
   , module Wumpus.Basic.Kernel.Drawing.LocTrace
   , module Wumpus.Basic.Kernel.Drawing.TraceDrawing
   , module Wumpus.Basic.Kernel.Objects.AdvObject
@@ -55,6 +56,7 @@ import Wumpus.Basic.Kernel.Base.WrappedPrimitive
 import Wumpus.Basic.Kernel.Drawing.Basis
 import Wumpus.Basic.Kernel.Drawing.Chain
 import Wumpus.Basic.Kernel.Drawing.CtxPicture
+import Wumpus.Basic.Kernel.Drawing.LocDrawing
 import Wumpus.Basic.Kernel.Drawing.LocTrace
 import Wumpus.Basic.Kernel.Drawing.TraceDrawing
 import Wumpus.Basic.Kernel.Objects.AdvObject
