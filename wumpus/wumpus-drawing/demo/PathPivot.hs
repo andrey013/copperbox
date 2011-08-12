@@ -26,15 +26,15 @@ path_pic = drawTracing $ localize (set_line_width 2) $ do
     
 
 path1 :: LocGraphic Double
-path1 = execPivot (lines []) (lines [go_up 20 , go_up_right 20, go_down 60])
+path1 = runPivot (penlines []) (penlines [go_up 20 , go_up_right 20, go_down 60])
 
 path2 :: LocGraphic Double
-path2 = execPivot (lines [go_up 20]) (lines [go_up_right 20, go_down 60])
+path2 = runPivot (penlines [go_up 20]) (penlines [go_up_right 20, go_down 60])
 
 path3 :: LocGraphic Double
-path3 = execPivot (lines [go_up 20, go_up_right 20]) (lines [go_down 60])
+path3 = runPivot (penlines [go_up 20, go_up_right 20]) (penlines [go_down 60])
 
 path4 :: LocGraphic Double
-path4 = execPivot (lines [go_up 20, go_up_right 20, go_down 60]) (lines [])
+path4 = runPivot (penlines [go_up 20, go_up_right 20, go_down 60]) (penlines [])
 
 

@@ -21,31 +21,34 @@
 module Wumpus.Drawing.Paths.Base.PathBuilder
   ( 
 
-    LocTraceM(..) -- re-export
 
-  , GenPathSpec
+    GenPathSpec
   , PathSpec
   , Vamp(..)
-
+  , PathTerm(..)
 
   , runGenPathSpec
+  , execGenPathSpec
+  , evalGenPathSpec
+  , stripGenPathSpec
+
   , runPathSpec
-  , execPathSpec
-  , evalPathSpec
-  , stripPathSpec
+  , runPathSpec_
 
---  , execPivot
+  , runPivot
 
-  , pathTip
 
-  , lineto
-  , curveto
-  , moveto
+  , penline
+  , pencurve
+ 
   
   , breakPath
-  , hlineto
-  , vlineto
-  , alineto
+  , hpenline
+  , vpenline
+  , apenline
+
+  , penlines
+  , pathmoves
 
   , vamp
   , cycleSubPath
@@ -53,9 +56,7 @@ module Wumpus.Drawing.Paths.Base.PathBuilder
  
   ) where
 
-import Wumpus.Drawing.Basis.LocTrace
 import Wumpus.Drawing.Paths.Base.RelPath
--- import qualified Wumpus.Drawing.Paths.Base.RelPath as R
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -64,7 +65,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 
 import Data.AffineSpace                         -- package: vector-space
--- import Data.VectorSpace
+import Data.VectorSpace
 
 import Control.Applicative
 import Control.Monad
@@ -78,7 +79,6 @@ newtype GenPathSpec st u a = GenPathSpec
 
 type instance DUnit   (GenPathSpec st u a) = u
 type instance UState  (GenPathSpec st u)   = st
-type instance MonUnit (GenPathSpec st u a) = u
 
 type PathSpec u a = GenPathSpec () u a
 
@@ -120,7 +120,7 @@ instance Monoid PathW where
 
 
 
-data PathTerm = SUBPATH_OPEN | SUBPATH_CLOSED DrawStyle
+data PathTerm = PATH_OPEN | PATH_CLOSED DrawStyle
   deriving (Eq,Show)
 
 
@@ -192,51 +192,76 @@ instance UserStateM (GenPathSpec st u) where
                       in ((), pt, s {st_user_state =  upd ust}, mempty)
 
 
+
 -- | Note - location probably should return Point2 not Vec2 hence 
 -- this uses @cheat@ temporarily.
 --
 -- TODO - sort out LocTraceM class.
 -- 
-instance InterpretUnit u => LocTraceM (GenPathSpec st u) where
-  moveBy   = moveto
-  insertl  = insertLocImage
-  location = cheat <$> pathTip
-    where cheat (P2 x y) = V2 x y
+
+
+instance InterpretUnit u => LocationM (GenPathSpec st u) where
+  location = locationImpl
+
+
+-- CursorM 
+
+instance InterpretUnit u => CursorM (GenPathSpec st u) where
+  moveby   = movebyImpl
+  insertl  = insertlImpl
 
            
+--------------------------------------------------------------------------------
+-- Run functions
 
 runGenPathSpec :: InterpretUnit u 
-               => GenPathSpec st u a -> st -> LocImage u (a, RelPath u)
-runGenPathSpec ma st = promoteLoc $ \pt -> 
+               => GenPathSpec st u a -> st -> PathTerm 
+               -> LocImage u (a, st, RelPath u)
+runGenPathSpec ma st term = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let dpt       = normalizeF (dc_font_size ctx) pt
         st_zero   = PathSt (zeroActivePath dpt) st
         (a,_,s,w) = getGenPathSpec ma ctx dpt st_zero
         upath     = dinterpF (dc_font_size ctx) $ w_rel_path w
-        (_,wcp)   = runImage (drawActivePen SUBPATH_OPEN $ st_active_pen s) ctx
+        (_,wcp)   = runImage (drawActivePen term $ st_active_pen s) ctx
         wfinal    = w_trace w `mappend` wcp
-    in replaceAns (a,upath) $ primGraphic wfinal
+    in replaceAns (a, st_user_state s, upath) $ primGraphic wfinal
+
+
+-- Note - eval and exec return the RelPath this is as-per RWS
+-- which returns @w@ for execRWS (s,w) and evalRWS (a,w)
+--
+
+evalGenPathSpec :: InterpretUnit u
+                => GenPathSpec st u a -> st -> PathTerm 
+                -> LocImage u (a, RelPath u)
+evalGenPathSpec ma st term = 
+    (\(a,_,w) -> (a,w)) <$> runGenPathSpec ma st term
+
+    
+
+execGenPathSpec :: InterpretUnit u
+                => GenPathSpec st u a -> st -> PathTerm 
+                -> LocImage u (st, RelPath u)
+execGenPathSpec ma st term =
+    (\(_,s,w) -> (s,w)) <$> runGenPathSpec ma st term
+
+
+
+stripGenPathSpec :: InterpretUnit u
+                 => GenPathSpec st u a -> st -> PathTerm 
+                 -> LocQuery u (a, st, RelPath u)
+stripGenPathSpec ma st term = stripLocImage $ runGenPathSpec ma st term
 
 
 runPathSpec :: InterpretUnit u
-            => PathSpec u a -> LocImage u (a, RelPath u)
-runPathSpec ma = runGenPathSpec ma ()
+            => PathSpec u a -> PathTerm -> LocImage u (a, RelPath u)
+runPathSpec ma term = evalGenPathSpec ma () term
 
+runPathSpec_ :: InterpretUnit u
+             => PathSpec u a -> PathTerm -> LocGraphic u
+runPathSpec_ ma term = ignoreAns $ evalGenPathSpec ma () term
 
-evalPathSpec :: InterpretUnit u
-             => PathSpec u a -> LocImage u (RelPath u)
-evalPathSpec ma = snd <$> runPathSpec ma
-
-
-execPathSpec :: InterpretUnit u
-             => PathSpec u a -> LocImage u a
-execPathSpec ma = fst <$> runPathSpec ma
-
-
-
-stripPathSpec :: InterpretUnit u
-             => PathSpec u a -> LocQuery u (RelPath u)
-stripPathSpec ma = stripLocImage $ evalPathSpec ma
 
 
 -- Monad run function nomenclature:
@@ -266,34 +291,42 @@ drawActivePen :: PathTerm -> ActivePen -> DGraphic
 drawActivePen _    PEN_UP                            = mempty
 drawActivePen term (PEN_DOWN { ap_start_point = pt
                              , ap_rel_path    = rp}) = case term of
-    SUBPATH_OPEN -> ignoreAns $ drawOpenPath rp `at` pt
-    SUBPATH_CLOSED styl -> ignoreAns $ drawClosedPath styl rp `at` pt
+    PATH_OPEN -> ignoreAns $ drawOpenPath rp `at` pt
+    PATH_CLOSED styl -> ignoreAns $ drawClosedPath styl rp `at` pt
 
 
 
 
 
 
-{-
+
 
 -- | Form a \"pivot path\" drawing from two path specifications.
 -- The start point of the drawing is the pivot formed by joining
 -- the paths.
 --
-execPivot :: (Floating u, InterpretUnit u)
+runPivot :: (Floating u, InterpretUnit u)
           => PathSpec u a -> PathSpec u a -> LocGraphic u
-execPivot ma mb = moveStart (negateV v) $ pen `mappend` ins
+runPivot ma mb = promoteLoc $ \pt -> 
+    askDC >>= \ctx ->
+    let dpt         = normalizeF (dc_font_size ctx) pt
+        st_zero     = PathSt (zeroActivePath dpt) ()
+        (p1,_,s,w1) = getGenPathSpec mz ctx dpt st_zero
+        dp1         = normalizeF (dc_font_size ctx) p1
+        v1          = pvec dpt dp1
+        (_,wcp)     = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
+        wfinal      = w_trace w1 `mappend` wcp        
+    in primGraphic $ cpmove (negateV v1) wfinal
   where
-   (v, _, _, pen, ins) = runPathSpec ( ma >> location >>= \ans -> 
-                                       mb >> return ans )
--}
+    mz = ma >> location >>= \pt -> mb >> return pt
+
 
 --------------------------------------------------------------------------------
 -- operations
 
 
-pathTip :: InterpretUnit u => GenPathSpec st u (Point2 u)
-pathTip = GenPathSpec $ \ctx pt s ->
+locationImpl :: InterpretUnit u => GenPathSpec st u (Point2 u)
+locationImpl = GenPathSpec $ \ctx pt s ->
     let upt = dinterpF (dc_font_size ctx) pt
     in (upt, pt, s, mempty)
 
@@ -304,9 +337,19 @@ extendPen :: DPoint2 -> DVec2 -> ActivePen -> ActivePen
 extendPen pt v PEN_UP           = PEN_DOWN pt (line1 v)
 extendPen _  v (PEN_DOWN p0 rp) = PEN_DOWN p0 (rp `snocLineTo` v)
 
+--
+-- NOTE - /lineto/ needs a new name as the @to@ suffix suggests
+-- moving to a point, whereas the movement is @by@ a vector.
+--
+-- @relline@ not a good candidate, need a name that supports 
+-- horizontal (h) and vertical (v) versions.
+--
 
-lineto :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
-lineto v1 = GenPathSpec $ \ctx pt s -> 
+
+-- | Extend the path with a line, drawn by the pen.
+-- 
+penline :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
+penline v1 = GenPathSpec $ \ctx pt s -> 
    let sz  = dc_font_size ctx
        dv1 = normalizeF sz v1
        pen = extendPen pt dv1 (st_active_pen s)
@@ -323,9 +366,11 @@ extendPenC _  v1 v2 v3 (PEN_DOWN p0 rp) = PEN_DOWN p0 (snocCurveTo rp v1 v2 v3)
 
 
 
-curveto :: InterpretUnit u 
+-- | Extend the path with a curve, drawn by the pen.
+-- 
+pencurve :: InterpretUnit u 
         => Vec2 u -> Vec2 u -> Vec2 u -> GenPathSpec st u ()
-curveto v1 v2 v3 = GenPathSpec $ \ctx pt s -> 
+pencurve v1 v2 v3 = GenPathSpec $ \ctx pt s -> 
    let sz  = dc_font_size ctx
        dv1 = normalizeF sz v1
        dv2 = normalizeF sz v2
@@ -335,39 +380,46 @@ curveto v1 v2 v3 = GenPathSpec $ \ctx pt s ->
    in ((), pt .+^ dv1, s { st_active_pen = pen }, w1)
 
 
--- | @moveto@ causes a pen up.
+-- | @moveby@ causes a pen up.
 --
-moveto :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
-moveto v1 = GenPathSpec $ \ctx pt s -> 
+movebyImpl :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
+movebyImpl v1 = GenPathSpec $ \ctx pt s -> 
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,wcp) = runImage (drawActivePen SUBPATH_OPEN $ st_active_pen s) ctx
+        (_,wcp) = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
         w1      = PathW { w_rel_path = mempty, w_trace = wcp }
     in ((), pt .+^ dv1, s { st_active_pen = PEN_UP }, w1)
 
 
 breakPath :: InterpretUnit u => GenPathSpec st u ()
-breakPath = moveto (V2 0 0)
+breakPath = movebyImpl (V2 0 0)
 
-hlineto :: InterpretUnit u => u -> GenPathSpec st u ()
-hlineto dx = lineto (hvec dx)
+hpenline :: InterpretUnit u => u -> GenPathSpec st u ()
+hpenline dx = penline (hvec dx)
 
-vlineto :: InterpretUnit u => u -> GenPathSpec st u ()
-vlineto dy = lineto (vvec dy)
-
-
-alineto :: (Floating u, InterpretUnit u) 
-        => Radian -> u -> GenPathSpec st u ()
-alineto ang d = lineto (avec ang d)
+vpenline :: InterpretUnit u => u -> GenPathSpec st u ()
+vpenline dy = penline (vvec dy)
 
 
-insertLocImage :: InterpretUnit u 
-               => LocImage u a -> GenPathSpec st u ()
-insertLocImage gf = GenPathSpec $ \ctx pt s ->
+apenline :: (Floating u, InterpretUnit u) 
+         => Radian -> u -> GenPathSpec st u ()
+apenline ang d = penline (avec ang d)
+
+penlines :: InterpretUnit u => [Vec2 u] -> GenPathSpec st u ()
+penlines = mapM_ penline
+
+pathmoves :: InterpretUnit u => [Vec2 u] -> GenPathSpec st u ()
+pathmoves = mapM_ moveby
+
+
+
+insertlImpl :: InterpretUnit u 
+            => LocImage u a -> GenPathSpec st u a
+insertlImpl gf = GenPathSpec $ \ctx pt s ->
     let upt     = dinterpF (dc_font_size ctx) pt
-        (_,wcp) = runLocImage gf ctx upt
+        (a,wcp) = runLocImage gf ctx upt
         w1      = PathW { w_rel_path = mempty, w_trace = wcp }
-    in ((), pt, s, w1)
+    in (a, pt, s, w1)
 
 
 
@@ -375,7 +427,7 @@ vamp :: InterpretUnit u => Vamp u -> GenPathSpec st u ()
 vamp (Vamp v1 conn) = GenPathSpec $ \ctx pt s ->
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,wcp) = runImage (drawActivePen SUBPATH_OPEN $ st_active_pen s) ctx
+        (_,wcp) = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
         upt     = dinterpF sz pt
         (_,ccp) = runConnectorImage conn ctx upt (upt .+^ v1)
         w1      = PathW { w_rel_path = mempty, w_trace = wcp `mappend` ccp }
@@ -384,7 +436,7 @@ vamp (Vamp v1 conn) = GenPathSpec $ \ctx pt s ->
 
 cycleSubPath :: DrawStyle -> GenPathSpec st u ()
 cycleSubPath styl = GenPathSpec $ \ctx pt s ->
-    let gf      = drawActivePen (SUBPATH_CLOSED styl) $ st_active_pen s
+    let gf      = drawActivePen (PATH_CLOSED styl) $ st_active_pen s
         (_,wcp) = runImage gf ctx
         w1      = PathW { w_rel_path = mempty, w_trace = wcp }
     in ((), pt, s { st_active_pen = PEN_UP }, w1)
@@ -405,8 +457,9 @@ cycleSubPath styl = GenPathSpec $ \ctx pt s ->
 
 localPen :: DrawingContextF -> GenPathSpec st u a -> GenPathSpec st u a
 localPen upd ma = GenPathSpec $ \ctx pt s ->
-    let (_,wcp)      = runImage (drawActivePen SUBPATH_OPEN $ st_active_pen s) ctx
+    let (_,wcp)      = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
         (a,p1,s1,w1) = getGenPathSpec ma (upd ctx) pt s
-        w2           = let wcp2 = wcp `mappend` w_trace w1 in w1 { w_trace = wcp2 }
+        w2           = let wcp2 = wcp `mappend` w_trace w1 
+                       in w1 { w_trace = wcp2 }
     in (a, p1, s1 { st_active_pen = PEN_UP }, w2)
 

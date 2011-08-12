@@ -21,7 +21,7 @@ module Wumpus.Rhythm.Djembe.Draw where
 import Wumpus.Rhythm.Djembe.GraphicPrimitives
 import Wumpus.Rhythm.Djembe.Parameters
 
-import Wumpus.Drawing.Basis.LocTrace            -- package: wumpus-drawing
+-- import Wumpus.Drawing.Basis.LocTrace            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
@@ -42,7 +42,7 @@ type FlamHead = LocGraphic AfmUnit
 
 data NoteHead = NoteHead 
       { notehead_base   :: PosNoteHead
-      , notehead_trafo  :: PosObject AfmUnit -> PosObject AfmUnit 
+      , notehead_trafo  :: PosGraphic AfmUnit -> PosGraphic AfmUnit
       }
                         
 
@@ -86,7 +86,7 @@ swing a = S a noAnno
 
 -- what to call div? 
 
-addTrafo :: (PosObject AfmUnit -> PosObject AfmUnit) -> NoteHead -> NoteHead
+addTrafo :: (PosGraphic AfmUnit -> PosGraphic AfmUnit) -> NoteHead -> NoteHead
 addTrafo fn = (\s i -> s { notehead_trafo = i `mappend` fn })
                  <*> notehead_trafo
 
@@ -197,7 +197,6 @@ type UnitWidth = AfmUnit
 newtype DjembeDraw a = DjembeDraw { 
       getDjembeDraw :: UnitWidth -> LocTrace UnitWidth a }
 
-type instance MonUnit (DjembeDraw a) = UnitWidth
 
 
 -- Functor
@@ -229,15 +228,14 @@ instance Monad DjembeDraw where
 --
 runDjembeDraw :: InterpretUnit u 
               => UnitWidth -> DjembeDraw a -> LocGraphic u
-runDjembeDraw uw mf = post $ runLocTrace $ getDjembeDraw mf uw 
+runDjembeDraw uw ma = 
+    uconvF $ runLocTrace_ $ localize upd $ getDjembeDraw ma uw
   where
-    post (_,_,gf) = localize (contextual_line_width fn . join_miter) $ 
-                      uconvF gf
+    upd =  contextual_line_width fn . join_miter
     
     fn sz         = let s1 = (fromIntegral sz) / (10.0::Double)
                         i1 = ceiling s1 `asTypeOf` (1::Integer)
                     in 0.5 * (fromIntegral $ i1)
-
 
 
 
@@ -248,19 +246,20 @@ withFontSize fn = (\s i -> fn i s) <*> dc_font_size
 -- | Move rightwards by the unit width.
 --
 moveNext :: DjembeDraw ()
-moveNext = DjembeDraw $ \r -> moveBy (hvec r)
+moveNext = DjembeDraw $ \r -> moveby (hvec r)
 
 -- | Insert a graphic at /baseline center/ - this is the position 
 -- for notes.
 --
 insertBLC :: LocGraphic AfmUnit -> DjembeDraw ()
-insertBLC gf = DjembeDraw $ \_ -> insertl_ gf
+insertBLC gf = DjembeDraw $ \_ -> insertl_ gf >> return ()
 
 -- | Insert a graphic at /stem top/ - this is the position for 
 -- stems and beams (drawn with a pivot).
 --
 insertStemTop :: LocGraphic AfmUnit -> DjembeDraw ()
-insertStemTop gf = DjembeDraw $ \_ -> insertl_ (moveStart (vvec stem_top) gf)
+insertStemTop gf = DjembeDraw $ \_ -> 
+    insertl_ (moveStart (vvec stem_top) gf) >> return ()
 
 
 asksUnitWidth :: (AfmUnit -> a) -> DjembeDraw a

@@ -36,9 +36,9 @@ module Wumpus.Drawing.Extras.Grids
 
 
 import Wumpus.Drawing.Basis.DrawingPrimitives
-import Wumpus.Drawing.Basis.LocTrace
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+
 import Wumpus.Core                              -- package: wumpus-core
 import Wumpus.Core.Colour ( black )
 
@@ -200,11 +200,11 @@ verticalLines numv h uw props@(GridProps { gp_minor_subdivs = subs })
 minorMajor :: InterpretUnit u 
            => Int -> Int -> Vec2 u -> LocGraphic u -> LocGraphic u 
            -> LocGraphic u
-minorMajor count alt mv mnr mjr = execLocTrace (step count)
+minorMajor count alt mv mnr mjr = runLocTrace (step count)
   where
-    step n | n <= 0           = return ()
-           | n `mod` alt == 0 = insertl mjr >> moveBy mv >> step (n-1)
-           | otherwise        = insertl mnr >> moveBy mv >> step (n-1)
+    step n | n <= 0           = ureturn
+           | n `mod` alt == 0 = insertl mjr >> moveby mv >> step (n-1)
+           | otherwise        = insertl mnr >> moveby mv >> step (n-1)
  
 
 

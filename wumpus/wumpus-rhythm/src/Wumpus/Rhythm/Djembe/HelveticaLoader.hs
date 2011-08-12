@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Rhythm.Djembe.GraphicInterpretation
+-- Module      :  Wumpus.Rhythm.Djembe.HelveticaLoader
 -- Copyright   :  (c) Stephen Tetley 2010-2011
 -- License     :  BSD3
 --
@@ -10,7 +10,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC 
 --
--- Djembe
+-- Font loader
 --
 --------------------------------------------------------------------------------
 

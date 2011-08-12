@@ -23,6 +23,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Unit phantom type
     UNil(..)
   , ureturn
+  , uvoid
 
   -- * Non-contextual unit conversion.
   , ScalarUnit(..)
@@ -126,7 +127,7 @@ instance Translate (UNil u) where
 -- 
 -- or:
 -- 
--- return UNil
+-- > return UNil
 --
 -- rather than:
 --
@@ -135,6 +136,11 @@ instance Translate (UNil u) where
 --
 ureturn :: Monad m => m (UNil u)
 ureturn = return UNil
+
+-- | 'uvoid' runs a monadic computation and returns @UNil@.
+--
+uvoid :: Monad m => m a -> m (UNil u)
+uvoid ma = ma >> return UNil
 
 --------------------------------------------------------------------------------
 -- Non-contextual units

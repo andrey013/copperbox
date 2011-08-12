@@ -235,7 +235,7 @@ elaboratePosObject :: (Fractional u, Ord u, InterpretUnit u)
                    -> PosObject u a
 elaboratePosObject zdec raddr gf ma = decoratePosObject zdec fn ma
   where
-    fn ortt = moveStart (vtoOrigin raddr ortt) gf
+    fn ortt = moveStart (vtoRectAddress ortt raddr) gf
 
 
 

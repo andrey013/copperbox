@@ -98,7 +98,7 @@ import Prelude hiding ( lines )
 
 
 
-type PosNoteHead = PosObject AfmUnit
+type PosNoteHead = PosGraphic AfmUnit
 
 
 
@@ -106,7 +106,7 @@ type PosNoteHead = PosObject AfmUnit
 runPosNoteHead :: InterpretUnit u 
                => AfmUnit -> PosNoteHead -> LocGraphic u
 runPosNoteHead dx nh = 
-    uconvF $ ignoreAns $ moveStart (hvec dx) (runPosObject BLC nh)
+    uconvF $ ignoreAns $ moveStart (hvec dx) (runPosObject nh BLC)
 
 
 
@@ -130,7 +130,7 @@ runStem pos uw mf = uconvF $ moveStart (go_up stem_top) $ mf pos uw
 -- > flam_note_head is always drawn with north as the start point.
 -- 
 data NoteHeadDesc = NoteHeadDesc
-      { nhd_note_head               :: PosObject AfmUnit
+      { nhd_note_head               :: PosGraphic AfmUnit
       , nhd_high_low_glyph          :: LocGraphic AfmUnit
       , nhd_low_ydist               :: AfmUnit
       , nhd_high_ydist              :: AfmUnit
@@ -197,9 +197,9 @@ charDesc ch = NoteHeadDesc
   where
     -- Char glyphs can be drawn at north directly.
     --
-    glyph       = ignoreAns $ runPosObject BLC (posChar ch)
+    glyph       = ignoreAns $ runPosObject (posChar ch) BLC
     flam_glyph  = localize (scale_point_size 0.75) $ ignoreAns 
-                      $ runPosObject NN (posChar ch) 
+                      $ runPosObject (posChar ch) NN
 
 
 
@@ -275,7 +275,7 @@ noNote = nhd_note_head noNoteDesc
 
 strikeNoteHead :: NoteHeadDesc -> PosNoteHead
 strikeNoteHead desc = 
-    decoPosObject SUPERIOR body $ nhd_note_head desc
+    decoratePosObject SUPERIOR body $ nhd_note_head desc
   where
     body ortt  = let xmin = 1.5 * (or_x_minor ortt)
                      xmaj = 1.5 * (or_x_major ortt)
@@ -286,7 +286,7 @@ strikeNoteHead desc =
 
 underscoreNoteHead :: NoteHeadDesc -> PosNoteHead
 underscoreNoteHead desc = 
-    decoPosObject SUPERIOR body $ nhd_note_head desc
+    decoratePosObject SUPERIOR body $ nhd_note_head desc
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
@@ -302,8 +302,10 @@ lowNoteHead desc = lowBiNoteHead desc noNote
 highNoteHead :: NoteHeadDesc -> PosNoteHead
 highNoteHead desc = highBiNoteHead desc noNote
 
+
 highBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
-highBiNoteHead high note = elabPosObject SUPERIOR BLC gf note
+highBiNoteHead high note = 
+    elaboratePosObject SUPERIOR BLC gf note
   where
     dy  = nhd_high_ydist high
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph high
@@ -311,7 +313,8 @@ highBiNoteHead high note = elabPosObject SUPERIOR BLC gf note
 
 
 lowBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
-lowBiNoteHead low note = elabPosObject SUPERIOR BLC gf note 
+lowBiNoteHead low note = 
+    elaboratePosObject SUPERIOR BLC gf note 
   where
     dy  = nhd_low_ydist low
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph low
@@ -355,33 +358,33 @@ data StemPos = LEFT_EXT | STEM_INNER | RIGHT_EXT
 type Stem = StemPos -> (AfmUnit -> LocGraphic AfmUnit)
 
 single_stem_down :: PathSpec AfmUnit ()
-single_stem_down = lineto $ go_down stem_length
+single_stem_down = penline $ go_down stem_length
 
 
 single_stem_up :: PathSpec AfmUnit ()
-single_stem_up = lineto $ go_up stem_length
+single_stem_up = penline $ go_up stem_length
 
 -- | Draw either a single stem (inner) or nothing for the 
 -- extremities.
 --
 plainStem :: Stem
 plainStem LEFT_EXT      = const mempty
-plainStem STEM_INNER    = const $ execPathSpec single_stem_down
+plainStem STEM_INNER    = const $ runPathSpec_ single_stem_down PATH_OPEN 
 plainStem RIGHT_EXT     = const mempty
 
 
 
 flam_stem_left :: PathSpec AfmUnit ()
-flam_stem_left = lines [ go_up flam_vstem_length, go_up_right flam_xdist ]
+flam_stem_left = penlines [ go_up flam_vstem_length, go_up_right flam_xdist ]
 
 
 -- | Draw the left stem for both extremities. Draw the combined
 -- stem for the inners.
 --
 flamStem :: Stem
-flamStem LEFT_EXT      = const $ execPivot flam_stem_left (return ())
-flamStem STEM_INNER    = const $ execPivot flam_stem_left single_stem_down
-flamStem RIGHT_EXT     = const $ execPivot flam_stem_left (return ())
+flamStem LEFT_EXT      = const $ runPivot flam_stem_left (return ())
+flamStem STEM_INNER    = const $ runPivot flam_stem_left single_stem_down
+flamStem RIGHT_EXT     = const $ runPivot flam_stem_left (return ())
 
 
 data RightExt = LINE | MOVE
@@ -401,8 +404,8 @@ div_stem_right :: RightExt -> AfmUnit -> PathSpec AfmUnit ()
 div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
   where
     hw          = 0.5 * uw
-    step1 MOVE  = moveBy (go_right hw)
-    step1 LINE  = lineto (go_right hw) 
+    step1 MOVE  = moveby (go_right hw)
+    step1 LINE  = penline (go_right hw) 
 
     crossbar    :: LocGraphic AfmUnit
     crossbar    = moveStart startvec $ hline (-hw)
@@ -410,9 +413,9 @@ div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
 
 
 divStem :: Stem 
-divStem LEFT_EXT   uw = execPathSpec $ div_stem_right MOVE uw
-divStem STEM_INNER uw = execPivot single_stem_up (div_stem_right MOVE uw)
-divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
+divStem LEFT_EXT   uw = runPathSpec_ (div_stem_right MOVE uw) PATH_OPEN
+divStem STEM_INNER uw = runPivot single_stem_up (div_stem_right MOVE uw)
+divStem RIGHT_EXT  uw = runPathSpec_ (div_stem_right LINE uw) PATH_OPEN
 
 
 
@@ -429,25 +432,25 @@ divStem RIGHT_EXT  uw = execPathSpec $ div_stem_right LINE uw
 swing_stem_right :: RightExt -> PathSpec AfmUnit ()
 swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_down
   where
-    step1 MOVE  = moveBy (go_right flam_xdist)
-    step1 LINE  = lineto (go_right flam_xdist) 
+    step1 MOVE  = moveby (go_right flam_xdist)
+    step1 LINE  = penline (go_right flam_xdist) 
 
 
 swingAngle :: LocGraphic AfmUnit
-swingAngle = execPathSpec ang_path
+swingAngle = runPathSpec_ ang_path PATH_OPEN
   where
     w        = 0.8 * flam_xdist
     w1       = 0.9 * flam_xdist
-    ang_path =  moveBy (go_left w1 ^+^ go_down divstem_beam_ydrop)
-             >> lines [go_down_right w, go_down_left w]
+    ang_path =  moveby (go_left w1 ^+^ go_down divstem_beam_ydrop)
+             >> penlines [go_down_right w, go_down_left w]
 
 
 
 
 swingStem :: Stem
-swingStem LEFT_EXT   = const $ execPathSpec $ swing_stem_right MOVE
-swingStem STEM_INNER = const $ execPivot single_stem_up (swing_stem_right MOVE)
-swingStem RIGHT_EXT  = const $ execPathSpec $ swing_stem_right LINE
+swingStem LEFT_EXT   = const $ runPathSpec_ (swing_stem_right MOVE) PATH_OPEN
+swingStem STEM_INNER = const $ runPivot single_stem_up (swing_stem_right MOVE)
+swingStem RIGHT_EXT  = const $ runPathSpec_ (swing_stem_right LINE) PATH_OPEN
 
 
 
@@ -464,11 +467,11 @@ swingStem RIGHT_EXT  = const $ execPathSpec $ swing_stem_right LINE
 -- 
 beamBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
 beamBracket _  n | n < 1 = mempty
-beamBracket uw n         = execPivot pathl pathr
+beamBracket uw n         = runPivot pathl pathr
   where
-    w = uw * fromIntegral n 
-    pathl = lines [ go_up    stem_length ]
-    pathr = lines [ go_right w, go_down stem_length ]
+    w     = uw * fromIntegral n 
+    pathl = penlines [ go_up    stem_length ]
+    pathr = penlines [ go_right w, go_down stem_length ]
 
 
 
@@ -528,8 +531,8 @@ leadinAccent = StemAccent ( vertical_stalk <> triangle_tip)
   where
     vertical_stalk = vline leadin_mark_height
 
-    triangle_tip :: LocGraphic AfmUnit
-    triangle_tip   = drawClosedPath_ FILL $ evalPathSpec $ lines vpath
+    triangle_tip   :: LocGraphic AfmUnit
+    triangle_tip   = runPathSpec_ (penlines vpath) $ PATH_CLOSED FILL 
 
     vh             = 0.75 * leadin_mark_height
     vhmid          = 0.4  * vh
@@ -547,7 +550,7 @@ leadinAccent = StemAccent ( vertical_stalk <> triangle_tip)
 strokeAccent :: Accent
 strokeAccent = StemAccent $ moveStart (go_up accent_stroke_ydist) greater
   where
-    greater    = ignoreAns $ escCharLabel (CharEscName "greater") BLC
+    greater = ignoreAns $ runPosObject (posEscChar $ CharEscName "greater") BLC
 
 
 domHand :: Accent 
@@ -574,17 +577,17 @@ otherHand =
 -- is so the text can be drawn first.
 --
 pletBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
-pletBracket pw num = 
-    moveStart (go_up plet_ydist) $ execPathSpec pathspec
+pletBracket pw num = ignoreAns $ 
+    moveStart (go_up plet_ydist) $ runPathSpec (uvoid pathspec) PATH_OPEN
   where
     numw      = numberWidth num
     bhw       = 0.5 * (pw - numw)
     bhh       = 0.5 * (0.75 * helvetica_cap_height) 
 
 
-    pathspec  = vlineto bhh >> hlineto bhw        >> insertl_ text 
-                            >> moveBy (hvec numw) >> hlineto bhw 
-                            >> vlineto (-bhh)
+    pathspec  = vpenline bhh >> hpenline bhw       >> insertl_ text 
+                             >> moveby (hvec numw) >> hpenline bhw 
+                             >> vpenline (-bhh)
 
     text      = moveStart (vvec (-bhh) ^+^ hvec (0.5 * numw)) $ 
                   localize (scale_point_size 0.75) $ textline (show num) BLC
