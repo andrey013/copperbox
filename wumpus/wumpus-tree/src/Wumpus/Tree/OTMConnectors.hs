@@ -20,16 +20,15 @@ module Wumpus.Tree.OTMConnectors
   (
 
     radialOTM
-  , blankOTM
-  , familyOTM
-  , splayOTM
+--  , blankOTM
+--  , familyOTM
+--  , splayOTM
 
 
   ) where
 
 import Wumpus.Tree.Base
 
-import Wumpus.Drawing.Basis.RefTrace            -- package: wumpus-drawing
 import Wumpus.Drawing.Paths.Absolute
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -48,16 +47,10 @@ type OTMAnchorConn u a = TreeDirection -> u -> a -> [a] -> Graphic u
 
 radialOTM :: ( Real u, Floating u, InterpretUnit u
              , RadialAnchor a, CenterAnchor a, u ~ DUnit a) 
-          => OTMConn u a
-radialOTM = OTMConn { getOTMConn = \_ _ -> gf }
+          => a -> [a] -> TreeGraphic u
+radialOTM a as = uvoid $ mapM fn $ radialNodes a as
   where
-    find r1 rs im = both (lookup r1 im) 
-                         (fmap catMaybes $ mapM (\a -> lookup a im) rs)
-
-    gf r1 rs im   = zapQuery (find r1 rs im) >>= \(ma,xs) ->
-                    maybe mempty (\a  -> mconcat $ map fn $ radialNodes a xs) ma
- 
-    fn (a,b)      = straightLine a b
+    fn (a,b)      = insertci a b straightConnector 
 
 
 
@@ -85,9 +78,12 @@ anchorAngles f t = (theta0, theta1)
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
 
 
+{-
+
 blankOTM :: OTMConn u a
 blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
 
+-}
 
 -- 
 -- @radialConn@ cannot be represented as a connector from
@@ -99,12 +95,13 @@ blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
 -- 
 
 -- Note - can the \"crossbar\" of a famillyConn cannot be 
--- calcuated parent-to-arbitrary-child?
+-- calculated parent-to-arbitrary-child?
 -- 
--- Probably we need to know half the height step, rather than 
--- calculate it from anchors.
+-- Probably we need to know half the height step 
+-- (vcenter-to-vcenter), rather than calculate it from anchors.
 --
 
+{-
 
 
 -- Drawing a family connector is quite horrible, we need to know
@@ -189,6 +186,7 @@ splayOTMC dir _ a xs =
     fn p0 p1 = straightLine p0 p1
 
 
+-}
 
 --------------------------------------------------------------------------------
 

@@ -32,7 +32,6 @@ module Wumpus.Tree.DrawLoc
 import Wumpus.Tree.Base
 import Wumpus.Tree.Design
 
-import Wumpus.Drawing.Basis.RefTrace            -- package: wumpus-drawing
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -54,9 +53,10 @@ plainTree gf = fmap (PlainNode . gf)
 
 
 treeDrawing :: (Real u, Floating u, InterpretUnit u)
-            => TreeProps u a -> TreeSpec ix u a -> LocGraphic u
-treeDrawing props t1 = promoteLoc $ \pt ->
-    zapQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 props t2) pt
+            => (a -> [a] -> TreeGraphic u) 
+            -> TreeProps u -> TreeSpec ix u a -> LocGraphic u
+treeDrawing conn props t1 = promoteLoc $ \pt ->
+    liftQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 conn props t2) pt
 
 
 
@@ -78,23 +78,21 @@ xtree ix a kids = Node (RefNode ix a) kids
 
 
 phase1 :: InterpretUnit u
-       => TreeProps u a -> TreeSpec ix u a 
+       => (a -> [a] -> TreeGraphic u) 
+       -> TreeProps u -> TreeSpec ix u a 
        -> LocGraphic u -- ans should be LocImage u (M.Map ix a)
-phase1 props t1 = ignoreAns $ runRefTrace (step1 t1)
+phase1 otmconn props t1 = ignoreAns $ runTreeMonad (step1 t1) props
   where
     step1 (Node nd []) = insert1 nd
 
     step1 (Node nd xs) = insert1 nd    >>= \r1 -> 
                          mapM step1 xs >>= \rs ->
-                         linkRef (otmconn r1 rs) >>
+                         otmconn r1 rs >>
                          return r1
 
-    otmconn = let fn = getOTMConn $ tp_one_to_many_conn props
-              in fn (tp_direction props) (tp_level_distance props)
-
     -- TODO ix
-    insert1 (PlainNode gf)         = insertRef gf
-    insert1 (RefNode _ gf)         = insertRef gf
+    insert1 (PlainNode gf)         = insertli zeroPt gf
+    insert1 (RefNode _ gf)         = insertli zeroPt gf
 
 
 
@@ -105,8 +103,7 @@ phase1 props t1 = ignoreAns $ runRefTrace (step1 t1)
 -- so it can be drawn.
 --
 runDesign :: (Real u, Floating u, InterpretUnit u)
-          => TreeProps u a  -> TreeSpec ix u a 
-          -> Query u (TreeSpec ix u a)
+          => TreeProps u -> TreeSpec ix u a -> Query u (TreeSpec ix u a)
 runDesign props t1 =  
      fmap post <$> designOrientateScale props t1
   where
@@ -117,7 +114,7 @@ runDesign props t1 =
 
 
 designOrientateScale :: (Real u, Floating u, InterpretUnit u)
-                     => TreeProps u a  -> TreeSpec ix u a 
+                     => TreeProps u -> TreeSpec ix u a 
                      -> Query u (Tree (Point2 u, AnnoNode ix u a))
 designOrientateScale props t1 =  
     scaleTree sx sy (design t1) >>= \ans -> return $ orientateTree dir ans

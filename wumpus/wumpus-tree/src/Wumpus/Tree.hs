@@ -39,11 +39,10 @@ import Wumpus.Tree.VersionNumber
 
 
 standardTreeProps :: Fractional u 
-                  => u -> u -> OTMConn u a -> TreeProps u a
-standardTreeProps sx sy otm_conn = 
+                  => u -> u -> TreeProps u
+standardTreeProps sx sy = 
     TreeProps { tp_sibling_distance = sx 
               , tp_level_distance   = sy
-              , tp_one_to_many_conn = otm_conn         
               , tp_direction        = TREE_DOWN
               }  
 

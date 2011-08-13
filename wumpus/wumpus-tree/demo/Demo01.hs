@@ -41,8 +41,8 @@ tree_pic1 :: CtxPicture
 tree_pic1 = udrawTracing (0::Double) $ do
     --
     draw $ dcTextlabel "Tree 1:"        `at` (P2 0  550)
-    drawl (P2 10 500) $ treeDrawing props1 $ plainTree (const red_dot) tree1
-    --
+    drawl (P2 10 500) $ treeDrawing radialOTM props1 $ plainTree (const red_dot) tree1
+{-    --
     draw $ dcTextlabel "Tree 2:"       `at` (P2 200 550) 
     drawl (P2 300 550) $ treeDrawing props2 $ plainTree dotChar tree2
 
@@ -56,15 +56,18 @@ tree_pic1 = udrawTracing (0::Double) $ do
     --
     draw $ dcTextlabel "Tree 5:"        `at` zeroPt
     drawl (P2 320 0) $ treeDrawing props5 $ plainTree (const circ_dot) tree5
+-}
   where
     red_dot  = localize (fill_colour red) dotDisk
-    circ_dot = localize (stroke_colour black) dotCircle
+--    circ_dot = localize (stroke_colour black) dotCircle
 
-    props1 = tree_direction TREE_RIGHT $ standardTreeProps 30 30 radialOTM
-    props2 = standardTreeProps 30 40 familyOTM
-    props3 = tree_direction TREE_DOWN $ standardTreeProps 25 30 familyOTM
-    props4 = standardTreeProps 20 30 radialOTM
-    props5 = standardTreeProps 30 36 radialOTM
+    props1 = TreeProps { tp_level_distance   = 30
+                       , tp_sibling_distance = 30
+                       , tp_direction        = TREE_RIGHT }
+--    props2 = standardTreeProps 30 40 familyOTM
+--    props3 = tree_direction TREE_DOWN $ standardTreeProps 25 30 familyOTM
+--    props4 = standardTreeProps 20 30 radialOTM
+--    props5 = standardTreeProps 30 36 radialOTM
 
 
 tree1 :: Tree Char

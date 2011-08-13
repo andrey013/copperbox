@@ -193,12 +193,7 @@ instance UserStateM (GenPathSpec st u) where
 
 
 
--- | Note - location probably should return Point2 not Vec2 hence 
--- this uses @cheat@ temporarily.
---
--- TODO - sort out LocTraceM class.
--- 
-
+-- LocationM
 
 instance InterpretUnit u => LocationM (GenPathSpec st u) where
   location = locationImpl
@@ -208,6 +203,11 @@ instance InterpretUnit u => LocationM (GenPathSpec st u) where
 
 instance InterpretUnit u => CursorM (GenPathSpec st u) where
   moveby   = movebyImpl
+
+
+-- InsertlM
+
+instance InterpretUnit u => InsertlM (GenPathSpec st u) where
   insertl  = insertlImpl
 
            

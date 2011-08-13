@@ -12,8 +12,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Writer monad with imperative /turtle/ style movement to build 
--- LocGraphics.
+-- Drawing monad with immutable start point.
 --
 --------------------------------------------------------------------------------
 
@@ -24,7 +23,7 @@ module Wumpus.Basic.Kernel.Drawing.LocDrawing
     GenLocDrawing
   , LocDrawing
 
-  , LocDrawM
+  , LocDrawM(..)
 
   , runGenLocDrawing
   , evalGenLocDrawing
@@ -61,8 +60,8 @@ import Data.Monoid
 
 
 -- | 'GenLocDrawing' is a reader-writer-state monad, unlike 
--- 'GenLocTrace' there is no current point, instead point is an 
--- immutable /origin/.
+-- 'GenLocTrace' there is no updateable current point, instead 
+-- the point is an immutable /origin/.
 --
 -- The writer accumulates a graphical trace.
 --
@@ -145,12 +144,14 @@ instance InterpretUnit u => InsertlM (GenLocDrawing st u) where
 --------------------------------------------------------------------------------
 
 class LocDrawM (m :: * -> *) where
+  inserti  :: (Translate a, u ~ DUnit a, u ~ DUnit (m ())) => Image u a -> m a
   insertli :: u ~ DUnit (m ()) => Anchor u -> LocImage u a -> m a
   insertci :: u ~ DUnit (m ()) => 
               Anchor u -> Anchor u -> ConnectorImage u a -> m a
 
 
 instance InterpretUnit u => LocDrawM (GenLocDrawing st u) where
+  inserti  = insertiImpl
   insertli = insertliImpl
   insertci = insertciImpl
 
@@ -204,6 +205,13 @@ runLocDrawing_ ma = ignoreAns $ runLocDrawing ma
 
 
 --------------------------------------------------------------------------------
+
+insertiImpl :: (InterpretUnit u, Translate a, u ~ DUnit a) 
+            => Image u a -> GenLocDrawing st u a
+insertiImpl gf = GenLocDrawing $ \ctx pt s -> 
+    let (P2 x y) = dinterpF (dc_font_size ctx) pt 
+        (a,w1)   = runImage (translate x y gf) ctx
+    in (a,s,w1) 
 
 
 
