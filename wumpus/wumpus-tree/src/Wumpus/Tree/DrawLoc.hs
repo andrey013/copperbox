@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -52,7 +53,7 @@ plainTree :: (elt -> LocImage u a) -> Tree elt -> TreeSpec ix u a
 plainTree gf = fmap (PlainNode . gf)
 
 
-treeDrawing :: (Real u, Floating u, InterpretUnit u)
+treeDrawing :: (Real u, Floating u, Translate a, InterpretUnit u, u ~ DUnit a)
             => (a -> [a] -> TreeGraphic u) 
             -> TreeProps u -> TreeSpec ix u a -> LocGraphic u
 treeDrawing conn props t1 = promoteLoc $ \pt ->
@@ -77,7 +78,7 @@ xtree ix a kids = Node (RefNode ix a) kids
 
 
 
-phase1 :: InterpretUnit u
+phase1 :: (Translate a, InterpretUnit u, u ~ DUnit a)
        => (a -> [a] -> TreeGraphic u) 
        -> TreeProps u -> TreeSpec ix u a 
        -> LocGraphic u -- ans should be LocImage u (M.Map ix a)

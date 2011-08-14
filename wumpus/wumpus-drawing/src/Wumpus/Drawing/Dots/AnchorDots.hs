@@ -88,6 +88,14 @@ data DotAnchor u = DotAnchor
 
 type instance DUnit (DotAnchor u) = u
 
+instance Num u => Translate (DotAnchor u) where
+  translate x y (DotAnchor ctr radialF cardinalF) = 
+      DotAnchor { center_anchor   = translate x y ctr
+                , radial_anchor   = translate x y . radialF 
+                , cardinal_anchor = translate x y . cardinalF 
+                }
+
+
 instance CenterAnchor (DotAnchor u) where
   center (DotAnchor ca _ _) = ca
 

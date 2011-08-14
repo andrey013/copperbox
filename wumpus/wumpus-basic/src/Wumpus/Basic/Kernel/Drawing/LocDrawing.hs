@@ -50,7 +50,6 @@ import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 import Control.Monad
@@ -61,15 +60,16 @@ import Data.Monoid
 
 -- | 'GenLocDrawing' is a reader-writer-state monad, unlike 
 -- 'GenLocTrace' there is no updateable current point, instead 
--- the point is an immutable /origin/.
+-- the start point is supplied when the drawing is run and it 
+-- is translated by the components of the start point.
 --
 -- The writer accumulates a graphical trace.
 --
--- Essentially, 'GenLocDrawing' is a 'LocImage' object extended 
+-- Essentially, 'GenLocDrawing' is an 'Image' object extended 
 -- with user state.
 --
 newtype GenLocDrawing st u a = GenLocDrawing { 
-    getGenLocDrawing :: DrawingContext -> DPoint2 -> st -> (a, st, CatPrim)}
+    getGenLocDrawing :: DrawingContext -> st -> (a, st, CatPrim)}
 
 type instance DUnit  (GenLocDrawing st u a) = u
 type instance UState (GenLocDrawing st u)   = st
@@ -80,17 +80,17 @@ type LocDrawing u a = GenLocDrawing () u a
 -- Functor
 
 instance Functor (GenLocDrawing st u) where
-  fmap f ma = GenLocDrawing $ \ctx pt s -> 
-    let (a,s1,o) = getGenLocDrawing ma ctx pt s in (f a, s1, o)
+  fmap f ma = GenLocDrawing $ \ctx s -> 
+    let (a,s1,o) = getGenLocDrawing ma ctx s in (f a, s1, o)
 
 
 -- Applicative
 
 instance Applicative (GenLocDrawing st u) where
-  pure a    = GenLocDrawing $ \_   _  s -> (a, s, mempty)
-  mf <*> ma = GenLocDrawing $ \ctx pt s -> 
-                let (f,s1,o1) = getGenLocDrawing mf ctx pt s
-                    (a,s2,o2) = getGenLocDrawing ma ctx pt s1
+  pure a    = GenLocDrawing $ \_   s -> (a, s, mempty)
+  mf <*> ma = GenLocDrawing $ \ctx s -> 
+                let (f,s1,o1) = getGenLocDrawing mf ctx s
+                    (a,s2,o2) = getGenLocDrawing ma ctx s1
                 in (f a, s2, o1 `mappend` o2)
 
 
@@ -98,10 +98,10 @@ instance Applicative (GenLocDrawing st u) where
 -- Monad
 
 instance Monad (GenLocDrawing st u) where
-  return a  = GenLocDrawing $ \_   _  s -> (a, s, mempty)
-  ma >>= k  = GenLocDrawing $ \ctx pt s -> 
-                let (a,s1,o1) = getGenLocDrawing ma ctx pt s
-                    (b,s2,o2) = (getGenLocDrawing . k) a ctx pt s1
+  return a  = GenLocDrawing $ \_   s -> (a, s, mempty)
+  ma >>= k  = GenLocDrawing $ \ctx s -> 
+                let (a,s1,o1) = getGenLocDrawing ma ctx s
+                    (b,s2,o2) = (getGenLocDrawing . k) a ctx s1
                 in (b, s2, o1 `mappend` o2)
 
 
@@ -109,45 +109,47 @@ instance Monad (GenLocDrawing st u) where
 -- DrawingCtxM
 
 instance DrawingCtxM (GenLocDrawing st u) where
-  askDC           = GenLocDrawing $ \ctx _  s -> (ctx, s, mempty)
-  asksDC fn       = GenLocDrawing $ \ctx _  s -> (fn ctx, s, mempty)
-  localize upd ma = GenLocDrawing $ \ctx pt s -> 
-                      getGenLocDrawing ma (upd ctx) pt s
+  askDC           = GenLocDrawing $ \ctx s -> (ctx, s, mempty)
+  asksDC fn       = GenLocDrawing $ \ctx s -> (fn ctx, s, mempty)
+  localize upd ma = GenLocDrawing $ \ctx s -> 
+                      getGenLocDrawing ma (upd ctx) s
 
 
 
 -- UserStateM 
 
 instance UserStateM (GenLocDrawing st u) where
-  getState        = GenLocDrawing $ \_ _ s -> (s, s, mempty)
-  setState s      = GenLocDrawing $ \_ _ _ -> ((), s, mempty)
-  updateState upd = GenLocDrawing $ \_ _ s -> ((), upd s, mempty)
+  getState        = GenLocDrawing $ \_ s -> (s, s, mempty)
+  setState s      = GenLocDrawing $ \_ _ -> ((), s, mempty)
+  updateState upd = GenLocDrawing $ \_ s -> ((), upd s, mempty)
 
 
 -- Monoid
 
 instance Monoid a => Monoid (GenLocDrawing st u a) where
-  mempty           = GenLocDrawing $ \_   _ s -> (mempty, s, mempty)
-  ma `mappend` mb  = GenLocDrawing $ \ctx pt s -> 
-                       let (a,s1,w1) = getGenLocDrawing ma ctx pt s
-                           (b,s2,w2) = getGenLocDrawing mb ctx pt s1
+  mempty           = GenLocDrawing $ \_   s -> (mempty, s, mempty)
+  ma `mappend` mb  = GenLocDrawing $ \ctx s -> 
+                       let (a,s1,w1) = getGenLocDrawing ma ctx s
+                           (b,s2,w2) = getGenLocDrawing mb ctx s1
                        in (a `mappend` b, s2, w1 `mappend` w2)
-
-
-
-instance InterpretUnit u => InsertlM (GenLocDrawing st u) where
-  insertl   = insertlImpl
-
 
 
 
 --------------------------------------------------------------------------------
 
-class LocDrawM (m :: * -> *) where
-  inserti  :: (Translate a, u ~ DUnit a, u ~ DUnit (m ())) => Image u a -> m a
-  insertli :: u ~ DUnit (m ()) => Anchor u -> LocImage u a -> m a
-  insertci :: u ~ DUnit (m ()) => 
-              Anchor u -> Anchor u -> ConnectorImage u a -> m a
+class Monad m => LocDrawM (m :: * -> *) where
+  inserti   :: u ~ DUnit (m ()) => Image u a -> m a
+  inserti_  :: u ~ DUnit (m ()) => Image u a -> m ()
+  insertli  :: u ~ DUnit (m ()) => Anchor u -> LocImage u a -> m a
+  insertli_ :: u ~ DUnit (m ()) => Anchor u -> LocImage u a -> m ()
+  insertci  :: u ~ DUnit (m ()) => 
+               Anchor u -> Anchor u -> ConnectorImage u a -> m a
+  insertci_ :: u ~ DUnit (m ()) => 
+               Anchor u -> Anchor u -> ConnectorImage u a -> m ()
+
+  inserti_  gf       = inserti gf >> return ()
+  insertli_ pt gf    = insertli pt gf >> return ()
+  insertci_ p1 p2 gf = insertci p1 p2 gf >> return ()
 
 
 instance InterpretUnit u => LocDrawM (GenLocDrawing st u) where
@@ -160,91 +162,77 @@ instance InterpretUnit u => LocDrawM (GenLocDrawing st u) where
 -- Run functions
 
 
-runGenLocDrawing :: InterpretUnit u 
-               => GenLocDrawing st u a -> st -> LocImage u (a,st)
-runGenLocDrawing ma st = promoteLoc $ \pt -> 
+runGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+                 => GenLocDrawing st u a -> st -> LocImage u (a,st)
+runGenLocDrawing ma st = promoteLoc $ \(P2 x y) -> 
     askDC >>= \ctx ->
-    let dpt       = normalizeF (dc_font_size ctx) pt
-        (a,s1,w1) = getGenLocDrawing ma ctx dpt st
-    in replaceAns (a,s1) $ primGraphic w1
+    let (a,s1,w1) = getGenLocDrawing ma ctx st
+        ans       = translate x y a 
+        dv1       = normalizeF (dc_font_size ctx) (V2 x y)
+    in replaceAns (ans,s1) $ primGraphic $ cpmove dv1 w1
 
 
 
 
 -- | Forget the user state LocImage, just return the /answer/.
 --
-evalGenLocDrawing :: InterpretUnit u 
-                => GenLocDrawing st u a -> st -> LocImage u a
+evalGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+                  => GenLocDrawing st u a -> st -> LocImage u a
 evalGenLocDrawing ma st = fmap fst $ runGenLocDrawing ma st
 
 
 -- | Forget the /answer/, just return the user state.
 --
-execGenLocDrawing :: InterpretUnit u 
-                => GenLocDrawing st u a -> st -> LocImage u st 
+execGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+                  => GenLocDrawing st u a -> st -> LocImage u st 
 execGenLocDrawing ma st = fmap snd $ runGenLocDrawing ma st
 
 
-stripGenLocDrawing :: InterpretUnit u 
-                 => GenLocDrawing st u a -> st -> LocQuery u (a,st)
+stripGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+                   => GenLocDrawing st u a -> st -> LocQuery u (a,st)
 stripGenLocDrawing ma st = stripLocImage $ runGenLocDrawing ma st 
 
 
 -- | Simple version of 'runGenLocDrawing' - run a 'LocDrawing' without
 -- user state.
 --
-runLocDrawing :: InterpretUnit u 
-            => LocDrawing u a -> LocImage u a
+runLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+              => LocDrawing u a -> LocImage u a
 runLocDrawing ma = evalGenLocDrawing ma ()
 
 
-runLocDrawing_ :: InterpretUnit u 
-             => LocDrawing u a -> LocGraphic u 
+runLocDrawing_ :: (Translate a, InterpretUnit u, u ~ DUnit a) 
+               => LocDrawing u a -> LocGraphic u 
 runLocDrawing_ ma = ignoreAns $ runLocDrawing ma
 
 
 
 --------------------------------------------------------------------------------
 
-insertiImpl :: (InterpretUnit u, Translate a, u ~ DUnit a) 
+insertiImpl :: InterpretUnit u 
             => Image u a -> GenLocDrawing st u a
-insertiImpl gf = GenLocDrawing $ \ctx pt s -> 
-    let (P2 x y) = dinterpF (dc_font_size ctx) pt 
-        (a,w1)   = runImage (translate x y gf) ctx
-    in (a,s,w1) 
+insertiImpl gf = GenLocDrawing $ \ctx s -> 
+    let (a,w1)   = runImage gf ctx in (a,s,w1) 
 
 
 
-insertlImpl :: InterpretUnit u 
-            => LocImage u a -> GenLocDrawing st u a
-insertlImpl gf = GenLocDrawing $ \ctx pt s -> 
-    let upt    = dinterpF (dc_font_size ctx) pt 
-        (a,w1) = runLocImage gf ctx upt
-    in (a,s,w1) 
-
-
-
-
--- | Helper - change points to vectors.
--- 
-vecPt :: Point2 u -> Vec2 u
-vecPt (P2 x y) = V2 x y
 
 
 insertliImpl :: InterpretUnit u
              => Anchor u -> LocImage u a -> GenLocDrawing st u a
-insertliImpl p1 gf = GenLocDrawing $ \ctx pt s -> 
-    let upt    = dinterpF (dc_font_size ctx) pt 
-        (a,w1) = runLocImage gf ctx (upt .+^ vecPt p1) 
-    in (a,s,w1) 
+insertliImpl p1 gf = GenLocDrawing $ \ctx s -> 
+    let (a,w1) = runLocImage gf ctx p1 in (a,s,w1) 
 
 
+
+-- This is not right - if I\'ve taken an anchor from an object
+-- within the relative coord system, the anchor points are already
+-- translated respective to the origin. This implementation of 
+-- @insertci@ adds the translation a second time.
 
 
 insertciImpl :: InterpretUnit u 
              => Anchor u -> Anchor u -> ConnectorImage u a 
              -> GenLocDrawing st u a
-insertciImpl p1 p2 gf = GenLocDrawing $ \ctx pt s -> 
-    let upt    = dinterpF (dc_font_size ctx) pt
-        (a,w1) = runConnectorImage gf ctx (upt .+^ vecPt p1) (upt .+^ vecPt p2)
-    in (a,s,w1) 
+insertciImpl p1 p2 gf = GenLocDrawing $ \ctx s -> 
+    let (a,w1) = runConnectorImage gf ctx p1 p2 in (a,s,w1) 

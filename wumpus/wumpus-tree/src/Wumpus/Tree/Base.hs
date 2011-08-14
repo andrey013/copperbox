@@ -108,7 +108,7 @@ instance InterpretUnit u => LocDrawM (TreeMonad u) where
   insertci p1 p2 gf = TreeMonad $ \_ -> insertci p1 p2 gf
 
 
-runTreeMonad :: InterpretUnit u 
+runTreeMonad :: (Translate a, InterpretUnit u, u ~ DUnit a)
              => TreeMonad u a -> TreeProps u -> LocImage u a
 runTreeMonad ma props = runLocDrawing $ getTreeMonad ma props
 
