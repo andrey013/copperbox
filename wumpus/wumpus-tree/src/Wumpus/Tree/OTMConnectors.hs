@@ -20,10 +20,9 @@ module Wumpus.Tree.OTMConnectors
   (
 
     radialOTM
---  , blankOTM
---  , familyOTM
---  , splayOTM
-
+  , blankOTM
+  , familyOTM
+  , splayOTM
 
   ) where
 
@@ -41,16 +40,14 @@ import Data.Maybe
 import Data.Monoid
 import Prelude hiding ( lookup )
 
-type OTMAnchorConn u a = TreeDirection -> u -> a -> [a] -> Graphic u
-
 
 
 radialOTM :: ( Real u, Floating u, InterpretUnit u
-             , RadialAnchor a, CenterAnchor a, u ~ DUnit a) 
-          => a -> [a] -> TreeGraphic u
-radialOTM a as = uvoid $ mapM fn $ radialNodes a as
+             , RadialAnchor node, CenterAnchor node, u ~ DUnit node) 
+          => OTMAnchorConn node u 
+radialOTM _ _ a as = mconcat $ map fn $ radialNodes a as
   where
-    fn (a,b)      = insertci a b straightConnector 
+    fn (s,t)      = connect s t straightConnector
 
 
 
@@ -78,12 +75,12 @@ anchorAngles f t = (theta0, theta1)
     theta1  = if theta0 < pi then theta0 + pi else theta0 - pi
 
 
-{-
 
-blankOTM :: OTMConn u a
-blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
 
--}
+blankOTM :: OTMAnchorConn node u
+blankOTM _ _ _ _ = mempty
+
+
 
 -- 
 -- @radialConn@ cannot be represented as a connector from
@@ -101,7 +98,7 @@ blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
 -- (vcenter-to-vcenter), rather than calculate it from anchors.
 --
 
-{-
+
 
 
 -- Drawing a family connector is quite horrible, we need to know
@@ -110,20 +107,11 @@ blankOTM = OTMConn { getOTMConn = \_ _ _ _ -> mempty }
 
 
 familyOTM :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
-             , CenterAnchor a, CardinalAnchor a 
-             , u ~ DUnit a ) 
-          => OTMConn u a
-familyOTM = OTMConn { getOTMConn = gf }
-  where
-    gf dir h = oneToMany (\a as -> familyOTMC dir h a as)
-
-
-familyOTMC :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
-              , CenterAnchor a, CardinalAnchor a 
-              , u ~ DUnit a ) 
-           => OTMAnchorConn u a
-familyOTMC _   _ _ [] = mempty
-familyOTMC dir h a xs = 
+             , CenterAnchor node, CardinalAnchor node
+             , u ~ DUnit node ) 
+          => OTMAnchorConn node u
+familyOTM _   _ _ [] = mempty
+familyOTM dir h a xs = 
     let hh        = 0.5 * h
         (paF,caF) = famAnchors dir
         ptick     = outtick hh (center a) (paF a)
@@ -163,30 +151,22 @@ linkAll [] = Nothing
 linkAll xs = Just $ optimizeLines $ vertexPath xs
 
 
+
+
+
 splayOTM :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
-            , CenterAnchor a, CardinalAnchor a 
-            , u ~ DUnit a ) 
-         => OTMConn u a
-splayOTM = OTMConn { getOTMConn = gf }
-  where
-    gf dir h = oneToMany (\a as -> splayOTMC dir h a as)
-
-
-
-splayOTMC :: ( Real u, Floating u, Ord u, Tolerance u, InterpretUnit u
-              , CenterAnchor a, CardinalAnchor a 
-              , u ~ DUnit a ) 
-           => OTMAnchorConn u a
-splayOTMC _   _ _ [] = mempty
-splayOTMC dir _ a xs = 
-    let (paF,caF) = famAnchors dir
-        p0        = paF a
-    in mconcat $ map (\x -> fn p0 (caF x)) xs
+            , CenterAnchor node, CardinalAnchor node 
+            , u ~ DUnit node) 
+          => OTMAnchorConn node u
+splayOTM _   _ _ [] = mempty
+splayOTM dir _ a xs = let (paF,caF) = famAnchors dir
+                          p0        = paF a
+                      in mconcat $ map (\x -> fn p0 (caF x)) xs
   where
     fn p0 p1 = straightLine p0 p1
 
 
--}
+
 
 --------------------------------------------------------------------------------
 

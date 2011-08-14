@@ -22,9 +22,6 @@ module Wumpus.Tree
   , module Wumpus.Tree.OTMConnectors
   , module Wumpus.Tree.VersionNumber
 
-  -- * Definitions
-  , standardTreeProps
-
   )
   where
 
@@ -33,16 +30,4 @@ import Wumpus.Tree.DrawLoc
 import Wumpus.Tree.OTMConnectors
 import Wumpus.Tree.VersionNumber
 
-
-
-
-
-
-standardTreeProps :: Fractional u 
-                  => u -> u -> TreeProps u
-standardTreeProps sx sy = 
-    TreeProps { tp_sibling_distance = sx 
-              , tp_level_distance   = sy
-              , tp_direction        = TREE_DOWN
-              }  
 

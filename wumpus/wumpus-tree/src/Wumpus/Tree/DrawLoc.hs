@@ -53,11 +53,10 @@ plainTree :: (elt -> LocImage u a) -> Tree elt -> TreeSpec ix u a
 plainTree gf = fmap (PlainNode . gf)
 
 
-treeDrawing :: (Real u, Floating u, Translate a, InterpretUnit u, u ~ DUnit a)
-            => (a -> [a] -> TreeGraphic u) 
-            -> TreeProps u -> TreeSpec ix u a -> LocGraphic u
-treeDrawing conn props t1 = promoteLoc $ \pt ->
-    liftQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 conn props t2) pt
+treeDrawing :: (Real u, Floating u, Translate node, InterpretUnit u, u ~ DUnit node)
+            => TreeProps node u -> TreeSpec ix u node -> LocGraphic u
+treeDrawing props t1 = promoteLoc $ \pt ->
+    liftQuery (runDesign props t1) >>= \t2 -> applyLoc (phase1 props t2) pt
 
 
 
@@ -78,17 +77,15 @@ xtree ix a kids = Node (RefNode ix a) kids
 
 
 
-phase1 :: (Translate a, InterpretUnit u, u ~ DUnit a)
-       => (a -> [a] -> TreeGraphic u) 
-       -> TreeProps u -> TreeSpec ix u a 
-       -> LocGraphic u -- ans should be LocImage u (M.Map ix a)
-phase1 otmconn props t1 = ignoreAns $ runTreeMonad (step1 t1) props
+phase1 :: (Translate node, InterpretUnit u, u ~ DUnit node)
+       => TreeProps node u -> TreeSpec ix u node -> LocGraphic u
+phase1 props t1 = ignoreAns $ runTreeMonad (step1 t1) props
   where
     step1 (Node nd []) = insert1 nd
 
     step1 (Node nd xs) = insert1 nd    >>= \r1 -> 
                          mapM step1 xs >>= \rs ->
-                         otmconn r1 rs >>
+                         drawConn r1 rs >>
                          return r1
 
     -- TODO ix
@@ -104,7 +101,7 @@ phase1 otmconn props t1 = ignoreAns $ runTreeMonad (step1 t1) props
 -- so it can be drawn.
 --
 runDesign :: (Real u, Floating u, InterpretUnit u)
-          => TreeProps u -> TreeSpec ix u a -> Query u (TreeSpec ix u a)
+          => TreeProps node u -> TreeSpec ix u a -> Query u (TreeSpec ix u a)
 runDesign props t1 =  
      fmap post <$> designOrientateScale props t1
   where
@@ -115,7 +112,7 @@ runDesign props t1 =
 
 
 designOrientateScale :: (Real u, Floating u, InterpretUnit u)
-                     => TreeProps u -> TreeSpec ix u a 
+                     => TreeProps node u -> TreeSpec ix u a 
                      -> Query u (Tree (Point2 u, AnnoNode ix u a))
 designOrientateScale props t1 =  
     scaleTree sx sy (design t1) >>= \ans -> return $ orientateTree dir ans
