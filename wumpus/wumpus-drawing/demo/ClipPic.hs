@@ -46,14 +46,20 @@ clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
     drawl (P2   0 320) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path01))
     drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
-                         (drawClosedPath FILL =<< zapLocQ (extrPathSpec path02))
-    drawl (P2 384 416) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path03))
-    drawl (P2 328 512) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path04))
+                         (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path02))
+    drawl (P2 384 416) $ (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path03))
+    drawl (P2 328 512) $ (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path04))
     drawl (P2   0   0) $ clip1
     drawl (P2 112   0) $ clip2
     drawl (P2 384  96) $ clip3
     drawl (P2 328 192) $ clip4
 
+
+extrPathSpec :: InterpretUnit u 
+             => PathSpec u a -> LocQuery u (RelPath u)
+extrPathSpec spec = fmap post $ stripGenPathSpec spec () (PATH_CLOSED STROKE)
+  where
+    post (_,_,c) = c
 
 background :: RGBi -> LocGraphic Double
 background rgb = promoteLoc $ \_ -> 
@@ -103,33 +109,33 @@ type UPathSpec u = PathSpec u (UNil u)
 -- zeroPt
 path01 :: UPathSpec Double
 path01 =  do 
-    hlineto 80 
-    lineto (vec 112 160) 
-    lineto (vec (-112) 160)
-    hlineto (-80)
-    lineto (vec 112 (-160))
-    lineto (vec (-112) (-160))
+    hpenline 80 
+    penline (vec 112 160) 
+    penline (vec (-112) 160)
+    hpenline (-80)
+    penline (vec 112 (-160))
+    penline (vec (-112) (-160))
     ureturn 
 
 
 -- (P2 112 0)
 path02 :: UPathSpec Double
 path02 = do 
-    hlineto 80 
-    lineto (vec 72 112)
-    lineto (vec 72 (-112))
-    hlineto 80
-    lineto (vec (-224) 320)
-    hlineto (-80)
-    lineto (vec 112 (-160))
-    lineto (vec (-112) (-160))
+    hpenline 80 
+    penline (vec 72 112)
+    penline (vec 72 (-112))
+    hpenline 80
+    penline (vec (-224) 320)
+    hpenline (-80)
+    penline (vec 112 (-160))
+    penline (vec (-112) (-160))
     ureturn
 
 -- (P2 384 96) 
 path03 :: UPathSpec Double
-path03 = hlineto 96 >> vlineto 56 >> hlineto (-136) >> ureturn
+path03 = hpenline 96 >> vpenline 56 >> hpenline (-136) >> ureturn
 
 -- (P2 328 192)
 path04 :: UPathSpec Double
-path04 = hlineto 152 >> vlineto 56 >> hlineto (-192) >> ureturn
+path04 = hpenline 152 >> vpenline 56 >> hpenline (-192) >> ureturn
 

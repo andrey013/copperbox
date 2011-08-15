@@ -39,6 +39,8 @@ description:
     @Objects.Image@. Moved @Chain@, @CtxPicture@ and 
     @TraceDrawing@ into the new @Drawing@ folder.
   .
+  * Added @Wumpus.Basic.Kernel.Drawing.LocDrawing@ module.
+  . 
   * Rationalized the combinators exported by the drawing objects 
     @Image@, @LocImage@, @LocThetaImage@ and @Connector@.
   . 

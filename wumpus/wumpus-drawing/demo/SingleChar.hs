@@ -6,7 +6,6 @@ module SingleChar where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.SimpleDots
-import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

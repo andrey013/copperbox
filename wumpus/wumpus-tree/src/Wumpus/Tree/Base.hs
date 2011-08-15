@@ -20,7 +20,6 @@ module Wumpus.Tree.Base
   (
 
     TreeMonad
-  , TreeGraphic
   , OTMAnchorConn
   , TreeProps(..)
   , TreeDirection(..)
@@ -44,7 +43,6 @@ data TreeMonad node u a = TreeMonad {
 
 type instance DUnit (TreeMonad node u a) = u
 
-type TreeGraphic u = TreeMonad u (UNil u)
 
 type OTMAnchorConn node u = TreeDirection -> u -> node -> [node] -> Graphic u
 

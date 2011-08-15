@@ -63,7 +63,7 @@ automata = udrawTracing (0::Double) $ do
 infixr 1 `mat`
 
 mat :: InterpretUnit u => LocImage u a -> Query u (Point2 u) -> Image u a
-mat img mq = zapQuery mq >>= \pt -> img `at` pt
+mat img mq = liftQuery mq >>= \pt -> img `at` pt
 
 state :: String -> DLocImage DCircle
 state ss = 
@@ -100,7 +100,7 @@ astraightconn p0 p1 = connect p0 p1 (rightArrow tri45 connline)
 arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop ctr p1 = 
-    zapQuery (loop zradius ctr zincl) >>= \absp -> 
+    liftQuery (loop zradius ctr zincl) >>= \absp -> 
     rightArrowPath tri45 absp 
   where
     v1      = pvec ctr p1
