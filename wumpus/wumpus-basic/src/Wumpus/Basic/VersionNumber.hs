@@ -23,7 +23,7 @@ module Wumpus.Basic.VersionNumber
 
 -- | Version number
 --
--- > (0,21,0)
+-- > (0,22,0)
 --
 wumpus_basic_version :: (Int,Int,Int)
-wumpus_basic_version = (0,21,0)
+wumpus_basic_version = (0,22,0)

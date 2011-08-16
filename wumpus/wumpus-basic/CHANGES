@@ -1,4 +1,19 @@
 
+0.20.0 to 0.21.0:
+
+  * The code from the @Kernel.Base.UserState@ module has been 
+    moved to the module @Kernel.Drawing.Basis@.
+
+  * Moved @Image@ and @Query@ from @Objects.Basis@ to new module
+    @Objects.Image@. Moved @Chain@, @CtxPicture@ and 
+    @TraceDrawing@ into the new @Drawing@ folder.
+
+  * Added @Wumpus.Basic.Kernel.Drawing.LocDrawing@ module.
+ 
+  * Rationalized the combinators exported by the drawing objects 
+    @Image@, @LocImage@, @LocThetaImage@ and @Connector@.
+ 
+
 0.18.0 to 0.20.0 (no release numbered v0.19.0):
 
   * Added text advance-vector calculations to @QueryDC@ - 

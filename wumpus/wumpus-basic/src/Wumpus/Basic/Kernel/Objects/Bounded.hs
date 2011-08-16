@@ -38,6 +38,8 @@ module Wumpus.Basic.Kernel.Objects.Bounded
 
   , bbrectangle
 
+  , boundedRect
+
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
@@ -59,6 +61,8 @@ import Data.Monoid
 type BoundedGraphic u           = Image u (BoundingBox u)
 type BoundedLocGraphic u        = LocImage u (BoundingBox u)
 type BoundedLocThetaGraphic u   = LocThetaImage u (BoundingBox u)
+
+
 
 
 -- | 'centerOrthoBBox' : @ theta * bbox -> BBox @
@@ -87,7 +91,7 @@ centerOrthoBBox theta bb = traceBoundary $ map (rotateAbout theta ctr) ps
 -- the minimum bounding box with both the bottom-left and 
 -- upper-right corners at the implicit start point.
 --
-emptyBoundedLocGraphic :: InterpretUnit u => LocImage u (BoundingBox u)
+emptyBoundedLocGraphic :: InterpretUnit u => BoundedLocGraphic u 
 emptyBoundedLocGraphic = promoteLoc $ \pt -> 
     replaceAns (BBox pt pt) $ primGraphic mempty
 
@@ -102,7 +106,7 @@ emptyBoundedLocGraphic = promoteLoc $ \pt ->
 -- bottom-left and upper-right corners at the implicit start point 
 --
 emptyBoundedLocThetaGraphic :: InterpretUnit u 
-                            => LocThetaImage u (BoundingBox u)
+                            => BoundedLocThetaGraphic u
 emptyBoundedLocThetaGraphic = promoteLocTheta $ \pt _ -> 
     replaceAns (BBox pt pt) $ primGraphic mempty
 
@@ -155,7 +159,9 @@ illustrateBoundedLocThetaGraphic gf = aelaborate gf fn
 
 
 
-
+-- | Draw a bounding box as a stroked rectangle with 
+-- dotted lines.
+--
 bbrectangle :: InterpretUnit u => BoundingBox u -> Graphic u
 bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     | llx == urx && lly == ury = mempty `at` p1
@@ -167,3 +173,21 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
     cross         = straightLine p1 p2 
                       `mappend` straightLine (P2 llx ury) (P2 urx lly)
 
+
+
+-- | 'boundedRect' : @ style * width * height -> LocGraphic @
+--
+-- Create a stroked rectangle - the implicit start point is 
+-- /bottom-left/, return the bounding box of the rectangle as the 
+-- answer.
+-- 
+-- The line properties (colour, pen thickness, etc.) are taken 
+-- from the implicit 'DrawingContext'.
+-- 
+boundedRect :: InterpretUnit u 
+            => DrawStyle -> u -> u -> BoundedLocGraphic u 
+boundedRect style w h = promoteLoc $ \pt@(P2 x y) -> 
+    let bb = BBox pt (P2 (x + w) (y + h))
+    in replaceAns bb $ applyLoc (dcRectangle style w h) pt
+
+ 

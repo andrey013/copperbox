@@ -34,41 +34,34 @@ path_pic = drawTracing $ do
 
 
 path1 :: DLocGraphic
-path1 = localize (stroke_colour dark_red) $ execPathSpec path_spec1
+path1 = localize (stroke_colour dark_red) $ runPathSpec_ path_spec1 PATH_OPEN
 
 
 
 path2 :: DLocGraphic 
 path2 = ignoreAns $ localize (stroke_colour red) $ 
-    obliterate2 (evalPathSpec path_spec1) >>= drawClosedPath FILL
+    obliterate (evalGenPathSpec path_spec1 () PATH_OPEN) >>= \(_,path) -> 
+    drawClosedPath FILL path
 
 makePD :: PathSpec Double a -> DLocGraphic
-makePD spec = localize (stroke_colour red) $ ignoreAns $ execPathSpec spec
+makePD spec = localize (stroke_colour red) $ runPathSpec_ spec PATH_OPEN
 
 
--- Note - current definition of @obliterate@ in Wumpus-Basic is
--- not satisfactory. A better definition would replace the 
--- collected CatPrim with mempty.
---
--- This is a place holder.
---
-obliterate2 :: a -> a
-obliterate2 = id
 
 path_spec1 :: PathSpec Double (UNil Double)
 path_spec1 = do
-    lineto   (V2 0 50)
-    lineto   (V2 50 0)
+    penline  (V2 0 50)
+    penline  (V2 50 0)
     insertl  disk1
-    moveBy   (V2 0 (-50))
-    lineto   (V2 100 0) 
+    moveby   (V2 0 (-50))
+    penline  (V2 100 0) 
     vamp     vamp1  
-    lineto   (V2 20 0)
+    penline  (V2 20 0)
 
     localPen (stroke_colour blue) $ do 
          { breakPath 
-         ; lineto   (V2 50 0)
-         ; lineto   (V2 0 (-40))
+         ; penline  (V2 50 0)
+         ; penline  (V2 0 (-40))
          ; cycleSubPath FILL_STROKE
          }
     ureturn

@@ -507,7 +507,7 @@ rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 
 
 
--- | 'strokedRectangle' : @ width * height -> LocGraphic @
+-- | 'strokedRectangle' : @ style * width * height -> LocGraphic @
 --
 -- Create a stroked rectangle 'LocGraphic' - the implicit point is 
 -- bottom-left. 

@@ -17,14 +17,11 @@
 -- Anchor points on shapes, bounding boxes, etc.
 --
 -- Anchors are addressable positions, an examplary use is taking
--- anchors on node shapes to get the start and end points for 
--- connectors in a network (graph) diagram.
+-- anchors on node shapes to get the in-bound and out-bound points 
+-- for connectors in a network (graph) diagram.
 -- 
--- \*\* WARNING \*\* - The API here needs some thought as to a
--- good balance of the type classes - in a nutshell \"are corners 
--- better than cardinals\". Originally I tried to follow how I 
--- understand the TikZ anchors to work, but this is perhaps not 
--- ideal for dividing into type-classes.
+-- \*\* WARNING \*\* - the API here probably needs some more 
+-- thought.
 --
 --------------------------------------------------------------------------------
 
