@@ -26,7 +26,7 @@ module Wumpus.Drawing.Paths.Base.AbsPath
 
 
   -- * Construction
-  , empty
+  , emptyPath
   , line1
   , curve1
   , vertexPath
@@ -38,13 +38,11 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   , length
 
   -- * Concat and extension
-  , append
-  , consLineTo
+  , snocLine
   , snocLineTo
-  , consCurveTo
+  , snocCurve
   , snocCurveTo
 
-  , pathconcat
 
   -- * Conversion
   , toPrimPath
@@ -84,6 +82,8 @@ module Wumpus.Drawing.Paths.Base.AbsPath
   , pathViewR
 
   , optimizeLines
+
+  , jointedAppend       -- temporary export
 
   , roundTrail
   , roundInterior
@@ -129,6 +129,8 @@ import Prelude hiding ( null, length )
 
 
 
+
+
 -- | Absolute path data type.
 
 data AbsPath u = AbsPath 
@@ -167,6 +169,26 @@ data AbsPathSeg u = AbsLineSeg  u (Vec2 u)
 
 type instance DUnit (AbsPathSeg u) = u
 
+-- 
+-- DESIGN NOTE
+--
+-- No monoid instance. AbsPaths dont support empty or even concat 
+-- naturally.
+--
+-- Concat is troublesome because AbsPaths are always located 
+-- within a frame.
+--
+-- They can support:
+--
+-- a. Concat with a join between the end of the first path and the
+-- start of the second.
+-- 
+-- b. Shape preserving concat - the second path is moved so it 
+-- continues from the end point of the first path.
+--
+-- It is conceptually simpler to think about extension (adding to 
+-- the path tip) rather than concatenation. 
+--
 
 --------------------------------------------------------------------------------
 
@@ -192,6 +214,8 @@ instance Num u => Translate (AbsPath u) where
   translate x y (AbsPath len sp se ep) = 
       AbsPath len (translate x y sp) se (translate x y ep)
 
+
+
 --------------------------------------------------------------------------------
 -- Construction
 
@@ -203,8 +227,8 @@ instance Num u => Translate (AbsPath u) where
 --
 -- Thus AbsPath operates as a semigroup but not a monoid.
 --
-empty :: Floating u => Point2 u -> AbsPath u
-empty = zeroPath
+emptyPath :: Floating u => Point2 u -> AbsPath u
+emptyPath = zeroPath
 
 
 -- | Create an absolute path as a straight line between the 
@@ -236,10 +260,10 @@ vertexPath :: (Floating u, Ord u, Tolerance u)
            => [Point2 u] -> AbsPath u
 vertexPath []       = error "traceLinePoints - empty point list."
 vertexPath [a]      = line1 a a
-vertexPath (a:b:xs) = step (line1 a b) b xs
+vertexPath (a:b:xs) = step (line1 a b) xs
   where
-    step acc _ []     = acc
-    step acc e (y:ys) = step (acc `append` line1 e y) y ys
+    step acc []     = acc
+    step acc (y:ys) = step (snocLineTo acc y) ys
 
 
 
@@ -253,10 +277,10 @@ vertexPath (a:b:xs) = step (line1 a b) b xs
 --
 curvePath :: (Floating u, Ord u, Tolerance u) 
           => [Point2 u] -> AbsPath u
-curvePath (a:b:c:d:xs) = step (curve1 a b c d) d xs
+curvePath (a:b:c:d:xs) = step (curve1 a b c d) xs
   where
-    step acc p0 (x:y:z:zs) = step (acc `append` curve1 p0 x y z) z zs
-    step acc _  _          = acc
+    step acc (x:y:z:zs) = step (snocCurveTo acc x y z) zs
+    step acc _          = acc
 
 curvePath _            = error "curvePath - less than 4 elems."
 
@@ -299,41 +323,22 @@ length (AbsPath u _ _ _) = u
 
 
 --------------------------------------------------------------------------------
--- Concat
+-- Extension
 
-infixr 1 `append`
 
--- | Append two AbsPaths. 
--- 
--- If the end of the first path and the start of the second path
--- coalesce then the paths are joined directly, otherwise, a
--- straight line segment is added to join the paths.
--- 
--- Neither path is /moved/. Consider 'RelPath' if you need 
--- different concatenation.
+
+-- | Extend the path with a straight line segment from the 
+-- end-point defined by the supplied vector.
 --
-append :: (Floating u, Ord u, Tolerance u) 
-       => AbsPath u -> AbsPath u -> AbsPath u
-append (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
-    | end1 == start2 = AbsPath (len1+len2) start1 (se1 `join` se2) end2 
-    | otherwise      = AbsPath total_len start1 segs end2 
-  where
-    joint     = lineSegment end1 start2
-    total_len = len1 + len2 + segmentLength joint
-    segs      = se1 `join` (cons joint se2)
+snocLine :: Floating u => AbsPath u -> Vec2 u -> AbsPath u
+snocLine (AbsPath u sp se ep) v1 = 
+  let u1        = vlength v1 
+      tail_line = AbsLineSeg u1 v1
+  in AbsPath (u + u1) sp (JL.snoc se tail_line) (ep .+^ v1)
 
 
--- | Prefix the path with a straight line segment from the 
--- supplied point.
---
-consLineTo :: Floating u => Point2 u -> AbsPath u -> AbsPath u
-consLineTo p0 (AbsPath u sp se1 ep) = AbsPath (u + len) p0 (cons s1 se1) ep
-  where
-    s1@(AbsLineSeg len _) = lineSegment p0 sp  
-
-
--- | Suffix the path with a straight line segment to the 
--- supplied point.
+-- | Extend the path with a straight line segment from the 
+-- end-point to the supplied point.
 --
 snocLineTo :: Floating u => AbsPath u -> Point2 u -> AbsPath u
 snocLineTo (AbsPath u sp se1 ep) p1 = AbsPath (u + len) sp (snoc se1 s1) p1
@@ -341,19 +346,21 @@ snocLineTo (AbsPath u sp se1 ep) p1 = AbsPath (u + len) sp (snoc se1 s1) p1
     s1@(AbsLineSeg len _) = lineSegment ep p1
 
 
--- | Prefix the path with a Bezier curve segment formed by the 
--- supplied points.
+-- | Extend the path from the end-point with a Bezier curve 
+-- segment formed by the supplied points.
 --
-consCurveTo :: (Floating u, Ord u, Tolerance u)
-            => Point2 u -> Point2 u -> Point2 u -> AbsPath u -> AbsPath u
-consCurveTo p0 p1 p2 (AbsPath u sp se1 ep) = 
-    AbsPath (u + len) p0 (cons s1 se1) ep
+snocCurve :: (Floating u, Ord u, Tolerance u)
+          => AbsPath u -> Vec2 u -> Vec2 u -> Vec2 u -> AbsPath u
+snocCurve absp@(AbsPath _ _ _ ep) v1 v2 v3 = snocCurveTo absp p1 p2 p3
   where
-    s1@(AbsCurveSeg len _ _ _) = curveSegment p0 p1 p2 sp
+    p1 = ep .+^ v1
+    p2 = p1 .+^ v2
+    p3 = p2 .+^ v3
+ 
 
 
--- | Suffix the path with a Bezier curve segment formed by the 
--- supplied points.
+-- | Extend the path from the end-point with a Bezier curve 
+-- segment formed by the supplied points.
 --
 snocCurveTo :: (Floating u, Ord u, Tolerance u)
             => AbsPath u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
@@ -363,23 +370,14 @@ snocCurveTo (AbsPath u sp se1 ep) p1 p2 p3 =
     s1@(AbsCurveSeg len _ _ _) = curveSegment ep p1 p2 p3
  
 
- 
 
--- | Concat the list of paths onto the intial path.
--- 
--- Because a true empty path cannot be constructed (i.e. the
--- /empty/ path needs a start point even if it has no segments) - 
--- the list is in /destructor form/. Client code has to decide 
--- how to handle the empty list case, e.g.:
---
--- > case paths of
--- >  (x:xs) -> Just $ pathconcat x xs
--- >  []     -> Nothing
---
--- 
-pathconcat :: (Floating u, Ord u, Tolerance u) 
-           => AbsPath u -> [AbsPath u] -> AbsPath u
-pathconcat p0 ps = foldl' append p0 ps
+
+
+-- need to add prefixLine, suffixCurve, prefixCurve...
+
+-------------------------------------------------------------------------------- 
+
+
 
 segmentLength :: AbsPathSeg u -> u
 segmentLength (AbsLineSeg u _)       = u
@@ -790,11 +788,28 @@ optimizeLines (AbsPath _ sp0 segs _) =
 --------------------------------------------------------------------------------
 -- Round corners
 
--- NOTE - round corners are probably better suited to construction 
--- rather than transformation.
--- 
--- The code below is pencilled in to change.
+-- The code below may change.
 --
+
+-- | Append two AbsPaths. 
+-- 
+-- If the end of the first path and the start of the second path
+-- coalesce then the paths are joined directly, otherwise, a
+-- straight line segment is added to join the paths.
+-- 
+-- Neither path is /moved/. Consider 'RelPath' if you need 
+-- different concatenation.
+--
+jointedAppend :: (Floating u, Ord u, Tolerance u) 
+       => AbsPath u -> AbsPath u -> AbsPath u
+jointedAppend (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
+    | end1 == start2 = AbsPath (len1+len2) start1 (se1 `join` se2) end2 
+    | otherwise      = AbsPath total_len start1 segs end2 
+  where
+    joint     = lineSegment end1 start2
+    total_len = len1 + len2 + segmentLength joint
+    segs      = se1 `join` (cons joint se2)
+
 
 
 
@@ -834,9 +849,11 @@ roundTrail _ [a]            = zeroPath a
 roundTrail _ [a,b]          = line1 a b
 roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
   where
-    step acc (m:n:o:ps)     = step (acc `append` lineCurveTrail u m n o) (n:o:ps)
-    step acc [n,o]          = acc `append` lineCurveTrail u n o start
-                                  `append` lineCurveTrail u o start b 
+    step acc (m:n:o:ps)     = let line_tail = lineCurveTrail u m n o
+                              in step (jointedAppend acc line_tail) (n:o:ps)
+    step acc [n,o]          = let tail1 = lineCurveTrail u n o start
+                                  tail2 = lineCurveTrail u o start b 
+                              in jointedAppend (jointedAppend acc tail1) tail2
     step acc _              = acc
 
 
@@ -848,7 +865,8 @@ roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
 --
 lineCurveTrail :: (Real u, Floating u, Tolerance u) 
                => u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
-lineCurveTrail u a b c = line1 p1 p2 `append` cornerCurve p2 b p3
+lineCurveTrail u a b c = 
+    jointedAppend (line1 p1 p2) (cornerCurve p2 b p3)
   where
     p1 = a .+^ (avec (vdirection $ pvec a b) u)
     p2 = b .+^ (avec (vdirection $ pvec b a) u)
@@ -876,8 +894,8 @@ roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
                                  in step path1 (p1:c:xs)
   where
     step acc (m:n:o:ps)     = let (seg2,p1) = lineCurveInter1 u m n o
-                              in step (acc `append` seg2) (p1:o:ps)
-    step acc [n,o]          = acc `append` line1 n o
+                              in step (jointedAppend acc seg2) (p1:o:ps)
+    step acc [n,o]          = jointedAppend acc (line1 n o)
     step acc _              = acc
 
 
@@ -891,7 +909,7 @@ lineCurveInter1 :: (Real u, Floating u, Tolerance u)
                 => u -> Point2 u -> Point2 u -> Point2 u 
                 -> (AbsPath u, Point2 u)
 lineCurveInter1 u a b c = 
-    (line1 a p2 `append` cornerCurve p2 b p3, p3)
+    (jointedAppend (line1 a p2) (cornerCurve p2 b p3), p3)
   where
     p2 = b .+^ (avec (vdirection $ pvec b a) u)
     p3 = b .+^ (avec (vdirection $ pvec b c) u)

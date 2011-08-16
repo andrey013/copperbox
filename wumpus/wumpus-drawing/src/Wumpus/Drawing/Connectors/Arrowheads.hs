@@ -439,7 +439,7 @@ odiamondWideTip =
 
 curveTipPath :: Point2 En -> Radian -> AbsPath En
 curveTipPath pt theta = 
-    curve1 a b c pt `append` curve1 pt z y x
+    jointedAppend (curve1 a b c pt) (curve1 pt z y x)
   where
     ow  = avec theta (-1)
     a   = pt .+^ ow ^+^ avec (theta + ang90) 0.5
@@ -465,7 +465,7 @@ curveTip =
 
 curveTipRevPath :: Point2 En -> Radian -> AbsPath En
 curveTipRevPath pt theta = 
-    curve1 a b c p2 `append` curve1 p2 z y x
+    jointedAppend (curve1 a b c p2) (curve1 p2 z y x)
   where
     p2  = pt .+^ avec theta (-1)
     a   = pt .+^ avec (theta + ang90) 0.5

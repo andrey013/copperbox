@@ -312,7 +312,7 @@ toAbsPath :: (Floating u, Ord u, Tolerance u)
           => Point2 u -> RelPath u -> AbsPath u
 toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
   where
-    step1 p0 EmptyL                           = Abs.empty p0
+    step1 p0 EmptyL                           = Abs.emptyPath p0
 
     step1 p0 (RelLineSeg _ v1 :< se)            = 
         let (pth,end) = aline p0 v1 in step2 end pth (viewl se)
@@ -323,11 +323,11 @@ toAbsPath start (RelPath _ segs) = step1 start $ viewl segs
     step2 _  acc EmptyL                       = acc
     step2 p0 acc (RelLineSeg _ v1 :< se)        = 
         let (s1,end) = aline p0 v1 
-        in step2 end (acc `Abs.append` s1) (viewl se)
+        in step2 end (acc `Abs.jointedAppend` s1) (viewl se)
 
     step2 p0 acc (RelCurveSeg _ v1 v2 v3 :< se) = 
         let (s1,end) = acurve p0 v1 v2 v3 
-        in step2 end (acc `Abs.append` s1) (viewl se)
+        in step2 end (acc `Abs.jointedAppend` s1) (viewl se)
 
     aline p0 v1                               = 
         let p1 = p0 .+^ v1 in (Abs.line1 p0 p1, p1)
