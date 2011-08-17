@@ -2,7 +2,7 @@
 
 module PathPivot where
 
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core

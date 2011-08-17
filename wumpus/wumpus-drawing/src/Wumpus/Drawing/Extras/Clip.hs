@@ -26,7 +26,7 @@ module Wumpus.Drawing.Extras.Clip
   ) where
 
 
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -35,7 +35,7 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 -- | Clip a LocGraphic.
 --
-locClip :: InterpretUnit u => RelPath u -> LocGraphic u -> LocGraphic u
-locClip rp gf = promoteLoc $ \pt -> 
-    liftQuery (toPrimPath pt rp) >>= \pp -> clipImage pp (gf `at` pt)
+locClip :: InterpretUnit u => AbsPath u -> LocGraphic u -> LocGraphic u
+locClip absp gf = promoteLoc $ \pt -> 
+    liftQuery (toPrimPath absp) >>= \pp -> clipImage pp (gf `at` pt)
 

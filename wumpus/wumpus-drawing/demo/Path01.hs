@@ -3,7 +3,7 @@
 module Path01 where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -34,16 +34,16 @@ path_pic = drawTracing $ do
     
 
 triangles :: LocGraphic Double
-triangles = localize (set_line_width 8) $ execPathSpec $ 
+triangles = localize (set_line_width 8) $ (runPathSpec_ `flip` PATH_OPEN) $ 
     localize (stroke_colour dark_slate_blue) $ 
-    moveBy (hvec 60) >> tristeps >>
-    moveBy (hvec 60) >> tristeps >>
-    moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE >>
-    moveBy (hvec 60) >> tristeps >> cycleSubPath STROKE >>
+    moveby (hvec 60) >> tristeps >>
+    moveby (hvec 60) >> tristeps >>
+    moveby (hvec 60) >> tristeps >> cycleSubPath STROKE >>
+    moveby (hvec 60) >> tristeps >> cycleSubPath STROKE >>
     ureturn
   where
     tristeps :: PathSpec Double ()
-    tristeps = lineto (V2 40 0) >> lineto (V2 0 40) >> lineto (V2 (-40) (-40))
+    tristeps = penline (V2 40 0) >> penline (V2 0 40) >> penline (V2 (-40) (-40))
        
 
 {-

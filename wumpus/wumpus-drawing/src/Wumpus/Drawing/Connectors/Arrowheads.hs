@@ -61,7 +61,7 @@ module Wumpus.Drawing.Connectors.Arrowheads
 
 import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Connectors.Base
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

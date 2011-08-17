@@ -22,8 +22,8 @@ module Wumpus.Drawing.Paths.Vamps
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.PathBuilder ( Vamp(..) )
-import Wumpus.Drawing.Paths.Base.AbsPath
+import Wumpus.Drawing.Paths.PathBuilder ( Vamp(..) )
+import Wumpus.Drawing.Paths.Base
 
 import Wumpus.Basic.Kernel
 

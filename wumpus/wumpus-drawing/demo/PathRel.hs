@@ -3,8 +3,7 @@
 module PathRel where
 
 import Wumpus.Drawing.Colour.SVGColours
-import Wumpus.Drawing.Paths.Relative
-import Wumpus.Drawing.Paths.Vamps
+import Wumpus.Drawing.Paths
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -39,9 +38,10 @@ path1 = localize (stroke_colour dark_red) $ runPathSpec_ path_spec1 PATH_OPEN
 
 
 path2 :: DLocGraphic 
-path2 = ignoreAns $ localize (stroke_colour red) $ 
-    obliterate (evalGenPathSpec path_spec1 () PATH_OPEN) >>= \(_,path) -> 
-    drawClosedPath FILL path
+path2 = promoteLoc $ \pt ->
+  localize (stroke_colour red) $ 
+    obliterate (applyLoc (evalGenPathSpec path_spec1 () PATH_OPEN) pt) >>= \(_,path) -> 
+    drawClosedPath_ FILL path
 
 makePD :: PathSpec Double a -> DLocGraphic
 makePD spec = localize (stroke_colour red) $ runPathSpec_ spec PATH_OPEN

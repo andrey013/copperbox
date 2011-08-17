@@ -42,7 +42,7 @@ module Wumpus.Drawing.Text.Base.Label
   ) where
 
 
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 

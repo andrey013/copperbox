@@ -24,7 +24,7 @@ module Wumpus.Drawing.Shapes.Circle
 
   ) where
 
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic

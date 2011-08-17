@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Drawing.Paths.Abolute
+-- Module      :  Wumpus.Drawing.Paths
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,14 +15,16 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Wumpus.Drawing.Paths.Absolute
+module Wumpus.Drawing.Paths
   ( 
 
-    module Wumpus.Drawing.Paths.Base.AbsPath
-  , module Wumpus.Drawing.Paths.Base.PathBuilder
+    module Wumpus.Drawing.Paths.Base
+  , module Wumpus.Drawing.Paths.PathBuilder
+  , module Wumpus.Drawing.Paths.Vamps
 
   ) where
 
-import Wumpus.Drawing.Paths.Base.AbsPath
-import Wumpus.Drawing.Paths.Base.PathBuilder
+import Wumpus.Drawing.Paths.Base
+import Wumpus.Drawing.Paths.PathBuilder
+import Wumpus.Drawing.Paths.Vamps
 

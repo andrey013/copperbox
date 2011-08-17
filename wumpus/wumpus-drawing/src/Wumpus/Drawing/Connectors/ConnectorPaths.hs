@@ -48,7 +48,7 @@ module Wumpus.Drawing.Connectors.ConnectorPaths
   ) where
 
 import Wumpus.Drawing.Connectors.Base
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry.Quadrant           -- package: wumpus-basic
 import Wumpus.Basic.Kernel hiding ( promoteConn )
