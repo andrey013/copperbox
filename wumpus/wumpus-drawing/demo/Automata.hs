@@ -5,7 +5,7 @@ module Automata where
 
 import Wumpus.Drawing.Connectors
 import Wumpus.Drawing.Extras.Loop
-import Wumpus.Drawing.Paths.Absolute
+import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs

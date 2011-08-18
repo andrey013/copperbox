@@ -1,5 +1,5 @@
 name:             wumpus-tree
-version:          0.17.0
+version:          0.18.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -32,6 +32,8 @@ description:
   .
   Changelog:
   .
+  v0.17.0 to v0.18
+  .
   v0.16.0 to v0.17.0:
   .
   * Reworked internals to use the @LocDrawing@ monad from 
@@ -63,8 +65,8 @@ library
                       containers        >= 0.3.0     && <= 0.6.0,
                       vector-space      >= 0.6       && <  1.0,
                       wumpus-core       >= 0.51.0    && <  0.52.0,
-                      wumpus-basic      == 0.21.0,
-                      wumpus-drawing    == 0.6.0
+                      wumpus-basic      == 0.22.0,
+                      wumpus-drawing    == 0.7.0
 
   
   exposed-modules:

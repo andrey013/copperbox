@@ -4,7 +4,7 @@ module DotPic where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.AnchorDots
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 

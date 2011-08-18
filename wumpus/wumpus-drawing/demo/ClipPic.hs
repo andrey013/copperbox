@@ -14,7 +14,7 @@ module ClipPic where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Extras.Clip
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -44,20 +44,23 @@ std_ctx = standardContext 14
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    drawl (P2   0 320) $ (drawClosedPath FILL =<< zapLocQ (extrPathSpec path01))
+    drawl (P2   0 320) $ runPathSpec_ path01 (PATH_CLOSED FILL)
     drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
-                         (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path02))
-    drawl (P2 384 416) $ (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path03))
-    drawl (P2 328 512) $ (drawClosedPath FILL =<< liftLocQuery (extrPathSpec path04))
+                           runPathSpec_ path02 (PATH_CLOSED FILL)
+    drawl (P2 384 416) $ runPathSpec_ path03 (PATH_CLOSED FILL)
+    drawl (P2 328 512) $ runPathSpec_ path04 (PATH_CLOSED FILL)
     drawl (P2   0   0) $ clip1
     drawl (P2 112   0) $ clip2
     drawl (P2 384  96) $ clip3
     drawl (P2 328 192) $ clip4
 
 
+-- PathSpec is overkill here...
+--
 extrPathSpec :: InterpretUnit u 
-             => PathSpec u a -> LocQuery u (RelPath u)
-extrPathSpec spec = fmap post $ stripGenPathSpec spec () (PATH_CLOSED STROKE)
+             => PathSpec u a -> LocQuery u (AbsPath u)
+extrPathSpec spec = qpromoteLoc $ \pt ->
+    fmap post $ qapplyLoc (stripGenPathSpec spec () (PATH_CLOSED STROKE)) pt
   where
     post (_,_,c) = c
 

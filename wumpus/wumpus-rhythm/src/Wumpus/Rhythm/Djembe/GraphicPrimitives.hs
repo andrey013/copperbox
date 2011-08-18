@@ -80,7 +80,7 @@ import Wumpus.Rhythm.Djembe.Parameters
 
 
 import Wumpus.Drawing.Basis.DrawingPrimitives   -- package: wumpus-drawing
-import Wumpus.Drawing.Paths.Relative
+import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Text.DirectionZero        
 
 
