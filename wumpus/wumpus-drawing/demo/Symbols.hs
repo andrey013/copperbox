@@ -36,8 +36,8 @@ symbols = udrawTracing (0::Double) $ do
   where
     chn_alg         = tableDown 30 (100,20) 
     start           = P2 0 (30*20)
-    sdraw (s,_)     = cnext $ dcTextlabel s
-    ldraw (_,name)  = cnext $ moveStart (hvec 16) (dcTextlabel name)
+    sdraw (s,_)     = onChain $ dcTextlabel s
+    ldraw (_,name)  = onChain $ moveStart (hvec 16) (dcTextlabel name)
 
 
 all_letters :: [(String, String)]

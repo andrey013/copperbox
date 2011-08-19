@@ -5,6 +5,7 @@ module Grid01 where
 
 
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Extras.Axes
 import Wumpus.Drawing.Extras.Grids
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -39,4 +40,8 @@ grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
     node (0,0) $ grid (grid_major_colour red) 4 3
     node (1,1) $ orthontAxes (1,3) (1,2)
+    node (0,6) $ smallDisk
+    node (0,6) $ grid (grid_major_colour red) 4 3
+    node (0,6) $ horizontalLabels NN [0,1,2,3,4]
+    node (0,6) $ verticalLabels EE [0,1,2,3]
     return ()

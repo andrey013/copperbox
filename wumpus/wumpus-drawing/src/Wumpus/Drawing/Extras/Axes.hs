@@ -18,6 +18,9 @@ module Wumpus.Drawing.Extras.Axes
   ( 
    
     orthontAxes
+ 
+  , horizontalLabels
+  , verticalLabels
 
   ) where
 
@@ -35,8 +38,7 @@ import Data.Monoid
 --
 orthontAxes :: (Real u, Floating u, InterpretUnit u)
             => (Int,Int) -> (Int,Int) -> LocGraphic u
-orthontAxes (xl,xr) (yl,yr) = 
-    promoteLoc $ \(P2 x y) -> 
+orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) -> 
     snapmove (1,1) >>= \(V2 uw uh) ->
     let conn1 = rightArrow barb45 connline
         xPtl  = P2 (x - (uw * fromIntegral xl)) y
@@ -46,3 +48,19 @@ orthontAxes (xl,xr) (yl,yr) =
     in  localize cap_square $           ignoreAns (connect xPtl xPtr conn1) 
                               `mappend` ignoreAns (connect yPtl yPtr conn1)
 
+
+
+horizontalLabels :: (Num a, Fractional u, InterpretUnit u) 
+                 => RectAddress -> [a] -> LocGraphic u 
+horizontalLabels addr ns = 
+    snapmove (1,1) >>= \(V2 uw _) -> runChain_ (mapM mf ns) (chainH uw)
+  where
+    mf n = onChain $ runPosObject (posTextUpright $ show n) addr
+
+
+verticalLabels :: (Num a, Fractional u, InterpretUnit u) 
+                 => RectAddress -> [a] -> LocGraphic u 
+verticalLabels addr ns = 
+    snapmove (1,1) >>= \(V2 _ uh) -> runChain_ (mapM mf ns) (chainV uh)
+  where
+    mf n = onChain $ runPosObject (posTextUpright $ show n) addr

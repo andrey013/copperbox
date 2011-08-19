@@ -33,7 +33,7 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , runChain
   , runChain_
 
-  , cnext
+  , onChain
   , setChainScheme
 
 
@@ -215,17 +215,22 @@ runChain_ ma cscm = ignoreAns $ runChain ma cscm
 --------------------------------------------------------------------------------
 -- Operations
 
-cnext :: InterpretUnit u 
-      => LocImage u a -> GenChain st u a
-cnext gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
-    let dpt       = dinterpF (dc_font_size ctx) pt
-        (pt1,st1) = sf dpt s0
+onChain :: InterpretUnit u 
+        => LocImage u a -> GenChain st u a
+onChain gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
+    let upt       = dinterpF (dc_font_size ctx) pt
+        (a,w1)    = runImage (applyLoc gf upt) ctx
+        (pt1,st1) = sf upt s0
         dpt1      = normalizeF (dc_font_size ctx) pt1
-        (a,w1)    = runImage (applyLoc gf pt1) ctx
-        new_st    = ChainSt { chain_st = st1
-                            , chain_next = sf
+        new_st    = ChainSt { chain_st         = st1
+                            , chain_next       = sf
                             , chain_user_state = ust }
     in (a, dpt1, new_st, w1)
+
+--
+-- Note - onChain draws at the initial position, then increments 
+-- the next position.
+--
 
 
 setChainScheme :: InterpretUnit u 

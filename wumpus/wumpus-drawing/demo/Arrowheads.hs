@@ -90,7 +90,7 @@ std_ctx = fill_colour peru $ standardContext 18
 -- Note - /null/ chain action needs a better type synonym name.
 --
 makeArrowDrawing :: (String, ArrowTip) -> Chain Double (UNil Double)
-makeArrowDrawing (name, utip) = cnext (aconn `mappend` lbl)
+makeArrowDrawing (name, utip) = onChain (aconn `mappend` lbl)
   where
     aconn = ignoreAns $ promoteLoc $ \pt ->
               connect pt (displace (hvec 60) pt) (uniformArrow utip connline)

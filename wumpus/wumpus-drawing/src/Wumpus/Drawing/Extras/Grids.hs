@@ -155,7 +155,7 @@ grid upd nx ny =
     let props  = upd default_grid_props
         width  = uw * fromIntegral nx
         height = uh * fromIntegral ny
-        intrr = gridInterior nx width uw ny height uh props
+        intrr  = gridInterior nx width uw ny height uh props
         rect   = localize (major_line_update props) $ 
                    blRectangle STROKE width height
     in intrr `mappend` rect
