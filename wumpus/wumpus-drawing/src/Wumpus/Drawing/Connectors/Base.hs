@@ -17,7 +17,7 @@
 module Wumpus.Drawing.Connectors.Base
   ( 
 
-    Connector    
+    ConnectorPathQuery
 
   , ArrowTip(..)
   , ArrowConnector
@@ -47,7 +47,7 @@ import Data.Monoid
 -- | The type of Connectors - a query from start and end point to 
 -- a Path.
 --
-type Connector u = ConnectorQuery u (AbsPath u)
+type ConnectorPathQuery u = ConnectorQuery u (AbsPath u)
 
 -- | Arrowhead /algorithm/ - the components of an arrowhead.
 -- 
@@ -67,7 +67,8 @@ type ArrowConnector u = ConnectorImage u (AbsPath u)
 
 
 
-runArrowTip :: InterpretUnit u => ArrowTip -> Query u (u, u, LocThetaGraphic u)
+runArrowTip :: InterpretUnit u 
+            => ArrowTip -> Query u (u, u, LocThetaGraphic u)
 runArrowTip (ArrowTip df len deco) = 
    getLineWidth             >>= \lw    -> 
    uconvertCtx1 (df lw)     >>= \uretd ->
@@ -78,7 +79,7 @@ runArrowTip (ArrowTip df len deco) =
 -- | Connector with an arrow tip at the end point (i.e right).
 --
 rightArrow :: (Real u, Floating u, InterpretUnit u) 
-            => ArrowTip -> Connector u -> ArrowConnector u
+           => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
 rightArrow alg conn = promoteConn $ \p0 p1 ->
     applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     rightArrowPath alg full_path 
@@ -88,7 +89,7 @@ rightArrow alg conn = promoteConn $ \p0 p1 ->
 -- | Connector with an arrow tip at the start point (i.e left).
 --
 leftArrow :: (Real u, Floating u, InterpretUnit u) 
-            => ArrowTip -> Connector u -> ArrowConnector u
+            => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
 leftArrow alg conn = promoteConn $ \p0 p1 ->
     applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftArrowPath alg full_path 
@@ -98,7 +99,7 @@ leftArrow alg conn = promoteConn $ \p0 p1 ->
 -- end points.
 --
 leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip -> ArrowTip ->  Connector u -> ArrowConnector u
+               => ArrowTip -> ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
 leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
     applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftRightArrowPath algl algr full_path 
@@ -109,7 +110,7 @@ leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
 -- end points.
 --
 uniformArrow :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip ->  Connector u -> ArrowConnector u
+               => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
 uniformArrow alg conn = promoteConn $ \p0 p1 ->
     applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
     leftRightArrowPath alg alg full_path 

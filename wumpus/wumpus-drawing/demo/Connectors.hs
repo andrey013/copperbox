@@ -37,7 +37,7 @@ conn_pic :: CtxPicture
 conn_pic = drawTracing $ localize (dest_arm_len (0.75::Em))
                        $ tableGraphic conntable
 
-conntable :: [(String, Connector Double)]
+conntable :: [(String, ConnectorPathQuery Double)]
 conntable = 
     [ ("connline",      connline)
     , ("connarc",       connarc)
@@ -61,7 +61,7 @@ conntable =
     , ("connvbezier",   connvbezier)
     ]
 
-tableGraphic :: [(String, Connector Double)] -> TraceDrawing Double ()
+tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
     draw $ runChain (mapM (onChain .  makeConnDrawing) conns) chn_alg `at` start
   where
@@ -74,7 +74,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (String, Connector Double) -> DLocGraphic 
+makeConnDrawing :: (String, ConnectorPathQuery Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
     promoteLoc $ \p0 -> fn p0 (displace (vec 60 40) p0) 
   where

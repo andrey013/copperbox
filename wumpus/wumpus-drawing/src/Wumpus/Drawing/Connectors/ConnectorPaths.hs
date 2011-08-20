@@ -61,10 +61,9 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
-
 -- | Straight line connector.
 --
-connline :: (Real u, Floating u, InterpretUnit u) => Connector u
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
 connline = qpromoteConn $ \p0 p1 -> return $ line1 p0 p1
 
 
@@ -80,7 +79,7 @@ connline = qpromoteConn $ \p0 p1 -> return $ line1 p0 p1
 -- 
 --
 connarc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
-        => Connector u
+        => ConnectorPathQuery u
 connarc = qpromoteConn $ \p0 p1 -> 
     connectorArcAngle >>= \arc_ang ->
     let v1      = pvec p0 p1
@@ -103,7 +102,7 @@ connarc = qpromoteConn $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 connhdiagh = qpromoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -132,7 +131,7 @@ connhdiagh = qpromoteConn $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 connvdiagv = qpromoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -160,7 +159,7 @@ connvdiagv = qpromoteConn $ \p0 p1 ->
 -- end point
 -- 
 conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 conndiagh = qpromoteConn $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -185,7 +184,7 @@ conndiagh = qpromoteConn $ \p0 p1 ->
 -- point.
 -- 
 conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 conndiagv = qpromoteConn $ \p0 p1 -> 
     connectorDstArm >>= \dst_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -210,7 +209,7 @@ conndiagv = qpromoteConn $ \p0 p1 ->
 -- end point.
 -- 
 connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 connhdiag = qpromoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -235,7 +234,7 @@ connhdiag = qpromoteConn $ \p0 p1 ->
 -- end point.
 -- 
 connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => Connector u
+          => ConnectorPathQuery u
 connvdiag = qpromoteConn $ \p0 p1 -> 
     connectorSrcArm >>= \src_arm ->
     case quadrant $ vdirection $ pvec p0 p1 of
@@ -262,7 +261,7 @@ connvdiag = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => Connector u
+         => ConnectorPathQuery u
 connabar = qpromoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -280,7 +279,7 @@ connabar = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /below/ the points.
 --
 connbbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => Connector u
+         => ConnectorPathQuery u
 connbbar = qpromoteConn $ \p0 p1 ->
     connectorSrcArm >>= \src_arm ->
     connectorDstArm >>= \dst_arm ->
@@ -299,7 +298,7 @@ connbbar = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => Connector u
+           => ConnectorPathQuery u
 connaright = qpromoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
     let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
 
@@ -313,7 +312,7 @@ connaright = qpromoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 -- The bar is drawn /below/ the points.
 --
 connbright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => Connector u
+           => ConnectorPathQuery u
 connbright = qpromoteConn $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
     let mid = P2 x1 y0 in return $ vertexPath [p0, mid, p1]
 
@@ -324,7 +323,7 @@ connbright = qpromoteConn $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
 -- | Derive the direction aka. sign of an arm.
 --
 directional :: (Num u, Ord u) => u -> u -> u -> u
-directional src dst arm = if  src < dst then arm else negate arm
+directional src dst arm = if src < dst then arm else negate arm
                     
 
 
@@ -340,7 +339,7 @@ directional src dst arm = if  src < dst then arm else negate arm
 -- horizontal distance. 
 --
 connhrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => Connector u
+        => ConnectorPathQuery u
 connhrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorSrcArm >>= \ src_arm -> 
     let a0 = p0 .+^ hvec src_arm
@@ -360,7 +359,7 @@ connhrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- horizontal distance. 
 --
 connrrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => Connector u
+        => ConnectorPathQuery u
 connrrh = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional x0 x1) connectorDstArm >>= \ dst_arm -> 
     let a1 = p1 .-^ hvec dst_arm
@@ -377,7 +376,7 @@ connrrh = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  o  
 --
 connvrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => Connector u
+        => ConnectorPathQuery u
 connvrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorSrcArm >>= \ src_arm -> 
     let a0 = p0 .+^ vvec src_arm
@@ -394,7 +393,7 @@ connvrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  o  
 --
 connrrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => Connector u
+        => ConnectorPathQuery u
 connrrv = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     fmap (directional y0 y1) connectorDstArm >>= \ dst_arm -> 
     let a1 = p1 .-^ vvec dst_arm
@@ -413,7 +412,7 @@ connrrv = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- The loop is drawn /above/ the points.
 --
 connaloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => Connector u
+          => ConnectorPathQuery u
 connaloop = loopbody id
 
 -- | Loop connector.
@@ -425,13 +424,13 @@ connaloop = loopbody id
 -- The loop is drawn /above/ the points.
 --
 connbloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => Connector u
+          => ConnectorPathQuery u
 connbloop = loopbody negate
 
 -- | Looping just differs on a negate...
 --
 loopbody :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-         => (u -> u) -> Connector u
+         => (u -> u) -> ConnectorPathQuery u
 loopbody fn = qpromoteConn $ \p0 p1 ->
     connectorSrcArm   >>= \src_arm ->
     connectorDstArm   >>= \dst_arm ->
@@ -455,7 +454,7 @@ loopbody fn = qpromoteConn $ \p0 p1 ->
 -- this produces nicer curves.
 --
 connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => Connector u
+            => ConnectorPathQuery u
 connhbezier = qpromoteConn $ \p0 p1 -> 
     fmap (2*) connectorSrcArm   >>= \src_arm ->
     fmap (2*) connectorDstArm   >>= \dst_arm ->
@@ -482,7 +481,7 @@ connhbezier = qpromoteConn $ \p0 p1 ->
 -- this produces nicer curves.
 --
 connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => Connector u
+            => ConnectorPathQuery u
 connvbezier = qpromoteConn $ \p0 p1 -> 
     fmap (2*) connectorSrcArm   >>= \src_arm ->
     fmap (2*) connectorDstArm   >>= \dst_arm ->

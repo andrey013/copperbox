@@ -30,12 +30,11 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                              -- package: wumpus-core
 
 
-
 -- TODO - library of useful / illustrative vamps (circle, square etc.)
 
 
 
--- Note - actual square TODO...
+-- 
 --
 squareWE :: (Real u, Floating  u, Ord u, Tolerance u, InterpretUnit u) 
          => u -> Vamp u
@@ -43,10 +42,12 @@ squareWE diam = Vamp { vamp_move = hvec diam
                      , vamp_conn = conn }
   where
     conn = promoteConn $ \p1 p2 -> 
-           -- TODO ...
-           drawClosedPath_ STROKE $ vertexPath $ [ p1, p2 ]
+             let dir = vdirection $ pvec p1 p2
+             in drawClosedPath_ STROKE $ vectorPathTheta path1 dir p1
 
-     -- vertexPath [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]
+    hdiam = 0.5 * diam 
+    path1 = [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]
 
 
 -- Drawing a cirle picks the half point on the vamp_move vector...
+

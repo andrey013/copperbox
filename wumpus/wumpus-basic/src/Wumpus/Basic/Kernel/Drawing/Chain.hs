@@ -276,10 +276,10 @@ scStepper :: PointDisplace u -> Int -> PointDisplace u
 scStepper outF n innF = 
     ChainScheme { scheme_start = start, scheme_step = step }
   where
-    start pt                      = (pt,0)
-    step  pt (ogin,i) | i < n     = (innF pt, (ogin, i+1))
+    start pt                      = (pt,1)
+    step  pt (ogin,i) | i <  n    = (innF pt, (ogin, i+1))
                       | otherwise = let o1 = outF ogin 
-                                    in (innF o1, (o1,1)) 
+                                    in (o1, (o1,1)) 
 
 
 tableRight :: Num u => Int -> (u,u) -> ChainScheme u

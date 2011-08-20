@@ -33,6 +33,9 @@ module Wumpus.Drawing.Paths.Base
   , curvePath
   , controlCurve
 
+  , vectorPath
+  , vectorPathTheta
+
   -- * Queries
   , null
   , length
@@ -299,6 +302,23 @@ controlCurve start cin cout end =
     sz     = 0.375 * (vlength $ pvec start end)
     v1     = avec cin  sz
     v2     = avec cout sz
+
+
+
+
+
+vectorPath :: (Floating u, Ord u, Tolerance u) 
+           => [Vec2 u] -> Point2 u -> AbsPath u
+vectorPath vecs p0 = vertexPath $ p0 : step p0 vecs
+  where
+    step _ []       = []
+    step pt (v1:vs) = let p1 = pt .+^ v1 in p1 : step p1 vs 
+
+
+vectorPathTheta :: (Real u, Floating u, Tolerance u) 
+                => [Vec2 u] -> Radian -> Point2 u -> AbsPath u 
+vectorPathTheta vs ang = vectorPath $ map (rotate ang) vs
+
 
 
 --------------------------------------------------------------------------------
