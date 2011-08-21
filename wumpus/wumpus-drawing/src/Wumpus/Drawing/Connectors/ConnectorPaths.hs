@@ -48,6 +48,7 @@ module Wumpus.Drawing.Connectors.ConnectorPaths
   ) where
 
 import Wumpus.Drawing.Connectors.Base
+import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry.Quadrant           -- package: wumpus-basic
@@ -59,12 +60,100 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
+type ProjectionQuery u = 
+      ConnectorProps -> Point2 u -> Point2 u -> Query u (Point2 u)
+
+inlineSrc :: (Real u, Floating u, InterpretUnit u) 
+          => ProjectionQuery u
+inlineSrc props p0 p1 = 
+    connectorSrcSpace props >>= \sep -> 
+    let ang = vdirection $ pvec p0 p1
+    in return $ p0 .+^ avec ang sep
+
+inlineDst :: (Real u, Floating u, InterpretUnit u) 
+          => ProjectionQuery u
+inlineDst props p0 p1 = 
+    connectorDstSpace props >>= \sep -> 
+    let ang = vdirection $ pvec p0 p1
+    in return $ p1 .-^ avec ang sep
+
+
+-- | Horizontal \"orthonormal\" version of 'inlineSrc'.
+--
+horizontalSrc :: (Real u, Floating u, InterpretUnit u) 
+              => ProjectionQuery u
+horizontalSrc props p0 p1 = 
+    connectorSrcSpace props >>= \sep ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> return $ p0 .+^ go_right sep
+      QUAD_SE -> return $ p0 .+^ go_right sep
+      _       -> return $ p0 .+^ go_left sep        
+
+
+
+-- | Horizontal \"orthonormal\" version of 'inlineDst'.
+--
+horizontalDst :: (Real u, Floating u, InterpretUnit u) 
+              => ProjectionQuery u
+horizontalDst props p0 p1 = 
+    connectorDstSpace props >>= \sep ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> return $ p1 .+^ go_left sep
+      QUAD_SE -> return $ p1 .+^ go_left sep  
+      _       -> return $ p0 .+^ go_right sep
+
+
+
+-- | Vertical \"orthonormal\" version of 'inlineSrc'.
+--
+verticalSrc :: (Real u, Floating u, InterpretUnit u) 
+            => ProjectionQuery u
+verticalSrc props p0 p1 =
+    connectorSrcSpace props >>= \sep ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> return $ p0 .+^ go_up sep       
+      QUAD_NW -> return $ p0 .+^ go_up sep
+      _       -> return $ p0 .+^ go_down sep
+
+
+-- | Vertical \"orthonormal\" version of 'inlineDst'.
+--
+verticalDst :: (Real u, Floating u, InterpretUnit u) 
+            => ProjectionQuery u
+verticalDst props p0 p1 =
+    connectorDstSpace props >>= \sep ->
+    case quadrant $ vdirection $ pvec p0 p1 of
+      QUAD_NE -> return $ p0 .+^ go_down sep       
+      QUAD_NW -> return $ p0 .+^ go_down sep
+      _       -> return $ p0 .+^ go_up sep
+
+
+
+-- | Promote a function from source and dest points to a connector 
+-- function accounting for the separator values in the 
+-- DrawingContext.
+--
+buildConn :: (Real u, Floating u, InterpretUnit u) 
+          => ConnectorProps 
+          -> ProjectionQuery u -> ProjectionQuery u
+          -> (Point2 u -> Point2 u -> Query u (AbsPath u))
+          -> ConnectorPathQuery u
+buildConn props qsrc qdst fn = qpromoteConn $ \p0 p1 -> 
+    qsrc props p0 p1 >>= \a -> qdst props p0 p1 >>= \b -> fn a b
+
+
+
+
+
 
 
 -- | Straight line connector.
 --
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
-connline = qpromoteConn $ \p0 p1 -> return $ line1 p0 p1
+connline :: (Real u, Floating u, InterpretUnit u) 
+         => ConnectorProps -> ConnectorPathQuery u
+connline props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+    return $ line1 p0 p1
+
 
 
 
@@ -79,10 +168,10 @@ connline = qpromoteConn $ \p0 p1 -> return $ line1 p0 p1
 -- 
 --
 connarc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
-        => ConnectorPathQuery u
-connarc = qpromoteConn $ \p0 p1 -> 
-    connectorArcAngle >>= \arc_ang ->
-    let v1      = pvec p0 p1
+        => ConnectorProps -> ConnectorPathQuery u
+connarc props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+    let arc_ang = conn_arc_ang props 
+        v1      = pvec p0 p1
         hlen    = 0.5 * vlength v1
         ang     = vdirection v1
         cp0     = p0 .+^ avec (ang + arc_ang) hlen
@@ -102,10 +191,9 @@ connarc = qpromoteConn $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-connhdiagh = qpromoteConn $ \p0 p1 -> 
-    connectorSrcArm >>= \src_arm ->
-    connectorDstArm >>= \dst_arm ->
+           => ConnectorProps -> ConnectorPathQuery u
+connhdiagh props = buildConn props horizontalSrc horizontalDst $ \p0 p1 -> 
+    connectorArms props >>= \(src_arm, dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 src_arm dst_arm
       QUAD_SE -> right p0 p1 src_arm dst_arm
@@ -131,10 +219,9 @@ connhdiagh = qpromoteConn $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-connvdiagv = qpromoteConn $ \p0 p1 -> 
-    connectorSrcArm >>= \src_arm ->
-    connectorDstArm >>= \dst_arm ->
+           => ConnectorProps -> ConnectorPathQuery u
+connvdiagv props = buildConn props verticalSrc verticalDst $ \p0 p1 -> 
+    connectorArms props >>= \(src_arm, dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up   p0 p1 src_arm dst_arm
       QUAD_NW -> up   p0 p1 src_arm dst_arm
@@ -159,9 +246,9 @@ connvdiagv = qpromoteConn $ \p0 p1 ->
 -- end point
 -- 
 conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-conndiagh = qpromoteConn $ \p0 p1 -> 
-    connectorDstArm >>= \dst_arm ->
+          => ConnectorProps -> ConnectorPathQuery u
+conndiagh props = buildConn props inlineSrc horizontalDst $ \p0 p1 -> 
+    connectorArms props >>= \(_,dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 dst_arm
       QUAD_SE -> right p0 p1 dst_arm
@@ -184,9 +271,9 @@ conndiagh = qpromoteConn $ \p0 p1 ->
 -- point.
 -- 
 conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-conndiagv = qpromoteConn $ \p0 p1 -> 
-    connectorDstArm >>= \dst_arm ->
+          => ConnectorProps -> ConnectorPathQuery u
+conndiagv props = buildConn props inlineSrc verticalDst $ \p0 p1 -> 
+    connectorArms props >>= \(_,dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up    p0 p1 dst_arm
       QUAD_NW -> up    p0 p1 dst_arm
@@ -209,9 +296,9 @@ conndiagv = qpromoteConn $ \p0 p1 ->
 -- end point.
 -- 
 connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-connhdiag = qpromoteConn $ \p0 p1 -> 
-    connectorSrcArm >>= \src_arm ->
+          => ConnectorProps -> ConnectorPathQuery u
+connhdiag props = buildConn props horizontalSrc inlineDst $ \p0 p1 -> 
+    connectorArms props  >>= \(src_arm,_) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 src_arm
       QUAD_SE -> right p0 p1 src_arm
@@ -234,9 +321,9 @@ connhdiag = qpromoteConn $ \p0 p1 ->
 -- end point.
 -- 
 connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorPathQuery u
-connvdiag = qpromoteConn $ \p0 p1 -> 
-    connectorSrcArm >>= \src_arm ->
+          => ConnectorProps -> ConnectorPathQuery u
+connvdiag props = buildConn props verticalSrc inlineDst $ \p0 p1 -> 
+    connectorArms props >>= \(src_arm,_) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up    p0 p1 src_arm
       QUAD_NW -> up    p0 p1 src_arm
@@ -245,6 +332,7 @@ connvdiag = qpromoteConn $ \p0 p1 ->
     up   p0 p1 v1 = return $ vertexPath [ p0, p0 .+^ vvec v1, p1 ]
 
     down p0 p1 v1 = return $ vertexPath [ p0, p0 .-^ vvec v1, p1 ]
+
 
 
 -- DESIGN NOTE - should the concept of /above/ and /below/ use 
@@ -261,10 +349,9 @@ connvdiag = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorPathQuery u
-connabar = qpromoteConn $ \p0 p1 ->
-    connectorSrcArm >>= \src_arm ->
-    connectorDstArm >>= \dst_arm ->
+         => ConnectorProps -> ConnectorPathQuery u
+connabar props = buildConn props verticalSrc verticalDst $ \p0 p1 ->
+    connectorArms props >>= \(src_arm,dst_arm) ->
     let ang = vdirection $ pvec p0 p1
     in return $ vertexPath [ p0, dispDirectionTheta UP src_arm ang p0
                            , dispDirectionTheta UP dst_arm ang p1, p1 ]
@@ -279,10 +366,9 @@ connabar = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /below/ the points.
 --
 connbbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorPathQuery u
-connbbar = qpromoteConn $ \p0 p1 ->
-    connectorSrcArm >>= \src_arm ->
-    connectorDstArm >>= \dst_arm ->
+         => ConnectorProps -> ConnectorPathQuery u
+connbbar props = buildConn props verticalSrc verticalDst $ \p0 p1 ->
+    connectorArms props >>= \(src_arm, dst_arm) ->
     let ang = vdirection $ pvec p0 p1
     in return $ vertexPath [ p0, dispDirectionTheta DOWN src_arm ang p0
                            , dispDirectionTheta DOWN dst_arm ang p1, p1 ]
@@ -298,9 +384,10 @@ connbbar = qpromoteConn $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorPathQuery u
-connaright = qpromoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
-    let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
+           => ConnectorProps -> ConnectorPathQuery u
+connaright props = 
+    buildConn props verticalSrc horizontalDst $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
+      let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
 
 
 -- | Right angle connector.
@@ -312,8 +399,9 @@ connaright = qpromoteConn $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
 -- The bar is drawn /below/ the points.
 --
 connbright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorPathQuery u
-connbright = qpromoteConn $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
+           => ConnectorProps -> ConnectorPathQuery u
+connbright props = 
+    buildConn props horizontalSrc verticalDst $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
     let mid = P2 x1 y0 in return $ vertexPath [p0, mid, p1]
 
 
@@ -339,10 +427,11 @@ directional src dst arm = if src < dst then arm else negate arm
 -- horizontal distance. 
 --
 connhrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorPathQuery u
-connhrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
-    fmap (directional x0 x1) connectorSrcArm >>= \ src_arm -> 
-    let a0 = p0 .+^ hvec src_arm
+        => ConnectorProps -> ConnectorPathQuery u
+connhrr props = 
+    buildConn props horizontalSrc horizontalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+    connectorArms props >>= \(src_arm,_) -> 
+    let a0 = p0 .+^ hvec (directional x0 x1 src_arm)
         a1 = a0 .+^ vvec (y1 - y0)
     in return $ vertexPath [p0, a0, a1, p1]
 
@@ -359,12 +448,13 @@ connhrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- horizontal distance. 
 --
 connrrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorPathQuery u
-connrrh = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
-    fmap (directional x0 x1) connectorDstArm >>= \ dst_arm -> 
-    let a1 = p1 .-^ hvec dst_arm
-        a0 = a1 .-^ vvec (y1 - y0)
-    in return $ vertexPath [p0, a0, a1, p1]
+        => ConnectorProps -> ConnectorPathQuery u
+connrrh props = 
+    buildConn props horizontalSrc horizontalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+      connectorArms props >>= \(_,dst_arm) -> 
+      let a1 = p1 .-^ hvec (directional x0 x1 dst_arm)
+          a0 = a1 .-^ vvec (y1 - y0)
+      in return $ vertexPath [p0, a0, a1, p1]
 
 
 -- | Connector with two right angles...
@@ -376,12 +466,13 @@ connrrh = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  o  
 --
 connvrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorPathQuery u
-connvrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
-    fmap (directional y0 y1) connectorSrcArm >>= \ src_arm -> 
-    let a0 = p0 .+^ vvec src_arm
-        a1 = a0 .+^ hvec (x1 - x0)
-    in return $ vertexPath [p0, a0, a1, p1]
+        => ConnectorProps -> ConnectorPathQuery u
+connvrr props = 
+    buildConn props verticalSrc verticalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+      connectorArms props >>= \(src_arm,_) -> 
+      let a0 = p0 .+^ vvec (directional y0 y1 src_arm)
+          a1 = a0 .+^ hvec (x1 - x0)
+      in return $ vertexPath [p0, a0, a1, p1]
 
 
 -- | Connector with two right angles...
@@ -393,12 +484,13 @@ connvrr = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- >  o  
 --
 connrrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorPathQuery u
-connrrv = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
-    fmap (directional y0 y1) connectorDstArm >>= \ dst_arm -> 
-    let a1 = p1 .-^ vvec dst_arm
-        a0 = a1 .-^ hvec (x1 - x0)
-    in return $ vertexPath [p0, a0, a1, p1]
+        => ConnectorProps -> ConnectorPathQuery u
+connrrv props = 
+    buildConn props verticalSrc verticalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+      connectorArms props >>= \(_,dst_arm) -> 
+      let a1 = p1 .-^ vvec (directional y0 y1 dst_arm)
+          a0 = a1 .-^ hvec (x1 - x0)
+      in return $ vertexPath [p0, a0, a1, p1]
 
 
 
@@ -412,7 +504,7 @@ connrrv = qpromoteConn $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
 -- The loop is drawn /above/ the points.
 --
 connaloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorPathQuery u
+          => ConnectorProps -> ConnectorPathQuery u
 connaloop = loopbody id
 
 -- | Loop connector.
@@ -424,17 +516,16 @@ connaloop = loopbody id
 -- The loop is drawn /above/ the points.
 --
 connbloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorPathQuery u
+          => ConnectorProps -> ConnectorPathQuery u
 connbloop = loopbody negate
 
 -- | Looping just differs on a negate...
 --
 loopbody :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-         => (u -> u) -> ConnectorPathQuery u
-loopbody fn = qpromoteConn $ \p0 p1 ->
-    connectorSrcArm   >>= \src_arm ->
-    connectorDstArm   >>= \dst_arm ->
-    connectorLoopSize >>= \loop_len ->
+         => (u -> u) -> ConnectorProps -> ConnectorPathQuery u
+loopbody fn props = buildConn props horizontalSrc horizontalDst $ \p0 p1 ->
+    connectorArms props  >>= \(src_arm, dst_arm) ->
+    connectorLoopSize props >>= \loop_len ->
     let ang = vdirection $ pvec p0 p1 
         a0  = dispParallel (negate src_arm) ang p0
         a1  = dispPerpendicular (fn loop_len) ang a0
@@ -454,10 +545,9 @@ loopbody fn = qpromoteConn $ \p0 p1 ->
 -- this produces nicer curves.
 --
 connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorPathQuery u
-connhbezier = qpromoteConn $ \p0 p1 -> 
-    fmap (2*) connectorSrcArm   >>= \src_arm ->
-    fmap (2*) connectorDstArm   >>= \dst_arm ->
+            => ConnectorProps -> ConnectorPathQuery u
+connhbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+    fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> right p0 p1 src_arm dst_arm
       QUAD_SE -> right p0 p1 src_arm dst_arm
@@ -481,10 +571,9 @@ connhbezier = qpromoteConn $ \p0 p1 ->
 -- this produces nicer curves.
 --
 connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorPathQuery u
-connvbezier = qpromoteConn $ \p0 p1 -> 
-    fmap (2*) connectorSrcArm   >>= \src_arm ->
-    fmap (2*) connectorDstArm   >>= \dst_arm ->
+            => ConnectorProps -> ConnectorPathQuery u
+connvbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+    fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
     case quadrant $ vdirection $ pvec p0 p1 of
       QUAD_NE -> up   p0 p1 src_arm dst_arm
       QUAD_NW -> up   p0 p1 src_arm dst_arm

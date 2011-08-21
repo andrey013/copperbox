@@ -4,6 +4,7 @@ module Connectors where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors
+import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -34,32 +35,35 @@ makeCtx :: FontLoadResult -> DrawingContext
 makeCtx = set_font helvetica . metricsContext 11
 
 conn_pic :: CtxPicture 
-conn_pic = drawTracing $ localize (dest_arm_len (0.75::Em))
-                       $ tableGraphic conntable
+conn_pic = drawTracing $ tableGraphic conntable
+
 
 conntable :: [(String, ConnectorPathQuery Double)]
 conntable = 
-    [ ("connline",      connline)
-    , ("connarc",       connarc)
-    , ("connhdiagh",    connhdiagh)
-    , ("connvdiagv",    connvdiagv)
-    , ("conndiagh",     conndiagh)
-    , ("conndiagv",     conndiagv)
-    , ("connhdiag",     connhdiag)
-    , ("connvdiag",     connvdiag)
-    , ("connabar",      connabar)
-    , ("connbbar",      connbbar)
-    , ("connaright",    connaright)
-    , ("connbright",    connbright)
-    , ("connhrr",       connhrr)
-    , ("connrrh",       connrrh)
-    , ("connvrr",       connvrr)
-    , ("connrrv",       connrrv)
-    , ("connaloop",     connaloop)
-    , ("connbloop",     connbloop)
-    , ("connhbezier",   connhbezier)
-    , ("connvbezier",   connvbezier)
+    [ ("connline",      connline props)
+    , ("connarc",       connarc props)
+    , ("connhdiagh",    connhdiagh props)
+    , ("connvdiagv",    connvdiagv props)
+    , ("conndiagh",     conndiagh props)
+    , ("conndiagv",     conndiagv props)
+    , ("connhdiag",     connhdiag props)
+    , ("connvdiag",     connvdiag props)
+    , ("connabar",      connabar props)
+    , ("connbbar",      connbbar props)
+    , ("connaright",    connaright props)
+    , ("connbright",    connbright props)
+    , ("connhrr",       connhrr  props)
+    , ("connrrh",       connrrh props)
+    , ("connvrr",       connvrr props)
+    , ("connrrv",       connrrv props)
+    , ("connaloop",     connaloop props)
+    , ("connbloop",     connbloop props)
+    , ("connhbezier",   connhbezier props)
+    , ("connvbezier",   connvbezier props)
     ]
+  where
+    props = default_connector_props { conn_dst_arm = 2::Em } 
+
 
 tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 

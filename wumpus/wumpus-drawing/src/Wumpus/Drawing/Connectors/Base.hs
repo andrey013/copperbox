@@ -17,6 +17,7 @@
 module Wumpus.Drawing.Connectors.Base
   ( 
 
+
     ConnectorPathQuery
 
   , ArrowTip(..)
@@ -29,9 +30,6 @@ module Wumpus.Drawing.Connectors.Base
 
   , rightArrowPath
 
-  
-  , buildConn
-
   ) where
 
 import Wumpus.Drawing.Paths
@@ -43,6 +41,9 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 import Data.Monoid
+
+
+
 
 -- | The type of Connectors - a query from start and end point to 
 -- a Path.
@@ -192,28 +193,3 @@ tipDirectionR u absp | u <= 0   = directionR absp
    
 
 
-
--- | Promote a function from source and dest points to a connector 
--- function accounting for the separator values in the 
--- DrawingContext.
---
--- This should be used instead of @promoteConn@ for functions 
--- building connectors.
---
-buildConn :: (Real u, Floating u, InterpretUnit u) 
-            => (Point2 u -> Point2 u -> Image u a) 
-            -> ConnectorImage u a
-buildConn fn = promoteConn $ \p0 p1 -> 
-    connectorSrcSpace  >>= \sep0 ->
-    connectorDstSpace  >>= \sep1 ->
-    connectorSrcOffset >>= \off0 ->
-    connectorDstOffset >>= \off1 ->
-    let ang = vdirection $ pvec p0 p1
-    in fn (dispPerpendicular off0 ang $ p0 .+^ avec ang sep0) 
-          (dispPerpendicular off1 ang $ p1 .-^ avec ang sep1)
-   
---
--- CAUTION - buildConn projects the spacers along the (straight)
--- connector line. This might not be what is wanted for jointed
--- connectors.
--- 

@@ -29,7 +29,6 @@ module Wumpus.Basic.Kernel.Base.DrawingContext
 
   , DrawingContextF
   , TextMargin(..)
-  , ConnectorProps(..)
 
   -- * Construction
   , standardContext
@@ -89,7 +88,6 @@ data DrawingContext = DrawingContext
       , dc_text_colour          :: RGBi
       , dc_line_spacing_factor  :: Double
       , dc_text_margin          :: TextMargin
-      , dc_connector_props      :: ConnectorProps
       }
 
 -- TODO - what parts of the Drawing Context should be strict? 
@@ -108,57 +106,6 @@ data TextMargin = TextMargin
        { text_margin_x          :: !Em
        , text_margin_y          :: !Em
        }
-
-
--- | ConnectorProps control the drawing of connectors in 
--- Wumpus-Drawing.
---
--- > conn_src_space     :: Em
--- > conn_dst_space     :: Em
---
--- Source and destination spacers - these add spacing between the 
--- respective connector points and the tips of the drawn connector.
--- 
--- > conn_src_offset    :: Em
--- > conn_dst_offset    :: Em
---
--- Source and destination offsets - these offset the drawing of
--- the connector perpendicular to the direction of line formed 
--- between the connector points (a positive offset is drawn above, 
--- a negative offset below). The main use of offsets is to draw
--- parallel line connectors.
---
--- > conn_arc_ang       :: Radian 
---
--- Control the /bend/ of an arc connector.
--- 
--- > conn_src_arm       :: Em
--- > conn_dst_arm       :: Em 
---
--- Control the /arm/ length of a jointed connector - arms are the 
--- initial segments of the connector. 
---
--- > conn_loop_size     :: Em
---
--- Control the /height/ of a loop connector. 
---
--- > conn_box_halfsize  :: Em
--- 
--- Control the size of a connector box. Connector boxes are 
--- drawn with the exterior lines projected out from the connector
--- points a halfsize above and below.
--- 
-data ConnectorProps = ConnectorProps
-      { dc_conn_src_space       :: !Em
-      , dc_conn_dst_space       :: !Em
-      , dc_conn_src_offset      :: !Em
-      , dc_conn_dst_offset      :: !Em
-      , dc_conn_arc_ang         :: !Radian
-      , dc_conn_src_arm         :: !Em
-      , dc_conn_dst_arm         :: !Em
-      , dc_conn_loop_size       :: !Em
-      , dc_conn_box_halfsize    :: !Em
-      }
 
 
 
@@ -193,15 +140,6 @@ data ConnectorProps = ConnectorProps
 -- > round_corner_factor: 0
 -- > text_margin:         (0.5 em, 0.5 em) 
 --
--- > conn_src_sep:        0
--- > conn_dst_sep:        0
--- > conn_src_offset:     0
--- > conn_dst_offset:     0
--- > conn_arc_ang:        pi / 12
--- > conn_src_arm:        1
--- > conn_dst_arm:        1
--- > conn_loop_size:      2 
--- 
 --
 standardContext :: FontSize -> DrawingContext
 standardContext sz = 
@@ -217,7 +155,6 @@ standardContext sz =
                    , dc_text_colour          = wumpus_black
                    , dc_line_spacing_factor  = default_line_spacing  
                    , dc_text_margin          = default_text_margin
-                   , dc_connector_props      = default_connector_props
                    }
 
 
@@ -278,7 +215,6 @@ reset_drawing_properties dcxt =
          , dc_text_colour           = wumpus_black
          , dc_line_spacing_factor   = default_line_spacing
          , dc_text_margin           = default_text_margin
-         , dc_connector_props       = default_connector_props
          }
 
 -- Ideally @reset_drawing_properties@ would be in the UpdateDC 
@@ -313,21 +249,6 @@ reset_drawing_metrics dcxt =
 default_text_margin :: TextMargin
 default_text_margin = TextMargin { text_margin_x = 0.5, text_margin_y = 0.5 }
 
-
--- Arc angle is 15deg - quite shallow.
---
-default_connector_props :: ConnectorProps
-default_connector_props = 
-    ConnectorProps { dc_conn_src_space    = 0
-                   , dc_conn_dst_space    = 0
-                   , dc_conn_src_offset   = 0
-                   , dc_conn_dst_offset   = 0
-                   , dc_conn_arc_ang      = pi / 12
-                   , dc_conn_src_arm      = 1
-                   , dc_conn_dst_arm      = 1
-                   , dc_conn_loop_size    = 2 
-                   , dc_conn_box_halfsize = 2 
-                   }
 
 
 default_line_spacing :: Double

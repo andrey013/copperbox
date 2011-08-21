@@ -35,6 +35,9 @@ description:
   * Changed Chain so that first item in the chain is the start 
     point (previously the start point was iterated by the chain).
   .
+  * Removed @ConnectorProps@ from the @DrawingContext@ , they are 
+    now used \"locally\" in Wumpus-Drawing.
+  .
   v0.20.0 to v0.21.0:
   .
   * The code from the @Kernel.Base.UserState@ module has been 

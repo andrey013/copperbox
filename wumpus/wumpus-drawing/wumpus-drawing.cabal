@@ -94,6 +94,7 @@ library
     Wumpus.Drawing.Connectors.Base,
     Wumpus.Drawing.Connectors.BoxConnectors,
     Wumpus.Drawing.Connectors.ConnectorPaths,
+    Wumpus.Drawing.Connectors.ConnectorProps,
     Wumpus.Drawing.Dots.AnchorDots,
     Wumpus.Drawing.Dots.SimpleDots,
     Wumpus.Drawing.Extras.Axes,

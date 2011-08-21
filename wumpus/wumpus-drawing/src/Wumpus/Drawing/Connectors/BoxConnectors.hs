@@ -21,7 +21,8 @@ module Wumpus.Drawing.Connectors.BoxConnectors
 
   ) where
 
--- import Wumpus.Drawing.Paths.Absolute
+-- import Wumpus.Drawing.Connectors.Base
+import Wumpus.Drawing.Connectors.ConnectorProps
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -53,10 +54,9 @@ type ConnectorBox u = ConnectorGraphic u
 -- The rectangle will be inclined to the line.
 --
 connbox :: (Real u, Floating u, InterpretUnit u) 
-        => ConnectorBox u
-connbox = promoteConn $ \p0 p1 -> 
-    connectorSrcArm >>= \src_arm ->
-    connectorDstArm >>= \dst_arm ->
+        => ConnectorProps -> ConnectorBox u
+connbox props = promoteConn $ \p0 p1 -> 
+    connectorArms props >>= \(src_arm, dst_arm) ->
     let ang = vdirection $ pvec p0 p1 
         bl  = dispOrtho (V2 (-src_arm) (-src_arm)) ang p0
         tl  = dispOrtho (V2 (-src_arm)   src_arm ) ang p0
