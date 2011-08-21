@@ -80,7 +80,7 @@ data ConnectorProps = ConnectorProps
       , conn_loop_size       :: !Em
       , conn_box_halfsize    :: !Em
       }
-
+  deriving (Eq,Show)
 
 
 -- | Default connector properties.
@@ -122,7 +122,7 @@ connectorSrcSpace props =
 connectorDstSpace :: (DrawingCtxM m, InterpretUnit u) 
                   => ConnectorProps -> m u
 connectorDstSpace props = 
-    (\sz -> uconvert1 sz $ conn_src_space props) <$> pointSize
+    (\sz -> uconvert1 sz $ conn_dst_space props) <$> pointSize
 
 
 connectorArms :: (DrawingCtxM m, InterpretUnit u) 

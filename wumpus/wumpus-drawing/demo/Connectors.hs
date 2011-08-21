@@ -62,7 +62,9 @@ conntable =
     , ("connvbezier",   connvbezier props)
     ]
   where
-    props = default_connector_props { conn_dst_arm = 2::Em } 
+    props = default_connector_props { conn_dst_arm   = 2
+                                    , conn_src_space = 0.5
+                                    , conn_dst_space = 0.5 } 
 
 
 tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
