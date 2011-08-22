@@ -362,14 +362,14 @@ penline v1 = GenPathSpec $ \ctx s ->
 extendPathsC :: DVec2 -> DVec2 -> DVec2 -> PathSt st -> PathSt st
 extendPathsC v1 v2 v3 s@(PathSt { st_cumulative_path = cp
                                 , st_active_pen      = pen} )  = 
-    s { st_cumulative_path = snocCurve cp v1 v2 v3, st_active_pen = upd pen }
+    s { st_cumulative_path = snocCurve cp (v1,v2,v3), st_active_pen = upd pen }
   where
     upd PEN_UP          = let p0 = tipR cp 
                               p1 = p0 .+^ v1
                               p2 = p1 .+^ v2
                               p3 = p2 .+^ v3
                           in PEN_DOWN $ curve1 p0 p1 p2 p3
-    upd (PEN_DOWN absp) = PEN_DOWN $ snocCurve absp v1 v2 v3
+    upd (PEN_DOWN absp) = PEN_DOWN $ snocCurve absp (v1,v2,v3)
 
 
 

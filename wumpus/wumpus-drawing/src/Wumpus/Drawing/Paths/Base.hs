@@ -91,6 +91,10 @@ module Wumpus.Drawing.Paths.Base
   , roundTrail
   , roundInterior
 
+
+  -- * Path division
+  , pathdiv
+
   ) where
 
 
@@ -281,7 +285,7 @@ curvePath :: (Floating u, Ord u, Tolerance u)
           => [Point2 u] -> AbsPath u
 curvePath (a:b:c:d:xs) = step (curve1 a b c d) xs
   where
-    step acc (x:y:z:zs) = step (snocCurveTo acc x y z) zs
+    step acc (x:y:z:zs) = step (snocCurveTo acc (x,y,z)) zs
     step acc _          = acc
 
 curvePath _            = error "curvePath - less than 4 elems."
@@ -356,6 +360,8 @@ snocLine (AbsPath u sp se ep) v1 =
   in AbsPath (u + u1) sp (JL.snoc se tail_line) (ep .+^ v1)
 
 
+
+
 -- | Extend the path with a straight line segment from the 
 -- end-point to the supplied point.
 --
@@ -369,8 +375,8 @@ snocLineTo (AbsPath u sp se1 ep) p1 = AbsPath (u + len) sp (snoc se1 s1) p1
 -- segment formed by the supplied points.
 --
 snocCurve :: (Floating u, Ord u, Tolerance u)
-          => AbsPath u -> Vec2 u -> Vec2 u -> Vec2 u -> AbsPath u
-snocCurve absp@(AbsPath _ _ _ ep) v1 v2 v3 = snocCurveTo absp p1 p2 p3
+          => AbsPath u -> (Vec2 u, Vec2 u, Vec2 u) -> AbsPath u
+snocCurve absp@(AbsPath _ _ _ ep) (v1,v2,v3) = snocCurveTo absp (p1,p2,p3)
   where
     p1 = ep .+^ v1
     p2 = p1 .+^ v2
@@ -382,17 +388,12 @@ snocCurve absp@(AbsPath _ _ _ ep) v1 v2 v3 = snocCurveTo absp p1 p2 p3
 -- segment formed by the supplied points.
 --
 snocCurveTo :: (Floating u, Ord u, Tolerance u)
-            => AbsPath u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
-snocCurveTo (AbsPath u sp se1 ep) p1 p2 p3 = 
+            => AbsPath u -> (Point2 u, Point2 u, Point2 u) -> AbsPath u
+snocCurveTo (AbsPath u sp se1 ep) (p1,p2,p3) = 
     AbsPath (u + len) sp (snoc se1 s1) p3
   where
     s1@(AbsCurveSeg len _ _ _) = curveSegment ep p1 p2 p3
  
-
-
-
-
--- need to add prefixLine, suffixCurve, prefixCurve...
 
 -------------------------------------------------------------------------------- 
 
@@ -682,6 +683,8 @@ atend_ (AbsPath _ _ _ ep) = ep
 
 
 --------------------------------------------------------------------------------
+-- Path Views cf. Data.Sequence
+
 
 infixr 5 :<<
 infixl 5 :>>
@@ -703,8 +706,12 @@ type instance DUnit (PathViewR u) = u
 type DPathViewR = PathViewR Double
 
 
-data PathSegment u = LineSeg  (Point2 u) (Point2 u)
-                   | CurveSeg (Point2 u) (Point2 u) (Point2 u) (Point2 u)
+
+-- | PathSegments are annotated with length.
+--
+--
+data PathSegment u = LineSeg  u (Point2 u) (Point2 u)
+                   | CurveSeg u (Point2 u) (Point2 u) (Point2 u) (Point2 u)
   deriving (Eq,Show) 
 
 type instance DUnit (PathSegment u) = u 
@@ -716,9 +723,9 @@ type DPathSegment = PathSegment Double
 --------------------------------------------------------------------------------
 
 instance Functor PathSegment where
-  fmap f (LineSeg p0 p1)        = LineSeg (fmap f p0) (fmap f p1)
-  fmap f (CurveSeg p0 p1 p2 p3) = 
-      CurveSeg (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
+  fmap f (LineSeg d p0 p1)        = LineSeg (f d) (fmap f p0) (fmap f p1)
+  fmap f (CurveSeg d p0 p1 p2 p3) = 
+      CurveSeg (f d) (fmap f p0) (fmap f p1) (fmap f p2) (fmap f p3)
 
 instance Functor PathViewL where
   fmap _ EmptyPathL   = EmptyPathL
@@ -733,33 +740,33 @@ instance Functor PathViewR where
 
 
 pathViewL :: Num u => AbsPath u -> PathViewL u
-pathViewL (AbsPath u sp segs ep) = go (viewl segs)
+pathViewL (AbsPath len sp segs ep) = go (viewl segs)
   where
     go EmptyL                           = EmptyPathL
      
-    go (AbsLineSeg len v1 :< se)        =
-        let p1 = sp .+^ v1 in LineSeg sp p1 :<< AbsPath (u-len) p1 se ep
+    go (AbsLineSeg d v1 :< se)        =
+        let p1 = sp .+^ v1 in LineSeg d sp p1 :<< AbsPath (len - d) p1 se ep
 
-    go (AbsCurveSeg len v1 v2 v3 :< se) =
+    go (AbsCurveSeg d v1 v2 v3 :< se) =
         let p1 = sp .+^ v1
             p2 = p1 .+^ v2
             p3 = p2 .+^ v3
-        in CurveSeg sp p1 p2 p3 :<< AbsPath (u-len) p3 se ep
+        in CurveSeg d sp p1 p2 p3 :<< AbsPath (len - d) p3 se ep
 
 
 pathViewR :: Num u => AbsPath u -> PathViewR u
-pathViewR (AbsPath u sp segs ep) = go (viewr segs)
+pathViewR (AbsPath len sp segs ep) = go (viewr segs)
   where
     go EmptyR                           = EmptyPathR 
 
-    go (se :> AbsLineSeg len v1)        = 
-       let p0 = ep .-^ v1 in AbsPath (u-len) sp se p0 :>> LineSeg p0 ep
+    go (se :> AbsLineSeg d v1)        = 
+       let p0 = ep .-^ v1 in AbsPath (len - d) sp se p0 :>> LineSeg d p0 ep
 
-    go (se :> AbsCurveSeg len v1 v2 v3) =  
+    go (se :> AbsCurveSeg d v1 v2 v3) =  
        let p2 = ep .-^ v3
            p1 = p2 .-^ v2
            p0 = p1 .-^ v1
-       in AbsPath (u-len) sp se p0 :>> CurveSeg p0 p1 p2 ep
+       in AbsPath (len - d) sp se p0 :>> CurveSeg d p0 p1 p2 ep
 
 
 
@@ -933,3 +940,19 @@ lineCurveInter1 u a b c =
     p2 = b .+^ (avec (vdirection $ pvec b a) u)
     p3 = b .+^ (avec (vdirection $ pvec b c) u)
  
+
+
+--------------------------------------------------------------------------------
+-- Path division
+
+
+
+pathdiv :: (Real u, Floating u) 
+        => u -> u -> AbsPath u -> [(Point2 u, Radian)]
+pathdiv ana sz path0 = step $ shortenL ana path0
+  where
+    step paff | null paff = []
+              | otherwise = atstart paff : step (shortenL sz paff)
+                          
+ 
+

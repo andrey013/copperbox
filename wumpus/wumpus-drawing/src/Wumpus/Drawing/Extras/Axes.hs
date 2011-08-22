@@ -40,7 +40,7 @@ orthontAxes :: (Real u, Floating u, InterpretUnit u)
             => (Int,Int) -> (Int,Int) -> LocGraphic u
 orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) -> 
     snapmove (1,1) >>= \(V2 uw uh) ->
-    let conn1 = rightArrow barb45 connline
+    let conn1 = rightArrow barb45 (connline default_connector_props)
         xPtl  = P2 (x - (uw * fromIntegral xl)) y
         xPtr  = P2 (x + (uw * fromIntegral xr)) y
         yPtl  = P2 x (y - (uh * fromIntegral yl))

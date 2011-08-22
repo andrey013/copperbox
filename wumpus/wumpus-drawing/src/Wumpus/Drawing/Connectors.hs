@@ -11,6 +11,8 @@
 -- Portability :  GHC
 --
 -- Shim module for Connectors.
+-- 
+-- \*\* WARNING \*\* - this is due to change...
 --
 --------------------------------------------------------------------------------
 
@@ -20,6 +22,7 @@ module Wumpus.Drawing.Connectors
   , module Wumpus.Drawing.Connectors.Base
   , module Wumpus.Drawing.Connectors.BoxConnectors
   , module Wumpus.Drawing.Connectors.ConnectorPaths
+  , module Wumpus.Drawing.Connectors.ConnectorProps
 
   ) where
 
@@ -27,3 +30,4 @@ import Wumpus.Drawing.Connectors.Arrowheads
 import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorPaths
+import Wumpus.Drawing.Connectors.ConnectorProps
