@@ -27,11 +27,6 @@ path_pic = drawTracing $ do
     drawl (P2 0 0)   $ path1
     drawl (P2 140 0) $ path1
     drawl (P2 140 0) $ dots1
-
---    drawl (P2 400 0) $ makePD path_spec2
---    drawl (P2 0 200) $ makePD path_spec3
---    drawl (P2 100 200) $ makePD path_spec4
-
     return ()  
     
 
@@ -45,7 +40,7 @@ dots1 = localize (fill_colour red) $ promoteLoc $ \(P2 x y) ->
     mconcat $ map (\pt -> smallDisk `at` translate x y pt) $ dots_list
 
 dots_list :: [DPoint2]
-dots_list = map fst $ pathdiv 30 20 abspath1
+dots_list = map fst $ pathdiv 30 20 10 abspath1
 
 
 

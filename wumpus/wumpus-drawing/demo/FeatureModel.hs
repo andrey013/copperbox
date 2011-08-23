@@ -5,6 +5,7 @@
 module FeatureModel where
 
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
@@ -112,3 +113,9 @@ cmandatory_ p0 p1 = connWith diskTip p0 p1 >> return ()
 coptional_ :: ( Real u, Floating u, InterpretUnit u ) 
            => Box u -> Box u -> TraceDrawing u ()
 coptional_ p0 p1 = connWith odiskTip p0 p1 >> return ()
+
+
+-- Cf. Parsec\'s Token module...
+
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline = C.connline default_connector_props

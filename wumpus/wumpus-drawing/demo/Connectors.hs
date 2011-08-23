@@ -4,7 +4,7 @@ module Connectors where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors
-import Wumpus.Drawing.Connectors.ConnectorProps
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -40,26 +40,26 @@ conn_pic = drawTracing $ tableGraphic conntable
 
 conntable :: [(String, ConnectorPathQuery Double)]
 conntable = 
-    [ ("connline",      connline props)
-    , ("connarc",       connarc props)
-    , ("connhdiagh",    connhdiagh props)
-    , ("connvdiagv",    connvdiagv props)
-    , ("conndiagh",     conndiagh props)
-    , ("conndiagv",     conndiagv props)
-    , ("connhdiag",     connhdiag props)
-    , ("connvdiag",     connvdiag props)
-    , ("connabar",      connabar props)
-    , ("connbbar",      connbbar props)
-    , ("connaright",    connaright props)
-    , ("connbright",    connbright props)
-    , ("connhrr",       connhrr  props)
-    , ("connrrh",       connrrh props)
-    , ("connvrr",       connvrr props)
-    , ("connrrv",       connrrv props)
-    , ("connaloop",     connaloop props)
-    , ("connbloop",     connbloop props)
-    , ("connhbezier",   connhbezier props)
-    , ("connvbezier",   connvbezier props)
+    [ ("connline",      C.connline props)
+    , ("connarc",       C.connarc props)
+    , ("connhdiagh",    C.connhdiagh props)
+    , ("connvdiagv",    C.connvdiagv props)
+    , ("conndiagh",     C.conndiagh props)
+    , ("conndiagv",     C.conndiagv props)
+    , ("connhdiag",     C.connhdiag props)
+    , ("connvdiag",     C.connvdiag props)
+    , ("connabar",      C.connabar props)
+    , ("connbbar",      C.connbbar props)
+    , ("connaright",    C.connaright props)
+    , ("connbright",    C.connbright props)
+    , ("connhrr",       C.connhrr  props)
+    , ("connrrh",       C.connrrh props)
+    , ("connvrr",       C.connvrr props)
+    , ("connrrv",       C.connrrv props)
+    , ("connaloop",     C.connaloop props)
+    , ("connbloop",     C.connbloop props)
+    , ("connhbezier",   C.connhbezier props)
+    , ("connvbezier",   C.connvbezier props)
     ]
   where
     props = default_connector_props { conn_dst_arm   = 2

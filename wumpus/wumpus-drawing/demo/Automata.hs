@@ -4,6 +4,7 @@
 module Automata where
 
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Extras.Loop
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes
@@ -107,6 +108,11 @@ arrloop ctr p1 =
     zradius = vlength v1
     zincl   = vdirection v1
 
+
+-- Cf. Parsec\'s Token module...
+
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline = C.connline default_connector_props
 
 
 

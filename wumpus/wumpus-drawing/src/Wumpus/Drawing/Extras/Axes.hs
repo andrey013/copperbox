@@ -25,6 +25,7 @@ module Wumpus.Drawing.Extras.Axes
   ) where
 
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
@@ -40,7 +41,7 @@ orthontAxes :: (Real u, Floating u, InterpretUnit u)
             => (Int,Int) -> (Int,Int) -> LocGraphic u
 orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) -> 
     snapmove (1,1) >>= \(V2 uw uh) ->
-    let conn1 = rightArrow barb45 (connline default_connector_props)
+    let conn1 = rightArrow barb45 connline
         xPtl  = P2 (x - (uw * fromIntegral xl)) y
         xPtr  = P2 (x + (uw * fromIntegral xr)) y
         yPtl  = P2 x (y - (uh * fromIntegral yl))
@@ -64,3 +65,10 @@ verticalLabels addr ns =
     snapmove (1,1) >>= \(V2 _ uh) -> runChain_ (mapM mf ns) (chainV uh)
   where
     mf n = onChain $ runPosObject (posTextUpright $ show n) addr
+
+
+
+-- Cf. Parsec\'s Token module...
+--
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline = C.connline default_connector_props

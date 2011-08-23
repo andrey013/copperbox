@@ -9,6 +9,7 @@ module PetriNet where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -104,22 +105,16 @@ straightconn = ignoreAns $ rightArrow tri45 connline
 
 
 connectorC :: ConnectorGraphic Double
-connectorC = 
-    ignoreAns $ localize (uniform_arm_len  (30::Double)) 
-              $ rightArrow tri45 connbbar
+connectorC = ignoreAns $ rightArrow tri45 connbbar
 
 connectorC' :: ConnectorGraphic Double
-connectorC' = 
-    ignoreAns $ localize (uniform_arm_len  (30::Double)) 
-                      $ rightArrow tri45 connabar
+connectorC' = ignoreAns $ rightArrow tri45 connabar
 
 connectorD :: ConnectorGraphic Double
 connectorD = ignoreAns $ rightArrow tri45 connarc
 
 connectorD' :: ConnectorGraphic Double
-connectorD' = 
-    ignoreAns $ localize (conn_arc_angle $ negate $ pi / 12) 
-                      $ rightArrow tri45 connarc
+connectorD' = ignoreAns $ rightArrow tri45 connarc
 
 
 lblParensParens :: DLocGraphic
@@ -136,3 +131,30 @@ lblBold :: String -> DLocGraphic
 lblBold ss = 
     ignoreAns $ localize (set_font helvetica_bold) $ textline ss CENTER
 
+
+
+-- Cf. Parsec\'s Token module...
+
+conn_props :: ConnectorProps
+conn_props = (default_connector_props { conn_src_arm = 2
+                                      , conn_dst_arm = 2 
+                                      , conn_arc_ang =  negate $ pi / 12 })
+
+connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
+connline = C.connline conn_props
+
+
+connabar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
+connabar = C.connabar conn_props
+
+
+connbbar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
+connbbar = C.connbbar conn_props
+
+
+connarc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+        => ConnectorPathQuery u
+connarc = C.connarc conn_props

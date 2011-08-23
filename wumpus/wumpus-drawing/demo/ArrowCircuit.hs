@@ -11,6 +11,7 @@
 module ArrowCircuit where
 
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Shapes
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -78,7 +79,7 @@ body = do
     -- Note - need a variant of /bar/ that draws UDLR only.
 
 connWith :: ( Real u, Floating u, InterpretUnit u ) 
-         => Connector u -> Anchor u -> Anchor u -> TraceDrawing u ()
+         => ConnectorPathQuery u -> Anchor u -> Anchor u -> TraceDrawing u ()
 connWith con a0 a1 = localize double_point_size $ 
     drawc a0 a1 (rightArrow tri45 con)
 
@@ -104,3 +105,20 @@ rrectangle _r w h = strokedShape (rectangle w h)
     -- This should have round corners but they are currently
     -- disabled pending a re-think. 
     {- localize (round_corner_factor r) $ -} 
+
+
+
+-- Cf. Parsec\'s Token module...
+
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline = C.connline default_connector_props
+
+connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathQuery u
+connabar = C.connabar default_connector_props
+
+
+connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => ConnectorPathQuery u
+connaright = C.connaright default_connector_props
+

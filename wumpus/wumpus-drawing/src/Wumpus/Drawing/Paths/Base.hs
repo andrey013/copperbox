@@ -946,13 +946,19 @@ lineCurveInter1 u a b c =
 -- Path division
 
 
-
+-- | Divide a path returning intermediate points and direction
+--
+-- Args are initial-prefix, division size, trailing size.
+-- 
+-- Generation is stopped if the remainder of the path is shorter
+-- than the trailing size.
+--
 pathdiv :: (Real u, Floating u) 
-        => u -> u -> AbsPath u -> [(Point2 u, Radian)]
-pathdiv ana sz path0 = step $ shortenL ana path0
+        => u -> u -> u -> AbsPath u -> [(Point2 u, Radian)]
+pathdiv ana sz end = step . shortenL ana 
   where
-    step paff | null paff = []
-              | otherwise = atstart paff : step (shortenL sz paff)
+    step pth | length pth < end = []
+             | otherwise         = atstart pth : step (shortenL sz pth)
                           
  
 

@@ -4,6 +4,7 @@ module Arrowheads where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Connectors
+import qualified Wumpus.Drawing.Connectors.ConnectorPaths as C
 import Wumpus.Drawing.Text.DirectionZero
 import Wumpus.Drawing.Text.StandardFontDefs
 
@@ -99,3 +100,7 @@ makeArrowDrawing (name, utip) = onChain (aconn `mappend` lbl)
               textline name WW `at` (displace (hvec 66) pt)
 
 
+-- Cf. Parsec\'s Token module...
+
+connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline = C.connline default_connector_props
