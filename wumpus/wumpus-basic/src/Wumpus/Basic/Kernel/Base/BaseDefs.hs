@@ -64,6 +64,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
   -- * Misc
   , vsum
+  , orthoVec
+
   , both
 
   ) where
@@ -330,6 +332,18 @@ vsum (v:vs) = go v vs
   where
     go a []     = a
     go a (b:bs) = go (a ^+^ b) bs
+
+
+-- | Build a vector form its parallel and perpendicular components
+-- and inclination.
+--
+-- Candidate for Wumpus-Core.
+-- 
+orthoVec :: Floating u => u -> u -> Radian -> Vec2 u 
+orthoVec pall perp ang = avec ang pall ^+^ avec (ang + half_pi) perp
+  where
+    half_pi = 0.5 * pi
+
 
 
 -- | Applicative /both/ - run both computations return the pair

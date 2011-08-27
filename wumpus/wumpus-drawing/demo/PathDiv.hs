@@ -5,6 +5,7 @@ module PathRel where
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.HPath
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -45,13 +46,17 @@ dots_list = map fst $ pathdiv 30 20 10 abspath1
 
 
 abspath1 :: AbsPath Double
-abspath1 = emptyPath zeroPt `snocLineTo` (P2 0 60) 
-                            `snocLineTo` (P2 40 100)
-                            `snocLineTo` (P2 80 60)
-                            `snocLineTo` (P2 80 0)
-                            `snocLineTo` (P2 60 0)  
-                            `snocLineTo`  (P2 60 30)
-                            `snocCurveTo` (P2 60 50, P2 50 60, P2 40 60)
-                            `snocCurveTo` (P2 30 60, P2 20 50, P2 20 30)
-                            `snocLineTo` (P2 20 0)
+abspath1 = runHPath hp zeroPt
+  where
+    hp = mconcat [ line_up 60
+                 , line_up_right 40 
+                 , line_down_right 40
+                 , line_down 60
+                 , line_left 20
+                 , line_up   30
+                 , curve (vvec 20) (vec (-10) 10) (hvec (-10))
+                 , curve (hvec (-10)) (vec (-10) (-10)) (vvec (-20))
+                 , line_down 30
+                 ]
+                            
                           

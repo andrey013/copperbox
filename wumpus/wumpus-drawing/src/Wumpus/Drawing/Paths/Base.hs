@@ -95,6 +95,9 @@ module Wumpus.Drawing.Paths.Base
   -- * Path division
   , pathdiv
 
+  -- * Decorative extension
+  , snocSineWave
+
   ) where
 
 
@@ -348,10 +351,13 @@ length (AbsPath u _ _ _) = u
 --------------------------------------------------------------------------------
 -- Extension
 
+infixl 5 `snocLine`
 
 
 -- | Extend the path with a straight line segment from the 
 -- end-point defined by the supplied vector.
+--
+-- > infixl 5 `snocLine`
 --
 snocLine :: Floating u => AbsPath u -> Vec2 u -> AbsPath u
 snocLine (AbsPath u sp se ep) v1 = 
@@ -361,9 +367,13 @@ snocLine (AbsPath u sp se ep) v1 =
 
 
 
+infixl 5 `snocLineTo`
+
 
 -- | Extend the path with a straight line segment from the 
 -- end-point to the supplied point.
+--
+-- > infixl 5 `snocLineTo`
 --
 snocLineTo :: Floating u => AbsPath u -> Point2 u -> AbsPath u
 snocLineTo (AbsPath u sp se1 ep) p1 = AbsPath (u + len) sp (snoc se1 s1) p1
@@ -371,9 +381,13 @@ snocLineTo (AbsPath u sp se1 ep) p1 = AbsPath (u + len) sp (snoc se1 s1) p1
     s1@(AbsLineSeg len _) = lineSegment ep p1
 
 
+infixl 5 `snocCurve`
+
 -- | Extend the path from the end-point with a Bezier curve 
 -- segment formed by the supplied points.
 --
+-- > infixl 5 `snocCurve`
+-- 
 snocCurve :: (Floating u, Ord u, Tolerance u)
           => AbsPath u -> (Vec2 u, Vec2 u, Vec2 u) -> AbsPath u
 snocCurve absp@(AbsPath _ _ _ ep) (v1,v2,v3) = snocCurveTo absp (p1,p2,p3)
@@ -383,10 +397,14 @@ snocCurve absp@(AbsPath _ _ _ ep) (v1,v2,v3) = snocCurveTo absp (p1,p2,p3)
     p3 = p2 .+^ v3
  
 
+infixl 5 `snocCurveTo`
+
 
 -- | Extend the path from the end-point with a Bezier curve 
 -- segment formed by the supplied points.
 --
+-- > infixl 5 `snocCurveTo`
+-- 
 snocCurveTo :: (Floating u, Ord u, Tolerance u)
             => AbsPath u -> (Point2 u, Point2 u, Point2 u) -> AbsPath u
 snocCurveTo (AbsPath u sp se1 ep) (p1,p2,p3) = 
@@ -961,4 +979,39 @@ pathdiv ana sz end = step . shortenL ana
              | otherwise         = atstart pth : step (shortenL sz pth)
                           
  
+
+--------------------------------------------------------------------------------
+-- Decorative path segments
+
+infixl 5 `snocSineWave`
+
+
+-- | Extend the path with a one-phase sine wave. Height is 
+-- parametric.
+--
+-- > infixl 5 `snocSineWave`
+--
+snocSineWave :: (Real u, Floating u, Ord u, Tolerance u) 
+             => AbsPath u -> (u,Vec2 u) -> AbsPath u
+snocSineWave abs_path (h,base_vec) = 
+    abs_path `snocCurveTo` (p1,p2,p3) `snocCurveTo` (p4,p5,p6)
+             `snocCurveTo` (p7,p8,p9) `snocCurveTo` (p10,p11,p12)
+  where
+    base1 = vlength base_vec / 12
+    h2    = h * (pi / 6)
+    ang   = vdirection base_vec
+    p0    = _abs_path_end abs_path
+    p1    = displace (orthoVec     base1    h2  ang) p0
+    p2    = displace (orthoVec  (2*base1)   h   ang) p0
+    p3    = displace (orthoVec  (3*base1)   h   ang) p0
+    p4    = displace (orthoVec  (4*base1)   h   ang) p0
+    p5    = displace (orthoVec  (5*base1)   h2  ang) p0
+    p6    = displace (orthoVec  (6*base1)   0   ang) p0
+    p7    = displace (orthoVec  (7*base1) (-h2) ang) p0
+    p8    = displace (orthoVec  (8*base1) (-h)  ang) p0
+    p9    = displace (orthoVec  (9*base1) (-h)  ang) p0
+    p10   = displace (orthoVec (10*base1) (-h)  ang) p0
+    p11   = displace (orthoVec (11*base1) (-h2) ang) p0
+    p12   = displace (orthoVec (12*base1)   0   ang) p0
+
 
