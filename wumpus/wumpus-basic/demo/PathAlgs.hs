@@ -3,7 +3,6 @@
 
 module PathAlgs where
 
-import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Geometry.Paths
 import Wumpus.Basic.Kernel
 
@@ -41,40 +40,40 @@ mf1 = do
 
 rect1 :: LocGraphic Double
 rect1 = promoteLoc $ \pt -> 
-    zapQuery (vertexPP $ runPathAlgPoint pt $ rectanglePathAlg 36 24) 
+    liftQuery (vertexPP $ runPathAlgPoint pt $ rectanglePathAlg 36 24) 
       >>= dcClosedPath STROKE
 
 
 rect2 :: LocGraphic Double
 rect2 = promoteLoc $ \pt ->
-    zapQuery (vertexPP $ runPathAlgPoint pt $ blRectanglePathAlg 36 24) 
+    liftQuery (vertexPP $ runPathAlgPoint pt $ blRectanglePathAlg 36 24) 
       >>= dcClosedPath STROKE
 
 diamond1 :: LocGraphic Double
 diamond1 = promoteLoc $ \pt ->
-    zapQuery (vertexPP $ runPathAlgPoint pt $ diamondPathAlg 16 20) 
+    liftQuery (vertexPP $ runPathAlgPoint pt $ diamondPathAlg 16 20) 
       >>= dcClosedPath STROKE
 
 
 poly5 :: LocGraphic Double
 poly5 = promoteLoc $ \pt ->
-    zapQuery (vertexPP $ runPathAlgPoint pt $ polygonPathAlg 5 20) 
+    liftQuery (vertexPP $ runPathAlgPoint pt $ polygonPathAlg 5 20) 
       >>= dcClosedPath STROKE
 
 arc1 :: LocGraphic Double
 arc1 = promoteLoc $ \pt ->
-    zapQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) 
+    liftQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 0 (0.5*pi)) 
       >>= dcOpenPath
 
 arc2 :: LocGraphic Double
 arc2 = promoteLoc $ \pt ->
-    zapQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) 
+    liftQuery (curvePP $ runPathAlgPoint pt $ arcPathAlg 20 quarter_pi (1.5*pi)) 
       >>= dcOpenPath
 
 
 circle1 :: LocGraphic Double
 circle1 = promoteLoc $ \pt ->
-    zapQuery (curvePP $ runPathAlgPoint pt $ circlePathAlg 20) 
+    liftQuery (curvePP $ runPathAlgPoint pt $ circlePathAlg 20) 
       >>= dcClosedPath STROKE
 
 

@@ -18,10 +18,15 @@
 
 module Wumpus.Basic.Kernel.Base.BaseDefs
   (
-  
+
+  -- * Constants
+    quarter_pi
+  , half_pi
+  , two_pi
+
 
   -- * Unit phantom type
-    UNil(..)
+  , UNil(..)
   , ureturn
   , uvoid
 
@@ -42,8 +47,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * KernChar
   , KernChar
 
-  -- * Drawing paths
-  , DrawStyle(..)
+  -- * Drawing paths and shapes (closed paths)
+  , PathMode(..)
+  , DrawMode(..)
 
   -- * Drawing /layer/
   , ZDeco(..)  
@@ -81,6 +87,15 @@ import Data.Monoid
 
 
 
+
+quarter_pi      :: Radian
+quarter_pi      = 0.25 * pi
+
+half_pi         :: Radian
+half_pi         = 0.5 * pi
+
+two_pi          :: Radian
+two_pi          = 2.0 * pi
 
 
 --------------------------------------------------------------------------------
@@ -248,10 +263,24 @@ type KernChar u = (u,EscapedChar)
 --
 -- > STROKE
 --
--- > FILL_STROKE - the path is filled and its edge is stroked.
+-- > FILL_STROKE - the path is filled, its edge is stroked.
 --
-data DrawStyle = FILL | STROKE | FILL_STROKE
+data PathMode = OSTROKE | CSTROKE | CFILL | CFILL_STROKE
   deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+
+-- | Draw closed paths and shapes. 
+-- 
+-- > CLOSED_FILL 
+--
+-- > CLOSED_STROKE
+--
+-- > CLOSED_FILL_STROKE - the path is filled, its edge is stroked.
+--
+data DrawMode = DRAW_STROKE | DRAW_FILL | DRAW_FILL_STROKE
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
 
 
 
@@ -341,8 +370,6 @@ vsum (v:vs) = go v vs
 -- 
 orthoVec :: Floating u => u -> u -> Radian -> Vec2 u 
 orthoVec pall perp ang = avec ang pall ^+^ avec (ang + half_pi) perp
-  where
-    half_pi = 0.5 * pi
 
 
 

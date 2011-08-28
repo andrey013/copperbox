@@ -13,6 +13,10 @@
 --
 -- Path /algorithms/ for elementary shapes - rectangle, diamond, 
 -- polygon.
+--
+-- \*\* WARNING \*\* - /Paths/ is not a good name for this module
+-- as it is conflates with Paths in Wumpus-Drawing which are 
+-- different things. 
 -- 
 --------------------------------------------------------------------------------
 
@@ -44,7 +48,6 @@ module Wumpus.Basic.Geometry.Paths
   ) 
   where
 
-import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Geometry.Vertices
 import Wumpus.Basic.Kernel
 
@@ -95,7 +98,7 @@ runPathAlgVec (PathAlg _ vs)                  = (Nothing, vs)
 
 
 drawVertexPathAlg :: InterpretUnit u 
-                  => DrawStyle -> PathAlg u -> LocGraphic u
+                  => DrawMode -> PathAlg u -> LocGraphic u
 drawVertexPathAlg style alg = promoteLoc $ \pt -> 
     liftQuery (vertexPP $ runPathAlgPoint pt alg) >>= dcClosedPath style
 

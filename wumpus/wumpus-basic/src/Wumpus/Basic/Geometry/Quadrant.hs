@@ -49,6 +49,7 @@ module Wumpus.Basic.Geometry.Quadrant
   where
 
 import Wumpus.Basic.Geometry.Base
+import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 

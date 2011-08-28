@@ -40,7 +40,7 @@ enDot :: InterpretUnit u => LocGraphic u
 enDot = uconvF body
   where
     body :: LocGraphic En
-    body = localize (fill_colour white) $ dcDisk FILL_STROKE 0.5
+    body = localize (fill_colour white) $ dcDisk DRAW_FILL_STROKE 0.5
 
 illustrateLine :: (Real u, Floating u, InterpretUnit u) 
                => Line u -> Graphic u

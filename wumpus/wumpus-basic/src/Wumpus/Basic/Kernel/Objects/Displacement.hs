@@ -32,7 +32,7 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , dispDirectionTheta
   , dispCardinalTheta
 
-  -- * Named vectors
+  -- * Named vector constructors
 
   , go_up
   , go_down
@@ -53,6 +53,24 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , go_down_left
   , go_down_right
 
+  , theta_up
+  , theta_down
+  , theta_left
+  , theta_right
+
+  , theta_north
+  , theta_south
+  , theta_east
+  , theta_west
+  , theta_north_east
+  , theta_north_west
+  , theta_south_east
+  , theta_south_west
+
+  , theta_up_left
+  , theta_up_right
+  , theta_down_left
+  , theta_down_right
 
   ) where
 
@@ -234,6 +252,70 @@ go_down_left d = V2 (-d) (-d)
 
 go_down_right :: Num u => u -> Vec2 u
 go_down_right d = V2 d (-d)
+
+
+--------------------------------------------------------------------------------
+
+
+
+theta_up :: Floating u => u -> Radian -> Vec2 u
+theta_up d ang = avec (ang + half_pi) d
+
+theta_down :: Floating u => u -> Radian -> Vec2 u
+theta_down d ang = avec (ang - half_pi) d
+
+
+-- | Parallel (reverse)
+--
+theta_left :: Floating u => u -> Radian -> Vec2 u
+theta_left d ang = avec (ang + pi) d
+
+-- | Parallel (forward)
+--
+theta_right :: Floating u => u -> Radian -> Vec2 u
+theta_right d ang = avec ang d
+
+
+
+theta_north :: Floating u => u -> Radian -> Vec2 u
+theta_north = theta_up
+
+theta_south :: Floating u => u -> Radian -> Vec2 u
+theta_south = theta_down
+
+theta_east :: Floating u => u -> Radian -> Vec2 u
+theta_east = theta_right
+
+theta_west :: Floating u => u -> Radian -> Vec2 u
+theta_west = theta_left
+
+
+theta_north_east :: Floating u => u -> Radian -> Vec2 u
+theta_north_east d ang = avec (ang + quarter_pi) d
+
+theta_north_west :: Floating u => u -> Radian -> Vec2 u
+theta_north_west d ang = avec (ang + 0.75*pi) d
+
+theta_south_east :: Floating u => u -> Radian -> Vec2 u
+theta_south_east d ang = avec (ang - quarter_pi) d
+
+theta_south_west :: Floating u => u -> Radian -> Vec2 u
+theta_south_west d ang = avec (ang + 1.25*pi) d
+
+
+
+theta_up_left :: Floating u => u -> Radian -> Vec2 u
+theta_up_left d = orthoVec (-d) d
+
+theta_up_right :: Floating u => u -> Radian -> Vec2 u
+theta_up_right d = orthoVec d d
+
+theta_down_left :: Floating u => u -> Radian -> Vec2 u
+theta_down_left d = orthoVec (-d) (-d)
+
+theta_down_right :: Floating u => u -> Radian -> Vec2 u
+theta_down_right d = orthoVec d (-d)
+
 
 
 --------------------------------------------------------------------------------

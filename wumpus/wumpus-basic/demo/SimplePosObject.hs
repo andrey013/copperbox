@@ -64,7 +64,7 @@ mf = do
 
 
 testDrawBl :: RectAddress -> LocGraphic Double
-testDrawBl raddr = dcDisk FILL 2 `mappend` rectBl raddr
+testDrawBl raddr = dcDisk DRAW_FILL 2 `mappend` rectBl raddr
 
 
 rectBl :: RectAddress -> LocGraphic Double
@@ -81,13 +81,13 @@ rectBl raddr =
 
 -- start-point - bottom left
 mkRectBl :: InterpretUnit u => u -> u -> LocGraphic u
-mkRectBl w h = dcRectangle STROKE w h
+mkRectBl w h = dcRectangle DRAW_STROKE w h
 
 
 
 testDrawMinor :: RectAddress -> LocGraphic Double
 testDrawMinor raddr = 
-    dcDisk FILL 2 `mappend` (ignoreAns $ rectMinor raddr)
+    dcDisk DRAW_FILL 2 `mappend` (ignoreAns $ rectMinor raddr)
 
 
 rectMinor :: RectAddress -> LocGraphic Double
@@ -110,5 +110,5 @@ mkRectMinor m w h = promoteLoc $ \pt ->
         br = displace (hvec w) bl
         tr = displace (vvec h) br
         tl = displace (vvec h) bl
-    in liftQuery (vertexPP [bl, br, tr, tl]) >>= dcClosedPath STROKE
+    in liftQuery (vertexPP [bl, br, tr, tl]) >>= dcClosedPath DRAW_STROKE
 

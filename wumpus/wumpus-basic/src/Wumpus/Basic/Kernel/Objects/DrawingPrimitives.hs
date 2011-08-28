@@ -28,6 +28,8 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , vertexPP
   , curvePP
 
+
+  , dcPath
   , dcOpenPath
   , dcClosedPath
 
@@ -204,6 +206,13 @@ curvePP xs = curvedPrimPath <$> mapM normalizeCtxF xs
 -- Drawing paths (stroke, fill, fillStroke)...
 --
 
+dcPath :: PathMode -> PrimPath -> Graphic u
+dcPath OSTROKE      = dcOpenPath
+dcPath CSTROKE      = dcClosedPath DRAW_STROKE
+dcPath CFILL        = dcClosedPath DRAW_FILL
+dcPath CFILL_STROKE = dcClosedPath DRAW_FILL_STROKE
+
+
 
 -- | 'dcOpenPath' : @ path -> Graphic @
 --
@@ -224,12 +233,12 @@ dcOpenPath pp = strokePrim (\rgb attr -> ostroke rgb attr pp)
 -- Drawing properties (colour, line width, etc.) for the 
 -- respective style are taken from the implicit 'DrawingContext'.
 --
-dcClosedPath :: DrawStyle -> PrimPath -> Graphic u
-dcClosedPath FILL        pp = fillPrim (\rgb -> fill rgb pp)
+dcClosedPath :: DrawMode -> PrimPath -> Graphic u
+dcClosedPath DRAW_FILL        pp = fillPrim (\rgb -> fill rgb pp)
 
-dcClosedPath STROKE      pp = strokePrim (\rgb attr -> cstroke rgb attr pp)
+dcClosedPath DRAW_STROKE      pp = strokePrim (\rgb attr -> cstroke rgb attr pp)
 
-dcClosedPath FILL_STROKE pp = 
+dcClosedPath DRAW_FILL_STROKE pp = 
     fillStrokePrim (\frgb attr srgb -> fillStroke frgb attr srgb pp)
 
 
@@ -437,7 +446,7 @@ circlePath r = qpromoteLoc $ \pt ->
 -- The respective line or fill properties for the 'DrawStyle' are 
 -- taken from the implicit 'DrawingContext'.
 -- 
-dcCircle :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
+dcCircle :: InterpretUnit u => DrawMode -> u -> LocGraphic u
 dcCircle style r = promoteLoc $ \pt -> 
     liftQuery (qapplyLoc (circlePath r) pt) >>= dcClosedPath style
 
@@ -473,7 +482,7 @@ rellipsePath rx ry = qpromoteLocTheta $ \pt ang ->
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-dcEllipse :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcEllipse :: InterpretUnit u => DrawMode -> u -> u -> LocGraphic u
 dcEllipse style rx ry = promoteLoc $ \pt ->
    liftQuery (qapplyLoc (ellipsePath rx ry) pt) >>= dcClosedPath style 
 
@@ -488,7 +497,7 @@ dcEllipse style rx ry = promoteLoc $ \pt ->
 -- are taken from the implicit 'DrawingContext'.
 -- 
 dcREllipse :: InterpretUnit u
-           => DrawStyle -> u -> u -> LocThetaGraphic u
+           => DrawMode -> u -> u -> LocThetaGraphic u
 dcREllipse style rx ry = promoteLocTheta $ \pt ang -> 
     liftQuery (qapplyLocTheta (rellipsePath rx ry) pt ang) >>= 
     dcClosedPath style
@@ -515,7 +524,7 @@ rectanglePath w h = locPP [hvec w, vvec h, hvec (-w)]
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-dcRectangle :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcRectangle :: InterpretUnit u => DrawMode -> u -> u -> LocGraphic u
 dcRectangle style w h = promoteLoc $ \pt -> 
     liftQuery (qapplyLoc (rectanglePath w h) pt) >>= dcClosedPath style
 
@@ -539,16 +548,16 @@ dcRectangle style w h = promoteLoc $ \pt ->
 -- The fill or stroke properties for the respective DrawStyle are
 -- taken from the implicit 'DrawingContext'.
 -- 
-dcDisk :: InterpretUnit u => DrawStyle -> u -> LocGraphic u
-dcDisk FILL radius = 
+dcDisk :: InterpretUnit u => DrawMode -> u -> LocGraphic u
+dcDisk DRAW_FILL radius = 
     normalizeCtx radius >>= \r -> 
     fillLoc (\rgb pt -> fillEllipse rgb r r pt)
 
-dcDisk STROKE radius = 
+dcDisk DRAW_STROKE radius = 
     normalizeCtx radius >>= \r -> 
     strokeLoc (\rgb attr pt -> strokeEllipse rgb attr r r pt)
 
-dcDisk FILL_STROKE radius = 
+dcDisk DRAW_FILL_STROKE radius = 
     normalizeCtx radius >>= \r -> 
     fillStrokeLoc (\frgb attr srgb pt -> fillStrokeEllipse frgb attr srgb r r pt)
 
@@ -572,14 +581,16 @@ dcDisk FILL_STROKE radius =
 -- The line properties (colour, pen thickness, etc.) are taken 
 -- from the implicit 'DrawingContext'.
 -- 
-dcEllipseDisk :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+dcEllipseDisk :: InterpretUnit u 
+              => DrawMode -> u -> u -> LocGraphic u
 dcEllipseDisk style rx ry = 
     normalizeCtx rx >>= \drx -> 
     normalizeCtx ry >>= \dry -> 
     case style of
-      FILL -> fillLoc (\rgb pt -> fillEllipse rgb drx dry pt)
-      STROKE -> strokeLoc (\rgb attr pt -> strokeEllipse rgb attr drx dry pt)
-      FILL_STROKE -> fillStrokeLoc $ 
+      DRAW_FILL -> fillLoc (\rgb pt -> fillEllipse rgb drx dry pt)
+      DRAW_STROKE -> strokeLoc 
+                       (\rgb attr pt -> strokeEllipse rgb attr drx dry pt)
+      DRAW_FILL_STROKE -> fillStrokeLoc $ 
                        (\frgb attr srgb pt -> 
                            fillStrokeEllipse frgb attr srgb drx dry pt)
 

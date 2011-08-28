@@ -32,11 +32,17 @@ description:
   .
   v0.21.0 to v0.22.0:
   .
+  * Changed the enumeration @DrawStyle@ to @DrawMode@. Added 
+    another enumeration @PathMode@.
+  .
   * Changed Chain so that first item in the chain is the start 
     point (previously the start point was iterated by the chain).
   .
   * Removed @ConnectorProps@ from the @DrawingContext@ , they are 
     now used \"locally\" in Wumpus-Drawing.
+  .
+  * Added more vector constructors to 
+    @Kernel.Objects.Displacement@. 
   .
   v0.20.0 to v0.21.0:
   .

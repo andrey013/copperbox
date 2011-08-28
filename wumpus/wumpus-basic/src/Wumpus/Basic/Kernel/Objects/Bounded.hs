@@ -169,7 +169,7 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
         localize drawing_props $ rect1 `mappend` cross
   where
     drawing_props = cap_round . dotted_line
-    rect1         = dcRectangle STROKE (urx-llx) (ury-lly) `at` p1
+    rect1         = dcRectangle DRAW_STROKE (urx-llx) (ury-lly) `at` p1
     cross         = straightLine p1 p2 
                       `mappend` straightLine (P2 llx ury) (P2 urx lly)
 
@@ -185,7 +185,7 @@ bbrectangle (BBox p1@(P2 llx lly) p2@(P2 urx ury))
 -- from the implicit 'DrawingContext'.
 -- 
 boundedRect :: InterpretUnit u 
-            => DrawStyle -> u -> u -> BoundedLocGraphic u 
+            => DrawMode -> u -> u -> BoundedLocGraphic u 
 boundedRect style w h = promoteLoc $ \pt@(P2 x y) -> 
     let bb = BBox pt (P2 (x + w) (y + h))
     in replaceAns bb $ applyLoc (dcRectangle style w h) pt
