@@ -86,13 +86,13 @@ type PointGen = Radian -> [Vec2 En]
 filledTipPath :: PointGen -> LocThetaGraphic En
 filledTipPath gen = 
     localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
-      cStraightLines FILL $ map (pt .+^) $ gen theta
+      cStraightLines DRAW_FILL $ map (pt .+^) $ gen theta
 
 
 closedTipPath :: PointGen -> LocThetaGraphic En
 closedTipPath gen = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      cStraightLines STROKE $ map (pt .+^) $ gen theta
+      cStraightLines DRAW_STROKE $ map (pt .+^) $ gen theta
 
 
 openTipPath :: PointGen -> LocThetaGraphic En
@@ -333,7 +333,7 @@ diskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize fill_use_stroke_colour $ 
-                      moveStart v1 (dcDisk FILL 0.5)
+                      moveStart v1 (dcDisk DRAW_FILL 0.5)
 
 
 odiskTip :: ArrowTip
@@ -347,7 +347,7 @@ odiskTip =
     body :: Radian -> LocGraphic En
     body theta = let v1 = avec theta (-0.5)
                  in localize solid_stroke_tip $ 
-                      moveStart v1 (dcDisk STROKE 0.5)
+                      moveStart v1 (dcDisk DRAW_STROKE 0.5)
 
 
 -- | squareSpec:

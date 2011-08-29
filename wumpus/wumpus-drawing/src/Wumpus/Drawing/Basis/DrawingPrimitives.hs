@@ -105,8 +105,8 @@ oStraightLines ps = liftQuery (vertexPP ps) >>= dcOpenPath
 
 -- | Draw an closed path formed from straight line segments.
 --
-cStraightLines :: InterpretUnit u => DrawStyle -> [Point2 u] -> Graphic u
-cStraightLines sty ps = liftQuery (vertexPP ps) >>= dcClosedPath sty
+cStraightLines :: InterpretUnit u => DrawMode -> [Point2 u] -> Graphic u
+cStraightLines mode ps = liftQuery (vertexPP ps) >>= dcClosedPath mode
 
 
 --------------------------------------------------------------------------------
@@ -116,16 +116,16 @@ cStraightLines sty ps = liftQuery (vertexPP ps) >>= dcClosedPath sty
 
 -- | Draw a rectangle, start point is bottom left.
 --
-blRectangle :: InterpretUnit u => DrawStyle -> u -> u -> LocGraphic u
+blRectangle :: InterpretUnit u => DrawMode -> u -> u -> LocGraphic u
 blRectangle = dcRectangle
 
 
 -- | Draw a rectangle, start point is bottom left.
 --
 ctrRectangle :: (Fractional u, InterpretUnit u) 
-             => DrawStyle -> u -> u -> LocGraphic u
-ctrRectangle sty w h = 
-    moveStart (vec (-hw) (-hh)) $ dcRectangle sty w h
+             => DrawMode -> u -> u -> LocGraphic u
+ctrRectangle mode w h = 
+    moveStart (vec (-hw) (-hh)) $ dcRectangle mode w h
   where
     hw = 0.5 * w
     hh = 0.5 * h
@@ -147,12 +147,12 @@ arc radius ang = promoteLocTheta $ \pt inclin ->
 -- | wedge : radius * apex_angle
 -- 
 wedge :: (Floating u, InterpretUnit u) 
-      => DrawStyle -> u -> Radian -> LocThetaGraphic u
-wedge sty radius ang = promoteLocTheta $ \pt inclin -> 
+      => DrawMode -> u -> Radian -> LocThetaGraphic u
+wedge mode radius ang = promoteLocTheta $ \pt inclin -> 
     let ps = bezierArcPoints ang radius inclin pt
     in uconvertCtxF pt      >>= \dpt -> 
        mapM uconvertCtxF ps >>= \dps -> 
-       dcClosedPath sty (build dpt dps)
+       dcClosedPath mode (build dpt dps)
   where
     -- Note - this relies on an implicit straight line cycle back 
     -- to the start point.

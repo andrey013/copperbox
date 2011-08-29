@@ -149,8 +149,6 @@ verticalDst props p0 p1 =
       QUAD_NW -> return $ p1 .+^ go_down sep
       _       -> return $ p1 .+^ go_up sep
 
-half_pi :: Radian
-half_pi = 0.5 * pi
 
 abovePerpSrc :: (Real u, Floating u, InterpretUnit u) 
          => ProjectionQuery u

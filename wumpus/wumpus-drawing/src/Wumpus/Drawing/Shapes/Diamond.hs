@@ -30,7 +30,6 @@ import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Geometry.Quadrant
-import Wumpus.Basic.Geometry.Paths
 import Wumpus.Basic.Kernel      
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -155,8 +154,8 @@ mkDiamond hw hh = qpromoteLocTheta $ \ctr theta ->
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
               => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkDiamondPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
-    let ps = runPathAlgPoint ctr $ diamondPathAlg hw hh
-    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) ps
+    qapplyLoc (pathSchemeSegmentInits $ diamondPathScm hw hh) ctr >>= \ps ->
+    roundCornerShapePath rnd $ map (rotateAbout theta ctr) ps
 
 
 

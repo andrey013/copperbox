@@ -62,4 +62,4 @@ connbox props = promoteConn $ \p0 p1 ->
         tl  = dispOrtho (V2 (-src_arm)   src_arm ) ang p0
         br  = dispOrtho (V2   dst_arm  (-src_arm)) ang p1
         tr  = dispOrtho (V2   dst_arm    src_arm ) ang p1
-    in liftQuery (vertexPP [ bl, br, tr, tl ]) >>= dcClosedPath STROKE
+    in liftQuery (vertexPP [ bl, br, tr, tl ]) >>= dcClosedPath DRAW_STROKE

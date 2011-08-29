@@ -134,7 +134,7 @@ leftArrowPath alg full_path =
         mid_ang         = tipDirectionL len full_path
         tip             = applyLocTheta deco (tipL full_path) mid_ang
     in replaceAns full_path $ 
-         sdecorate tip $ drawOpenPath short_path
+         sdecorate tip $ drawPath OSTROKE short_path
 
 
 
@@ -152,7 +152,7 @@ rightArrowPath alg full_path =
         mid_ang         = tipDirectionR len full_path
         tip             = applyLocTheta deco (tipR full_path) mid_ang
     in replaceAns full_path $ 
-         sdecorate tip $ drawOpenPath short_path
+         sdecorate tip $ drawPath OSTROKE short_path
 
 
 
@@ -173,7 +173,7 @@ leftRightArrowPath algl algr full_path =
         tipl            = applyLocTheta decol (tipL full_path) mid_angl
         tipr            = applyLocTheta decor (tipR full_path) mid_angr
     in replaceAns full_path $ 
-         sdecorate (tipl `mappend` tipr) $ drawOpenPath short_path
+         sdecorate (tipl `mappend` tipr) $ drawPath OSTROKE short_path
           
 
 
