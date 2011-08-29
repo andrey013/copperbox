@@ -16,20 +16,25 @@
 -- Ideally, clipping would be defined in Wumpus-Basic, but clipping
 -- needs a higher level path object than Wumpus-Basic provides.
 -- 
+-- TODO - names need improving.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Extras.Clip
   ( 
    
     locClip
+  , locClipH
 
   ) where
 
 
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.HPath
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
+import Wumpus.Core                              -- package: wumpus-core
 
 
 
@@ -39,3 +44,11 @@ locClip :: InterpretUnit u => AbsPath u -> LocGraphic u -> LocGraphic u
 locClip absp gf = promoteLoc $ \pt -> 
     liftQuery (toPrimPath absp) >>= \pp -> clipImage pp (gf `at` pt)
 
+
+
+-- | Clip a LocGraphic.
+--
+locClipH :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
+         => HPath u -> LocGraphic u -> LocGraphic u
+locClipH hp gf = promoteLoc $ \pt -> 
+    liftQuery (toPrimPath $ runHPath hp pt) >>= \pp -> clipImage pp (gf `at` pt)

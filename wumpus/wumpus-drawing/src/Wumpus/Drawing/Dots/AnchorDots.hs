@@ -65,6 +65,7 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
 import qualified Wumpus.Drawing.Dots.SimpleDots as SD
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel               
@@ -226,8 +227,8 @@ triangleLDO :: (Real u, Floating u, Tolerance u, InterpretUnit u)
 triangleLDO h = qpromoteLoc $ \pt -> 
     uconvertCtx1 h >>= \uh -> 
     let alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices uh
-        ps  = runPathAlgPoint pt alg
-    in return $ polygonAnchor ps pt
+    in (\ps -> polygonAnchor ps pt) 
+         <$> qapplyLoc (pathSchemeSegmentInits alg) pt
   where
     fn3 (a,b,c) = [a,b,c]
 
@@ -320,7 +321,8 @@ dotCircle = intoLocImage (circleLDO 0.5) SD.dotCircle
 dotPentagon :: (Floating u, InterpretUnit u) => DotLocImage u
 dotPentagon = intoLocImage (circleLDO 0.5) SD.dotPentagon
 
-dotStar :: (Floating u, InterpretUnit u) => DotLocImage u
+dotStar :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
+        => DotLocImage u
 dotStar = intoLocImage (circleLDO 0.5) SD.dotStar
 
 

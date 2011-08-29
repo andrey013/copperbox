@@ -75,6 +75,11 @@ instance InterpretUnit Centimeter where
   normalize _ = cm 
   dinterp   _ = dcm
 
+instance Tolerance Centimeter where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
+
+
 
 -- | Wrapped Double /Pica/ unit type.
 -- 
@@ -102,10 +107,6 @@ dpica :: Double -> Pica
 dpica = Pica . (\x -> x / 12.0)
 
 
-instance Tolerance Pica where 
-  eq_tolerance     = 0.001
-  length_tolerance = 0.01
-
 
 instance ScalarUnit Pica where
   fromPsPoint = dpica
@@ -114,6 +115,11 @@ instance ScalarUnit Pica where
 instance InterpretUnit Pica where
   normalize _ = pica
   dinterp   _ = dpica
+
+
+instance Tolerance Pica where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
 
 
 
@@ -134,7 +140,8 @@ instance InterpretUnit Em where
   normalize sz a = fromIntegral sz * realToFrac a
   dinterp sz d   = realToFrac d / fromIntegral sz
 
-instance Tolerance Centimeter where 
+
+instance Tolerance Em where 
   eq_tolerance     = 0.001
   length_tolerance = 0.01
 
@@ -153,11 +160,7 @@ instance InterpretUnit En where
   dinterp sz d   = 2 * (realToFrac d) / (fromIntegral sz)
 
 
-
-instance Tolerance Em where 
-  eq_tolerance     = 0.001
-  length_tolerance = 0.01
-
 instance Tolerance En where
   eq_tolerance     = 0.001 
   length_tolerance = 0.01
+

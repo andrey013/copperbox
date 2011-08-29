@@ -25,7 +25,6 @@ module Wumpus.Drawing.Paths.PathBuilder
     GenPathSpec
   , PathSpec
   , Vamp(..)
-  , PathTerm(..)
 
 
   , runGenPathSpec
@@ -111,12 +110,6 @@ data ActivePen = PEN_UP
 
 zeroActivePen :: DPoint2 -> ActivePen
 zeroActivePen pt = PEN_DOWN (emptyPath pt)
-
-
-
-
-data PathTerm = PATH_OPEN | PATH_CLOSED DrawStyle
-  deriving (Eq,Show)
 
 
 data Vamp u = Vamp
@@ -216,16 +209,16 @@ instance InterpretUnit u => InsertlM (GenPathSpec st u) where
 -- Run functions
 
 runGenPathSpec :: InterpretUnit u 
-               => GenPathSpec st u a -> st -> PathTerm 
+               => GenPathSpec st u a -> st -> PathMode 
                -> LocImage u (a, st, AbsPath u)
-runGenPathSpec ma st term = promoteLoc $ \pt -> 
+runGenPathSpec ma st mode = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let P2 dx dy  = normalizeF (dc_font_size ctx) pt
         st_zero   = PathSt (zeroActivePen zeroPt) (emptyPath zeroPt) st
         (a,s1,w1) = getGenPathSpec ma ctx st_zero
         dpath     = translate dx dy $ st_cumulative_path s1
         upath     = dinterpF (dc_font_size ctx) dpath
-        (_,w2)    = runImage (drawActivePen term $ st_active_pen s1) ctx
+        (_,w2)    = runImage (drawActivePen mode $ st_active_pen s1) ctx
         wfinal    = cpmove (V2 dx dy) $ w1 `mappend` w2
     in replaceAns (a, st_user_state s1, upath) $ primGraphic wfinal
 
@@ -235,34 +228,34 @@ runGenPathSpec ma st term = promoteLoc $ \pt ->
 --
 
 evalGenPathSpec :: InterpretUnit u
-                => GenPathSpec st u a -> st -> PathTerm 
+                => GenPathSpec st u a -> st -> PathMode
                 -> LocImage u (a, AbsPath u)
-evalGenPathSpec ma st term = 
-    (\(a,_,w) -> (a,w)) <$> runGenPathSpec ma st term
+evalGenPathSpec ma st mode = 
+    (\(a,_,w) -> (a,w)) <$> runGenPathSpec ma st mode
 
     
 
 execGenPathSpec :: InterpretUnit u
-                => GenPathSpec st u a -> st -> PathTerm 
+                => GenPathSpec st u a -> st -> PathMode
                 -> LocImage u (st, AbsPath u)
-execGenPathSpec ma st term =
-    (\(_,s,w) -> (s,w)) <$> runGenPathSpec ma st term
+execGenPathSpec ma st mode =
+    (\(_,s,w) -> (s,w)) <$> runGenPathSpec ma st mode
 
 
 
 stripGenPathSpec :: InterpretUnit u
-                 => GenPathSpec st u a -> st -> PathTerm 
+                 => GenPathSpec st u a -> st -> PathMode
                  -> LocQuery u (a, st, AbsPath u)
-stripGenPathSpec ma st term = stripLocImage $ runGenPathSpec ma st term
+stripGenPathSpec ma st mode = stripLocImage $ runGenPathSpec ma st mode
 
 
 runPathSpec :: InterpretUnit u
-            => PathSpec u a -> PathTerm -> LocImage u (a, AbsPath u)
-runPathSpec ma term = evalGenPathSpec ma () term
+            => PathSpec u a -> PathMode -> LocImage u (a, AbsPath u)
+runPathSpec ma mode = evalGenPathSpec ma () mode
 
 runPathSpec_ :: InterpretUnit u
-             => PathSpec u a -> PathTerm -> LocGraphic u
-runPathSpec_ ma term = ignoreAns $ evalGenPathSpec ma () term
+             => PathSpec u a -> PathMode -> LocGraphic u
+runPathSpec_ ma mode = ignoreAns $ evalGenPathSpec ma () mode
 
 
 
@@ -290,11 +283,9 @@ runPathSpec_ ma term = ignoreAns $ evalGenPathSpec ma () term
 
 -- | Helper.
 --
-drawActivePen :: PathTerm -> ActivePen -> DGraphic 
-drawActivePen _    PEN_UP                            = mempty
-drawActivePen term (PEN_DOWN abs_path) = case term of
-    PATH_OPEN -> ignoreAns $ drawOpenPath abs_path
-    PATH_CLOSED styl -> ignoreAns $ drawClosedPath styl abs_path
+drawActivePen :: PathMode -> ActivePen -> DGraphic 
+drawActivePen _    PEN_UP              = mempty
+drawActivePen mode (PEN_DOWN abs_path) = drawPath_ mode abs_path
 
 
 
@@ -315,7 +306,7 @@ runPivot ma mb = promoteLoc $ \pt ->
         (p1,s1,w1) = getGenPathSpec mz ctx st_zero
         dp1        = normalizeF (dc_font_size ctx) p1
         v1         = pvec dpt dp1
-        (_,w2)     = runImage (drawActivePen PATH_OPEN $ st_active_pen s1) ctx
+        (_,w2)     = runImage (drawActivePen OSTROKE $ st_active_pen s1) ctx
         wfinal     = w1 `mappend` w2
     in primGraphic $ cpmove (negateV v1) wfinal
   where
@@ -391,7 +382,7 @@ movebyImpl :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
 movebyImpl v1 = GenPathSpec $ \ctx s -> 
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,w1)  = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
+        (_,w1)  = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
         cpath   = snocLine (st_cumulative_path s) dv1
     in ((), s { st_active_pen = PEN_UP, st_cumulative_path = cpath }, w1)
 
@@ -431,7 +422,7 @@ vamp :: InterpretUnit u => Vamp u -> GenPathSpec st u ()
 vamp (Vamp v1 conn) = GenPathSpec $ \ctx s ->
     let sz     = dc_font_size ctx
         dv1    = normalizeF sz v1
-        (_,w1) = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
+        (_,w1) = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
         upt    = dinterpF sz (tipR $ st_cumulative_path s)
         (_,w2) = runConnectorImage conn ctx upt (upt .+^ v1)
         cpath  = snocLine (st_cumulative_path s) dv1
@@ -439,11 +430,16 @@ vamp (Vamp v1 conn) = GenPathSpec $ \ctx s ->
           , w1 `mappend` w2)
 
 
-cycleSubPath :: DrawStyle -> GenPathSpec st u ()
-cycleSubPath styl = GenPathSpec $ \ctx s ->
-    let gf      = drawActivePen (PATH_CLOSED styl) $ st_active_pen s
+cycleSubPath :: DrawMode -> GenPathSpec st u ()
+cycleSubPath mode = GenPathSpec $ \ctx s ->
+    let gf      = drawActivePen (fn mode) $ st_active_pen s
         (_,w1)  = runImage gf ctx
     in ((), s { st_active_pen = PEN_UP }, w1)
+  where
+    fn DRAW_STROKE      = CSTROKE
+    fn DRAW_FILL        = CFILL
+    fn DRAW_FILL_STROKE = CFILL_STROKE
+
 
 
 -- Design note 
@@ -459,9 +455,12 @@ cycleSubPath styl = GenPathSpec $ \ctx s ->
 --
 
 
+-- | Note - currently this changes the DrawingContext for insertl
+-- as well as the pen - this is a bug...
+--
 localPen :: DrawingContextF -> GenPathSpec st u a -> GenPathSpec st u a
 localPen upd ma = GenPathSpec $ \ctx s ->
-    let (_,w0)    = runImage (drawActivePen PATH_OPEN $ st_active_pen s) ctx
+    let (_,w0)    = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
         (a,s1,w1) = getGenPathSpec ma (upd ctx) s
     in (a, s1 { st_active_pen = PEN_UP }, w0 `mappend` w1 )
 

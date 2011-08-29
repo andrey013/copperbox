@@ -10,10 +10,11 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Graphic type - this is largely equivalent to Primitive in
--- Wumpus-Core, but drawing attributes are implicitly supplied 
--- by the DrawingContext.
+-- Primitive drawings - text, paths, lines, rectangles, disks, 
+-- ellipses...
 --
+-- All the primitives take their drawing properties (colour, line 
+-- width, etc.) from the DrawingContext.
 --
 --------------------------------------------------------------------------------
 

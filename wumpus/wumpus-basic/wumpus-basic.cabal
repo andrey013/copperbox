@@ -32,6 +32,9 @@ description:
   .
   v0.21.0 to v0.22.0:
   .
+  * Removed module @Geometry.Paths@ it is superseded in
+    Wumpus-Drawing.
+  .
   * Changed the enumeration @DrawStyle@ to @DrawMode@. Added 
     another enumeration @PathMode@.
   .
@@ -86,7 +89,6 @@ library
     Wumpus.Basic.Geometry.Base,
     Wumpus.Basic.Geometry.Illustrate,
     Wumpus.Basic.Geometry.Intersection,
-    Wumpus.Basic.Geometry.Paths,
     Wumpus.Basic.Geometry.Quadrant,
     Wumpus.Basic.Geometry.Vertices,
     Wumpus.Basic.Kernel,

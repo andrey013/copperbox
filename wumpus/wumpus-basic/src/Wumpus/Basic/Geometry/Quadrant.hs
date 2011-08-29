@@ -48,7 +48,6 @@ module Wumpus.Basic.Geometry.Quadrant
   ) 
   where
 
-import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -199,8 +198,8 @@ hypotenuseQI :: (Real u, Floating u) => u -> u -> RadialIntersect u
 hypotenuseQI dx dy ang = avec ang dist
   where
     base_ang = atan (dy / dx)
-    apex     = pi - (base_ang + fromRadian ang)
-    dist     = sin base_ang * (dx / sin apex)
+    apex_c   = pi - (base_ang + fromRadian ang)
+    dist     = sin base_ang * (dx / sin apex_c)
 
 
 
@@ -468,8 +467,8 @@ triangleQI :: (Real u, Floating u) => u -> u -> Radian -> Vec2 u
 triangleQI w h ang = avec ang dist
   where
     base_ang = atan (h / w)
-    apex     = pi - (base_ang + fromRadian ang)
-    dist     = sin base_ang * (w / sin apex)
+    apex_c   = pi - (base_ang + fromRadian ang)
+    dist     = sin base_ang * (w / sin apex_c)
 
 
 
@@ -569,8 +568,8 @@ triangleLeftSide :: Fractional u => u -> Radian -> Radian -> u
 triangleLeftSide base_width lang rang =
     (fromRadian $ sin rang) / factor 
   where
-    apex   = pi - (lang + rang)
-    factor = (fromRadian $ sin apex) / base_width
+    apex_c = pi - (lang + rang)
+    factor = (fromRadian $ sin apex_c) / base_width
 
 
 -- | 'rightTrapeziumBaseWidth' : @ top_width * height * top_right_ang -> Length @

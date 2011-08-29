@@ -43,7 +43,7 @@ squareWE diam = Vamp { vamp_move = hvec diam
   where
     conn = promoteConn $ \p1 p2 -> 
              let dir = vdirection $ pvec p1 p2
-             in drawClosedPath_ STROKE $ vectorPathTheta path1 dir p1
+             in drawPath_ CSTROKE $ vectorPathTheta path1 dir p1
 
     hdiam = 0.5 * diam 
     path1 = [ vvec hdiam, hvec diam, vvec (-diam), hvec (-diam) ]

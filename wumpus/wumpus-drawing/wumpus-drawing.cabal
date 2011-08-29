@@ -105,6 +105,7 @@ library
     Wumpus.Drawing.Paths.Base,
     Wumpus.Drawing.Paths.HPath,
     Wumpus.Drawing.Paths.PathBuilder,
+    Wumpus.Drawing.Paths.PathPrimitives,
     Wumpus.Drawing.Paths.Vamps,
     Wumpus.Drawing.Shapes,
     Wumpus.Drawing.Shapes.Base,

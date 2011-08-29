@@ -259,11 +259,13 @@ type KernChar u = (u,EscapedChar)
 
 -- | Draw closed paths. 
 -- 
--- > FILL 
+-- > OSTROKE - open and stroked
+
+-- > CSTROKE - closed and stroke
 --
--- > STROKE
+-- > CFILL - closed and filled
 --
--- > FILL_STROKE - the path is filled, its edge is stroked.
+-- > CFILL_STROKE - closed, the path is filled, its edge is stroked.
 --
 data PathMode = OSTROKE | CSTROKE | CFILL | CFILL_STROKE
   deriving (Bounded,Enum,Eq,Ord,Show)
@@ -272,9 +274,9 @@ data PathMode = OSTROKE | CSTROKE | CFILL | CFILL_STROKE
 
 -- | Draw closed paths and shapes. 
 -- 
--- > CLOSED_FILL 
+-- > DRAW_STROKE - closed and stroked
 --
--- > CLOSED_STROKE
+-- > DRAW_FILL - closed and filled
 --
 -- > CLOSED_FILL_STROKE - the path is filled, its edge is stroked.
 --

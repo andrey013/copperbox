@@ -50,10 +50,8 @@ module Wumpus.Drawing.Paths.Base
   -- * Conversion
   , toPrimPath
 
-  , drawOpenPath
-  , drawOpenPath_
-  , drawClosedPath
-  , drawClosedPath_
+  , drawPath
+  , drawPath_
 
   -- * Shortening
   , shortenPath
@@ -73,6 +71,7 @@ module Wumpus.Drawing.Paths.Base
   , atstart_
   , atend
   , atend_
+
 
   -- * Views
   , PathViewL(..)
@@ -456,27 +455,15 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
    
 
 
-
-drawOpenPath :: InterpretUnit u 
-             => AbsPath u -> Image u (AbsPath u)
-drawOpenPath rp = replaceAns rp $
-    liftQuery (toPrimPath rp) >>= dcOpenPath
-
-
-drawOpenPath_ :: InterpretUnit u 
-              => AbsPath u -> Graphic u
-drawOpenPath_ rp = liftQuery (toPrimPath rp) >>= dcOpenPath
+drawPath :: InterpretUnit u 
+         => PathMode -> AbsPath u -> Image u (AbsPath u)
+drawPath mode rp = replaceAns rp $ 
+    liftQuery (toPrimPath rp) >>= dcPath mode
 
 
-drawClosedPath :: InterpretUnit u 
-               => DrawStyle -> AbsPath u -> Image u (AbsPath u)
-drawClosedPath sty rp = replaceAns rp $ 
-    liftQuery (toPrimPath rp) >>= dcClosedPath sty
-
-
-drawClosedPath_ :: InterpretUnit u 
-                => DrawStyle -> AbsPath u -> Graphic u
-drawClosedPath_ sty rp = liftQuery (toPrimPath rp) >>= dcClosedPath sty
+drawPath_ :: InterpretUnit u 
+          => PathMode -> AbsPath u -> Graphic u
+drawPath_ mode rp = liftQuery (toPrimPath rp) >>= dcPath mode
 
 
 -- | Turn a Path into an ordinary PrimPath.
@@ -698,6 +685,8 @@ atend_ (AbsPath _ _ _ ep) = ep
 
 
 -- nearstart, nearend, verynear ...
+
+
 
 
 --------------------------------------------------------------------------------

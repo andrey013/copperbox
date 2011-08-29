@@ -289,5 +289,5 @@ drawBackfill rgb (Orientation xmin xmaj ymin ymaj) =
     mkVec  dx dy = vec (negate $ xmin+dx) (negate $ ymin+dy)
     mkRect dx dy = let w = dx + xmin + xmaj + dx
                        h = dy + ymin + ymaj + dy
-                   in dcRectangle FILL w h
+                   in dcRectangle DRAW_FILL w h
 

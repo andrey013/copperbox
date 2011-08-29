@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -32,6 +33,8 @@ module Wumpus.Drawing.Paths.HPath
   , runHPath
   , snocHPath 
 
+  , drawHPath
+
   , line 
   , curve
 
@@ -57,6 +60,9 @@ module Wumpus.Drawing.Paths.HPath
   , line_down_left
   , line_down_right
 
+  , ortholine
+
+
   , sineWave
 
   ) where
@@ -81,8 +87,11 @@ import Data.Monoid
 data PathCmd u = LineTo  (Vec2 u)
                | CurveTo (Vec2 u) (Vec2 u) (Vec2 u)
 
+type instance DUnit (PathCmd u) = u
+
 newtype HPath u = HPath { getHPath :: H (PathCmd u) }
 
+type instance DUnit (HPath u) = u
 
 
 instance Monoid (HPath u) where
@@ -108,10 +117,16 @@ snocHPath absp hp = step absp (toListH $ getHPath hp)
     step ac (CurveTo v1 v2 v3 : xs) = step (ac `snocCurve` (v1,v2,v3)) xs
 
 
+drawHPath :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
+          => PathMode -> HPath u -> LocImage u (AbsPath u)
+drawHPath mode hp = promoteLoc $ \pt -> 
+    drawPath mode (runHPath hp pt)
 
 
 line :: Vec2 u -> HPath u 
 line = HPath . wrapH . LineTo 
+
+
 
 curve :: Vec2 u -> Vec2 u -> Vec2 u -> HPath u
 curve v1 v2 v3 = HPath $ wrapH $ CurveTo v1 v2 v3
@@ -176,6 +191,11 @@ line_down_right :: Num u => u -> HPath u
 line_down_right = line . go_down_right
 
 
+-- | Alternative to @line@, specifying the vector components 
+-- rather the vector itself.
+--
+ortholine :: Floating u => u -> u -> Radian -> HPath u 
+ortholine x y ang = HPath $ wrapH $ LineTo (orthoVec x y ang)
 
 
 sineWave :: (Real u, Floating u, Ord u, Tolerance u) 

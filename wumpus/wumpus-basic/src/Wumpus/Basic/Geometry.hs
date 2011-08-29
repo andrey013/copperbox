@@ -20,7 +20,6 @@ module Wumpus.Basic.Geometry
     module Wumpus.Basic.Geometry.Base
   , module Wumpus.Basic.Geometry.Illustrate
   , module Wumpus.Basic.Geometry.Intersection
-  , module Wumpus.Basic.Geometry.Paths
   , module Wumpus.Basic.Geometry.Quadrant
   , module Wumpus.Basic.Geometry.Vertices
 
@@ -30,6 +29,5 @@ module Wumpus.Basic.Geometry
 import Wumpus.Basic.Geometry.Base
 import Wumpus.Basic.Geometry.Illustrate
 import Wumpus.Basic.Geometry.Intersection
-import Wumpus.Basic.Geometry.Paths
 import Wumpus.Basic.Geometry.Quadrant
 import Wumpus.Basic.Geometry.Vertices

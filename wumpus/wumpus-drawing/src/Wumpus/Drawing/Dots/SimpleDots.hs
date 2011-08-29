@@ -68,6 +68,7 @@ module Wumpus.Drawing.Dots.SimpleDots
   ) where
 
 
+import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
@@ -104,6 +105,10 @@ instance InterpretUnit MarkSize where
   normalize sz a = (realToFrac  a) * 0.75 * fromIntegral sz
   dinterp sz d   = (4/3) * (realToFrac d) / (fromIntegral sz)
 
+instance Tolerance MarkSize where 
+  eq_tolerance     = 0.001
+  length_tolerance = 0.01
+
 
 umark :: InterpretUnit u => LocGraphic MarkSize -> LocGraphic u
 umark = uconvF
@@ -112,25 +117,25 @@ umark = uconvF
 -- | Filled disk - radius 0.25 MarkSize.
 --
 smallDisk :: InterpretUnit u => LocGraphic u
-smallDisk = umark $ dcDisk FILL 0.25
+smallDisk = umark $ dcDisk DRAW_FILL 0.25
 
 
 -- | Filled disk - radius 1.0 MarkSize.
 --
 largeDisk :: InterpretUnit u => LocGraphic u
-largeDisk = umark $ dcDisk FILL 1
+largeDisk = umark $ dcDisk DRAW_FILL 1
 
 
 -- | Stroked disk (circle) - radius 0.25 MarkSize.
 --
 smallCirc :: InterpretUnit u => LocGraphic u
-smallCirc = umark $ dcDisk STROKE 0.25
+smallCirc = umark $ dcDisk DRAW_STROKE 0.25
 
 
 -- | Stroked disk (circle) - radius 1.0 MarkSize.
 --
 largeCirc :: InterpretUnit u => LocGraphic u
-largeCirc = umark $ dcDisk STROKE 1
+largeCirc = umark $ dcDisk DRAW_STROKE 1
 
 
 -- possibly:
@@ -193,54 +198,56 @@ dotCross =
 
 
 dotDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotDiamond = umark $ drawVertexPathAlg STROKE (diamondPathAlg 0.5 0.66)
+dotDiamond = umark $ drawPathScheme_ CSTROKE (diamondPathScm 0.5 0.66)
 
 dotFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotFDiamond = umark $ drawVertexPathAlg FILL (diamondPathAlg 0.5 0.66)
+dotFDiamond = umark $ drawPathScheme_ CFILL (diamondPathScm 0.5 0.66)
 
 
 
 dotBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotBDiamond = umark $ drawVertexPathAlg FILL_STROKE (diamondPathAlg 0.5 0.66)
+dotBDiamond = umark $ drawPathScheme_ CFILL_STROKE (diamondPathScm 0.5 0.66)
 
 
 -- | Note disk is filled.
 --
 dotDisk :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotDisk = umark $ dcDisk FILL 0.5
+dotDisk = umark $ dcDisk DRAW_FILL 0.5
 
 
 
 dotSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotSquare = umark $ drawVertexPathAlg STROKE (rectanglePathAlg 1 1)
+dotSquare = umark $ drawPathScheme_ CSTROKE (rectanglePathScm 1 1)
 
 
 dotCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotCircle = umark $ dcDisk STROKE 0.5
+dotCircle = umark $ dcDisk DRAW_STROKE 0.5
 
 
 dotBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotBCircle = umark $ dcDisk FILL_STROKE 0.5
+dotBCircle = umark $ dcDisk DRAW_FILL_STROKE 0.5
 
 
 
 dotPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
-dotPentagon = umark $ drawVertexPathAlg STROKE (polygonPathAlg 5 0.5)
+dotPentagon = umark $ drawPathScheme_ CSTROKE (polygonPathScm 5 0.5)
  
 
 
-dotStar :: (Floating u, InterpretUnit u) => LocGraphic u 
+dotStar :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
+        => LocGraphic u 
 dotStar = umark $ starLines 0.5
 
-starLines :: (Floating u, InterpretUnit u) => u -> LocGraphic u
-starLines hh = promoteLoc $ \ctr -> 
-    let ps = runPathAlgPoint ctr $ polygonPathAlg 5 hh
-    in step $ map (fn ctr) ps
+starLines :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
+          => u -> LocGraphic u
+starLines hh = promoteLoc $ \ctr ->
+    let alg = polygonPathScm 5 hh
+    in liftQuery (qapplyLoc (pathSchemeSegmentInits alg) ctr) >>= \ps -> 
+       step $ map (fn ctr) ps
   where
     fn p0 p1    = straightLine p0 p1
     step (x:xs) = mconcat $ x:xs
     step _      = error "starLines - unreachable"
-
 
 dotAsterisk :: (Floating u, InterpretUnit u) => LocGraphic u
 dotAsterisk = umark $ asteriskLines 1
@@ -272,7 +279,7 @@ dotFOCross = dotBCircle `mappend` dotCross
 
 
 dotTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-dotTriangle = umark $ drawVertexPathAlg STROKE alg 
+dotTriangle = umark $ drawPathScheme_ CSTROKE alg 
   where
     alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices 1
     fn3 = \(a,b,c) -> [a,b,c]

@@ -15,6 +15,7 @@ module ClipPic where
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Extras.Clip
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.HPath
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -44,7 +45,7 @@ std_ctx = standardContext 14
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    drawl (P2   0 320) $ runPathSpec_ path01 (PATH_CLOSED FILL)
+    drawl (P2   0 320) $ drawClosedHPath FILL path01
     drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
                            runPathSpec_ path02 (PATH_CLOSED FILL)
     drawl (P2 384 416) $ runPathSpec_ path03 (PATH_CLOSED FILL)
@@ -82,8 +83,7 @@ zapLocQ ma = promoteLoc $ \pt ->
    in return a
 
 clip1 :: LocGraphic Double
-clip1 = zapLocQ (extrPathSpec path01) >>= \a -> 
-        ignoreAns $ locClip a (background black)
+clip1 = ignoreAns $ locClipH path01 (background black)
   
 clip2 :: LocGraphic Double
 clip2 = zapLocQ (extrPathSpec path02) >>= \a -> 
@@ -110,15 +110,15 @@ iheartHaskell = promoteLoc $ \pt ->
 type UPathSpec u = PathSpec u (UNil u)
 
 -- zeroPt
-path01 :: UPathSpec Double
-path01 =  do 
-    hpenline 80 
-    penline (vec 112 160) 
-    penline (vec (-112) 160)
-    hpenline (-80)
-    penline (vec 112 (-160))
-    penline (vec (-112) (-160))
-    ureturn 
+path01 :: HPath Double
+path01 = mconcat $ 
+    [ hline 80 
+    , line (vec 112 160) 
+    , line (vec (-112) 160)
+    , hline (-80)
+    , line (vec 112 (-160))
+    , line (vec (-112) (-160))
+    ]
 
 
 -- (P2 112 0)
