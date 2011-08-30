@@ -84,10 +84,10 @@ makeDotDrawing (name,df) =
   where
     drawing     = runPathSpec_ path_spec OSTROKE
 
-    path_spec   = localPen path_style $ 
-                    insertl dot >> 
-                    mapM (\v -> penline v >> insertl dot) steps >>
-                    ureturn
+    path_spec   = updatePen path_style >>
+                  insertl dot >> 
+                  mapM (\v -> penline v >> insertl dot) steps >>
+                  ureturn
                                 
                            
 

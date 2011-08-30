@@ -42,7 +42,8 @@ description:
   .
   * Changed paths - @RelPath@ has been removed and there are now 
     only absolute paths. @PathBuilder@ builds absolute paths.
-    The path module hierarchy has changed.
+    The path module hierarchy has changed. Changed how pen 
+    updating works in @PathBuilder@. 
   .
   v0.5.0 to v0.6.0
   .

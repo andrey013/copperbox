@@ -52,7 +52,7 @@ module Wumpus.Drawing.Paths.PathBuilder
 
   , vamp
   , cycleSubPath
-  , localPen
+  , updatePen
  
   ) where
 
@@ -71,11 +71,19 @@ import Control.Monad
 import Data.Monoid
 import Prelude hiding ( null, cycle, lines )
 
+-- 
+-- TODO - possibly we need two drawing contexts one for the pen 
+-- and one for the decoration trace.
+-- 
+-- Alternatively PathSt should have a local DrawingContext for the 
+-- pen.
+--
+
 
 -- | Note - a path spec has an immutable start point like 
 -- @LocDrawing@.
 --
--- Effectively a path is draw in a local coordiante system with 
+-- Effectively a path is draw in a local coordinate system with 
 -- @(0,0)@ as the origin.
 --
 newtype GenPathSpec st u a = GenPathSpec { 
@@ -89,6 +97,7 @@ type PathSpec u a = GenPathSpec () u a
 
 data PathSt st = PathSt
       { st_active_pen       :: ActivePen
+      , st_pen_ctx          :: DrawingContext
       , st_cumulative_path  :: AbsPath Double
       , st_user_state       :: st
       }
@@ -214,11 +223,12 @@ runGenPathSpec :: InterpretUnit u
 runGenPathSpec ma st mode = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let P2 dx dy  = normalizeF (dc_font_size ctx) pt
-        st_zero   = PathSt (zeroActivePen zeroPt) (emptyPath zeroPt) st
+        st_zero   = PathSt (zeroActivePen zeroPt) ctx (emptyPath zeroPt) st
         (a,s1,w1) = getGenPathSpec ma ctx st_zero
         dpath     = translate dx dy $ st_cumulative_path s1
         upath     = dinterpF (dc_font_size ctx) dpath
-        (_,w2)    = runImage (drawActivePen mode $ st_active_pen s1) ctx
+        pctx      = st_pen_ctx s1
+        (_,w2)    = runImage (drawActivePen mode $ st_active_pen s1) pctx
         wfinal    = cpmove (V2 dx dy) $ w1 `mappend` w2
     in replaceAns (a, st_user_state s1, upath) $ primGraphic wfinal
 
@@ -302,11 +312,12 @@ runPivot :: (Floating u, InterpretUnit u)
 runPivot ma mb = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let dpt        = normalizeF (dc_font_size ctx) pt
-        st_zero    = PathSt (zeroActivePen zeroPt) (emptyPath zeroPt) ()
+        st_zero    = PathSt (zeroActivePen zeroPt) ctx (emptyPath zeroPt) ()
         (p1,s1,w1) = getGenPathSpec mz ctx st_zero
         dp1        = normalizeF (dc_font_size ctx) p1
         v1         = pvec dpt dp1
-        (_,w2)     = runImage (drawActivePen OSTROKE $ st_active_pen s1) ctx
+        pctx       = st_pen_ctx s1
+        (_,w2)     = runImage (drawActivePen OSTROKE $ st_active_pen s1) pctx
         wfinal     = w1 `mappend` w2
     in primGraphic $ cpmove (negateV v1) wfinal
   where
@@ -379,10 +390,10 @@ pencurve v1 v2 v3 = GenPathSpec $ \ctx s ->
 -- | @moveby@ causes a pen up.
 --
 movebyImpl :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
-movebyImpl v1 = GenPathSpec $ \ctx s -> 
+movebyImpl v1 = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,w1)  = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
+        (_,w1)  = runImage (drawActivePen OSTROKE $ st_active_pen s) pctx
         cpath   = snocLine (st_cumulative_path s) dv1
     in ((), s { st_active_pen = PEN_UP, st_cumulative_path = cpath }, w1)
 
@@ -419,10 +430,10 @@ insertlImpl gf = GenPathSpec $ \ctx s ->
 
 
 vamp :: InterpretUnit u => Vamp u -> GenPathSpec st u ()
-vamp (Vamp v1 conn) = GenPathSpec $ \ctx s ->
+vamp (Vamp v1 conn) = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz     = dc_font_size ctx
         dv1    = normalizeF sz v1
-        (_,w1) = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
+        (_,w1) = runImage (drawActivePen OSTROKE $ st_active_pen s) pctx
         upt    = dinterpF sz (tipR $ st_cumulative_path s)
         (_,w2) = runConnectorImage conn ctx upt (upt .+^ v1)
         cpath  = snocLine (st_cumulative_path s) dv1
@@ -431,9 +442,8 @@ vamp (Vamp v1 conn) = GenPathSpec $ \ctx s ->
 
 
 cycleSubPath :: DrawMode -> GenPathSpec st u ()
-cycleSubPath mode = GenPathSpec $ \ctx s ->
-    let gf      = drawActivePen (fn mode) $ st_active_pen s
-        (_,w1)  = runImage gf ctx
+cycleSubPath mode = GenPathSpec $ \_ s@(PathSt {st_pen_ctx = pctx}) ->
+    let (_,w1) = runImage (drawActivePen (fn mode) (st_active_pen s)) pctx
     in ((), s { st_active_pen = PEN_UP }, w1)
   where
     fn DRAW_STROKE      = CSTROKE
@@ -447,20 +457,14 @@ cycleSubPath mode = GenPathSpec $ \ctx s ->
 -- Should pen changing be @local@ style vis the Reader monad or a 
 -- state change with the State monad?
 -- 
--- @local@ is more idiomatic within the context of Wumpus (and 
--- easier to implement), but @state change@ is probably more 
--- natural for Path building.
--- 
--- For the time being we go with local.
+-- Now switched to state change.
 --
 
 
--- | Note - currently this changes the DrawingContext for insertl
--- as well as the pen - this is a bug...
+-- | Note - updates the pen but doesn\'t draw, the final path
+-- will be drawing with the last updated context.
 --
-localPen :: DrawingContextF -> GenPathSpec st u a -> GenPathSpec st u a
-localPen upd ma = GenPathSpec $ \ctx s ->
-    let (_,w0)    = runImage (drawActivePen OSTROKE $ st_active_pen s) ctx
-        (a,s1,w1) = getGenPathSpec ma (upd ctx) s
-    in (a, s1 { st_active_pen = PEN_UP }, w0 `mappend` w1 )
+updatePen :: DrawingContextF -> GenPathSpec st u ()
+updatePen upd = GenPathSpec $ \_ s@(PathSt { st_pen_ctx = pctx})  ->
+    ((), s { st_pen_ctx = upd pctx}, mempty )
 
