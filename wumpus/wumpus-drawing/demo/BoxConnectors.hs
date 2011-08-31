@@ -63,7 +63,7 @@ makeConnDrawing (ss,conn) =
   where
     fn p0 p1   = mconcat [ disk p0, disk p1, dcon p0 p1, lbl p1 ]
 
-    disk pt    = localize (fill_colour red) $ dcDisk FILL 2 `at` pt
+    disk pt    = localize (fill_colour red) $ dcDisk DRAW_FILL 2 `at` pt
     dcon p0 p1 = ignoreAns $ connect p0 p1 conn
 
     lbl  pt    = ignoreAns $ textline ss WW `at` (displace (hvec 20) pt)

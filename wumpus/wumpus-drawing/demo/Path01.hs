@@ -9,7 +9,6 @@ import Wumpus.Drawing.Paths
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace
 
 import Prelude hiding ( cycle )
 import System.Directory
@@ -34,12 +33,12 @@ path_pic = drawTracing $ do
     
 
 triangles :: LocGraphic Double
-triangles = localize (set_line_width 8) $ (runPathSpec_ `flip` PATH_OPEN) $ 
+triangles = localize (set_line_width 8) $ (runPathSpec_ `flip` OSTROKE) $ 
     localize (stroke_colour dark_slate_blue) $ 
     moveby (hvec 60) >> tristeps >>
     moveby (hvec 60) >> tristeps >>
-    moveby (hvec 60) >> tristeps >> cycleSubPath STROKE >>
-    moveby (hvec 60) >> tristeps >> cycleSubPath STROKE >>
+    moveby (hvec 60) >> tristeps >> cycleSubPath DRAW_STROKE >>
+    moveby (hvec 60) >> tristeps >> cycleSubPath DRAW_STROKE >>
     ureturn
   where
     tristeps :: PathSpec Double ()
@@ -74,5 +73,5 @@ path1 = evalPathSpec $ ctrlcurve (pi/2) 0 (P2 0 60)
 -}
 
 circle1 :: LocGraphic Double
-circle1 = localize (fill_colour gold) (dcCircle FILL 60)
+circle1 = localize (fill_colour gold) (dcCircle DRAW_FILL 60)
 

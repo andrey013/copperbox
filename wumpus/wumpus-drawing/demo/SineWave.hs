@@ -7,7 +7,6 @@ import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Extras.Grids
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Paths.HPath
 import Wumpus.Drawing.Text.StandardFontDefs
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -43,9 +42,9 @@ grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
     node (0,(-2)) $ grid (dotted_major_grid) 10 4
 
-    draw $ drawOpenPath_ $ emptyPath zeroPt `snocSineWave` (100,hvec 400)
-    draw $ drawOpenPath_ $ sinewave 100 (V2 400 0)   (P2 0 0)
-    draw $ drawOpenPath_ $ runHPath (sineWave 100 (V2 400 0)) (P2 0 0)
+    draw $ drawPath_ OSTROKE $ emptyPath zeroPt `snocSineWave` (100,hvec 400)
+    draw $ drawPath_ OSTROKE $ sinewave 100 (V2 400 0)   (P2 0 0)
+    draw $ drawPath_ OSTROKE $ runHPath (sineWave 100 (V2 400 0)) (P2 0 0)
 
     return ()
 

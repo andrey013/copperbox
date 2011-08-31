@@ -40,17 +40,17 @@ redA :: AdvGraphic Double
 redA = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "A")
   where
     background = localize (fill_colour tomato) 
-                          (moveStart bldisplace $ dcRectangle FILL 24 24)
+                          (moveStart bldisplace $ dcRectangle DRAW_FILL 24 24)
 
 greenB :: AdvGraphic Double
 greenB = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "B")
   where
     background = localize (fill_colour yellow_green) 
-                          (moveStart bldisplace $ dcRectangle FILL 24 24)
+                          (moveStart bldisplace $ dcRectangle DRAW_FILL 24 24)
 
 blueC :: AdvGraphic Double
 blueC = makeAdvObject (pure hdist) (background `mappend` dcTextlabel "C")
   where
     background = localize (fill_colour light_sky_blue) 
-                          (moveStart bldisplace $ dcRectangle FILL 24 24)
+                          (moveStart bldisplace $ dcRectangle DRAW_FILL 24 24)
 

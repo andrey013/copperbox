@@ -42,5 +42,5 @@ grid_pic = udrawTracing (0::Double) $ do
     node (0,0) $ arc radius (0.25*pi) `incline` 0
 
     node (5,0) $ grid (dotted_major_grid) 4 3
-    node (5,0) $ wedge FILL_STROKE radius (0.25*pi) `incline` 0
+    node (5,0) $ wedge DRAW_FILL_STROKE radius (0.25*pi) `incline` 0
     return ()

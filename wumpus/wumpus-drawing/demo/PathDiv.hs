@@ -1,11 +1,10 @@
 {-# OPTIONS -Wall #-}
 
-module PathRel where
+module PathDiv where
 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Paths.HPath
 
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -33,7 +32,7 @@ path_pic = drawTracing $ do
 
 
 path1 :: DLocGraphic
-path1 = promoteLoc $ \(P2 x y) -> translate x y (drawOpenPath_ abspath1) 
+path1 = promoteLoc $ \(P2 x y) -> translate x y (drawPath_ OSTROKE abspath1) 
 
 
 dots1 :: DLocGraphic 

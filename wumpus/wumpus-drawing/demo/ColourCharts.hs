@@ -53,7 +53,7 @@ tableGraphic row_count xs = draw $ (runChain (mapM onChain gs) chn) `at` pt
 colourSample :: String -> RGBi -> LocGraphic Double
 colourSample name rgb = localize (fill_colour rgb) $ 
     promoteLoc $ \pt ->  
-      mappend (blRectangle FILL_STROKE 15 10 `at` pt)
+      mappend (blRectangle DRAW_FILL_STROKE 15 10 `at` pt)
               (dcTextlabel name `at` displace (vec 20 2) pt)
         
 

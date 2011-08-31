@@ -23,8 +23,8 @@ module Wumpus.Drawing.Extras.Loop
 
 import Wumpus.Drawing.Paths
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
+
 import Wumpus.Core                              -- package: wumpus-core
 
 
