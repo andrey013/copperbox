@@ -142,11 +142,11 @@ instance DrawingCtxM (Query u) where
   localize upd ma = Query $ \ctx -> getQuery ma (upd ctx)
 
 
-runImage :: Image u a -> DrawingContext -> PrimResult u a
-runImage = getImage
+runImage :: DrawingContext -> Image u a -> PrimResult u a
+runImage ctx ma = getImage ma ctx
 
-runQuery :: Query u a -> DrawingContext -> a
-runQuery = getQuery
+runQuery :: DrawingContext -> Query u a -> a
+runQuery ctx ma = getQuery ma ctx
 
 
 
@@ -159,7 +159,7 @@ stripImage ma = Query $ \ctx -> fst $ getImage ma ctx
 -- | Turn a 'Query' into an 'Image' without graphic content.
 --
 liftQuery :: Query u a -> Image u a
-liftQuery ma = askDC >>= \ctx -> let a = runQuery ma ctx in return a
+liftQuery ma = askDC >>= \ctx -> let a = runQuery ctx ma in return a
 
 
 

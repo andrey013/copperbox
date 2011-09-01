@@ -61,7 +61,7 @@ text02 = makeAdvObject (pure $ hvec 210) $ dcTextlabel "text number two"
 miniDisk :: AdvGraphic Double
 miniDisk = makeAdvObject (pure $ V2 0 0) disk1 
   where
-    disk1 = localize (fill_colour sienna) $ dcDisk FILL 3
+    disk1 = localize (fill_colour sienna) $ dcDisk DRAW_FILL 3
 
 
 sienna :: RGBi

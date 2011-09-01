@@ -35,17 +35,18 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (P2 0 0) $ runChain_ (mapM onChain [text01, minidisk, text02, minidisk])
-                               (chainH 70) 
+    drawl (P2 0 0) $ runChain_ (chainH 70) $ 
+                       mapM onChain [text01, minidisk, text02, minidisk]
+                               
                                
 
-    drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle FILL 4 4
+    drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle DRAW_FILL 4 4
 
-    drawl (P2 0 200) $ runChain (mapM onChain $ diskList 32)
-                                (tableRight 6 (30,18)) 
+    drawl (P2 0 200) $ runChain (tableRight 6 (30,18)) $ mapM onChain $ diskList 32
+                                
                                 
 
-    drawl (P2 300 100) $ runChain (pchain $ diskList 30) pchain_start 
+    drawl (P2 300 100) $ runChain pchain_start $ pchain $ diskList 30
 
 
 pchain_start :: ChainScheme Double 
@@ -80,7 +81,7 @@ text02 = dcTextlabel "T02"
 
 
 minidisk :: LocGraphic Double
-minidisk = moveStart (vvec 7) $ dcDisk FILL 6
+minidisk = moveStart (vvec 7) $ dcDisk DRAW_FILL 6
 
 diskList :: Int -> [LocGraphic Double]
 diskList n = take n $ unfoldr phi black

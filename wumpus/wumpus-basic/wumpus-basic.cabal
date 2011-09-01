@@ -32,6 +32,11 @@ description:
   .
   v0.21.0 to v0.22.0:
   .
+  * Reverted argument order of @run@ functions they back to the 
+    @monadLib@ style (args * monadic_operation) rather than @MTL@
+    style (monadic_operation * args). Typographically this seems 
+    better.
+  .
   * Removed module @Geometry.Paths@ it is superseded in
     Wumpus-Drawing.
   .

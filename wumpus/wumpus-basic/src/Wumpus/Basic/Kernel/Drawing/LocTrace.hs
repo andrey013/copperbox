@@ -146,7 +146,7 @@ instance InterpretUnit u => CursorM (GenLocTrace st u) where
 insertlImpl :: InterpretUnit u => LocImage u a -> GenLocTrace st u a
 insertlImpl gf = GenLocTrace $ \ctx pt s ->
     let upt    = dinterpF (dc_font_size ctx) pt 
-        (a,w1) = runLocImage gf ctx upt
+        (a,w1) = runLocImage ctx upt gf
     in (a,pt,s,w1) 
 
 
@@ -171,8 +171,8 @@ instance InterpretUnit u => BranchCursorM (GenLocTrace st u) where
 
 
 runGenLocTrace :: InterpretUnit u 
-               => GenLocTrace st u a -> st -> LocImage u (a,st)
-runGenLocTrace ma st = promoteLoc $ \pt -> 
+               => st -> GenLocTrace st u a -> LocImage u (a,st)
+runGenLocTrace st ma = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let dpt         = normalizeF (dc_font_size ctx) pt
         (a,_,s1,w1) = getGenLocTrace ma ctx dpt st
@@ -184,20 +184,20 @@ runGenLocTrace ma st = promoteLoc $ \pt ->
 -- | Forget the user state LocImage, just return the /answer/.
 --
 evalGenLocTrace :: InterpretUnit u 
-                => GenLocTrace st u a -> st -> LocImage u a
-evalGenLocTrace ma st = fmap fst $ runGenLocTrace ma st
+                => st -> GenLocTrace st u a -> LocImage u a
+evalGenLocTrace st ma = fmap fst $ runGenLocTrace st ma
 
 
 -- | Forget the /answer/, just return the user state.
 --
 execGenLocTrace :: InterpretUnit u 
-                => GenLocTrace st u a -> st -> LocImage u st 
-execGenLocTrace ma st = fmap snd $ runGenLocTrace ma st
+                => st -> GenLocTrace st u a -> LocImage u st 
+execGenLocTrace st ma = fmap snd $ runGenLocTrace st ma
 
 
 stripGenLocTrace :: InterpretUnit u 
-                 => GenLocTrace st u a -> st -> LocQuery u (a,st)
-stripGenLocTrace ma st = stripLocImage $ runGenLocTrace ma st 
+                 => st -> GenLocTrace st u a -> LocQuery u (a,st)
+stripGenLocTrace st ma = stripLocImage $ runGenLocTrace st ma
 
 
 -- | Simple version of 'runGenLocTrace' - run a 'LocTrace' without
@@ -205,7 +205,7 @@ stripGenLocTrace ma st = stripLocImage $ runGenLocTrace ma st
 --
 runLocTrace :: InterpretUnit u 
             => LocTrace u a -> LocImage u a
-runLocTrace ma = evalGenLocTrace ma ()
+runLocTrace ma = evalGenLocTrace () ma
 
 
 runLocTrace_ :: InterpretUnit u 

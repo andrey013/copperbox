@@ -129,8 +129,8 @@ runCtxPictureU ctx df = maybe fk id $ runCtxPicture ctx df
 -- Transform a 'TraceDrawing' into a 'CtxPicture'.
 --
 drawTracing :: TraceDrawing u a -> CtxPicture
-drawTracing mf = 
-    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing mf ctx
+drawTracing ma = 
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx ma
 
 -- | 'udrawTracing' : @ scalar_unit_value * trace_drawing  -> CtxPicture @
 --
@@ -140,8 +140,8 @@ drawTracing mf =
 --
 --
 udrawTracing :: u -> TraceDrawing u a -> CtxPicture
-udrawTracing _ mf = 
-    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing mf ctx
+udrawTracing _ ma = 
+    CtxPicture $ \ctx -> liftToPictureMb $ execTraceDrawing ctx ma
 
 
 -- Note need Gen versions with user state...

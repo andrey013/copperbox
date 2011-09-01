@@ -174,23 +174,23 @@ instance Decorate ConnectorImage where
 
 
 runConnectorImage :: InterpretUnit u 
-                  => ConnectorImage u a -> DrawingContext 
-                  -> Point2 u -> Point2 u
+                  => DrawingContext -> Point2 u -> Point2 u
+                  -> ConnectorImage u a
                   -> PrimResult u a
-runConnectorImage ma ctx p0 p1 = 
+runConnectorImage ctx p0 p1 ma = 
     let dp0 = normalizeF (dc_font_size ctx) p0
         dp1 = normalizeF (dc_font_size ctx) p1 
-    in runImage (getConnectorImage ma dp0 dp1) ctx
+    in runImage ctx $ getConnectorImage ma dp0 dp1
 
 
 runConnectorQuery :: InterpretUnit u 
-                  => ConnectorQuery u a -> DrawingContext 
-                  -> Point2 u -> Point2 u 
+                  => DrawingContext -> Point2 u -> Point2 u 
+                  -> ConnectorQuery u a
                   -> a
-runConnectorQuery ma ctx p0 p1 = 
+runConnectorQuery ctx p0 p1 ma = 
     let dp0 = normalizeF (dc_font_size ctx) p0
         dp1 = normalizeF (dc_font_size ctx) p1 
-    in runQuery (getConnectorQuery ma dp0 dp1) ctx
+    in runQuery ctx $ getConnectorQuery ma dp0 dp1
 
 
 connect :: InterpretUnit u 

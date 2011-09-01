@@ -58,7 +58,7 @@ mf = do
     draw $ testDrawBl    BLC    `at` (P2 150  0)
     draw $ testDrawBl    BLR    `at` (P2 225  0)
     
-    drawl (P2 300 0) $ runPosObject msg SW
+    drawl (P2 300 0) $ runPosObject SW msg
   where
     msg = multilinePosText VALIGN_RIGHT "Red dot represents the\nrectangle address."
 
@@ -69,7 +69,7 @@ testDrawBl raddr = dcDisk DRAW_FILL 2 `mappend` rectBl raddr
 
 rectBl :: RectAddress -> LocGraphic Double
 rectBl raddr = 
-    ignoreAns $ runPosObject (makePosObject (return ortt) (mkRectBl w h)) raddr
+    ignoreAns $ runPosObject raddr $ makePosObject (return ortt) (mkRectBl w h)
   where
     w    = 40 
     h    = 30
@@ -92,7 +92,7 @@ testDrawMinor raddr =
 
 rectMinor :: RectAddress -> LocGraphic Double
 rectMinor raddr = 
-    runPosObject (makePosObject (return ortt) (mkRectMinor m w h)) raddr
+    runPosObject raddr $ makePosObject (return ortt) (mkRectMinor m w h)
   where
     m    = 10
     w    = 40 

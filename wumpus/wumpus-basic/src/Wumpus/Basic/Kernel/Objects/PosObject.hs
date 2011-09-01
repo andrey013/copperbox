@@ -165,8 +165,8 @@ instance (Monoid a, InterpretUnit u) => Monoid (PosObject u a) where
 -- | Running an PosObject produces a LocImage.
 --
 runPosObject :: InterpretUnit u 
-             => PosObject u a -> RectAddress -> LocImage u a
-runPosObject ma addr = promoteLoc $ \ot -> 
+             => RectAddress -> PosObject u a -> LocImage u a
+runPosObject addr ma = promoteLoc $ \ot -> 
     askDC >>= \ctx -> 
     let dot       = normalizeF (dc_font_size ctx) ot
         (a,o1,ca) = getPosObject ma ctx dot
@@ -178,8 +178,8 @@ runPosObject ma addr = promoteLoc $ \ot ->
 -- | Run a PosObject producing a LocImage (BoundingBox u).
 --
 runPosObjectBBox :: InterpretUnit u 
-                 => PosObject u a -> RectAddress -> LocImage u (BoundingBox u)
-runPosObjectBBox ma addr = promoteLoc $ \pt -> 
+                 => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
+runPosObjectBBox addr ma = promoteLoc $ \pt -> 
     askDC >>= \ctx -> 
     let sz        = dc_font_size ctx 
         dpt       = normalizeF sz pt
@@ -207,10 +207,10 @@ runPosObjectBBox ma addr = promoteLoc $ \pt ->
 makePosObject :: InterpretUnit u
               => Query u (Orientation u) -> LocImage u a -> PosObject u a
 makePosObject ma gf = PosObject $ \ctx pt -> 
-    let ort1  = runQuery ma ctx
+    let ort1  = runQuery ctx ma
         dort1 = normalizeF (dc_font_size ctx) ort1
         upt   = dinterpF (dc_font_size ctx) pt
-        (a,w) = runLocImage gf ctx upt
+        (a,w) = runLocImage ctx upt gf
     in (a,dort1,w)
 
 
@@ -246,7 +246,7 @@ decoratePosObject zdec fn ma = PosObject $ \ctx pt ->
     let (a,o1,w1) = getPosObject ma ctx pt
         uortt     = dinterpF (dc_font_size ctx) o1
         upt       = dinterpF (dc_font_size ctx) pt
-        (_,w2)    = runLocImage (fn uortt) ctx upt
+        (_,w2)    = runLocImage ctx upt $ fn uortt
         wout      = case zdec of
                          ANTERIOR -> w2 `mappend` w1
                          SUPERIOR -> w1  `mappend` w2
@@ -404,7 +404,7 @@ multilinePosEscText :: (Fractional u, InterpretUnit u)
                     => VAlign -> [EscapedText] -> PosGraphic u
 multilinePosEscText vspec xs = 
     addMargins $ PosObject $ \ctx pt -> 
-      let sep    = runQuery textlineSpace ctx
+      let sep    = runQuery ctx textlineSpace
       in getPosObject (body sep) ctx pt
   where
     body sp = alignColumnSep vspec sp $ 
@@ -484,11 +484,11 @@ monospaceEscText :: InterpretUnit u
                  => Query u u -> EscapedText -> PosGraphic u
 monospaceEscText qry esc = PosObject $ \ctx pt ->
     let upt    = dinterpF (dc_font_size ctx) pt
-        uw     = runQuery qry ctx
+        uw     = runQuery ctx qry
         ks     = monos uw $ destrEscapedText id esc
-        ortt   = runQuery (hkernOrientationZero  ks) ctx
+        ortt   = runQuery ctx $ hkernOrientationZero ks
         dort   = normalizeF (dc_font_size ctx) ortt
-        (_,w1) = runLocImage (hkernLine ks) ctx upt
+        (_,w1) = runLocImage ctx upt $ hkernLine ks
     in (UNil, dort, w1)
 
 

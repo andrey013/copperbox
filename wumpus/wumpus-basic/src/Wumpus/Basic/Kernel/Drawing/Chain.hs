@@ -170,8 +170,8 @@ instance Monoid a => Monoid (GenChain st u a) where
 -- Run functions
 
 runGenChain :: InterpretUnit u 
-         => GenChain st u a -> ChainScheme u -> st -> LocImage u (a,st)
-runGenChain ma (ChainScheme start step) ust = promoteLoc $ \pt -> 
+            => ChainScheme u -> st -> GenChain st u a -> LocImage u (a,st)
+runGenChain (ChainScheme start step) ust ma = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let st_zero     = ChainSt { chain_st         = start pt
                               , chain_next       = step
@@ -185,30 +185,30 @@ runGenChain ma (ChainScheme start step) ust = promoteLoc $ \pt ->
 -- | Forget the user state LocImage, just return the /answer/.
 --
 evalGenChain :: InterpretUnit u 
-             => GenChain st u a -> ChainScheme u -> st -> LocImage u a
-evalGenChain ma cscm st = fmap fst $ runGenChain ma cscm st
+             => ChainScheme u -> st -> GenChain st u a -> LocImage u a
+evalGenChain cscm st ma = fmap fst $ runGenChain cscm st ma
 
 
 -- | Forget the /answer/, just return the user state.
 --
 execGenChain :: InterpretUnit u 
-             => GenChain st u a -> ChainScheme u -> st -> LocImage u st 
-execGenChain ma cscm st = fmap snd $ runGenChain ma cscm st
+             => ChainScheme u -> st -> GenChain st u a -> LocImage u st 
+execGenChain cscm st ma = fmap snd $ runGenChain cscm st ma
 
 
 stripGenChain :: InterpretUnit u 
-              => GenChain st u a -> ChainScheme u -> st -> LocQuery u (a,st)
-stripGenChain ma cscm st = stripLocImage $ runGenChain ma cscm st 
+              => ChainScheme u -> st -> GenChain st u a -> LocQuery u (a,st)
+stripGenChain cscm st ma = stripLocImage $ runGenChain cscm st ma
 
 
 
 runChain :: InterpretUnit u 
-         => Chain u a -> ChainScheme u -> LocImage u a
-runChain ma cscm = evalGenChain ma cscm ()
+         => ChainScheme u -> Chain u a -> LocImage u a
+runChain cscm ma = evalGenChain cscm () ma
 
 runChain_ :: InterpretUnit u 
-          => Chain u a -> ChainScheme u -> LocGraphic u
-runChain_ ma cscm = ignoreAns $ runChain ma cscm
+          => ChainScheme u -> Chain u a -> LocGraphic u
+runChain_ cscm ma = ignoreAns $ runChain cscm ma
 
 
 
@@ -219,7 +219,7 @@ onChain :: InterpretUnit u
         => LocImage u a -> GenChain st u a
 onChain gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
     let upt       = dinterpF (dc_font_size ctx) pt
-        (a,w1)    = runImage (applyLoc gf upt) ctx
+        (a,w1)    = runImage ctx $ applyLoc gf upt
         (pt1,st1) = sf upt s0
         dpt1      = normalizeF (dc_font_size ctx) pt1
         new_st    = ChainSt { chain_st         = st1

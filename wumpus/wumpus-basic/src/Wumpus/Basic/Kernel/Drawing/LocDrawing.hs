@@ -163,8 +163,8 @@ instance InterpretUnit u => LocDrawM (GenLocDrawing st u) where
 
 
 runGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
-                 => GenLocDrawing st u a -> st -> LocImage u (a,st)
-runGenLocDrawing ma st = promoteLoc $ \(P2 x y) -> 
+                 => st -> GenLocDrawing st u a -> LocImage u (a,st)
+runGenLocDrawing st ma = promoteLoc $ \(P2 x y) -> 
     askDC >>= \ctx ->
     let (a,s1,w1) = getGenLocDrawing ma ctx st
         ans       = translate x y a 
@@ -177,20 +177,20 @@ runGenLocDrawing ma st = promoteLoc $ \(P2 x y) ->
 -- | Forget the user state LocImage, just return the /answer/.
 --
 evalGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
-                  => GenLocDrawing st u a -> st -> LocImage u a
-evalGenLocDrawing ma st = fmap fst $ runGenLocDrawing ma st
+                  => st -> GenLocDrawing st u a -> LocImage u a
+evalGenLocDrawing st ma = fmap fst $ runGenLocDrawing st ma
 
 
 -- | Forget the /answer/, just return the user state.
 --
 execGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
-                  => GenLocDrawing st u a -> st -> LocImage u st 
-execGenLocDrawing ma st = fmap snd $ runGenLocDrawing ma st
+                  => st -> GenLocDrawing st u a -> LocImage u st 
+execGenLocDrawing st ma = fmap snd $ runGenLocDrawing st ma
 
 
 stripGenLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
-                   => GenLocDrawing st u a -> st -> LocQuery u (a,st)
-stripGenLocDrawing ma st = stripLocImage $ runGenLocDrawing ma st 
+                   => st -> GenLocDrawing st u a -> LocQuery u (a,st)
+stripGenLocDrawing st ma = stripLocImage $ runGenLocDrawing st ma
 
 
 -- | Simple version of 'runGenLocDrawing' - run a 'LocDrawing' without
@@ -198,7 +198,7 @@ stripGenLocDrawing ma st = stripLocImage $ runGenLocDrawing ma st
 --
 runLocDrawing :: (Translate a, InterpretUnit u, u ~ DUnit a) 
               => LocDrawing u a -> LocImage u a
-runLocDrawing ma = evalGenLocDrawing ma ()
+runLocDrawing ma = evalGenLocDrawing () ma
 
 
 runLocDrawing_ :: (Translate a, InterpretUnit u, u ~ DUnit a) 
@@ -212,7 +212,7 @@ runLocDrawing_ ma = ignoreAns $ runLocDrawing ma
 insertiImpl :: InterpretUnit u 
             => Image u a -> GenLocDrawing st u a
 insertiImpl gf = GenLocDrawing $ \ctx s -> 
-    let (a,w1)   = runImage gf ctx in (a,s,w1) 
+    let (a,w1)   = runImage ctx gf in (a,s,w1) 
 
 
 
@@ -221,7 +221,7 @@ insertiImpl gf = GenLocDrawing $ \ctx s ->
 insertliImpl :: InterpretUnit u
              => Anchor u -> LocImage u a -> GenLocDrawing st u a
 insertliImpl p1 gf = GenLocDrawing $ \ctx s -> 
-    let (a,w1) = runLocImage gf ctx p1 in (a,s,w1) 
+    let (a,w1) = runLocImage ctx p1 gf in (a,s,w1) 
 
 
 
@@ -235,4 +235,4 @@ insertciImpl :: InterpretUnit u
              => Anchor u -> Anchor u -> ConnectorImage u a 
              -> GenLocDrawing st u a
 insertciImpl p1 p2 gf = GenLocDrawing $ \ctx s -> 
-    let (a,w1) = runConnectorImage gf ctx p1 p2 in (a,s,w1) 
+    let (a,w1) = runConnectorImage ctx p1 p2 gf in (a,s,w1) 

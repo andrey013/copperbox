@@ -146,8 +146,8 @@ instance UserStateM (GenTraceDrawing st u) where
 
 
 
-runTraceDrawing :: TraceDrawing u a -> DrawingContext -> (a, HPrim u)
-runTraceDrawing ma ctx = post $ getGenTraceDrawing ma ctx ()
+runTraceDrawing :: DrawingContext -> TraceDrawing u a -> (a, HPrim u)
+runTraceDrawing ctx ma = post $ getGenTraceDrawing ma ctx ()
   where
     post (a,_,w1) = (a,w1)
 
@@ -156,8 +156,8 @@ runTraceDrawing ma ctx = post $ getGenTraceDrawing ma ctx ()
 -- | Run the drawing returning only the output it produces, drop
 -- any answer from the monadic computation.
 --
-execTraceDrawing :: TraceDrawing u a -> DrawingContext -> HPrim u
-execTraceDrawing ma ctx = snd $ runTraceDrawing ma ctx
+execTraceDrawing :: DrawingContext -> TraceDrawing u a -> HPrim u
+execTraceDrawing ctx ma = snd $ runTraceDrawing ctx ma
 
 -- | Run the drawing ignoring the output it produces, return the 
 -- answer from the monadic computation.
@@ -166,13 +166,13 @@ execTraceDrawing ma ctx = snd $ runTraceDrawing ma ctx
 -- opposite behaviour (return the drawing, ignore than the 
 -- answer).
 -- 
-evalTraceDrawing :: TraceDrawing u a -> DrawingContext -> a
-evalTraceDrawing ma ctx = fst $ runTraceDrawing ma ctx
+evalTraceDrawing :: DrawingContext -> TraceDrawing u a -> a
+evalTraceDrawing ctx ma = fst $ runTraceDrawing ctx ma
 
 
-runGenTraceDrawing :: GenTraceDrawing st u a -> DrawingContext -> st 
+runGenTraceDrawing :: DrawingContext -> st -> GenTraceDrawing st u a 
                    -> (a,st,HPrim u)
-runGenTraceDrawing = getGenTraceDrawing
+runGenTraceDrawing ctx st ma = getGenTraceDrawing ma ctx st
 
 
 
@@ -242,7 +242,7 @@ trace a = GenTraceDrawing $ \_ s -> ((), s, a)
 
 fontDelta :: GenTraceDrawing st u a -> GenTraceDrawing st u a
 fontDelta mf = GenTraceDrawing $ \ctx s -> 
-    let (_,font_attrs) = runQuery textAttr ctx
+    let (_,font_attrs) = runQuery ctx textAttr
         (a,s1,w1)      = getGenTraceDrawing mf ctx s
         prim           = fontDeltaContext font_attrs $ primGroup $ hprimToList w1
     in (a, s1, singleH $ prim1 $ prim)
@@ -250,7 +250,7 @@ fontDelta mf = GenTraceDrawing $ \ctx s ->
 -- Note - this function is in the wrong module....
 --
 evalQuery :: DrawingCtxM m => Query u a -> m a
-evalQuery df = askDC >>= \ctx -> return $ runQuery df ctx
+evalQuery df = askDC >>= \ctx -> return $ runQuery ctx df
 
 
 
@@ -263,7 +263,7 @@ evalQuery df = askDC >>= \ctx -> return $ runQuery df ctx
 -- 
 draw :: Image u a -> GenTraceDrawing st u ()
 draw gf = askDC >>= \ctx -> 
-          let (_,w) = runImage gf ctx 
+          let (_,w) = runImage ctx gf
           in trace (singleH w) >> return ()
 
 
@@ -277,7 +277,7 @@ draw gf = askDC >>= \ctx ->
 -- 
 drawi :: Image u a -> GenTraceDrawing st u a
 drawi gf = askDC >>= \ctx -> 
-           let (a,w) = runImage gf ctx
+           let (a,w) = runImage ctx gf
            in trace (singleH w) >> return a
             
 
@@ -304,7 +304,7 @@ drawl ancr img = drawli ancr img >> return ()
 drawli :: InterpretUnit u
        => Anchor u -> LocImage u a -> GenTraceDrawing st u a
 drawli pt gf = askDC >>= \ctx -> 
-               let (a,w) = runLocImage gf ctx pt
+               let (a,w) = runLocImage ctx pt gf
                in trace (singleH w) >> return a
 
 
@@ -369,7 +369,7 @@ nodei :: (Fractional u, InterpretUnit u)
       => (Int,Int) -> LocImage u a -> GenTraceDrawing st u a
 nodei coord gf = askDC >>= \ctx -> 
                  position coord >>= \pt ->
-                 let (a,w) = runLocImage gf ctx pt
+                 let (a,w) = runLocImage ctx pt gf
                  in trace (singleH w) >> return a
  
 

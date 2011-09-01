@@ -191,10 +191,10 @@ runAdvObject ma = promoteLoc $ \ot ->
 makeAdvObject :: InterpretUnit u 
               => Query u (Vec2 u) -> LocImage u a -> AdvObject u a
 makeAdvObject ma gf = AdvObject $ \ctx pt -> 
-    let v1    = runQuery ma ctx
+    let v1    = runQuery ctx ma
         dav1  = DAV $ normalizeF (dc_font_size ctx) v1
         upt   = dinterpF (dc_font_size ctx) pt
-        (a,w) = runLocImage gf ctx upt
+        (a,w) = runLocImage ctx upt gf
     in (a,dav1,w)
 
 

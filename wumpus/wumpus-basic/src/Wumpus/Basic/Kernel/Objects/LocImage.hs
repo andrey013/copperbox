@@ -172,16 +172,16 @@ instance Decorate LocImage where
 
 
 runLocImage :: InterpretUnit u 
-            => LocImage u a -> DrawingContext -> Point2 u -> PrimResult u a
-runLocImage ma ctx pt = 
+            => DrawingContext -> Point2 u -> LocImage u a -> PrimResult u a
+runLocImage ctx pt ma = 
     let dpt = normalizeF (dc_font_size ctx) pt 
-    in runImage (getLocImage ma dpt) ctx
+    in runImage ctx $ getLocImage ma dpt
 
 runLocQuery :: InterpretUnit u 
-            => LocQuery u a -> DrawingContext -> Point2 u -> a
-runLocQuery ma ctx pt = 
+            => DrawingContext -> Point2 u -> LocQuery u a -> a
+runLocQuery ctx pt ma = 
     let dpt = normalizeF (dc_font_size ctx) pt 
-    in runQuery (getLocQuery ma dpt) ctx
+    in runQuery ctx $ getLocQuery ma dpt
 
 
 stripLocImage :: LocImage u a -> LocQuery u a
