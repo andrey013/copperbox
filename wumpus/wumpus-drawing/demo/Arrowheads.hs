@@ -77,7 +77,7 @@ arrtable =
 
 tableGraphic :: [(String, ArrowTip)] -> TraceDrawing Double ()
 tableGraphic tips = 
-    drawl start $ runChain_ (mapM makeArrowDrawing tips) chn_alg 
+    drawl start $ runChain_ chn_alg $ mapM makeArrowDrawing tips
   where
     chn_alg = tableDown 18 (180,24)
     start   = P2 0 480
@@ -97,7 +97,7 @@ makeArrowDrawing (name, utip) = onChain (aconn `mappend` lbl)
               connect pt (displace (hvec 60) pt) (uniformArrow utip connline)
 
     lbl   = ignoreAns $ promoteLoc $ \pt -> 
-              textline name WW `at` (displace (hvec 66) pt)
+              textline WW name `at` (displace (hvec 66) pt)
 
 
 -- Cf. Parsec\'s Token module...

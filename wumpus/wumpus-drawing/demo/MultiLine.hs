@@ -76,14 +76,14 @@ testDrawL :: (Real u, Floating u, Ord u, InterpretUnit u)
 testDrawL rpos = dcDisk DRAW_FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multilineText VALIGN_LEFT sample_text rpos
+            multilineText VALIGN_LEFT rpos sample_text
 
 testDrawC :: (Real u, Floating u, Ord u, InterpretUnit u) 
           => RectAddress -> LocGraphic u
 testDrawC rpos = dcDisk DRAW_FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multilineText VALIGN_CENTER sample_text rpos
+            multilineText VALIGN_CENTER rpos sample_text
 
 
 testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u) 
@@ -91,7 +91,7 @@ testDrawR :: (Real u, Floating u, Ord u, InterpretUnit u)
 testDrawR rpos = dcDisk DRAW_FILL 2 `mappend` (ignoreAns txt)
   where
     txt = illustrateBoundedLocGraphic $ 
-            multilineText VALIGN_RIGHT sample_text rpos
+            multilineText VALIGN_RIGHT rpos sample_text
 
 
 sample_text :: String

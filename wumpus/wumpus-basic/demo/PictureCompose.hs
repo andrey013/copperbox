@@ -149,14 +149,14 @@ rect_red = drawTracing $ body
   where  
     body :: TraceDrawing Double ()
     body = localize (fill_colour indian_red)
-                    (draw $ dcRectangle FILL_STROKE 30 10 `at` (P2 0 10))
+                    (draw $ dcRectangle DRAW_FILL_STROKE 30 10 `at` (P2 0 10))
                  
 rect_green :: CtxPicture
 rect_green = drawTracing $ body
   where
     body :: TraceDrawing Double ()
     body = localize (fill_colour olive_drab)
-                    (draw $ dcRectangle FILL_STROKE 15 15 `at` (P2 10 10))
+                    (draw $ dcRectangle DRAW_FILL_STROKE 15 15 `at` (P2 10 10))
 
 
 rect_blue :: CtxPicture
@@ -164,7 +164,7 @@ rect_blue = drawTracing $ body
   where
     body :: TraceDrawing Double ()
     body = localize (fill_colour powder_blue)
-                    (draw $ dcRectangle FILL_STROKE 20 30 `at` (P2 10 0))
+                    (draw $ dcRectangle DRAW_FILL_STROKE 20 30 `at` (P2 10 0))
 
 
 

@@ -119,17 +119,17 @@ connectorD' = ignoreAns $ rightArrow tri45 connarc
 
 lblParensParens :: DLocGraphic
 lblParensParens = 
-    ignoreAns $ localize (set_font helvetica) $ textline "(),()" CENTER
+    ignoreAns $ localize (set_font helvetica) $ textline CENTER "(),()"
 
 lblParensParensParens :: DLocGraphic
 lblParensParensParens = 
-    ignoreAns $ localize (set_font helvetica) $ textline "(),(),()" CENTER
+    ignoreAns $ localize (set_font helvetica) $ textline CENTER "(),(),()"
 
 
 
 lblBold :: String -> DLocGraphic
 lblBold ss = 
-    ignoreAns $ localize (set_font helvetica_bold) $ textline ss CENTER
+    ignoreAns $ localize (set_font helvetica_bold) $ textline CENTER ss
 
 
 

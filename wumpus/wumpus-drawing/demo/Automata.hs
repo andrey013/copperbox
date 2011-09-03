@@ -49,13 +49,13 @@ automata = udrawTracing (0::Double) $ do
 
     s0     <- evalQuery $ left_of q0
 
-    draw $ label_midway_of SE (textline "0") $ straightconn q0 q1
-    draw $ label_midway_of SS (textline "0") $ arrloop (center q1) (north q1) 
-    draw $ label_midway_of SW (textline "1") $ straightconn q1 q3
-    draw $ label_midway_of NE (textline "1") $ straightconn q0 q2
-    draw $ label_midway_of NW (textline "0") $ straightconn q2 q3
-    draw $ label_midway_of NN (textline "1") $ arrloop (center q2) (south q2) 
-    draw $ label_atstart_of EE (textline "start") $ astraightconn s0 (west q0) 
+    draw $ label_midway_of SE (textline `flip` "0") $ straightconn q0 q1
+    draw $ label_midway_of SS (textline `flip` "0") $ arrloop (center q1) (north q1) 
+    draw $ label_midway_of SW (textline `flip` "1") $ straightconn q1 q3
+    draw $ label_midway_of NE (textline `flip` "1") $ straightconn q0 q2
+    draw $ label_midway_of NW (textline `flip` "0") $ straightconn q2 q3
+    draw $ label_midway_of NN (textline `flip` "1") $ arrloop (center q2) (south q2) 
+    draw $ label_atstart_of EE (textline `flip` "start") $ astraightconn s0 (west q0) 
 
     return ()
 
@@ -69,13 +69,13 @@ mat img mq = liftQuery mq >>= \pt -> img `at` pt
 state :: String -> DLocImage DCircle
 state ss = 
     localize (set_font times_italic) $ 
-        label_center_of (textline ss) $ strokedShape $ circle 20
+        label_center_of (textline `flip` ss) $ strokedShape $ circle 20
 
 
 stopstate :: String -> DLocImage DCircle 
 stopstate ss = 
     localize (set_font times_italic) $ 
-        label_center_of (textline ss) $ dblStrokedShape $ circle 20
+        label_center_of (textline `flip` ss) $ dblStrokedShape $ circle 20
 
 
 

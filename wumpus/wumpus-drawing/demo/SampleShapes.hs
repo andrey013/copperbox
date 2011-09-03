@@ -156,7 +156,7 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
   where
     shape   = strokedShape $ setDecoration textF sh
     textF   = promoteLocTheta $ \pt _ -> 
-                ignoreAns (multilineText VALIGN_CENTER name CENTER) `at` pt
+                ignoreAns (multilineText VALIGN_CENTER CENTER name) `at` pt
 
     deg10   = d2r (10::Double)
     deg110  = d2r (110::Double)
@@ -177,7 +177,7 @@ label cpos ss = dotX `mappend` msg
   where
     (rpos,fn)     = go cpos
     msg           = ignoreAns $ moveStart (fn 10) $ 
-                       multilineText VALIGN_CENTER ss rpos
+                       multilineText VALIGN_CENTER rpos ss 
 
     go NORTH      = (SS, go_north)
     go NORTH_EAST = (SW, go_north_east)

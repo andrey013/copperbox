@@ -274,7 +274,7 @@ dotChar ch = dotText [ch]
 
 dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
 dotText ss = 
-    fmap bboxRectAnchor $ runPosObjectBBox (posText ss) CENTER
+    fmap bboxRectAnchor $ runPosObjectBBox CENTER $ posText ss
 
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 
@@ -348,5 +348,5 @@ intoLocImage :: InterpretUnit u
              => LocQuery u a -> LocImage u z -> LocImage u a
 intoLocImage ma gf = promoteLoc $ \pt -> 
                      askDC >>= \ctx -> 
-                     let ans = runLocQuery ma ctx pt
+                     let ans = runLocQuery ctx pt ma
                      in replaceAns ans $ applyLoc gf pt

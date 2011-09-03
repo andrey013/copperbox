@@ -150,7 +150,7 @@ dotChar ch = dotText [ch]
 
 
 dotText :: (Real u, Floating u, InterpretUnit u) => String -> LocGraphic u
-dotText ss = ignoreAns $ runPosObject (posText ss) CENTER
+dotText ss = ignoreAns $ runPosObject CENTER $ posText ss
 
 dotEscChar :: (Real u, Floating u, InterpretUnit u) 
            => EscapedChar -> LocGraphic u
@@ -158,7 +158,7 @@ dotEscChar = dotEscText . wrapEscChar
 
 dotEscText :: (Real u, Floating u, InterpretUnit u) 
            => EscapedText -> LocGraphic u
-dotEscText esc = ignoreAns $ runPosObject (posEscText esc) CENTER
+dotEscText esc = ignoreAns $ runPosObject CENTER $ posEscText esc
 
 -- TODO - need Upright versions of dots...
 

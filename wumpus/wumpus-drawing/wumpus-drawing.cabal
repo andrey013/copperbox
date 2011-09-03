@@ -43,7 +43,11 @@ description:
   * Changed paths - @RelPath@ has been removed and there are now 
     only absolute paths. @PathBuilder@ builds absolute paths.
     The path module hierarchy has changed. Changed how pen 
-    updating works in @PathBuilder@. 
+    updating works in @PathBuilder@.
+  .
+  * Changed argument order of the run functions to @monadLib@ 
+    style (params * monadic action) rather than @MTL@ style 
+    (monadic action * params).
   .
   v0.5.0 to v0.6.0
   .

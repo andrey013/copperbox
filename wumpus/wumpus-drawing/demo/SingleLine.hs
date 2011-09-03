@@ -55,7 +55,7 @@ mf = do
 testDraw :: RectAddress -> LocGraphic Double
 testDraw rpos = dcDisk DRAW_FILL 2 `mappend` (ignoreAns ans)
   where
-    ans = textline "Qwerty" rpos
+    ans = textline rpos "Qwerty"
 
 
 

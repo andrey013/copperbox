@@ -35,19 +35,19 @@ import Wumpus.Core                              -- package: wumpus-core
 -- Also, reversed argument order would be more convenient as 
 -- RectAddress always short but String could be long. 
 --
-textline :: InterpretUnit u => String -> RectAddress -> BoundedLocGraphic u
-textline ss addr = runPosObjectBBox (posText ss) addr
+textline :: InterpretUnit u => RectAddress -> String -> BoundedLocGraphic u
+textline addr ss = runPosObjectBBox addr (posText ss)
 
 
 -- | Note - this is likely to be moved too...
 --
 rtextline :: (Real u, Floating u, InterpretUnit u)
-          => Radian -> String -> RectAddress -> BoundedLocGraphic u
-rtextline ang ss addr = runPosObjectBBox (rposText ang ss) addr
+          => Radian -> RectAddress -> String -> BoundedLocGraphic u
+rtextline ang addr ss = runPosObjectBBox addr (rposText ang ss)
 
 
 multilineText :: (Fractional u, InterpretUnit u)
-              => VAlign -> String -> RectAddress -> BoundedLocGraphic u
-multilineText va ss addr = runPosObjectBBox (multilinePosText va ss) addr
+              => VAlign -> RectAddress -> String -> BoundedLocGraphic u
+multilineText va addr ss = runPosObjectBBox addr (multilinePosText va ss)
 
 

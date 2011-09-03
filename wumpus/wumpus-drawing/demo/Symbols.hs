@@ -30,9 +30,9 @@ std_ctx = set_font times_roman $ standardContext 12
 --
 symbols :: CtxPicture
 symbols = udrawTracing (0::Double) $ do
-    localize (set_font symbol) $ fontDelta $ draw $
-               runChain_ (mapM sdraw all_letters) chn_alg  `at` start
-    fontDelta $ draw $ runChain (mapM ldraw all_letters) chn_alg  `at` start
+    localize (set_font symbol) $ fontDelta $ drawl start $
+               runChain_ chn_alg $ mapM sdraw all_letters
+    fontDelta $ drawl start $ runChain chn_alg $ mapM ldraw all_letters
   where
     chn_alg         = tableDown 30 (100,20) 
     start           = P2 0 (30*20)

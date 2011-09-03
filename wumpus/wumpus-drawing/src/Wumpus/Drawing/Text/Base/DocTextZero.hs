@@ -99,8 +99,8 @@ instance (Monoid a, InterpretUnit u) => Monoid (Doc u a) where
 
 
 
-runDoc :: Doc u a -> VAlign -> FontFamily -> PosObject u a
-runDoc ma va ff = getDoc ma env1 
+runDoc :: VAlign -> FontFamily -> Doc u a -> PosObject u a
+runDoc va ff ma = getDoc ma env1 
   where
     env1 = DocEnv { doc_alignment = va, doc_font_family = ff }
 

@@ -33,18 +33,18 @@ path_pic = drawTracing $ do
 
 
 path1 :: DLocGraphic
-path1 = localize (stroke_colour dark_red) $ runPathSpec_ path_spec1 PATH_OPEN
+path1 = localize (stroke_colour dark_red) $ runPathSpec_ OSTROKE path_spec1
 
 
 
 path2 :: DLocGraphic 
 path2 = promoteLoc $ \pt ->
   localize (stroke_colour red) $ 
-    obliterate (applyLoc (evalGenPathSpec path_spec1 () PATH_OPEN) pt) >>= \(_,path) -> 
-    drawClosedPath_ FILL path
+    obliterate (applyLoc (evalGenPathSpec () OSTROKE path_spec1) pt) >>= \(_,path) -> 
+    drawPath_ CFILL path
 
 makePD :: PathSpec Double a -> DLocGraphic
-makePD spec = localize (stroke_colour red) $ runPathSpec_ spec PATH_OPEN
+makePD spec = localize (stroke_colour red) $ runPathSpec_ OSTROKE spec
 
 
 
@@ -58,15 +58,14 @@ path_spec1 = do
     vamp     vamp1  
     penline  (V2 20 0)
 
-    localPen (stroke_colour blue) $ do 
-         { breakPath 
-         ; penline  (V2 50 0)
-         ; penline  (V2 0 (-40))
-         ; cycleSubPath FILL_STROKE
-         }
+    updatePen (stroke_colour blue) 
+    breakPath 
+    penline  (V2 50 0)
+    penline  (V2 0 (-40))
+    cycleSubPath DRAW_FILL_STROKE
     ureturn
   where
-    disk1 = dcDisk STROKE 10
+    disk1 = dcDisk DRAW_STROKE 10
 
     vamp1 = squareWE 40 
 

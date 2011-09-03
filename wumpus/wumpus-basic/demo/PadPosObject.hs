@@ -73,7 +73,7 @@ shrink = mapOrientation (fillYMinor (-10))
 type Trafo = PosGraphic Double -> PosGraphic Double
 
 testDraw :: Trafo -> RectAddress -> LocGraphic Double
-testDraw trafo rpos = dcDisk FILL 2 `mappend` bbobj
+testDraw trafo rpos = dcDisk DRAW_FILL 2 `mappend` bbobj
   where
     bbobj = ignoreAns $ illustrateBoundedLocGraphic $ lrgBox trafo rpos
 
@@ -81,12 +81,12 @@ testDraw trafo rpos = dcDisk FILL 2 `mappend` bbobj
 
 
 lrgBox :: Trafo -> (RectAddress -> BoundedLocGraphic Double)
-lrgBox trafo = \addr -> runPosObjectBBox (trafo poBox) addr
+lrgBox trafo = \addr -> runPosObjectBBox addr $ trafo poBox
 
 poBox :: PosGraphic Double
 poBox = makePosObject mkOrtt mkRect
   where
     mkOrtt = pure (Orientation 20 20 10 10) 
-    mkRect = moveStart (V2 (-20) (-10)) $ dcRectangle STROKE 40 20 
+    mkRect = moveStart (V2 (-20) (-10)) $ dcRectangle DRAW_STROKE 40 20 
 
     -- dcRectangle is start point bottom left

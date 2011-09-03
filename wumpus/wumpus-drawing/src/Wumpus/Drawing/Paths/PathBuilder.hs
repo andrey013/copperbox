@@ -218,9 +218,9 @@ instance InterpretUnit u => InsertlM (GenPathSpec st u) where
 -- Run functions
 
 runGenPathSpec :: InterpretUnit u 
-               => GenPathSpec st u a -> st -> PathMode 
+               => st -> PathMode -> GenPathSpec st u a 
                -> LocImage u (a, st, AbsPath u)
-runGenPathSpec ma st mode = promoteLoc $ \pt -> 
+runGenPathSpec st mode ma = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
     let P2 dx dy  = normalizeF (dc_font_size ctx) pt
         st_zero   = PathSt (zeroActivePen zeroPt) ctx (emptyPath zeroPt) st
@@ -228,7 +228,7 @@ runGenPathSpec ma st mode = promoteLoc $ \pt ->
         dpath     = translate dx dy $ st_cumulative_path s1
         upath     = dinterpF (dc_font_size ctx) dpath
         pctx      = st_pen_ctx s1
-        (_,w2)    = runImage (drawActivePen mode $ st_active_pen s1) pctx
+        (_,w2)    = runImage pctx (drawActivePen mode $ st_active_pen s1) 
         wfinal    = cpmove (V2 dx dy) $ w1 `mappend` w2
     in replaceAns (a, st_user_state s1, upath) $ primGraphic wfinal
 
@@ -238,34 +238,34 @@ runGenPathSpec ma st mode = promoteLoc $ \pt ->
 --
 
 evalGenPathSpec :: InterpretUnit u
-                => GenPathSpec st u a -> st -> PathMode
+                => st -> PathMode -> GenPathSpec st u a
                 -> LocImage u (a, AbsPath u)
-evalGenPathSpec ma st mode = 
-    (\(a,_,w) -> (a,w)) <$> runGenPathSpec ma st mode
+evalGenPathSpec st mode ma = 
+    (\(a,_,w) -> (a,w)) <$> runGenPathSpec st mode ma
 
     
 
 execGenPathSpec :: InterpretUnit u
-                => GenPathSpec st u a -> st -> PathMode
+                => st -> PathMode -> GenPathSpec st u a
                 -> LocImage u (st, AbsPath u)
-execGenPathSpec ma st mode =
-    (\(_,s,w) -> (s,w)) <$> runGenPathSpec ma st mode
+execGenPathSpec st mode ma =
+    (\(_,s,w) -> (s,w)) <$> runGenPathSpec st mode ma
 
 
 
 stripGenPathSpec :: InterpretUnit u
-                 => GenPathSpec st u a -> st -> PathMode
+                 => st -> PathMode -> GenPathSpec st u a
                  -> LocQuery u (a, st, AbsPath u)
-stripGenPathSpec ma st mode = stripLocImage $ runGenPathSpec ma st mode
+stripGenPathSpec st mode ma = stripLocImage $ runGenPathSpec st mode ma
 
 
 runPathSpec :: InterpretUnit u
-            => PathSpec u a -> PathMode -> LocImage u (a, AbsPath u)
-runPathSpec ma mode = evalGenPathSpec ma () mode
+            => PathMode -> PathSpec u a -> LocImage u (a, AbsPath u)
+runPathSpec mode ma = evalGenPathSpec () mode ma
 
 runPathSpec_ :: InterpretUnit u
-             => PathSpec u a -> PathMode -> LocGraphic u
-runPathSpec_ ma mode = ignoreAns $ evalGenPathSpec ma () mode
+             => PathMode -> PathSpec u a -> LocGraphic u
+runPathSpec_ mode ma = ignoreAns $ evalGenPathSpec () mode ma
 
 
 
@@ -317,7 +317,7 @@ runPivot ma mb = promoteLoc $ \pt ->
         dp1        = normalizeF (dc_font_size ctx) p1
         v1         = pvec dpt dp1
         pctx       = st_pen_ctx s1
-        (_,w2)     = runImage (drawActivePen OSTROKE $ st_active_pen s1) pctx
+        (_,w2)     = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s1
         wfinal     = w1 `mappend` w2
     in primGraphic $ cpmove (negateV v1) wfinal
   where
@@ -393,7 +393,7 @@ movebyImpl :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
 movebyImpl v1 = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,w1)  = runImage (drawActivePen OSTROKE $ st_active_pen s) pctx
+        (_,w1)  = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s
         cpath   = snocLine (st_cumulative_path s) dv1
     in ((), s { st_active_pen = PEN_UP, st_cumulative_path = cpath }, w1)
 
@@ -424,7 +424,7 @@ insertlImpl :: InterpretUnit u
             => LocImage u a -> GenPathSpec st u a
 insertlImpl gf = GenPathSpec $ \ctx s ->
     let upt     = dinterpF (dc_font_size ctx) (tipR $ st_cumulative_path s)
-        (a,wcp) = runLocImage gf ctx upt
+        (a,wcp) = runLocImage ctx upt gf
     in (a, s, wcp)
 
 
@@ -433,9 +433,9 @@ vamp :: InterpretUnit u => Vamp u -> GenPathSpec st u ()
 vamp (Vamp v1 conn) = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz     = dc_font_size ctx
         dv1    = normalizeF sz v1
-        (_,w1) = runImage (drawActivePen OSTROKE $ st_active_pen s) pctx
+        (_,w1) = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s
         upt    = dinterpF sz (tipR $ st_cumulative_path s)
-        (_,w2) = runConnectorImage conn ctx upt (upt .+^ v1)
+        (_,w2) = runConnectorImage ctx upt (upt .+^ v1) conn
         cpath  = snocLine (st_cumulative_path s) dv1
     in ((), s { st_active_pen = PEN_UP, st_cumulative_path = cpath }
           , w1 `mappend` w2)
@@ -443,7 +443,7 @@ vamp (Vamp v1 conn) = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
 
 cycleSubPath :: DrawMode -> GenPathSpec st u ()
 cycleSubPath mode = GenPathSpec $ \_ s@(PathSt {st_pen_ctx = pctx}) ->
-    let (_,w1) = runImage (drawActivePen (fn mode) (st_active_pen s)) pctx
+    let (_,w1) = runImage pctx $ drawActivePen (fn mode) (st_active_pen s)
     in ((), s { st_active_pen = PEN_UP }, w1)
   where
     fn DRAW_STROKE      = CSTROKE

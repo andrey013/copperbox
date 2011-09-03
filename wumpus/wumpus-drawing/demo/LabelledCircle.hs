@@ -46,10 +46,10 @@ circle_drawing = do
     draw $ dcDisk DRAW_FILL 3 `at` southeast a
     return ()
   where
-    f1 = label_above (textline "label-above")
-    f2 = label_below (textline "label-below")
-    f3 = label_left_of  (textline "label-left")
-    f4 = label_right_of (textline "label-right")
+    f1 = label_above (textline `flip` "label-above")
+    f2 = label_below (textline `flip` "label-below")
+    f3 = label_left_of  (textline `flip` "label-left")
+    f4 = label_right_of (textline `flip` "label-right")
 
 strokeFill :: RGBi -> RGBi -> DrawingContextF
 strokeFill s f = stroke_colour s . fill_colour f

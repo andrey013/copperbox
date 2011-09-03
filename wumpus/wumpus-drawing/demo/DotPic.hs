@@ -69,7 +69,7 @@ dottable =
 
 tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    draw $ runChain_ (mapM (onChain . makeDotDrawing) imgs) chn_alg `at` pt
+    drawl pt $ runChain_ chn_alg $ mapM (onChain . makeDotDrawing) imgs
   where
     row_count   = 18
     chn_alg     = tableDown row_count (180,36)
@@ -82,7 +82,7 @@ makeDotDrawing :: (String, DotLocImage Double) -> DLocGraphic
 makeDotDrawing (name,df) = 
     drawing `mappend` moveStart (vec 86 14) lbl
   where
-    drawing     = runPathSpec_ path_spec OSTROKE
+    drawing     = runPathSpec_ OSTROKE path_spec
 
     path_spec   = updatePen path_style >>
                   insertl dot >> 
@@ -92,7 +92,7 @@ makeDotDrawing (name,df) =
                            
 
     lbl         = ignoreAns $ promoteLoc $ \pt -> 
-                    textline name WW `at` pt
+                    textline WW name `at` pt
 
     steps       = [V2 25 15, V2 25 (-15), V2 25 15]
     dot         = ignoreAns df

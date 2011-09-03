@@ -33,7 +33,7 @@ path_pic = drawTracing $ do
     
 
 triangles :: LocGraphic Double
-triangles = localize (set_line_width 8) $ (runPathSpec_ `flip` OSTROKE) $ 
+triangles = localize (set_line_width 8) $ (runPathSpec_ OSTROKE) $ 
     localize (stroke_colour dark_slate_blue) $ 
     moveby (hvec 60) >> tristeps >>
     moveby (hvec 60) >> tristeps >>

@@ -57,7 +57,7 @@ positions = [0, 12, 27, 49, 78, 122]
 
 -- Note - this chain might be worth putting in a library...
 pointChain :: (Int -> DLocGraphic) -> DLocGraphic
-pointChain fn = runChain_ (mapM (onChain . fn) point_sizes) chn_alg
+pointChain fn = runChain_ chn_alg $ mapM (onChain . fn) point_sizes
   where
     chn_alg = ChainScheme start step
     start   = \pt -> (pt,point_sizes)
@@ -77,7 +77,7 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
-    draw $ runChain_  (mapM (onChain . uncurry fontGraphic) xs) chn_alg `at` start
+    drawl start $ runChain_ chn_alg $ mapM (onChain . uncurry fontGraphic) xs
   where
     chn_alg   = tableDown 4 (1,180)
     start     = P2 0 (4*180)

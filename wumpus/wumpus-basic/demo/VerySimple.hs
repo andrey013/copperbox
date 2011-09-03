@@ -43,18 +43,18 @@ mf = do
 
 
 miniDisk :: InterpretUnit u => LocGraphic u
-miniDisk = localize (fill_colour sienna) $ dcDisk FILL 3
+miniDisk = localize (fill_colour sienna) $ dcDisk DRAW_FILL 3
 
 
 -- Should be the same size as 3 at 24 Point...
 --
 miniDiskEm :: LocGraphic Em
-miniDiskEm = localize (fill_colour aquamarine) $ dcDisk FILL 0.125
+miniDiskEm = localize (fill_colour aquamarine) $ dcDisk DRAW_FILL 0.125
 
 -- Should be the same size as 3 at 24 Point...
 --
 miniDiskEn :: LocGraphic En
-miniDiskEn = localize (fill_colour red) $ dcDisk FILL 0.25
+miniDiskEn = localize (fill_colour red) $ dcDisk DRAW_FILL 0.25
 
 
 sienna :: RGBi

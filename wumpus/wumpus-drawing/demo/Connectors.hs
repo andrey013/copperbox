@@ -69,7 +69,7 @@ conntable =
 
 tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    draw $ runChain (mapM (onChain .  makeConnDrawing) conns) chn_alg `at` start
+    drawl start $ runChain chn_alg $ mapM (onChain .  makeConnDrawing) conns
   where
     chn_alg   = tableDown 8 (180,64) 
     start     = P2 0 520 
@@ -89,6 +89,6 @@ makeConnDrawing (ss,conn) =
     disk pt    = localize (fill_colour red) $ dcDisk DRAW_FILL 2 `at` pt
     dcon p0 p1 = ignoreAns $ connect p0 p1 (uniformArrow curveTip conn)
 
-    lbl  pt    = ignoreAns $ textline ss WW `at` (displace (hvec 10) pt)
+    lbl  pt    = ignoreAns $ textline WW ss `at` (displace (hvec 10) pt)
 
 

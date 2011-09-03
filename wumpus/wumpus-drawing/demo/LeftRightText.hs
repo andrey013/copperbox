@@ -80,59 +80,59 @@ redPlus = localize (stroke_colour red) dotPlus
 -- single line
 --
 ne_oneline :: BoundedLocGraphic Double
-ne_oneline = textline "north east" NE
+ne_oneline = textline NE "north east"
 
 
 -- single line
 --
 se_oneline :: BoundedLocGraphic Double
-se_oneline = textline "south east" SE
+se_oneline = textline SE "south east"
 
 -- single line
 --
 ss_oneline :: BoundedLocGraphic Double
-ss_oneline = textline "south" SS
+ss_oneline = textline SS "south"
 
 -- single line
 --
 sw_oneline :: BoundedLocGraphic Double
-sw_oneline = textline "south west" SW
+sw_oneline = textline SW "south west"
 
 
 
 -- single line rot
 --
 ssr_single :: BoundedLocGraphic Double
-ssr_single = rtextline (0.25*pi) "south rot45"  SS
+ssr_single = rtextline (0.25*pi) SS "south rot45"
 
 -- single line rot
 --
 swr_single :: BoundedLocGraphic Double
-swr_single = rtextline (0.25*pi)  "south west rot45" SW
+swr_single = rtextline (0.25*pi) SW "south west rot45"
 
 -- single line rot
 --
 ner_single :: BoundedLocGraphic Double
-ner_single = rtextline (0.25*pi)  "north east rot45" NE
+ner_single = rtextline (0.25*pi) NE "north east rot45"
 
 
 cc_oneline :: BoundedLocGraphic Double
-cc_oneline = textline "Center-center..." CENTER
+cc_oneline = textline CENTER "Center-center..."
 
 
 blank_text :: BoundedLocGraphic Double
-blank_text = textline "" BLC
+blank_text = textline BLC ""
 
 
 left_text :: BoundedLocGraphic Double
-left_text = multilineText VALIGN_LEFT dummy_text CENTER
+left_text = multilineText VALIGN_LEFT CENTER dummy_text
 
 
 right_text :: BoundedLocGraphic Double
-right_text = multilineText VALIGN_RIGHT dummy_text CENTER
+right_text = multilineText VALIGN_RIGHT CENTER dummy_text
 
 center_text :: BoundedLocGraphic Double
-center_text = multilineText VALIGN_CENTER dummy_text CENTER
+center_text = multilineText VALIGN_CENTER CENTER dummy_text
 
 dummy_text :: String 
 dummy_text = unlines $ [ "The quick brown"

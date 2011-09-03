@@ -88,13 +88,13 @@ atext :: ( CenterAnchor (t u), u ~ DUnit (t u)
          , Real u, Floating u, InterpretUnit u)
       => t u -> String -> TraceDrawing u ()
 atext ancr ss = 
-    draw $ textline ss CENTER `at` (center ancr)
+    draw $ textline CENTER ss `at` (center ancr)
 
 
 ptext :: (Floating u, InterpretUnit u) 
       => Point2 u -> String -> TraceDrawing u ()
 ptext pt ss = localize (font_attr times_italic 14) $ 
-    draw $ textline ss CENTER `at` pt
+    draw $ textline CENTER ss `at` pt
 
 
 -- Note - return type is a LocImage not a shape...

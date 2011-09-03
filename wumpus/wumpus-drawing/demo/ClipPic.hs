@@ -46,9 +46,9 @@ clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
     drawl (P2   0 320) $ drawHPath CFILL path01
     drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
-                           runPathSpec_ path02 CFILL
-    drawl (P2 384 416) $ runPathSpec_ path03 CFILL
-    drawl (P2 328 512) $ runPathSpec_ path04 CFILL
+                           runPathSpec_ CFILL path02
+    drawl (P2 384 416) $ runPathSpec_ CFILL path03
+    drawl (P2 328 512) $ runPathSpec_ CFILL path04
     drawl (P2   0   0) $ clip1
     drawl (P2 112   0) $ clip2
     drawl (P2 384  96) $ clip3
@@ -60,7 +60,7 @@ clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
 extrPathSpec :: InterpretUnit u 
              => PathSpec u a -> LocQuery u (AbsPath u)
 extrPathSpec spec = qpromoteLoc $ \pt ->
-    fmap post $ qapplyLoc (stripGenPathSpec spec () CSTROKE) pt
+    fmap post $ qapplyLoc (stripGenPathSpec () CSTROKE spec) pt
   where
     post (_,_,c) = c
 
@@ -68,8 +68,8 @@ background :: RGBi -> LocGraphic Double
 background rgb = promoteLoc $ \_ -> 
     ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = runChain (mapM onChain $ replicate 112 iheartHaskell) 
-                   (tableDown 18 (86,16)) 
+    ihh = runChain (tableDown 18 (86,16)) $ mapM onChain $ replicate 112 iheartHaskell
+                   
 
 -- | This is one for Wumpus-Basic - the set of combinators to 
 -- shift between Images and Queries needs sorting out
@@ -78,8 +78,7 @@ background rgb = promoteLoc $ \_ ->
 zapLocQ :: InterpretUnit u => LocQuery u a-> LocImage u a
 zapLocQ ma = promoteLoc $ \pt -> 
    askDC >>= \ctx ->
-   let a = runLocQuery ma ctx pt
-   in return a
+   let a = runLocQuery ctx pt ma in return a
 
 clip1 :: LocGraphic Double
 clip1 = ignoreAns $ locClipH path01 (background black)

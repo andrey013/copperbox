@@ -47,7 +47,7 @@ conntable =
 
 tableGraphic :: [(String, ConnectorBox Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    drawl (P2 0 520) $ runChain_ (mapM makeConnDrawing conns) chn_alg 
+    drawl (P2 0 520) $ runChain_ chn_alg $ mapM makeConnDrawing conns
   where
     chn_alg   = tableDown 2 (180,80) 
 
@@ -66,5 +66,5 @@ makeConnDrawing (ss,conn) =
     disk pt    = localize (fill_colour red) $ dcDisk DRAW_FILL 2 `at` pt
     dcon p0 p1 = ignoreAns $ connect p0 p1 conn
 
-    lbl  pt    = ignoreAns $ textline ss WW `at` (displace (hvec 20) pt)
+    lbl  pt    = ignoreAns $ textline WW ss `at` (displace (hvec 20) pt)
 
