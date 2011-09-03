@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Wumpus.Basic.Kernel.Objects.PosObject
+-- Module      :  Wumpus.Basic.Kernel.Drawing.PosObject
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -21,12 +21,13 @@
 --
 --------------------------------------------------------------------------------
 
-module Wumpus.Basic.Kernel.Objects.PosObject
+module Wumpus.Basic.Kernel.Drawing.PosObject
   (
 
   -- * Positionable image
+    GenPosObject
 
-    PosObject
+  , PosObject
   , DPosObject
 
   , PosGraphic
@@ -101,10 +102,13 @@ type DOrt = Orientation Double
 
 -- | A positionable \"Object\".
 --
-newtype PosObject u a = PosObject 
-          { getPosObject :: DrawingContext -> DPoint2 -> (a, DOrt, CatPrim) }
+newtype GenPosObject st u a = GenPosObject { 
+    getGenPosObject :: DrawingContext -> DPoint2 -> st -> (a, st, DOrt, CatPrim) }
 
-type instance DUnit (PosObject u a) = u
+type instance DUnit (GenPosObject st u a) = u
+
+
+type PosObject u a = GenPosObject () u a
     
 -- | Version of PosObject specialized to Double for the unit type.
 --
@@ -122,70 +126,74 @@ type DPosGraphic = PosGraphic Double
 
 
 
-instance Functor (PosObject u) where
-  fmap f mf = PosObject $ \ctx pt -> 
-              let (a,o1,w1) = getPosObject mf ctx pt in (f a,o1,w1)
+instance Functor (GenPosObject st u) where
+  fmap f mf = GenPosObject $ \ctx pt s -> 
+              let (a,s1,o1,w1) = getGenPosObject mf ctx pt s in (f a,s1,o1,w1)
 
 
-instance Applicative (PosObject u) where
-  pure a    = PosObject $ \_   _  -> (a,mempty,mempty)
-  mf <*> ma = PosObject $ \ctx pt -> 
-              let (f,o1,w1) = getPosObject mf ctx pt
-                  (a,o2,w2) = getPosObject ma ctx pt
-              in (f a, o1 `mappend` o2, w1 `mappend` w2)
-
-
-
-instance Monad (PosObject u) where
-  return a  = PosObject $ \_   _  -> (a,mempty,mempty)
-  mf >>= k  = PosObject $ \ctx pt -> 
-              let (a,o1,w1) = getPosObject mf ctx pt
-                  (b,o2,w2) = getPosObject (k a) ctx pt
-              in (b, o1 `mappend` o2, w1 `mappend` w2)
+instance Applicative (GenPosObject st u) where
+  pure a    = GenPosObject $ \_   _  s -> (a,s,mempty,mempty)
+  mf <*> ma = GenPosObject $ \ctx pt s -> 
+              let (f,s1,o1,w1) = getGenPosObject mf ctx pt s
+                  (a,s2,o2,w2) = getGenPosObject ma ctx pt s1
+              in (f a, s2, o1 `mappend` o2, w1 `mappend` w2)
 
 
 
-instance DrawingCtxM (PosObject u) where
-  askDC           = PosObject $ \ctx _ -> (ctx, mempty, mempty)
-  asksDC fn       = PosObject $ \ctx _ -> (fn ctx, mempty, mempty)
-  localize upd ma = PosObject $ \ctx pt -> getPosObject ma (upd ctx) pt
+instance Monad (GenPosObject st u) where
+  return a  = GenPosObject $ \_   _  s  -> (a, s, mempty, mempty)
+  mf >>= k  = GenPosObject $ \ctx pt s -> 
+              let (a,s1,o1,w1) = getGenPosObject mf ctx pt s
+                  (b,s2,o2,w2) = getGenPosObject (k a) ctx pt s1
+              in (b, s2, o1 `mappend` o2, w1 `mappend` w2)
+
+
+
+instance DrawingCtxM (GenPosObject st u) where
+  askDC           = GenPosObject $ \ctx _  s -> (ctx, s, mempty, mempty)
+  asksDC fn       = GenPosObject $ \ctx _  s -> (fn ctx, s, mempty, mempty)
+  localize upd ma = GenPosObject $ \ctx pt s -> 
+                      getGenPosObject ma (upd ctx) pt s
 
 
 
 
-instance (Monoid a, InterpretUnit u) => Monoid (PosObject u a) where
-  mempty = PosObject $ \_ _ -> (mempty, mempty, mempty)
-  ma `mappend` mb = PosObject $ \ctx pt -> 
-                    let (a,o1,w1) = getPosObject ma ctx pt
-                        (b,o2,w2) = getPosObject mb ctx pt
-                    in (a `mappend` b, o1 `mappend` o2, w1 `mappend` w2)
+instance (Monoid a, InterpretUnit u) => Monoid (GenPosObject st u a) where
+  mempty = GenPosObject $ \_ _ s -> (mempty, s, mempty, mempty)
+  ma `mappend` mb = GenPosObject $ \ctx pt s -> 
+                    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+                        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
+                    in (a `mappend` b, s2, o1 `mappend` o2, w1 `mappend` w2)
 
 
 
 -- | Running an PosObject produces a LocImage.
 --
+runGenPosObject :: InterpretUnit u 
+                => RectAddress -> st -> GenPosObject st u a -> LocImage u (a,st)
+runGenPosObject addr st ma = promoteLoc $ \ot -> 
+    askDC >>= \ctx -> 
+    let dot          = normalizeF (dc_font_size ctx) ot
+        (a,s1,o1,ca) = getGenPosObject ma ctx dot st
+        v1           = vtoOrigin addr o1
+    in replaceAns (a,s1) $ primGraphic $ cpmove v1 ca
+
+
 runPosObject :: InterpretUnit u 
              => RectAddress -> PosObject u a -> LocImage u a
-runPosObject addr ma = promoteLoc $ \ot -> 
-    askDC >>= \ctx -> 
-    let dot       = normalizeF (dc_font_size ctx) ot
-        (a,o1,ca) = getPosObject ma ctx dot
-        v1        = vtoOrigin addr o1
-    in replaceAns a $ primGraphic $ cpmove v1 ca
-
-
+runPosObject addr ma = fmap fst $ runGenPosObject addr () ma
 
 -- | Run a PosObject producing a LocImage (BoundingBox u).
 --
 runPosObjectBBox :: InterpretUnit u 
-                 => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
+                    => RectAddress -> PosObject u a -> LocImage u (BoundingBox u)
 runPosObjectBBox addr ma = promoteLoc $ \pt -> 
     askDC >>= \ctx -> 
-    let sz        = dc_font_size ctx 
-        dpt       = normalizeF sz pt
-        (_,o1,w1) = getPosObject ma ctx dpt
-        v1        = vtoOrigin addr o1
-        bb        = dinterpF sz $ orientationBounds o1 (dpt .+^ v1)
+    let sz          = dc_font_size ctx 
+        dpt         = normalizeF sz pt
+        (_,_,o1,w1) = getGenPosObject ma ctx dpt ()
+        v1          = vtoOrigin addr o1
+        bb          = dinterpF sz $ orientationBounds o1 (dpt .+^ v1)
     in replaceAns bb $ primGraphic $ cpmove v1 w1
 
 
@@ -205,21 +213,21 @@ runPosObjectBBox addr ma = promoteLoc $ \pt ->
 -- not have the range of functions of LocImage or LocThetaImage.
 -- 
 makePosObject :: InterpretUnit u
-              => Query u (Orientation u) -> LocImage u a -> PosObject u a
-makePosObject ma gf = PosObject $ \ctx pt -> 
+              => Query u (Orientation u) -> LocImage u a -> GenPosObject st u a
+makePosObject ma gf = GenPosObject $ \ctx pt s -> 
     let ort1  = runQuery ctx ma
         dort1 = normalizeF (dc_font_size ctx) ort1
         upt   = dinterpF (dc_font_size ctx) pt
         (a,w) = runLocImage ctx upt gf
-    in (a,dort1,w)
+    in (a,s,dort1,w)
 
 
 -- | 'emptyPosObject' : @ PosObject @
 --
 -- Build an empty 'PosGraphicObject'.
 --
-emptyPosObject :: (Monoid a, InterpretUnit u) => PosObject u a
-emptyPosObject = PosObject $ \_ _ -> (mempty, mempty, mempty) 
+emptyPosObject :: (Monoid a, InterpretUnit u) => GenPosObject st u a
+emptyPosObject = mempty
 
     
 
@@ -231,8 +239,8 @@ emptyPosObject = PosObject $ \_ _ -> (mempty, mempty, mempty)
 
 
 elaboratePosObject :: (Fractional u, Ord u, InterpretUnit u)
-                   => ZDeco -> RectAddress -> LocGraphic u -> PosObject u a
-                   -> PosObject u a
+                   => ZDeco -> RectAddress -> LocGraphic u -> GenPosObject st u a
+                   -> GenPosObject st u a
 elaboratePosObject zdec raddr gf ma = decoratePosObject zdec fn ma
   where
     fn ortt = moveStart (vtoRectAddress ortt raddr) gf
@@ -240,17 +248,17 @@ elaboratePosObject zdec raddr gf ma = decoratePosObject zdec fn ma
 
 
 decoratePosObject :: InterpretUnit u 
-                  => ZDeco -> (Orientation u -> LocGraphic u) -> PosObject u a
-                  -> PosObject u a
-decoratePosObject zdec fn ma = PosObject $ \ctx pt -> 
-    let (a,o1,w1) = getPosObject ma ctx pt
-        uortt     = dinterpF (dc_font_size ctx) o1
-        upt       = dinterpF (dc_font_size ctx) pt
-        (_,w2)    = runLocImage ctx upt $ fn uortt
-        wout      = case zdec of
+                  => ZDeco -> (Orientation u -> LocGraphic u) -> GenPosObject st u a
+                  -> GenPosObject st u a
+decoratePosObject zdec fn ma = GenPosObject $ \ctx pt s -> 
+    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+        uortt        = dinterpF (dc_font_size ctx) o1
+        upt          = dinterpF (dc_font_size ctx) pt
+        (_,w2)       = runLocImage ctx upt $ fn uortt
+        wout         = case zdec of
                          ANTERIOR -> w2 `mappend` w1
                          SUPERIOR -> w1  `mappend` w2
-    in (a,o1,wout)
+    in (a,s1,o1,wout)
 
 
 
@@ -258,16 +266,17 @@ decoratePosObject zdec fn ma = PosObject $ \ctx pt ->
 -- | Extend the orientation.
 --
 extendPosObject :: InterpretUnit u 
-                => u -> u -> u -> u -> PosObject u a -> PosObject u a
-extendPosObject x0 x1 y0 y1 ma = PosObject $ \ctx pt ->
-    let (a,o1,w1) = getPosObject ma ctx pt
-        sz        = dc_font_size ctx        
-        ux0       = normalize sz x0
-        ux1       = normalize sz x1
-        uy0       = normalize sz y0
-        uy1       = normalize sz y1
-        o2        = extendOrientation ux0 ux1 uy0 uy1 o1
-    in (a,o2,w1)
+                => u -> u -> u -> u -> GenPosObject st u a 
+                -> GenPosObject st u a
+extendPosObject x0 x1 y0 y1 ma = GenPosObject $ \ctx pt s ->
+    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+        sz           = dc_font_size ctx        
+        ux0          = normalize sz x0
+        ux1          = normalize sz x1
+        uy0          = normalize sz y0
+        uy1          = normalize sz y1
+        o2           = extendOrientation ux0 ux1 uy0 uy1 o1
+    in (a,s1,o2,w1)
 
 
 -- | Note - this is a bad API, it would be better to have padders
@@ -275,12 +284,12 @@ extendPosObject x0 x1 y0 y1 ma = PosObject $ \ctx pt ->
 -- 
 mapOrientation :: InterpretUnit u
                => (Orientation u -> Orientation u) 
-               -> PosObject u a -> PosObject u a
-mapOrientation fn mf = PosObject $ \ctx pt -> 
-    let (a,o1,w1) = getPosObject mf ctx pt
+               -> GenPosObject st u a -> GenPosObject st u a
+mapOrientation fn mf = GenPosObject $ \ctx pt s -> 
+    let (a,s1,o1,w1) = getGenPosObject mf ctx pt s
         uort      = fn $ dinterpF (dc_font_size ctx) o1
         o2        = normalizeF (dc_font_size ctx) uort
-    in (a,o2,w1)
+    in (a,s1,o2,w1)
 
 
 --------------------------------------------------------------------------------
@@ -292,12 +301,12 @@ mapOrientation fn mf = PosObject $ \ctx pt ->
 -- of the PosObject.
 --
 illustratePosObject :: InterpretUnit u 
-                   => PosObject u a -> LocGraphic u
+                    => PosObject u a -> LocGraphic u
 illustratePosObject mf  = promoteLoc $ \pt ->   
     askDC >>= \ctx ->
-    let dpt       = normalizeF (dc_font_size ctx) pt 
-        (_,o1,w1) = getPosObject mf ctx dpt
-        uort      = dinterpF (dc_font_size ctx) o1
+    let dpt         = normalizeF (dc_font_size ctx) pt 
+        (_,_,o1,w1) = getGenPosObject mf ctx dpt ()
+        uort        = dinterpF (dc_font_size ctx) o1
     in adecorate (primGraphic w1) (illustrateOrientation uort `at` pt)
 
 
@@ -402,10 +411,9 @@ multilinePosText vspec xs =
 
 multilinePosEscText :: (Fractional u, InterpretUnit u)
                     => VAlign -> [EscapedText] -> PosGraphic u
-multilinePosEscText vspec xs = 
-    addMargins $ PosObject $ \ctx pt -> 
+multilinePosEscText vspec xs = addMargins $ GenPosObject $ \ctx pt s -> 
       let sep    = runQuery ctx textlineSpace
-      in getPosObject (body sep) ctx pt
+      in getGenPosObject (body sep) ctx pt s
   where
     body sp = alignColumnSep vspec sp $ 
                 map (makeTextPO CAP_HEIGHT_PLUS_DESCENDER) xs
@@ -420,7 +428,7 @@ makeTextPO hspec esc =
     makePosObject (textOrientationZero hspec esc) (dcEscapedlabel esc)
 
 
-addMargins :: InterpretUnit u => PosObject u a -> PosObject u a
+addMargins :: InterpretUnit u => GenPosObject st u a -> GenPosObject st u a
 addMargins ma = 
    textMargin >>= \(xsep,ysep) -> extendPosObject xsep xsep ysep ysep ma
 
@@ -482,14 +490,14 @@ monospaceText qry = monospaceEscText qry . escapeString
 --
 monospaceEscText :: InterpretUnit u 
                  => Query u u -> EscapedText -> PosGraphic u
-monospaceEscText qry esc = PosObject $ \ctx pt ->
+monospaceEscText qry esc = GenPosObject $ \ctx pt s ->
     let upt    = dinterpF (dc_font_size ctx) pt
         uw     = runQuery ctx qry
         ks     = monos uw $ destrEscapedText id esc
         ortt   = runQuery ctx $ hkernOrientationZero ks
         dort   = normalizeF (dc_font_size ctx) ortt
         (_,w1) = runLocImage ctx upt $ hkernLine ks
-    in (UNil, dort, w1)
+    in (UNil, s, dort, w1)
 
 
 
@@ -515,22 +523,22 @@ hkernOrientationZero xs =
 -- Combining PosObject
 
 
-instance (Monoid a, InterpretUnit u) => ZConcat (PosObject u a) where
+instance (Monoid a, InterpretUnit u) => ZConcat (GenPosObject st u a) where
   superior = mappend
   anterior = flip mappend
 
 
-instance Monoid a => Concat (PosObject u a) where
+instance Monoid a => Concat (GenPosObject st u a) where
   hconcat = genMoveAlign spinemoveH spineRight
   vconcat = genMoveAlign spinemoveV spineBelow
 
-instance (Monoid a, InterpretUnit u) => CatSpace (PosObject u a) where
+instance (Monoid a, InterpretUnit u) => CatSpace (GenPosObject st u a) where
   hspace = genMoveSepH spinemoveH spineRight
   vspace = genMoveSepV spinemoveV spineBelow
 
 
 
-instance Monoid a => Align (PosObject u a) where
+instance Monoid a => Align (GenPosObject st u a) where
   halign HALIGN_TOP    = genMoveAlign binmoveHTop    halignTopO
   halign HALIGN_CENTER = genMoveAlign binmoveHCenter halignCenterO
   halign HALIGN_BASE   = genMoveAlign binmoveHBottom halignBottomO
@@ -544,20 +552,20 @@ instance Monoid a => Align (PosObject u a) where
 genMoveAlign :: Monoid a
              => (Orientation Double -> Orientation Double -> Vec2 Double) 
              -> (Orientation Double -> Orientation Double -> Orientation Double) 
-             -> PosObject u a -> PosObject u a -> PosObject u a
-genMoveAlign mkV mkO ma mb = PosObject $ \ctx pt -> 
-    let (a,o1,w1) = getPosObject ma ctx pt
-        (b,o2,w2) = getPosObject mb ctx pt
-        v1        = mkV o1 o2
-        ortt      = mkO o1 o2
-        w2'       = cpmove v1 w2 
-    in (a `mappend` b, ortt, w1 `mappend` w2')
+             -> GenPosObject st u a -> GenPosObject st u a -> GenPosObject st u a
+genMoveAlign mkV mkO ma mb = GenPosObject $ \ctx pt s -> 
+    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
+        v1           = mkV o1 o2
+        ortt         = mkO o1 o2
+        w2'          = cpmove v1 w2 
+    in (a `mappend` b, s2, ortt, w1 `mappend` w2')
 
 
 --------------------------------------------------------------------------------
 -- Sep
 
-instance (Monoid a, InterpretUnit u) => AlignSpace (PosObject u a) where
+instance (Monoid a, InterpretUnit u) => AlignSpace (GenPosObject st u a) where
   halignSpace HALIGN_TOP    = genMoveSepH binmoveHTop    halignTopO
   halignSpace HALIGN_CENTER = genMoveSepH binmoveHCenter halignCenterO
   halignSpace HALIGN_BASE   = genMoveSepH binmoveHBottom halignBottomO
@@ -571,15 +579,16 @@ genMoveSepH :: (Monoid a, InterpretUnit u)
             => (Orientation Double -> Orientation Double -> Vec2 Double) 
             -> (Orientation Double -> Orientation Double -> Orientation Double) 
             -> u
-            -> PosObject u a -> PosObject u a -> PosObject u a
-genMoveSepH mkV mkO sep ma mb  = PosObject $ \ctx pt -> 
-    let (a,o1,w1) = getPosObject ma ctx pt
-        (b,o2,w2) = getPosObject mb ctx pt
-        dsep      = normalize (dc_font_size ctx) sep
-        v1        = hvec dsep ^+^ mkV o1 o2
-        ortt      = extendORight dsep $ mkO o1 o2
-        w2'       = cpmove v1 w2
-    in (a `mappend` b, ortt, w1 `mappend` w2')
+            -> GenPosObject st u a -> GenPosObject st u a 
+            -> GenPosObject st u a
+genMoveSepH mkV mkO sep ma mb  = GenPosObject $ \ctx pt s -> 
+    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
+        dsep         = normalize (dc_font_size ctx) sep
+        v1           = hvec dsep ^+^ mkV o1 o2
+        ortt         = extendORight dsep $ mkO o1 o2
+        w2'          = cpmove v1 w2
+    in (a `mappend` b, s2, ortt, w1 `mappend` w2')
 
 
 
@@ -587,13 +596,14 @@ genMoveSepV :: (Monoid a, InterpretUnit u)
             => (Orientation Double -> Orientation Double -> Vec2 Double) 
             -> (Orientation Double -> Orientation Double -> Orientation Double) 
             -> u
-            -> PosObject u a -> PosObject u a -> PosObject u a
-genMoveSepV mkV mkO sep ma mb = PosObject $ \ctx pt -> 
-    let (a,o1,w1) = getPosObject ma ctx pt
-        (b,o2,w2) = getPosObject mb ctx pt
-        dsep      = normalize (dc_font_size ctx) sep
-        v1        = vvec (-dsep) ^+^ mkV o1 o2
-        ortt      = extendODown dsep $ mkO o1 o2
-        w2'       = cpmove v1 w2
-    in (a `mappend` b, ortt, w1 `mappend` w2')
+            -> GenPosObject st u a -> GenPosObject st u a 
+            -> GenPosObject st u a
+genMoveSepV mkV mkO sep ma mb = GenPosObject $ \ctx pt s -> 
+    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s 
+        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
+        dsep         = normalize (dc_font_size ctx) sep
+        v1           = vvec (-dsep) ^+^ mkV o1 o2
+        ortt         = extendODown dsep $ mkO o1 o2
+        w2'          = cpmove v1 w2
+    in (a `mappend` b, s2, ortt, w1 `mappend` w2')
 
