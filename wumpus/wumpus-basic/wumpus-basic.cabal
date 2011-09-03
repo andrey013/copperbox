@@ -40,6 +40,9 @@ description:
   * Removed module @Geometry.Paths@ it is superseded in
     Wumpus-Drawing.
   .
+  * Added user state to PosObject and moved it into 
+    @Kernel.Drawing@.
+  .
   * Changed the enumeration @DrawStyle@ to @DrawMode@. Added 
     another enumeration @PathMode@.
   .
@@ -109,6 +112,7 @@ library
     Wumpus.Basic.Kernel.Drawing.CtxPicture,
     Wumpus.Basic.Kernel.Drawing.LocDrawing,
     Wumpus.Basic.Kernel.Drawing.LocTrace,
+    Wumpus.Basic.Kernel.Drawing.PosObject,
     Wumpus.Basic.Kernel.Drawing.TraceDrawing,
     Wumpus.Basic.Kernel.Objects.AdvObject,
     Wumpus.Basic.Kernel.Objects.Anchors,
@@ -122,7 +126,6 @@ library
     Wumpus.Basic.Kernel.Objects.LocImage,
     Wumpus.Basic.Kernel.Objects.LocThetaImage,
     Wumpus.Basic.Kernel.Objects.Orientation,
-    Wumpus.Basic.Kernel.Objects.PosObject,
     Wumpus.Basic.System.FontLoader,
     Wumpus.Basic.System.FontLoader.AfmParserBase,
     Wumpus.Basic.System.FontLoader.AfmTopLevel,

@@ -29,6 +29,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Drawing.CtxPicture
   , module Wumpus.Basic.Kernel.Drawing.LocDrawing
   , module Wumpus.Basic.Kernel.Drawing.LocTrace
+  , module Wumpus.Basic.Kernel.Drawing.PosObject
   , module Wumpus.Basic.Kernel.Drawing.TraceDrawing
   , module Wumpus.Basic.Kernel.Objects.AdvObject
   , module Wumpus.Basic.Kernel.Objects.Anchors
@@ -42,7 +43,6 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.LocImage
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
   , module Wumpus.Basic.Kernel.Objects.Orientation
-  , module Wumpus.Basic.Kernel.Objects.PosObject
 
   ) where
 
@@ -58,6 +58,7 @@ import Wumpus.Basic.Kernel.Drawing.Chain
 import Wumpus.Basic.Kernel.Drawing.CtxPicture
 import Wumpus.Basic.Kernel.Drawing.LocDrawing
 import Wumpus.Basic.Kernel.Drawing.LocTrace
+import Wumpus.Basic.Kernel.Drawing.PosObject
 import Wumpus.Basic.Kernel.Drawing.TraceDrawing
 import Wumpus.Basic.Kernel.Objects.AdvObject
 import Wumpus.Basic.Kernel.Objects.Anchors
@@ -71,4 +72,3 @@ import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.Orientation
-import Wumpus.Basic.Kernel.Objects.PosObject
