@@ -52,7 +52,7 @@ mf = localize text_margin_tight  $ do
     draw $ redPlus `at` P2 0 300
   where
     fn addr va = illustrateBoundedLocGraphic $ 
-                   runPosObjectBBox addr $ runDoc va helvetica_family doc1
+                   runPosObjectBBox addr $ runGenDoc va helvetica_family doc1
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u

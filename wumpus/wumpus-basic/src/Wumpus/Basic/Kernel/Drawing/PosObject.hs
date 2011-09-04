@@ -26,6 +26,7 @@ module Wumpus.Basic.Kernel.Drawing.PosObject
 
   -- * Positionable image
     GenPosObject
+  , GenPosGraphic
 
   , PosObject
   , DPosObject
@@ -34,7 +35,12 @@ module Wumpus.Basic.Kernel.Drawing.PosObject
   , DPosGraphic
 
   -- * Operations
+  , runGenPosObject
+  , evalGenPosObject
+  , execGenPosObject
+  
   , runPosObject
+
   , runPosObjectBBox
 
   , makePosObject
@@ -48,6 +54,7 @@ module Wumpus.Basic.Kernel.Drawing.PosObject
 
   , illustratePosObject
 
+  -- * Primitive text PosObjects
   , posChar
   , posEscChar 
   , posCharUpright
@@ -67,6 +74,9 @@ module Wumpus.Basic.Kernel.Drawing.PosObject
 
   , rposText
   , rposEscText
+  , rposChar
+  , rposEscChar
+  
 
   , posHKernText
 
@@ -81,6 +91,7 @@ import Wumpus.Basic.Kernel.Base.DrawingContext
 import Wumpus.Basic.Kernel.Base.QueryDC
 import Wumpus.Basic.Kernel.Base.UpdateDC
 import Wumpus.Basic.Kernel.Base.WrappedPrimitive
+import Wumpus.Basic.Kernel.Drawing.Basis
 import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Concat
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
@@ -105,9 +116,15 @@ type DOrt = Orientation Double
 newtype GenPosObject st u a = GenPosObject { 
     getGenPosObject :: DrawingContext -> DPoint2 -> st -> (a, st, DOrt, CatPrim) }
 
-type instance DUnit (GenPosObject st u a) = u
+type instance DUnit   (GenPosObject st u a) = u
+type instance UState  (GenPosObject st u)   = st
+
+type GenPosGraphic st u = GenPosObject st u (UNil u)
 
 
+-- | Type synonym for @GenPosObject () u a@, a PosObject without
+-- user state.
+--
 type PosObject u a = GenPosObject () u a
     
 -- | Version of PosObject specialized to Double for the unit type.
@@ -148,6 +165,16 @@ instance Monad (GenPosObject st u) where
               in (b, s2, o1 `mappend` o2, w1 `mappend` w2)
 
 
+instance (Monoid a, InterpretUnit u) => Monoid (GenPosObject st u a) where
+  mempty = GenPosObject $ \_ _ s -> (mempty, s, mempty, mempty)
+  ma `mappend` mb = GenPosObject $ \ctx pt s -> 
+                    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
+                        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
+                    in (a `mappend` b, s2, o1 `mappend` o2, w1 `mappend` w2)
+
+
+
+-- DrawingCtxM
 
 instance DrawingCtxM (GenPosObject st u) where
   askDC           = GenPosObject $ \ctx _  s -> (ctx, s, mempty, mempty)
@@ -155,15 +182,10 @@ instance DrawingCtxM (GenPosObject st u) where
   localize upd ma = GenPosObject $ \ctx pt s -> 
                       getGenPosObject ma (upd ctx) pt s
 
-
-
-
-instance (Monoid a, InterpretUnit u) => Monoid (GenPosObject st u a) where
-  mempty = GenPosObject $ \_ _ s -> (mempty, s, mempty, mempty)
-  ma `mappend` mb = GenPosObject $ \ctx pt s -> 
-                    let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
-                        (b,s2,o2,w2) = getGenPosObject mb ctx pt s1
-                    in (a `mappend` b, s2, o1 `mappend` o2, w1 `mappend` w2)
+instance UserStateM (GenPosObject st u) where
+  getState        = GenPosObject $ \_ _ s -> (s, s, mempty, mempty)
+  setState s      = GenPosObject $ \_ _ _ -> ((), s, mempty, mempty)
+  updateState upd = GenPosObject $ \_ _ s -> ((), upd s, mempty, mempty)
 
 
 
@@ -179,9 +201,20 @@ runGenPosObject addr st ma = promoteLoc $ \ot ->
     in replaceAns (a,s1) $ primGraphic $ cpmove v1 ca
 
 
+evalGenPosObject :: InterpretUnit u 
+                 => RectAddress -> st -> GenPosObject st u a -> LocImage u a
+evalGenPosObject addr st ma = fmap fst $ runGenPosObject addr st ma
+
+execGenPosObject :: InterpretUnit u 
+                 => RectAddress -> st -> GenPosObject st u a -> LocImage u st
+execGenPosObject addr st ma = fmap snd $ runGenPosObject addr st ma
+
 runPosObject :: InterpretUnit u 
              => RectAddress -> PosObject u a -> LocImage u a
 runPosObject addr ma = fmap fst $ runGenPosObject addr () ma
+
+
+
 
 -- | Run a PosObject producing a LocImage (BoundingBox u).
 --
@@ -338,28 +371,32 @@ illustrateOrientation (Orientation xmin xmaj ymin ymaj) = promoteLoc $ \pt ->
 --
 -- > posText ['1']
 -- 
-posChar             :: InterpretUnit u => Char -> PosGraphic u
+posChar             :: InterpretUnit u 
+                    => Char -> GenPosGraphic st u
 posChar             = makeCharPO CAP_HEIGHT_PLUS_DESCENDER . CharLiteral
 
-posEscChar          :: InterpretUnit u => EscapedChar -> PosGraphic u
+posEscChar          :: InterpretUnit u 
+                    => EscapedChar -> GenPosGraphic st u
 posEscChar          = makeCharPO CAP_HEIGHT_PLUS_DESCENDER
 
-posCharUpright      :: InterpretUnit u => Char -> PosGraphic u
+posCharUpright      :: InterpretUnit u 
+                    => Char -> GenPosGraphic st u
 posCharUpright      = makeCharPO JUST_CAP_HEIGHT . CharLiteral
 
-posEscCharUpright   :: InterpretUnit u => EscapedChar -> PosGraphic u
+posEscCharUpright   :: InterpretUnit u 
+                    => EscapedChar -> GenPosGraphic st u
 posEscCharUpright   = makeCharPO JUST_CAP_HEIGHT
 
 
 -- | Primtive builder that does not add margins.
 --
 posCharPrim         :: InterpretUnit u 
-                    => Either Char EscapedChar -> PosGraphic u
+                    => Either Char EscapedChar -> GenPosGraphic st u
 posCharPrim = makeCharPO CAP_HEIGHT_PLUS_DESCENDER . either CharLiteral id
 
 
 makeCharPO :: InterpretUnit u 
-           => TextHeight -> EscapedChar -> PosGraphic u
+           => TextHeight -> EscapedChar -> GenPosGraphic st u
 makeCharPO hspec esc = 
     makePosObject (charOrientation hspec esc) 
                   (dcEscapedlabel $ wrapEscChar esc)
@@ -384,23 +421,27 @@ charOrientation hspec esc =
 
 
 
-posText     :: InterpretUnit u => String -> PosGraphic u
+posText     :: InterpretUnit u 
+            => String -> GenPosGraphic st u
 posText     = addMargins . makeTextPO CAP_HEIGHT_PLUS_DESCENDER . escapeString
 
-posEscText  :: InterpretUnit u => EscapedText -> PosGraphic u
+posEscText  :: InterpretUnit u 
+            => EscapedText -> GenPosGraphic st u
 posEscText  = addMargins . makeTextPO CAP_HEIGHT_PLUS_DESCENDER
 
 
-posTextUpright      :: InterpretUnit u => String -> PosGraphic u
+posTextUpright      :: InterpretUnit u 
+                    => String -> GenPosGraphic st u
 posTextUpright      = addMargins . makeTextPO JUST_CAP_HEIGHT . escapeString
 
-posEscTextUpright   :: InterpretUnit u => EscapedText -> PosGraphic u
+posEscTextUpright   :: InterpretUnit u 
+                    => EscapedText -> GenPosGraphic st u
 posEscTextUpright   = addMargins . makeTextPO JUST_CAP_HEIGHT
 
 -- | Primtive builder that does not add margins.
 --
 posTextPrim         :: InterpretUnit u 
-                    => Either String EscapedText -> PosGraphic u
+                    => Either String EscapedText -> GenPosGraphic st u
 posTextPrim = makeTextPO CAP_HEIGHT_PLUS_DESCENDER . either escapeString id
 
 
@@ -410,7 +451,7 @@ multilinePosText vspec xs =
     multilinePosEscText vspec $ map escapeString $ lines xs
 
 multilinePosEscText :: (Fractional u, InterpretUnit u)
-                    => VAlign -> [EscapedText] -> PosGraphic u
+                    => VAlign -> [EscapedText] -> GenPosGraphic st u
 multilinePosEscText vspec xs = addMargins $ GenPosObject $ \ctx pt s -> 
       let sep    = runQuery ctx textlineSpace
       in getGenPosObject (body sep) ctx pt s
@@ -423,7 +464,7 @@ multilinePosEscText vspec xs = addMargins $ GenPosObject $ \ctx pt s ->
 -- | Note - this does not add margins.
 --
 makeTextPO :: InterpretUnit u 
-           => TextHeight -> EscapedText -> PosGraphic u
+           => TextHeight -> EscapedText -> GenPosGraphic st u
 makeTextPO hspec esc = 
     makePosObject (textOrientationZero hspec esc) (dcEscapedlabel esc)
 
@@ -451,18 +492,29 @@ textOrientationZero hspec esc =
 -- | Note - for single line text.
 --
 rposText        :: (Real u, Floating u, InterpretUnit u) 
-                => Radian -> String -> PosGraphic u
+                => Radian -> String -> GenPosGraphic st u
 rposText ang    = addMargins . makeRotatedPO ang . escapeString
 
 -- | Note - for single line text.
 --
 rposEscText     :: (Real u, Floating u, InterpretUnit u) 
-                => Radian -> EscapedText -> PosGraphic u
+                => Radian -> EscapedText -> GenPosGraphic st u
 rposEscText ang = addMargins . makeRotatedPO ang
 
 
+rposChar        :: (Real u, Floating u, InterpretUnit u) 
+                => Radian -> Char -> GenPosGraphic st u
+rposChar ang ch = rposEscText ang $ wrapEscChar $ CharLiteral ch
+
+rposEscChar     :: (Real u, Floating u, InterpretUnit u) 
+                => Radian -> EscapedChar -> GenPosGraphic st u
+rposEscChar ang ch = rposEscText ang $ wrapEscChar ch
+
+
+
+
 makeRotatedPO :: (Real u, Floating u, InterpretUnit u) 
-              => Radian -> EscapedText -> PosGraphic u
+              => Radian -> EscapedText -> GenPosGraphic st u
 makeRotatedPO ang esc = makePosObject qry body
   where
     qry  = rotateOrientation ang <$> 
@@ -476,20 +528,20 @@ makeRotatedPO ang esc = makePosObject qry body
 
 
 posHKernText :: InterpretUnit u
-            => [KernChar u] -> PosGraphic u
+            => [KernChar u] -> GenPosGraphic st u
 posHKernText xs = makePosObject (hkernOrientationZero xs) (hkernLine xs)
 
 -- | The query should retrieve the width of one char.
 --
 monospaceText :: InterpretUnit u 
-              => Query u u -> String -> PosGraphic u
+              => Query u u -> String -> GenPosGraphic st u
 monospaceText qry = monospaceEscText qry . escapeString
 
 
 -- | The query should retrieve the width of one char.
 --
 monospaceEscText :: InterpretUnit u 
-                 => Query u u -> EscapedText -> PosGraphic u
+                 => Query u u -> EscapedText -> GenPosGraphic st u
 monospaceEscText qry esc = GenPosObject $ \ctx pt s ->
     let upt    = dinterpF (dc_font_size ctx) pt
         uw     = runQuery ctx qry

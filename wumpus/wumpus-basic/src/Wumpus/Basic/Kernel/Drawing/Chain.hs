@@ -36,13 +36,20 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , onChain
   , setChainScheme
 
+  , chainPrefix
 
   , chainIterate
-  , chainH
-  , chainV
 
-  , tableRight  
-  , tableDown
+  , horizontalChainScm
+  , verticalChainScm
+  , runChainH
+  , runChainV
+
+  , tableRightScm
+  , tableDownScm
+  
+  , runTableRight
+  , runTableDown
 
   , radialChain
 
@@ -83,8 +90,8 @@ type DChain a    = Chain Double a
 -- not be possible if start was just a pure @cst@ value. 
 --
 data ChainScheme u = forall cst. ChainScheme 
-      { scheme_start    :: Point2 u -> cst
-      , scheme_step     :: Point2 u -> cst -> (Point2 u,cst)
+      { chain_init      :: Point2 u -> cst
+      , chain_step      :: Point2 u -> cst -> (Point2 u,cst)
       }
 
 type instance DUnit (ChainScheme u) = u
@@ -212,6 +219,7 @@ runChain_ cscm ma = ignoreAns $ runChain cscm ma
 
 
 
+
 --------------------------------------------------------------------------------
 -- Operations
 
@@ -238,10 +246,28 @@ setChainScheme :: InterpretUnit u
 setChainScheme (ChainScheme start step) = 
     GenChain $ \ctx pt (ChainSt _ _ ust) -> 
       let upt     = dinterpF (dc_font_size ctx) pt
-          new_st  = ChainSt { chain_st = start upt
-                            , chain_next = step
+          new_st  = ChainSt { chain_st         = start upt
+                            , chain_next       = step
                             , chain_user_state = ust }
       in ((), pt, new_st, mempty) 
+
+
+
+chainPrefix :: ChainScheme u -> Int -> ChainScheme u -> ChainScheme u
+chainPrefix (ChainScheme astart astep) ntimes chb@(ChainScheme bstart bstep)
+    | ntimes < 1 = chb
+    | otherwise  = ChainScheme { chain_init = start, chain_step = next }
+  where
+    start pt = (astart pt,ntimes, bstart pt)
+
+    next pt (ast,n,bst) 
+        | n > 0     = let (p2,ast1) = astep pt ast in (p2, (ast1,n-1,bst))
+        | n == 0    = let bst1      = bstart pt 
+                          (p2,bst2) = bstep pt bst1 
+                      in (p2, (ast,(-1),bst2))
+        | otherwise = let (p2,bst1) = bstep pt bst in (p2,(ast, (-1), bst1))
+ 
+
 
 
 
@@ -249,24 +275,33 @@ setChainScheme (ChainScheme start step) =
 -- Schemes
 
 chainIterate :: (Point2 u -> Point2 u) -> ChainScheme u
-chainIterate fn = ChainScheme { scheme_start = const ()
-                              , scheme_step  = \pt _ -> (fn pt, ())
+chainIterate fn = ChainScheme { chain_init = const ()
+                              , chain_step = \pt _ -> (fn pt, ())
                               }
 
 
-chainH :: Num u => u -> ChainScheme u
-chainH dx = 
-    ChainScheme { scheme_start = const ()
-                , scheme_step  = \pt _ -> (displace (hvec dx) pt, ())
+horizontalChainScm :: Num u => u -> ChainScheme u
+horizontalChainScm dx = 
+    ChainScheme { chain_init = const ()
+                , chain_step = \pt _ -> (displace (hvec dx) pt, ())
                 }
    
-chainV :: Num u => u -> ChainScheme u
-chainV dy = 
-    ChainScheme { scheme_start = const ()
-                , scheme_step  = \pt _ -> (displace (vvec dy) pt, ())
+verticalChainScm :: Num u => u -> ChainScheme u
+verticalChainScm dy = 
+    ChainScheme { chain_init = const ()
+                , chain_step = \pt _ -> (displace (vvec dy) pt, ())
                 }
 
 
+-- Horizontal and vertical chains are common enough to merit 
+-- dedicated run functions.
+
+runChainH :: InterpretUnit u => u -> Chain u a -> LocImage u a
+runChainH dx ma = runChain (horizontalChainScm dx) ma
+
+
+runChainV :: InterpretUnit u => u -> Chain u a -> LocImage u a
+runChainV dy ma = runChain (verticalChainScm dy) ma
 
 
 -- | Outer and inner steppers.
@@ -274,7 +309,7 @@ chainV dy =
 scStepper :: PointDisplace u -> Int -> PointDisplace u 
           -> ChainScheme u
 scStepper outF n innF = 
-    ChainScheme { scheme_start = start, scheme_step = step }
+    ChainScheme { chain_init = start, chain_step = step }
   where
     start pt                      = (pt,1)
     step  pt (ogin,i) | i <  n    = (innF pt, (ogin, i+1))
@@ -282,29 +317,52 @@ scStepper outF n innF =
                                     in (o1, (o1,1)) 
 
 
-tableRight :: Num u => Int -> (u,u) -> ChainScheme u
-tableRight num_cols (col_width,row_height) = 
+tableRightScm :: Num u => Int -> (u,u) -> ChainScheme u
+tableRightScm num_cols (col_width,row_height) = 
     scStepper downF num_cols rightF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
-tableDown :: Num u => Int -> (u,u) -> ChainScheme u
-tableDown num_rows (col_width,row_height) = 
+tableDownScm :: Num u => Int -> (u,u) -> ChainScheme u
+tableDownScm num_rows (col_width,row_height) = 
     scStepper rightF num_rows downF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
 
+runTableRight :: InterpretUnit u 
+             => Int -> (u,u) -> Chain u a -> LocImage u a
+runTableRight num_cols dims ma = 
+    runChain (tableRightScm num_cols dims) ma
+
+
+runTableDown :: InterpretUnit u 
+             => Int -> (u,u) -> Chain u a -> LocImage u a
+runTableDown num_rows dims ma = 
+    runChain (tableDownScm num_rows dims) ma
+
+
 
 radialChain :: Floating u 
             => u -> Radian -> Radian -> ChainScheme u
 radialChain radius angstart angi = 
-    ChainScheme { scheme_start = start, scheme_step = step }
+    ChainScheme { chain_init = start, chain_step = step }
   where
-    start pt           = (pt,angstart)
-    step  _ (ogin,ang) = (displace (avec ang radius) ogin, (ogin,ang + angi))
+    start pt           = let ogin = displace (avec angstart (-radius)) pt
+                         in (ogin, angstart)
+    step  _ (ogin,ang) = let ang_next = ang + angi 
+                             pt       = displace (avec ang_next radius) ogin
+                         in (pt, (ogin, ang_next))
+
+    
+
+-- radialChain is convoluted because first point is not the 
+-- circle center but a point on the circumference. Also the next
+-- step iterates the (constant) origin rather than the previous 
+-- point.
+
 
 -- Note - radialChains stepper is oblivious to the previous point...
 

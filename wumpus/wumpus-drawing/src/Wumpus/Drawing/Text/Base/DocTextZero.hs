@@ -21,10 +21,10 @@
 module Wumpus.Drawing.Text.Base.DocTextZero
   ( 
 
-
-    Doc 
+    GenDoc
+  , Doc 
   , DocGraphic
-  , runDoc
+  , runGenDoc
 
   , (<+>)
   , blank
@@ -58,13 +58,24 @@ import Control.Applicative
 import Data.Monoid
 import Numeric
 
-
+--
+-- Design Issue:
+--
+-- Can user state be added to Doc?
+--
+-- Easy if PosObject had user state, difficult as it doesn\'t...
+--
  
 -- | Doc type.
 --
-newtype Doc u a = Doc { getDoc :: DocEnv -> PosObject u a } 
+newtype GenDoc st u a = GenDoc { getGenDoc :: DocEnv -> GenPosObject st u a } 
 
-type instance DUnit (Doc u a) = u
+type instance DUnit  (GenDoc st u a) = u
+type instance UState (GenDoc st u)   = st
+
+type GenDocGraphic st u = GenDoc st u (UNil u)
+
+type Doc u a = GenDoc () u a
 
 type DocGraphic u = Doc u (UNil u)
 
@@ -74,33 +85,37 @@ data DocEnv = DocEnv
       , doc_font_family :: FontFamily
       }
 
-instance Functor (Doc u) where
-  fmap f ma = Doc $ \env -> fmap f $ getDoc ma env
+instance Functor (GenDoc st u) where
+  fmap f ma = GenDoc $ \env -> fmap f $ getGenDoc ma env
 
-instance Applicative (Doc u) where
-  pure a    = Doc $ \_   -> pure a
-  mf <*> ma = Doc $ \env -> getDoc mf env <*> getDoc ma env
-
-
-instance Monad (Doc u) where
-  return a  = Doc $ \_   -> return a
-  ma >>= k  = Doc $ \env -> getDoc ma env >>= \a -> getDoc (k a) env
+instance Applicative (GenDoc st u) where
+  pure a    = GenDoc $ \_   -> pure a
+  mf <*> ma = GenDoc $ \env -> getGenDoc mf env <*> getGenDoc ma env
 
 
+instance Monad (GenDoc st u) where
+  return a  = GenDoc $ \_   -> return a
+  ma >>= k  = GenDoc $ \env -> getGenDoc ma env >>= \a -> getGenDoc (k a) env
 
-instance DrawingCtxM (Doc u) where
-  askDC           = Doc $ \_   -> askDC 
-  asksDC fn       = Doc $ \_   -> asksDC fn
-  localize upd ma = Doc $ \env -> localize upd (getDoc ma env)
-
-instance (Monoid a, InterpretUnit u) => Monoid (Doc u a) where
-  mempty = Doc $ \_ -> mempty
-  ma `mappend` mb = Doc $ \env -> getDoc ma env `hconcat` getDoc mb env
+instance (Monoid a, InterpretUnit u) => Monoid (GenDoc st u a) where
+  mempty          = GenDoc $ \_   -> mempty
+  ma `mappend` mb = GenDoc $ \env -> getGenDoc ma env `hconcat` getGenDoc mb env
 
 
+instance DrawingCtxM (GenDoc st u) where
+  askDC           = GenDoc $ \_   -> askDC 
+  asksDC fn       = GenDoc $ \_   -> asksDC fn
+  localize upd ma = GenDoc $ \env -> localize upd (getGenDoc ma env)
 
-runDoc :: VAlign -> FontFamily -> Doc u a -> PosObject u a
-runDoc va ff ma = getDoc ma env1 
+
+instance UserStateM (GenDoc st u) where
+  getState        = GenDoc $ \_ -> getState
+  setState s      = GenDoc $ \_ -> setState s
+  updateState upd = GenDoc $ \_ -> updateState upd
+
+
+runGenDoc :: VAlign -> FontFamily -> GenDoc st u a -> GenPosObject st u a
+runGenDoc va ff ma = getGenDoc ma env1 
   where
     env1 = DocEnv { doc_alignment = va, doc_font_family = ff }
 
@@ -109,16 +124,17 @@ runDoc va ff ma = getDoc ma env1
 --------------------------------------------------------------------------------
 -- Get vcat vconcat... from the Concat class
 
-instance (Monoid a, Fractional u, InterpretUnit u) => Concat (Doc u a) where
+instance (Monoid a, Fractional u, InterpretUnit u) => 
+    Concat (GenDoc st u a) where
   hconcat = mappend
   vconcat = vcatImpl
 
 vcatImpl        :: (Monoid a, Fractional u, InterpretUnit u) 
-                => Doc u a -> Doc u a -> Doc u a
-vcatImpl ma mb  = Doc $ \env -> 
+                => GenDoc st u a -> GenDoc st u a -> GenDoc st u a
+vcatImpl ma mb  = GenDoc $ \env -> 
     let va = doc_alignment env 
     in textlineSpace >>= \sep -> 
-       valignSpace va sep (getDoc ma env) (getDoc mb env)
+       valignSpace va sep (getGenDoc ma env) (getGenDoc mb env)
 
 --------------------------------------------------------------------------------
 -- Primitives
@@ -129,67 +145,69 @@ infixr 6 <+>
 --
 -- (infixr 6)
 --
-(<+>) :: InterpretUnit u => DocGraphic u -> DocGraphic u -> DocGraphic u
+(<+>) :: InterpretUnit u 
+      => GenDocGraphic st u -> GenDocGraphic st u -> GenDocGraphic st u
 a <+> b = a `mappend` space `mappend` b 
 
 
 
-blank     :: InterpretUnit u => DocGraphic u
-blank     = Doc $ \_ -> posTextPrim (Left "")
+blank     :: InterpretUnit u => GenDocGraphic st u
+blank     = GenDoc $ \_ -> posTextPrim (Left "")
 
-space     :: InterpretUnit u => DocGraphic u
-space     = Doc $ \_ -> posCharPrim (Left ' ')
-
-
-string    :: InterpretUnit u => String -> DocGraphic u
-string ss = Doc $ \_ -> posTextPrim (Left ss)
+space     :: InterpretUnit u => GenDocGraphic st u
+space     = GenDoc $ \_ -> posCharPrim (Left ' ')
 
 
+string    :: InterpretUnit u => String -> GenDocGraphic st u
+string ss = GenDoc $ \_ -> posTextPrim (Left ss)
 
-escaped     :: InterpretUnit u => EscapedText -> DocGraphic u
-escaped esc = Doc $ \_ -> posTextPrim (Right esc)
 
-embedPosObject :: PosObject u a -> Doc u a
-embedPosObject ma = Doc $ \_ -> ma
+
+escaped     :: InterpretUnit u => EscapedText -> GenDocGraphic st u
+escaped esc = GenDoc $ \_ -> posTextPrim (Right esc)
+
+embedPosObject :: GenPosObject st u a -> GenDoc st u a
+embedPosObject ma = GenDoc $ \_ -> ma
 
 
 
 --------------------------------------------------------------------------------
 -- Change font weight
 
-bold :: Doc u a -> Doc u a 
-bold ma = Doc $ \env -> 
+bold :: GenDoc st u a -> GenDoc st u a 
+bold ma = GenDoc $ \env -> 
     localize (set_font $ boldWeight $ doc_font_family env)
-             (getDoc ma env)
+             (getGenDoc ma env)
 
 
-italic :: Doc u a -> Doc u a 
-italic ma = Doc $ \env -> 
+italic :: GenDoc st u a -> GenDoc st u a 
+italic ma = GenDoc $ \env -> 
     localize (set_font $ italicWeight $ doc_font_family env)
-             (getDoc ma env)
+             (getGenDoc ma env)
 
 
-boldItalic :: Doc u a -> Doc u a 
-boldItalic ma = Doc $ \env -> 
+boldItalic :: GenDoc st u a -> GenDoc st u a 
+boldItalic ma = GenDoc $ \env -> 
     localize (set_font $ boldItalicWeight $ doc_font_family env)
-             (getDoc ma env)
+             (getGenDoc ma env)
 
 
 --------------------------------------------------------------------------------
 -- Monospace
 
-monospace :: InterpretUnit u => EscapedChar -> EscapedText -> DocGraphic u
-monospace ref_ch esc = Doc $ \_ -> 
+monospace :: InterpretUnit u 
+          => EscapedChar -> EscapedText -> GenDocGraphic st u
+monospace ref_ch esc = GenDoc $ \_ -> 
     monospaceEscText (vector_x <$> escCharVector ref_ch) esc
 
 
 
 
-int :: InterpretUnit u => Int -> DocGraphic u
+int :: InterpretUnit u => Int -> GenDocGraphic st u
 int i = integer $ fromIntegral i
 
 
-integer :: InterpretUnit u => Integer -> DocGraphic u
+integer :: InterpretUnit u => Integer -> GenDocGraphic st u
 integer i = monospace (CharLiteral '0') (escapeString $ show i)
 
 
@@ -200,7 +218,7 @@ integer i = monospace (CharLiteral '0') (escapeString $ show i)
 -- | Specialized version of 'ffloat' - the answer is always 
 -- rendered at \"full precision\".
 --
-float :: (RealFloat a, InterpretUnit u) => a -> DocGraphic u
+float :: (RealFloat a, InterpretUnit u) => a -> GenDocGraphic st u
 float = ffloat Nothing
 
 
@@ -209,7 +227,8 @@ float = ffloat Nothing
 -- Like 'showFFloat', the answer is rendered to supplied 
 -- precision. @Nothing@ indicated full precision.
 --
-ffloat :: (RealFloat a, InterpretUnit u) => (Maybe Int) -> a -> DocGraphic u
+ffloat :: (RealFloat a, InterpretUnit u) 
+       => (Maybe Int) -> a -> GenDocGraphic st u
 ffloat mb d = 
     monospace (CharLiteral '0') $ escapeString  $ ($ "") $ showFFloat mb d
 
@@ -222,23 +241,24 @@ ffloat mb d =
 -- Decorate
 
 strikethrough :: (Fractional u, InterpretUnit u) 
-              => Doc u a -> Doc u a
+              => GenDoc st u a -> GenDoc st u a
 strikethrough = decorateDoc SUPERIOR drawStrikethrough 
 
 underline :: (Fractional u, InterpretUnit u) 
-          => Doc u a -> Doc u a
+          => GenDoc st u a -> GenDoc st u a
 underline = decorateDoc SUPERIOR drawUnderline
 
 highlight :: (Fractional u, InterpretUnit u) 
-          => RGBi -> Doc u a -> Doc u a
+          => RGBi -> GenDoc st u a -> GenDoc st u a
 highlight rgb = decorateDoc ANTERIOR (drawBackfill rgb) 
  
 
 
 decorateDoc :: InterpretUnit u 
-            => ZDeco -> (Orientation u -> LocGraphic u) -> Doc u a -> Doc u a
-decorateDoc zdec fn ma = Doc $ \env -> 
-    decoratePosObject zdec fn $ getDoc ma env
+            => ZDeco -> (Orientation u -> LocGraphic u) -> GenDoc st u a 
+            -> GenDoc st u a
+decorateDoc zdec fn ma = GenDoc $ \env -> 
+    decoratePosObject zdec fn $ getGenDoc ma env
 
 
            
