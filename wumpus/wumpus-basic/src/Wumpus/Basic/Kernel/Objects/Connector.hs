@@ -194,8 +194,8 @@ runConnectorQuery ctx p0 p1 ma =
 
 
 connect :: InterpretUnit u 
-        => Point2 u -> Point2 u -> ConnectorImage u a -> Image u a
-connect p0 p1 ma = normalizeCtxF p0 >>= \dp0 -> 
+        => ConnectorImage u a -> Point2 u -> Point2 u -> Image u a
+connect ma p0 p1 = normalizeCtxF p0 >>= \dp0 -> 
                    normalizeCtxF p1 >>= \dp1 -> 
                    getConnectorImage ma dp0 dp1
 

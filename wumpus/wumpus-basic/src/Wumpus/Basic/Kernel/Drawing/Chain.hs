@@ -33,7 +33,9 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , runChain
   , runChain_
 
-  , onChain
+  , chain1
+  , sequenceChain
+
   , setChainScheme
 
   , chainPrefix
@@ -45,11 +47,11 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , runChainH
   , runChainV
 
-  , tableRightScm
-  , tableDownScm
+  , tableRowwiseScm
+  , tableColumnwiseScm
   
-  , runTableRight
-  , runTableDown
+  , runTableRowwise
+  , runTableColumnwise
 
   , radialChain
 
@@ -223,9 +225,9 @@ runChain_ cscm ma = ignoreAns $ runChain cscm ma
 --------------------------------------------------------------------------------
 -- Operations
 
-onChain :: InterpretUnit u 
+chain1 :: InterpretUnit u 
         => LocImage u a -> GenChain st u a
-onChain gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
+chain1 gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
     let upt       = dinterpF (dc_font_size ctx) pt
         (a,w1)    = runImage ctx $ applyLoc gf upt
         (pt1,st1) = sf upt s0
@@ -234,6 +236,10 @@ onChain gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) ->
                             , chain_next       = sf
                             , chain_user_state = ust }
     in (a, dpt1, new_st, w1)
+
+sequenceChain :: InterpretUnit u 
+              => [LocImage u a] -> GenChain st u (UNil u)
+sequenceChain = ignoreAns . mapM_ chain1
 
 --
 -- Note - onChain draws at the initial position, then increments 
@@ -317,31 +323,31 @@ scStepper outF n innF =
                                     in (o1, (o1,1)) 
 
 
-tableRightScm :: Num u => Int -> (u,u) -> ChainScheme u
-tableRightScm num_cols (col_width,row_height) = 
+tableRowwiseScm :: Num u => Int -> (u,u) -> ChainScheme u
+tableRowwiseScm num_cols (col_width,row_height) = 
     scStepper downF num_cols rightF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
-tableDownScm :: Num u => Int -> (u,u) -> ChainScheme u
-tableDownScm num_rows (col_width,row_height) = 
+tableColumnwiseScm :: Num u => Int -> (u,u) -> ChainScheme u
+tableColumnwiseScm num_rows (col_width,row_height) = 
     scStepper rightF num_rows downF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
 
-runTableRight :: InterpretUnit u 
+runTableRowwise :: InterpretUnit u 
              => Int -> (u,u) -> Chain u a -> LocImage u a
-runTableRight num_cols dims ma = 
-    runChain (tableRightScm num_cols dims) ma
+runTableRowwise num_cols dims ma = 
+    runChain (tableRowwiseScm num_cols dims) ma
 
 
-runTableDown :: InterpretUnit u 
+runTableColumnwise :: InterpretUnit u 
              => Int -> (u,u) -> Chain u a -> LocImage u a
-runTableDown num_rows dims ma = 
-    runChain (tableDownScm num_rows dims) ma
+runTableColumnwise num_rows dims ma = 
+    runChain (tableColumnwiseScm num_rows dims) ma
 
 
 

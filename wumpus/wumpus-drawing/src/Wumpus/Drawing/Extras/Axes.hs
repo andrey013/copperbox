@@ -46,25 +46,25 @@ orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) ->
         xPtr  = P2 (x + (uw * fromIntegral xr)) y
         yPtl  = P2 x (y - (uh * fromIntegral yl))
         yPtr  = P2 x (y + (uh * fromIntegral yr))
-    in  localize cap_square $           ignoreAns (connect xPtl xPtr conn1) 
-                              `mappend` ignoreAns (connect yPtl yPtr conn1)
+    in  localize cap_square $           ignoreAns (connect conn1 xPtl xPtr) 
+                              `mappend` ignoreAns (connect conn1 yPtl yPtr)
 
 
 
 horizontalLabels :: (Num a, Fractional u, InterpretUnit u) 
                  => RectAddress -> [a] -> LocGraphic u 
 horizontalLabels addr ns = 
-    snapmove (1,1) >>= \(V2 uw _) -> runChain_ (chainH uw) (mapM mf ns) 
+    snapmove (1,1) >>= \(V2 uw _) -> ignoreAns (runChainH uw $ mapM mf ns)
   where
-    mf n = onChain $ runPosObject addr $ posTextUpright $ show n
+    mf n = chain1 $ runPosObject addr $ posTextUpright $ show n
 
 
 verticalLabels :: (Num a, Fractional u, InterpretUnit u) 
                => RectAddress -> [a] -> LocGraphic u 
 verticalLabels addr ns = 
-    snapmove (1,1) >>= \(V2 _ uh) -> runChain_ (chainV uh) (mapM mf ns)
+    snapmove (1,1) >>= \(V2 _ uh) -> ignoreAns (runChainV uh $ mapM mf ns)
   where
-    mf n = onChain $ runPosObject addr $ posTextUpright $ show n
+    mf n = chain1 $ runPosObject addr $ posTextUpright $ show n
 
 
 

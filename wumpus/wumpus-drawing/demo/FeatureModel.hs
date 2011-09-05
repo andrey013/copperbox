@@ -93,7 +93,7 @@ connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
    let p1 = projectAnchor north (realToFrac lw) b1
-   drawi $ connect p0 p1 (rightArrow arrh connline)
+   drawi $ connect (rightArrow arrh connline) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 

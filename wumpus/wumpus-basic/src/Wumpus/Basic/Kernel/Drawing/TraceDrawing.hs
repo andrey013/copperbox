@@ -328,7 +328,7 @@ drawli pt gf = askDC >>= \ctx ->
 -- 
 drawc :: InterpretUnit u
       => Anchor u -> Anchor u -> ConnectorImage u a -> GenTraceDrawing st u ()
-drawc an0 an1 img = drawci an0 an1 img >> return () 
+drawc an0 an1 gf = drawci an0 an1 gf >> return () 
 
 
 -- | Draw a ConnectorImage with the supplied Points taking the 
@@ -339,7 +339,7 @@ drawc an0 an1 img = drawci an0 an1 img >> return ()
 -- 
 drawci :: InterpretUnit u 
        => Anchor u -> Anchor u -> ConnectorImage u a -> GenTraceDrawing st u a
-drawci p0 p1 img = drawi (connect p0 p1 img)
+drawci p0 p1 gf = drawi (connect gf p0 p1)
 
 
 
@@ -408,4 +408,4 @@ drawrci :: ( Real u, Floating u, InterpretUnit u
            ) 
         => a1 -> a2 -> ConnectorImage u a -> GenTraceDrawing st u a
 drawrci a b gf = 
-    let (p0,p1) = radialConnectorPoints a b in drawi (connect p0 p1 gf)
+    let (p0,p1) = radialConnectorPoints a b in drawi (connect gf p0 p1)
