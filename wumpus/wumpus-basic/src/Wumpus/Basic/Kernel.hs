@@ -43,6 +43,7 @@ module Wumpus.Basic.Kernel
   , module Wumpus.Basic.Kernel.Objects.LocImage
   , module Wumpus.Basic.Kernel.Objects.LocThetaImage
   , module Wumpus.Basic.Kernel.Objects.Orientation
+  , module Wumpus.Basic.Kernel.Objects.Trail
 
   ) where
 
@@ -72,3 +73,4 @@ import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
 import Wumpus.Basic.Kernel.Objects.LocThetaImage
 import Wumpus.Basic.Kernel.Objects.Orientation
+import Wumpus.Basic.Kernel.Objects.Trail
