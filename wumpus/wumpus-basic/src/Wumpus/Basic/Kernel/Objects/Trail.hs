@@ -22,17 +22,29 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , GoingTrail(..)
   , TrailSegment(..)
 
+  , drawPlacedTrail
+  
+  , trailIterateLocus
+
+  , diamondTrail
+  , polygonTrail
+
   , sineWaveTrail
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
+import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
+import Wumpus.Basic.Kernel.Objects.Image
+import Wumpus.Basic.Kernel.Objects.LocImage
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
-
+import Data.List ( unfoldr )
 
 data PlacedTrail u = PlacedTrail
       { pt_init_vec :: Vec2 u
@@ -55,7 +67,66 @@ data TrailSegment u = TLine (Vec2 u)
 type instance DUnit (TrailSegment u) = u
 
 
+instance Functor TrailSegment where
+  fmap f (TLine v1)        = TLine $ fmap f v1
+  fmap f (TCurve v1 v2 v3) = TCurve (fmap f v1) (fmap f v2) (fmap f v3)
 
+
+
+drawPlacedTrail :: InterpretUnit u => PathMode -> PlacedTrail u -> LocGraphic u
+drawPlacedTrail mode (PlacedTrail v0 xs) = promoteLoc $ \pt -> 
+    normalizeCtxF v0 >>= \dv0 -> 
+    normalizeCtxF pt >>= \dpt -> 
+    liftQuery (mapM (fmap fn . normalizeCtxF) xs) >>= \dxs -> 
+    let pp = relPrimPath (dpt .+^ dv0) dxs in dcPath mode pp
+  where
+    fn (TLine v1)        = relLineTo v1
+    fn (TCurve v1 v2 v3) = relCurveTo v1 v2 v3
+
+
+-- | Create a PlacedTrail from the vector list - each vector in the 
+-- input list iterates to the start point rather then the 
+-- cumulative tip.
+--
+-- When the PlacedTrail is run, the supplied point is the /locus/ of 
+-- the path and it does not form part of the path proper.
+-- 
+-- Like 'trailStartIsLocus', this constructor is typically used to 
+-- make /shape paths/. Some shapes are easier to express as 
+-- iterated displacements of the center rather than 
+-- /turtle drawing/. 
+-- 
+trailIterateLocus :: Num u => [Vec2 u] -> PlacedTrail u
+trailIterateLocus []      = PlacedTrail zeroVec []
+trailIterateLocus (v0:xs) = PlacedTrail v0 (step v0 xs)
+  where
+    step v1 []      = [ TLine (v0 ^-^ v1) ]
+    step v1 (v2:vs) = TLine (v2 ^-^ v1) : step v2 vs
+
+
+
+
+-- | 'diamondTrail' : @ half_width * half_height -> PlacedTrail @
+--
+diamondTrail :: Num u => u -> u -> PlacedTrail u
+diamondTrail hw hh = trailIterateLocus [ vs,ve,vn,vw ]
+  where
+    vs = vvec (-hh)
+    ve = hvec hw
+    vn = vvec hh
+    vw = hvec (-hw)
+
+
+-- | 'polygonTrail' : @ num_points * radius -> PlacedTrail @ 
+--
+polygonTrail :: Floating u => Int -> u -> PlacedTrail u
+polygonTrail n radius = trailIterateLocus $ unfoldr phi (0,top)
+  where
+    top                     = 0.5*pi
+    theta                   = (2*pi) / fromIntegral n
+    
+    phi (i,ang) | i < n     = Just (avec ang radius, (i+1,ang+theta))
+                | otherwise = Nothing
 
 -- | Extend the path with a one-phase sine wave. Height is 
 -- parametric.
