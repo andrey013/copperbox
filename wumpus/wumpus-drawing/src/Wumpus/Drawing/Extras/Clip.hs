@@ -24,13 +24,11 @@ module Wumpus.Drawing.Extras.Clip
   ( 
    
     locClip
-  , locClipH
 
   ) where
 
 
 import Wumpus.Drawing.Paths
-import Wumpus.Drawing.Paths.HPath
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -46,9 +44,13 @@ locClip absp gf = promoteLoc $ \pt ->
 
 
 
+{-
+
 -- | Clip a LocGraphic.
 --
 locClipH :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
          => HPath u -> LocGraphic u -> LocGraphic u
 locClipH hp gf = promoteLoc $ \pt -> 
     liftQuery (toPrimPath $ runHPath hp pt) >>= \pp -> clipImage pp (gf `at` pt)
+
+-}

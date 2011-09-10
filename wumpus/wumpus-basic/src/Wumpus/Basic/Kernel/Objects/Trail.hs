@@ -11,31 +11,61 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- 
+-- /Trails/ - prototype paths. Less resource heavy than the Path
+-- object in Wumpus-Drawing.
 --
 --------------------------------------------------------------------------------
 
 module Wumpus.Basic.Kernel.Objects.Trail
   (
 
-    PlacedTrail(..)
-  , CatTrail
-  , TrailSegment(..)
+    TrailSegment(..)
+  , CatTrail(..)        -- temporarily exposed
+  , PlacedTrail(..)     -- temporarily exposed
 
   , drawPlacedTrail
   , drawCatTrail
   
   , trailIterateLocus
 
+  , placedTrailPoints
+
+  , rectangleTrail
   , diamondTrail
   , polygonTrail
 
+  
+  , trail_up
+  , trail_down
+  , trail_left
+  , trail_right
+
+  , trail_north
+  , trail_south
+  , trail_east
+  , trail_west
+  , trail_north_east
+  , trail_north_west
+  , trail_south_east
+  , trail_south_west
+
+  , trail_up_left
+  , trail_up_right
+  , trail_down_left
+  , trail_down_right
+
+  , ortholine
+ 
   , sineWaveTrail
+  , semicircleAboveTrail
+  , semicircleBelowTrail
+  , squiggleTrail
 
   ) where
 
 import Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Basic.Kernel.Base.QueryDC
+import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.DrawingPrimitives
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
@@ -121,6 +151,29 @@ trailIterateLocus (v0:xs) = PlacedTrail v0 (step v0 xs)
     step v1 (v2:vs) = TLine (v2 ^-^ v1) : step v2 vs
 
 
+placedTrailPoints :: InterpretUnit u => PlacedTrail u -> LocQuery u [Point2 u]
+placedTrailPoints (PlacedTrail v0 ts) = qpromoteLoc $ \pt -> 
+    return $ step (pt .+^ v0) ts
+  where
+    step p1 []                    = [p1]
+    step p1 (TLine v1:xs)         = p1 : step (p1 .+^ v1) xs
+    step p1 (TCurve v1 v2 v3 :xs) = let p2 = p1 .+^ v1
+                                        p3 = p2 .+^ v2
+                                        p4 = p3 .+^ v3 
+                                    in p1 : p2 : p3 : step p4 xs
+
+-- | 'rectangleTrail' : @ width * height -> PlacedTrail @
+--
+rectangleTrail :: Fractional u => u -> u -> PlacedTrail u
+rectangleTrail w h = 
+    PlacedTrail { pt_init_vec = ctr_to_bl 
+                , pt_segments = map TLine spec
+                }
+  where
+    ctr_to_bl = vec (negate $ 0.5*w) (negate $ 0.5*h)
+    spec      = [ go_right w, go_up h, go_left w, go_down h ]
+
+
 
 
 -- | 'diamondTrail' : @ half_width * half_height -> PlacedTrail @
@@ -145,24 +198,99 @@ polygonTrail n radius = trailIterateLocus $ unfoldr phi (0,top)
     phi (i,ang) | i < n     = Just (avec ang radius, (i+1,ang+theta))
                 | otherwise = Nothing
 
--- | Extend the path with a one-phase sine wave. Height is 
--- parametric.
+
+
+
+catline :: Vec2 u -> CatTrail u 
+catline = CatTrail . wrapH . TLine
+
+
+
+catcurve :: Vec2 u -> Vec2 u -> Vec2 u -> CatTrail u
+catcurve v1 v2 v3 = CatTrail $ wrapH $ TCurve v1 v2 v3
+
+
+trail_up :: Num u => u -> CatTrail u
+trail_up = catline . go_up
+
+trail_down :: Num u => u -> CatTrail u
+trail_down = catline . go_down
+
+trail_left :: Num u => u -> CatTrail u
+trail_left = catline . go_left
+
+trail_right :: Num u => u -> CatTrail u
+trail_right = catline . go_right
+
+
+trail_north :: Num u => u -> CatTrail u
+trail_north = trail_up
+
+trail_south :: Num u => u -> CatTrail u
+trail_south = catline . go_down
+
+trail_east :: Num u => u -> CatTrail u
+trail_east = catline . go_right
+
+trail_west :: Num u => u -> CatTrail u
+trail_west = catline . go_left
+
+
+trail_north_east :: Floating u => u -> CatTrail u
+trail_north_east = catline . go_north_east
+
+trail_north_west :: Floating u => u -> CatTrail u
+trail_north_west = catline . go_north_west
+
+trail_south_east :: Floating u => u -> CatTrail u
+trail_south_east = catline . go_south_east
+
+trail_south_west :: Floating u => u -> CatTrail u
+trail_south_west = catline . go_south_west
+
+
+trail_up_left :: Num u => u -> CatTrail u
+trail_up_left = catline . go_up_left
+
+trail_up_right :: Num u => u -> CatTrail u
+trail_up_right = catline . go_up_right
+
+trail_down_left :: Num u => u -> CatTrail u
+trail_down_left = catline . go_down_left
+
+trail_down_right :: Num u => u -> CatTrail u
+trail_down_right = catline . go_down_right
+
+
+-- | Alternative to @line@, specifying the vector components 
+-- rather the vector itself.
 --
--- > infixl 5 `snocSineWave`
+ortholine :: Floating u => u -> u -> Radian -> CatTrail u 
+ortholine x y ang = catline (orthoVec x y ang)
+
+
+--------------------------------------------------------------------------------
+
+
+-- | Helper
+--
+vdiff :: Num u => Vec2 u -> Vec2 u -> Vec2 u
+vdiff  = flip (^-^)
+
+
+-- | One-phase sine wave. Height is parametric.
 --
 sineWaveTrail :: (Real u, Floating u)
               => u -> Vec2 u -> CatTrail u
-sineWaveTrail h base_vec = CatTrail $ fromListH
-    [ TCurve v1 (vdif v1 v2) (vdif v2 v3)
-    , TCurve (vdif v3 v4) (vdif v4 v5) (vdif v5 v6)
-    , TCurve (vdif v6 v7) (vdif v7 v8) (vdif v8 v9)
-    , TCurve (vdif v9 v10) (vdif v10 v11) (vdif v11 v12)
-    ]
+sineWaveTrail h base_vec = 
+              catcurve  v1           (vdiff v1 v2)   (vdiff v2 v3)
+    `mappend` catcurve (vdiff v3 v4)  (vdiff v4 v5)   (vdiff v5 v6)
+    `mappend` catcurve (vdiff v6 v7)  (vdiff v7 v8)   (vdiff v8 v9)
+    `mappend` catcurve (vdiff v9 v10) (vdiff v10 v11) (vdiff v11 v12)
   where
     base1 = vlength base_vec / 12
     h2    = h * (pi / 6)
     ang   = vdirection base_vec
-    vdif  = flip (^-^)
     v1    = orthoVec     base1    h2  ang
     v2    = orthoVec  (2*base1)   h   ang
     v3    = orthoVec  (3*base1)   h   ang
@@ -176,3 +304,92 @@ sineWaveTrail h base_vec = CatTrail $ fromListH
     v11   = orthoVec (11*base1) (-h2) ang
     v12   = orthoVec (12*base1)   0   ang
 
+
+
+kappa :: Floating u => u
+kappa = 4 * ((sqrt 2 - 1) / 3)
+
+
+
+-- | 'halfCircleA' : @ radius * center -> [Point] @ 
+-- 
+-- Make a circle from four Bezier curves. Although this function 
+-- produces an approximation of a circle, the approximation seems
+-- fine in practice.
+--
+semicircleAboveTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
+semicircleAboveTrail base_vec =
+              catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
+    `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
+  where
+    circum  = vlength base_vec
+    radius  = 0.5 * circum
+    ang     = vdirection base_vec
+    rl      = radius * kappa
+    
+    v1      = orthoVec 0 rl ang
+    v2      = orthoVec (radius - rl) radius ang
+    v3      = orthoVec radius radius ang
+
+    v4      = orthoVec (radius + rl) radius ang
+    v5      = orthoVec circum rl ang
+    v6      = orthoVec circum 0 ang
+
+
+-- | 'halfCircleB' : @ radius * center -> [Point] @ 
+-- 
+-- Make a circle from four Bezier curves. Although this function 
+-- produces an approximation of a circle, the approximation seems
+-- fine in practice.
+--
+semicircleBelowTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
+semicircleBelowTrail base_vec =
+              catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
+    `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
+  where
+    circum  = vlength base_vec
+    radius  = 0.5 * circum
+    ang     = vdirection base_vec
+    rl      = radius * kappa
+    
+    v1      = orthoVec 0 (-rl) ang
+    v2      = orthoVec (radius - rl) (-radius) ang
+    v3      = orthoVec radius (-radius) ang
+
+    v4      = orthoVec (radius + rl) (-radius) ang
+    v5      = orthoVec circum (-rl) ang
+    v6      = orthoVec circum 0 ang
+
+-- | A good squiggle is not made from semicircles 
+-- (it needs a bit of pinch).
+--
+squiggleTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
+squiggleTrail base_vec = 
+              catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
+    `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
+    `mappend` catcurve (vdiff v6 v7)  (vdiff v7 v8)   (vdiff v8 v9)
+    `mappend` catcurve (vdiff v9 v10) (vdiff v10 v11) (vdiff v11 v12)
+  where
+    four_radius   = vlength base_vec
+    radius        = 0.25 * four_radius
+    two_radius    = 0.5  * four_radius
+    three_radius  = 0.75 * four_radius
+    ang           = vdirection base_vec
+    rl            = radius * kappa
+    micro         = 0.33 * rl           -- seems good
+    
+    v1            = orthoVec micro rl ang
+    v2            = orthoVec (radius - rl) radius ang
+    v3            = orthoVec radius radius ang
+
+    v4            = orthoVec (radius + rl) radius ang
+    v5            = orthoVec (two_radius - micro) rl ang
+    v6            = orthoVec two_radius  0 ang
+
+    v7            = orthoVec (two_radius + micro) (-rl) ang
+    v8            = orthoVec (three_radius - rl) (-radius) ang
+    v9            = orthoVec three_radius (-radius) ang
+
+    v10           = orthoVec (three_radius + rl) (-radius) ang
+    v11           = orthoVec (four_radius - micro) (-rl) ang
+    v12           = orthoVec four_radius 0 ang

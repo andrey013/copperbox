@@ -226,9 +226,9 @@ triangleLDO :: (Real u, Floating u, Tolerance u, InterpretUnit u)
             => MarkSize -> LocQuery u (DotAnchor u)
 triangleLDO h = qpromoteLoc $ \pt -> 
     uconvertCtx1 h >>= \uh -> 
-    let alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices uh
+    let alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices uh
     in (\ps -> polygonAnchor ps pt) 
-         <$> qapplyLoc (pathSchemeSegmentInits alg) pt
+         <$> qapplyLoc (placedTrailPoints alg) pt
   where
     fn3 (a,b,c) = [a,b,c]
 

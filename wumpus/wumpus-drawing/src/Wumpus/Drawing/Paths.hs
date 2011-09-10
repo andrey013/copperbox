@@ -19,16 +19,12 @@ module Wumpus.Drawing.Paths
   ( 
 
     module Wumpus.Drawing.Paths.Base
-  , module Wumpus.Drawing.Paths.HPath
   , module Wumpus.Drawing.Paths.PathBuilder
-  , module Wumpus.Drawing.Paths.PathPrimitives
   , module Wumpus.Drawing.Paths.Vamps
 
   ) where
 
 import Wumpus.Drawing.Paths.Base
-import Wumpus.Drawing.Paths.HPath
 import Wumpus.Drawing.Paths.PathBuilder
-import Wumpus.Drawing.Paths.PathPrimitives
 import Wumpus.Drawing.Paths.Vamps
 

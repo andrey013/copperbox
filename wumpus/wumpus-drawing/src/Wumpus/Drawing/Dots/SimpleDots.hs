@@ -68,7 +68,6 @@ module Wumpus.Drawing.Dots.SimpleDots
   ) where
 
 
-import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
@@ -198,15 +197,15 @@ dotCross =
 
 
 dotDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotDiamond = umark $ drawPathScheme_ CSTROKE (diamondPathScm 0.5 0.66)
+dotDiamond = umark $ drawPlacedTrail CSTROKE (diamondTrail 0.5 0.66)
 
 dotFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotFDiamond = umark $ drawPathScheme_ CFILL (diamondPathScm 0.5 0.66)
+dotFDiamond = umark $ drawPlacedTrail CFILL (diamondTrail 0.5 0.66)
 
 
 
 dotBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotBDiamond = umark $ drawPathScheme_ CFILL_STROKE (diamondPathScm 0.5 0.66)
+dotBDiamond = umark $ drawPlacedTrail CFILL_STROKE (diamondTrail 0.5 0.66)
 
 
 -- | Note disk is filled.
@@ -217,7 +216,7 @@ dotDisk = umark $ dcDisk DRAW_FILL 0.5
 
 
 dotSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotSquare = umark $ drawPathScheme_ CSTROKE (rectanglePathScm 1 1)
+dotSquare = umark $ drawPlacedTrail CSTROKE (rectangleTrail 1 1)
 
 
 dotCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -230,7 +229,7 @@ dotBCircle = umark $ dcDisk DRAW_FILL_STROKE 0.5
 
 
 dotPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
-dotPentagon = umark $ drawPathScheme_ CSTROKE (polygonPathScm 5 0.5)
+dotPentagon = umark $ drawPlacedTrail CSTROKE (polygonTrail 5 0.5)
  
 
 
@@ -241,8 +240,8 @@ dotStar = umark $ starLines 0.5
 starLines :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
           => u -> LocGraphic u
 starLines hh = promoteLoc $ \ctr ->
-    let alg = polygonPathScm 5 hh
-    in liftQuery (qapplyLoc (pathSchemeSegmentInits alg) ctr) >>= \ps -> 
+    let alg = polygonTrail 5 hh
+    in liftQuery (qapplyLoc (placedTrailPoints alg) ctr) >>= \ps -> 
        step $ map (fn ctr) ps
   where
     fn p0 p1    = straightLine p0 p1
@@ -279,7 +278,7 @@ dotFOCross = dotBCircle `mappend` dotCross
 
 
 dotTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-dotTriangle = umark $ drawPathScheme_ CSTROKE alg 
+dotTriangle = umark $ drawPlacedTrail CSTROKE alg 
   where
-    alg = pathIterateLocus $ fn3 $ equilateralTriangleVertices 1
+    alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices 1
     fn3 = \(a,b,c) -> [a,b,c]
