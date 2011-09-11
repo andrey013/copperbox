@@ -56,15 +56,14 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
   , orthoCatline
  
-  , sineWaveTrail
   , semicircleAboveTrail
   , semicircleBelowTrail
-  , squiggleTrail
-  , sawtoothTrail
-  , squareWaveTrail
 
+  , sineWave
+  , sineWave1
   , squareWave
   , sawtoothWave
+  , squiggleWave
 
   ) where
 
@@ -279,8 +278,8 @@ orthoCatline x y ang = catline (orthoVec x y ang)
 --
 -- DESING NOTE
 --
--- Angle + number of repetitions (plus height etc.) might be a 
--- better API for waves than using a base_vec...
+-- Angle, unit width and number of repetitions (plus height etc.) 
+-- seems the best API, although this make fitting an issue.
 --
 
 -- | Helper
@@ -289,19 +288,23 @@ vdiff :: Num u => Vec2 u -> Vec2 u -> Vec2 u
 vdiff  = flip (^-^)
 
 
+sineWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
+sineWave i unit ang = 
+    mconcat $ replicate i $ sineWave1 (0.25 * unit) unit ang
+
+
 -- | One-phase sine wave. Height is parametric.
 --
-sineWaveTrail :: (Real u, Floating u)
-              => u -> Vec2 u -> CatTrail u
-sineWaveTrail h base_vec = 
-              catcurve  v1           (vdiff v1 v2)   (vdiff v2 v3)
+sineWave1 :: (Real u, Floating u)
+              => u -> u -> Radian -> CatTrail u
+sineWave1 h unit ang = 
+              catcurve  v1            (vdiff v1 v2)   (vdiff v2 v3)
     `mappend` catcurve (vdiff v3 v4)  (vdiff v4 v5)   (vdiff v5 v6)
     `mappend` catcurve (vdiff v6 v7)  (vdiff v7 v8)   (vdiff v8 v9)
     `mappend` catcurve (vdiff v9 v10) (vdiff v10 v11) (vdiff v11 v12)
   where
-    base1 = vlength base_vec / 12
+    base1 = unit / 12
     h2    = h * (pi / 6)
-    ang   = vdirection base_vec
     v1    = orthoVec     base1    h2  ang
     v2    = orthoVec  (2*base1)   h   ang
     v3    = orthoVec  (3*base1)   h   ang
@@ -371,21 +374,23 @@ semicircleBelowTrail base_vec =
     v5      = orthoVec circum (-rl) ang
     v6      = orthoVec circum 0 ang
 
--- | A proper semicircles do not make a good squiggle (it needs a 
+-- | Proper semicircles do not make a good squiggle (it needs a 
 -- bit of pinch).
 --
-squiggleTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
-squiggleTrail base_vec = 
+squiggleWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
+squiggleWave i unit ang = mconcat $ replicate i $ squiggle1 unit ang
+    
+squiggle1 :: (Real u, Floating u) => u -> Radian -> CatTrail u
+squiggle1 unit ang = 
               catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
     `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
     `mappend` catcurve (vdiff v6 v7)  (vdiff v7 v8)   (vdiff v8 v9)
     `mappend` catcurve (vdiff v9 v10) (vdiff v10 v11) (vdiff v11 v12)
   where
-    four_radius   = vlength base_vec
+    four_radius   = unit
     radius        = 0.25 * four_radius
     two_radius    = 0.5  * four_radius
     three_radius  = 0.75 * four_radius
-    ang           = vdirection base_vec
     rl            = radius * kappa
     micro         = 0.33 * rl           -- seems good
     
@@ -405,37 +410,7 @@ squiggleTrail base_vec =
     v11           = orthoVec (four_radius - micro) (-rl) ang
     v12           = orthoVec four_radius 0 ang
 
-
--- | TODO - sawtooth would be better as \"divisional\" on total
--- length rather than repeated for each phase (concatenation
--- generates a less than optimal path).
---  
-sawtoothTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
-sawtoothTrail base_vec = catline v1 `mappend` catline v2 `mappend` catline v3
-  where
-    len = vlength base_vec
-    h   = 0.25 * len
-    ang = vdirection base_vec
-
-    v1  = orthoVec (0.25 * len) h ang
-    v2  = orthoVec (0.50 * len) (negate $ 2.0 * h) ang
-    v3  = orthoVec (0.25 * len) h ang
     
-
-squareWaveTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
-squareWaveTrail base_vec = 
-    catline v1 `mappend` catline v2 `mappend` catline v3 `mappend` catline v4
-               `mappend` catline v5
-  where
-    len = vlength base_vec
-    h   = 0.25 * len
-    ang = vdirection base_vec
-
-    v1  = theta_up h ang
-    v2  = theta_right (0.5 * len) ang
-    v3  = theta_down (2.0 * h) ang
-    v4  = theta_right (0.5 * len) ang
-    v5  = theta_up h ang
 
 squareWave :: Floating u => Int -> u -> Radian -> CatTrail u 
 squareWave n unit ang 
@@ -456,7 +431,7 @@ squareWave n unit ang
 
 
 
--- | Better API...
+-- |
 --  
 sawtoothWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u 
 sawtoothWave n unit ang 
