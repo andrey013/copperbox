@@ -73,6 +73,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , orthoVec
 
   , both
+  , monPreRepeatPost
 
   ) where
 
@@ -381,3 +382,12 @@ orthoVec pall perp ang = avec ang pall ^+^ avec (ang + half_pi) perp
 both :: Applicative f => f a -> f b -> f (a,b)
 both fa fb = (,) <$> fa <*> fb
 
+
+-- | Monodial scheme - prefix, repeat body n times, suffix.
+--
+monPreRepeatPost :: Monoid a => a -> (Int, a) -> a -> a
+monPreRepeatPost pre (n,body1) post = step pre n
+  where
+    step ac i | i < 1     = ac `mappend` post
+              | otherwise = step (ac `mappend` body1) (i - 1) 
+    

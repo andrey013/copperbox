@@ -54,12 +54,17 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_down_left
   , trail_down_right
 
-  , ortholine
+  , orthoCatline
  
   , sineWaveTrail
   , semicircleAboveTrail
   , semicircleBelowTrail
   , squiggleTrail
+  , sawtoothTrail
+  , squareWaveTrail
+
+  , squareWave
+  , sawtoothWave
 
   ) where
 
@@ -262,15 +267,21 @@ trail_down_right :: Num u => u -> CatTrail u
 trail_down_right = catline . go_down_right
 
 
--- | Alternative to @line@, specifying the vector components 
+-- | Alternative to @catline@, specifying the vector components 
 -- rather the vector itself.
 --
-ortholine :: Floating u => u -> u -> Radian -> CatTrail u 
-ortholine x y ang = catline (orthoVec x y ang)
+orthoCatline :: Floating u => u -> u -> Radian -> CatTrail u 
+orthoCatline x y ang = catline (orthoVec x y ang)
 
 
 --------------------------------------------------------------------------------
 
+--
+-- DESING NOTE
+--
+-- Angle + number of repetitions (plus height etc.) might be a 
+-- better API for waves than using a base_vec...
+--
 
 -- | Helper
 --
@@ -360,8 +371,8 @@ semicircleBelowTrail base_vec =
     v5      = orthoVec circum (-rl) ang
     v6      = orthoVec circum 0 ang
 
--- | A good squiggle is not made from semicircles 
--- (it needs a bit of pinch).
+-- | A proper semicircles do not make a good squiggle (it needs a 
+-- bit of pinch).
 --
 squiggleTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
 squiggleTrail base_vec = 
@@ -393,3 +404,68 @@ squiggleTrail base_vec =
     v10           = orthoVec (three_radius + rl) (-radius) ang
     v11           = orthoVec (four_radius - micro) (-rl) ang
     v12           = orthoVec four_radius 0 ang
+
+
+-- | TODO - sawtooth would be better as \"divisional\" on total
+-- length rather than repeated for each phase (concatenation
+-- generates a less than optimal path).
+--  
+sawtoothTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
+sawtoothTrail base_vec = catline v1 `mappend` catline v2 `mappend` catline v3
+  where
+    len = vlength base_vec
+    h   = 0.25 * len
+    ang = vdirection base_vec
+
+    v1  = orthoVec (0.25 * len) h ang
+    v2  = orthoVec (0.50 * len) (negate $ 2.0 * h) ang
+    v3  = orthoVec (0.25 * len) h ang
+    
+
+squareWaveTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
+squareWaveTrail base_vec = 
+    catline v1 `mappend` catline v2 `mappend` catline v3 `mappend` catline v4
+               `mappend` catline v5
+  where
+    len = vlength base_vec
+    h   = 0.25 * len
+    ang = vdirection base_vec
+
+    v1  = theta_up h ang
+    v2  = theta_right (0.5 * len) ang
+    v3  = theta_down (2.0 * h) ang
+    v4  = theta_right (0.5 * len) ang
+    v5  = theta_up h ang
+
+squareWave :: Floating u => Int -> u -> Radian -> CatTrail u 
+squareWave n unit ang 
+    | n >  0    = monPreRepeatPost up_half (n - 1,kont) fin
+    | otherwise = mempty
+  where
+    up_half     = catline $ theta_up    (0.25 * unit) ang
+    up_one      = catline $ theta_up    (0.5  * unit) ang
+    down_one    = catline $ theta_down  (0.5  * unit) ang
+    right_half  = catline $ theta_right (0.5  * unit) ang
+
+    kont        = right_half `mappend` down_one `mappend` right_half
+                             `mappend` up_one
+
+    fin         = right_half `mappend` down_one `mappend` right_half
+                             `mappend` up_half
+
+
+
+
+-- | Better API...
+--  
+sawtoothWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u 
+sawtoothWave n unit ang 
+    | n >  0    = monPreRepeatPost up_half (n - 1,kont) fin
+    | otherwise = mempty
+  where
+    up_half  = catline $ theta_up_right (0.25 * unit) ang
+    up_one   = catline $ theta_up_right (0.5  * unit) ang
+    down_one = catline $ theta_down_right (0.5 * unit) ang
+
+    kont     = down_one `mappend` up_one
+    fin      = down_one `mappend` up_half
