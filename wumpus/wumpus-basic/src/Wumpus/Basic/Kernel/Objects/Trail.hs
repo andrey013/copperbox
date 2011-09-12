@@ -64,6 +64,14 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , squareWave
   , sawtoothWave
   , squiggleWave
+  , semicircAWave
+  , semicircBWave
+
+  , tricurve
+  , rectcurve
+  , bowcurve
+  , wedgecurve
+  , loopcurve
 
   ) where
 
@@ -276,11 +284,12 @@ orthoCatline x y ang = catline (orthoVec x y ang)
 --------------------------------------------------------------------------------
 
 --
--- DESING NOTE
+-- DESIGN NOTE
 --
 -- Angle, unit width and number of repetitions (plus height etc.) 
 -- seems the best API, although this make fitting an issue.
 --
+
 
 -- | Helper
 --
@@ -444,3 +453,66 @@ sawtoothWave n unit ang
 
     kont     = down_one `mappend` up_one
     fin      = down_one `mappend` up_half
+
+
+
+semicircAWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
+semicircAWave i unit ang = 
+    mconcat $ replicate i $ semicircleAboveTrail (avec ang unit)
+
+semicircBWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
+semicircBWave i unit ang = 
+    mconcat $ replicate i $ semicircleBelowTrail (avec ang unit)
+
+
+
+-- | Curve in a triangle.
+-- 
+tricurve :: Floating u => u -> u -> Radian -> CatTrail u
+tricurve bw h ang = catcurve v1 zeroVec v2
+  where
+    v1 = orthoVec (0.5 * bw) h ang
+    v2 = orthoVec (0.5 * bw) (-h) ang
+
+
+
+-- | Curve in a rectangle.
+-- 
+rectcurve :: Floating u => u -> u -> Radian -> CatTrail u
+rectcurve bw h ang = catcurve v1 v2 v3
+  where
+    v1 = orthoVec 0    h  ang
+    v2 = orthoVec bw   0  ang
+    v3 = orthoVec 0  (-h) ang
+
+
+
+-- | Curve in half a /bowtie/.
+-- 
+bowcurve :: Floating u => u -> u -> Radian -> CatTrail u
+bowcurve bw h ang = catcurve v1 v2 v3
+  where
+    v1 = orthoVec 0    h  ang
+    v2 = orthoVec bw (-h)  ang
+    v3 = orthoVec 0    h ang
+
+
+-- | Wedge curve formed inside a bowtie rotated by 90deg.
+-- 
+wedgecurve :: Floating u => u -> u -> Radian -> CatTrail u
+wedgecurve bw h ang = catcurve v1 v2 v3
+  where
+    v1 = orthoVec   bw    h  ang
+    v2 = orthoVec (-bw)   0  ang
+    v3 = orthoVec   bw  (-h) ang
+
+
+-- | Variation of wedge curve that draws a loop.
+-- 
+loopcurve :: Floating u => u -> u -> Radian -> CatTrail u
+loopcurve bw h ang = catcurve v1 v2 v3
+  where
+    ww = 2.0 * bw 
+    v1 = orthoVec  (1.5 * bw)    h  ang
+    v2 = orthoVec  (-ww)         0  ang
+    v3 = orthoVec  (1.5 * bw)  (-h) ang

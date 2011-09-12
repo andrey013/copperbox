@@ -32,10 +32,19 @@ pic01 = drawTracing tdrawing
 tdrawing :: TraceDrawing Double ()
 tdrawing = do
     drawl zeroPt $ drawPlacedTrail CFILL_STROKE $ polygonTrail 5 20
+    drawl (P2  80 0)   $ drawCatTrail OSTROKE $ tricurve 40 50 0
+    drawl (P2 160 0)   $ drawCatTrail OSTROKE $ rectcurve 40 50 0
+    drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve 40 40 0
+    drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve 40 40 0
+    drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve 20 40 0
     drawl (P2   0 160) $ drawCatTrail OSTROKE $ sineWave 10 20 0
     drawl (P2 210 160) $ drawCatTrail OSTROKE $ squiggleWave 10 20 0
     drawl (P2   0 200) $ drawCatTrail OSTROKE $ sawtoothWave 10 20 0
     drawl (P2 210 200) $ drawCatTrail OSTROKE $ squareWave 10 20 0
+    drawl (P2   0 240) $ drawCatTrail OSTROKE $ semicircAWave 10 20 0
+    drawl (P2 210 240) $ drawCatTrail OSTROKE $ semicircBWave 10 20 0
+
+
 
 test1 :: Maybe DPoint2
 test1 = interLinesegLine line_seg1 line1
