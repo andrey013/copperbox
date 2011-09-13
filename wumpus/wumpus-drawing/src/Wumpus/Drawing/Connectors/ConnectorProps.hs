@@ -26,6 +26,7 @@ module Wumpus.Drawing.Connectors.ConnectorProps
   , connectorDstSpace
   , connectorArms
   , connectorLoopSize
+  , connectorBoxHalfSize 
 
   ) where
 
@@ -103,7 +104,7 @@ default_connector_props =
                    , conn_src_arm      = 1
                    , conn_dst_arm      = 1
                    , conn_loop_size    = 2 
-                   , conn_box_halfsize = 2 
+                   , conn_box_halfsize = 1
                    }
 
 
@@ -138,4 +139,10 @@ connectorLoopSize :: (DrawingCtxM m, InterpretUnit u)
                   => ConnectorProps -> m u
 connectorLoopSize props = 
     (\sz -> uconvert1 sz $ conn_loop_size props) <$> pointSize
+
+
+connectorBoxHalfSize :: (DrawingCtxM m, InterpretUnit u) 
+                  => ConnectorProps -> m u
+connectorBoxHalfSize props = 
+    (\sz -> uconvert1 sz $ conn_box_halfsize props) <$> pointSize
 

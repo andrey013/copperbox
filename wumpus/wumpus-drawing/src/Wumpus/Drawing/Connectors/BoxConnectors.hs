@@ -18,6 +18,7 @@ module Wumpus.Drawing.Connectors.BoxConnectors
   ( 
     ConnectorBox
   , connbox
+  , conntube
 
   ) where
 
@@ -28,6 +29,8 @@ import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+import Data.Monoid
 
 -- NOTE - boxes (currently) seem to only support stroke otherwise
 -- they would obliterate what they connect.
@@ -56,10 +59,53 @@ type ConnectorBox u = ConnectorGraphic u
 connbox :: (Real u, Floating u, InterpretUnit u) 
         => ConnectorProps -> ConnectorBox u
 connbox props = promoteConn $ \p0 p1 -> 
-    connectorArms props >>= \(src_arm, dst_arm) ->
-    let ang = vdirection $ pvec p0 p1 
-        bl  = dispOrtho (V2 (-src_arm) (-src_arm)) ang p0
-        tl  = dispOrtho (V2 (-src_arm)   src_arm ) ang p0
-        br  = dispOrtho (V2   dst_arm  (-src_arm)) ang p1
-        tr  = dispOrtho (V2   dst_arm    src_arm ) ang p1
-    in liftQuery (vertexPP [ bl, br, tr, tl ]) >>= dcClosedPath DRAW_STROKE
+    connectorBoxHalfSize props >>= \sz ->
+    applyLoc (drawPlacedTrail CSTROKE $ cfconnbox sz (pvec p0 p1)) p0
+
+
+conntube :: (Real u, Floating u, InterpretUnit u) 
+        => ConnectorProps -> ConnectorBox u
+conntube props = promoteConn $ \p0 p1 -> 
+    connectorBoxHalfSize props >>= \sz ->
+    applyLoc (drawPlacedTrail CSTROKE $ cfconntube sz (pvec p0 p1)) p0
+
+
+
+-- Box connectors aren\'t especially coordinate free.
+
+-- | @v1@ is the /interior/ vector.
+--
+cfconnbox :: (Real u, Floating u) => u -> Vec2 u -> PlacedTrail u
+cfconnbox du v1 = 
+    placeCatTrail (orthoVec (-du) (-du) ang) $ mconcat $
+      [ trail_theta_right w ang
+      , trail_theta_up h ang
+      , trail_theta_left w ang
+      , trail_theta_down h ang
+      ]
+  where
+    ang = vdirection v1 
+    w   = (2*du) + vlength v1
+    h   = 2*du
+    
+
+
+-- | @v1@ is the /interior/ vector.
+--
+cfconntube :: (Real u, Floating u) => u -> Vec2 u -> PlacedTrail u
+cfconntube du v1 = 
+    placeCatTrail (orthoVec 0 (-du) ang) $ mconcat $
+      [ trail_theta_right w ang
+      , semicircleBelowTrail vup
+      , trail_theta_left w ang
+      , semicircleBelowTrail vdown
+      ]
+  where
+    ang   = vdirection v1 
+    w     = vlength v1
+    vup   = avec (ang + half_pi) (2*du)
+    vdown = avec (ang - half_pi) (2*du)
+
+    
+
+

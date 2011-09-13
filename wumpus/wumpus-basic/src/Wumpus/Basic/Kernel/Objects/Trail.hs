@@ -25,6 +25,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
   , drawPlacedTrail
   , drawCatTrail
+
+  , placeCatTrail
   
   , trailIterateLocus
 
@@ -55,6 +57,27 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_down_right
 
   , orthoCatline
+
+  , trail_theta_up
+  , trail_theta_down
+  , trail_theta_left
+  , trail_theta_right
+
+  , trail_theta_north
+  , trail_theta_south
+  , trail_theta_east
+  , trail_theta_west
+  , trail_theta_north_east
+  , trail_theta_north_west
+  , trail_theta_south_east
+  , trail_theta_south_west
+
+  , trail_theta_up_left
+  , trail_theta_up_right
+  , trail_theta_down_left
+  , trail_theta_down_right
+
+
  
   , semicircleAboveTrail
   , semicircleBelowTrail
@@ -141,6 +164,16 @@ drawPlacedTrail mode (PlacedTrail v0 xs) = promoteLoc $ \pt ->
   where
     fn (TLine v1)        = relLineTo v1
     fn (TCurve v1 v2 v3) = relCurveTo v1 v2 v3
+
+
+
+-- | Turn a 'CatRail' into a 'PlacedTrail'.
+--
+placeCatTrail :: Vec2 u -> CatTrail u -> PlacedTrail u
+placeCatTrail vinit cat = PlacedTrail { pt_init_vec = vinit
+                                      , pt_segments = getCatTrail cat []
+                                      }
+
 
 
 -- | Create a PlacedTrail from the vector list - each vector in the 
@@ -279,6 +312,59 @@ trail_down_right = catline . go_down_right
 --
 orthoCatline :: Floating u => u -> u -> Radian -> CatTrail u 
 orthoCatline x y ang = catline (orthoVec x y ang)
+
+
+trail_theta_up :: Floating u => u -> Radian -> CatTrail u
+trail_theta_up u = catline . theta_up u
+
+trail_theta_down :: Floating u => u -> Radian -> CatTrail u
+trail_theta_down u = catline . theta_down u
+
+trail_theta_left :: Floating u => u -> Radian -> CatTrail u
+trail_theta_left u = catline . theta_left u
+
+trail_theta_right :: Floating u => u -> Radian -> CatTrail u
+trail_theta_right u = catline . theta_right u
+
+
+trail_theta_north :: Floating u => u -> Radian -> CatTrail u
+trail_theta_north = trail_theta_up
+
+trail_theta_south :: Floating u => u -> Radian -> CatTrail u
+trail_theta_south = trail_theta_down
+
+trail_theta_east :: Floating u => u -> Radian -> CatTrail u
+trail_theta_east = trail_theta_right
+
+trail_theta_west :: Floating u => u -> Radian -> CatTrail u
+trail_theta_west = trail_theta_left
+
+
+trail_theta_north_east :: Floating u => u -> Radian -> CatTrail u
+trail_theta_north_east u = catline . theta_north_east u
+
+trail_theta_north_west :: Floating u => u -> Radian -> CatTrail u
+trail_theta_north_west u = catline . theta_north_west u
+
+trail_theta_south_east :: Floating u => u -> Radian -> CatTrail u
+trail_theta_south_east u = catline . theta_south_east u
+
+trail_theta_south_west :: Floating u => u -> Radian -> CatTrail u
+trail_theta_south_west u = catline . theta_south_west u
+
+
+trail_theta_up_left :: Floating u => u -> Radian -> CatTrail u
+trail_theta_up_left u = catline . theta_up_left u
+
+trail_theta_up_right :: Floating u => u -> Radian -> CatTrail u
+trail_theta_up_right u = catline . theta_up_right u
+
+trail_theta_down_left :: Floating u => u -> Radian -> CatTrail u
+trail_theta_down_left u = catline . theta_down_left u
+
+trail_theta_down_right :: Floating u => u -> Radian -> CatTrail u
+trail_theta_down_right u = catline . theta_down_right u
+
 
 
 --------------------------------------------------------------------------------
