@@ -8,6 +8,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.Monoid
 import System.Directory
 
 
@@ -37,6 +38,8 @@ tdrawing = do
     drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve 40 40 0
     drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve 40 40 0
     drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve 20 40 0
+    drawl (P2  20 80)  $ dcCircle DRAW_FILL 20 
+    drawl (P2  40 50)  $ drawCatTrail OSTROKE $ stick
     drawl (P2   0 160) $ drawCatTrail OSTROKE $ sineWave 10 20 0
     drawl (P2 210 160) $ drawCatTrail OSTROKE $ squiggleWave 10 20 0
     drawl (P2   0 200) $ drawCatTrail OSTROKE $ sawtoothWave 10 20 0
@@ -44,6 +47,9 @@ tdrawing = do
     drawl (P2   0 240) $ drawCatTrail OSTROKE $ semicircAWave 10 20 0
     drawl (P2 210 240) $ drawCatTrail OSTROKE $ semicircBWave 10 20 0
 
+
+stick :: CatTrail Double
+stick = trail_up 30 `mappend` arcTrail (d2r 315.0) 20 0
 
 
 test1 :: Maybe DPoint2

@@ -82,6 +82,9 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , semicircleAboveTrail
   , semicircleBelowTrail
 
+  , arcTrail
+  , minorArcTrail
+
   , sineWave
   , sineWave1
   , squareWave
@@ -419,10 +422,13 @@ kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
 
 
+-- DESIGN NOTE - maybe accounting for CW and CCW would make a 
+-- better API than /above/ and /below/.
 
--- | 'halfCircleA' : @ radius * center -> [Point] @ 
+
+-- | 'semicircleAboveTrail' : @ radius * center -> [Point] @ 
 -- 
--- Make a circle from four Bezier curves. Although this function 
+-- Make a semicircle from two Bezier curves. Although this function 
 -- produces an approximation of a circle, the approximation seems
 -- fine in practice.
 --
@@ -445,9 +451,9 @@ semicircleAboveTrail base_vec =
     v6      = orthoVec circum 0 ang
 
 
--- | 'halfCircleB' : @ radius * center -> [Point] @ 
+-- | 'semicircleBelowTrail' : @ radius * center -> [Point] @ 
 -- 
--- Make a circle from four Bezier curves. Although this function 
+-- Make a semicircle from two Bezier curves. Although this function 
 -- produces an approximation of a circle, the approximation seems
 -- fine in practice.
 --
@@ -468,6 +474,64 @@ semicircleBelowTrail base_vec =
     v4      = orthoVec (radius + rl) (-radius) ang
     v5      = orthoVec circum (-rl) ang
     v6      = orthoVec circum 0 ang
+
+
+
+
+-- | 'bezierMinorArc' : @ apex_angle * radius * inclination -> CatTrail @
+--
+-- > ang should be in the range 0 < ang <= 90deg.
+--
+minorArcTrail :: (Real u, Floating u)
+              => Radian -> u -> Radian -> CatTrail u
+minorArcTrail ang radius theta = 
+    catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
+  where
+    kfactor = fromRadian $ ang / (0.5*pi)
+    rl      = kfactor * radius * kappa
+    totang  = circularModulo $ ang + theta
+
+    p0      = dispParallel radius theta zeroPt
+    p1      = dispPerpendicular rl theta p0
+    p2      = dispPerpendicular (-rl) totang p3
+    p3      = dispParallel radius totang zeroPt
+
+
+
+
+-- | 'bezierArcPoints' : @ apex_angle * radius * inclination -> Trail @
+--
+-- > ang should be in the range 0 < ang < 360deg.
+--
+-- > if   0 < ang <=  90 returns 1 segment
+-- > if  90 < ang <= 180 returns 2 segments
+-- > if 180 < ang <= 270 returns 3 segments
+-- > if 270 < ang <  360 returns 4 segmenets
+--
+arcTrail :: (Real u, Floating u)
+         => Radian -> u -> Radian -> CatTrail u
+arcTrail ang radius theta = go (circularModulo ang)
+  where
+    go a | a <= half_pi = wedge1 a
+         | a <= pi      = wedge2 (a/2)
+         | a <= 1.5*pi  = wedge3 (a/3)
+         | otherwise    = wedge4 (a/4)
+    
+    wedge1 a =           minorArcTrail a radius theta
+
+    wedge2 a =           minorArcTrail a radius theta
+               `mappend` minorArcTrail a radius (theta+a)
+
+    wedge3 a =           minorArcTrail a radius theta
+               `mappend` minorArcTrail a radius (theta+a)
+               `mappend` minorArcTrail a radius (theta+a+a)
+  
+    wedge4 a =           minorArcTrail a radius theta
+               `mappend` minorArcTrail a radius (theta+a)
+               `mappend` minorArcTrail a radius (theta+a+a)
+               `mappend` minorArcTrail a radius (theta+a+a+a)
+
+
 
 -- | Proper semicircles do not make a good squiggle (it needs a 
 -- bit of pinch).
@@ -549,6 +613,10 @@ semicircAWave i unit ang =
 semicircBWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
 semicircBWave i unit ang = 
     mconcat $ replicate i $ semicircleBelowTrail (avec ang unit)
+
+
+
+--------------------------------------------------------------------------------
 
 
 
