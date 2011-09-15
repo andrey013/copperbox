@@ -66,7 +66,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
   -- * Direction enumeration
   , Direction(..)
-  
+  , ClockDirection(..)  
 
   -- * Misc
   , vsum
@@ -346,10 +346,15 @@ data Cardinal = NORTH | NORTH_EAST | EAST | SOUTH_EAST
 
 -- | An enumerated type representing horizontal and vertical 
 -- directions.
+--
 data Direction = UP | DOWN | LEFT | RIGHT
    deriving (Enum,Eq,Ord,Show) 
 
 
+-- | An enumerated type representing /clock/ directions.
+--
+data ClockDirection = CW | CCW
+   deriving (Enum,Eq,Ord,Show) 
 
 
 -- | Sum a list of Vectors.

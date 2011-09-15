@@ -39,17 +39,29 @@ tdrawing = do
     drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve 40 40 0
     drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve 20 40 0
     drawl (P2  20 80)  $ dcCircle DRAW_FILL 20 
-    drawl (P2  40 50)  $ drawCatTrail OSTROKE $ stick
+    drawl (P2  40 50)  $ drawCatTrail OSTROKE $ stick1
+    drawl (P2 100 80)  $ drawCatTrail OSTROKE $ stick2
+    drawl (P2 180 80)  $ drawCatTrail OSTROKE $ stick3
+    drawl (P2 260 80)  $ drawCatTrail OSTROKE $ stick4
     drawl (P2   0 160) $ drawCatTrail OSTROKE $ sineWave 10 20 0
     drawl (P2 210 160) $ drawCatTrail OSTROKE $ squiggleWave 10 20 0
     drawl (P2   0 200) $ drawCatTrail OSTROKE $ sawtoothWave 10 20 0
     drawl (P2 210 200) $ drawCatTrail OSTROKE $ squareWave 10 20 0
-    drawl (P2   0 240) $ drawCatTrail OSTROKE $ semicircAWave 10 20 0
-    drawl (P2 210 240) $ drawCatTrail OSTROKE $ semicircBWave 10 20 0
+    drawl (P2   0 240) $ drawCatTrail OSTROKE $ semicircleWave CW 10 20 0
+    drawl (P2 210 240) $ drawCatTrail OSTROKE $ semicircleWave CCW 10 20 0
 
 
-stick :: CatTrail Double
-stick = trail_up 30 `mappend` arcTrail (d2r 315.0) 20 0
+stick1 :: CatTrail Double
+stick1 = trail_right 25 `mappend` arcTrailCCW (d2r 315.0) 20 0
+
+stick2 :: CatTrail Double
+stick2 = trail_right 25 `mappend` arcTrailCW (d2r 315.0) 20 0
+
+stick3 :: CatTrail Double
+stick3 = trail_right 15 `mappend` semicircleCW (hvec 30)
+
+stick4 :: CatTrail Double
+stick4 = trail_right 15 `mappend` semicircleCCW (hvec 30)
 
 
 test1 :: Maybe DPoint2

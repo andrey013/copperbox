@@ -79,19 +79,20 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
 
  
-  , semicircleAboveTrail
-  , semicircleBelowTrail
+  , semicircleCW
+  , semicircleCCW
 
-  , arcTrail
-  , minorArcTrail
+  , minorArcCW
+  , minorArcCCW
+  , arcTrailCW
+  , arcTrailCCW
 
   , sineWave
   , sineWave1
   , squareWave
   , sawtoothWave
   , squiggleWave
-  , semicircAWave
-  , semicircBWave
+  , semicircleWave
 
   , tricurve
   , rectcurve
@@ -426,14 +427,14 @@ kappa = 4 * ((sqrt 2 - 1) / 3)
 -- better API than /above/ and /below/.
 
 
--- | 'semicircleAboveTrail' : @ radius * center -> [Point] @ 
+-- | 'semicircleCW' : @ base_vector -> CatTrail @ 
 -- 
--- Make a semicircle from two Bezier curves. Although this function 
--- produces an approximation of a circle, the approximation seems
--- fine in practice.
+-- Make a clockwise semicircle from two Bezier curves. Although 
+-- this function produces an approximation of a semicircle, the 
+-- approximation seems fine in practice.
 --
-semicircleAboveTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
-semicircleAboveTrail base_vec =
+semicircleCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
+semicircleCW base_vec =
               catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
     `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
   where
@@ -451,14 +452,14 @@ semicircleAboveTrail base_vec =
     v6      = orthoVec circum 0 ang
 
 
--- | 'semicircleBelowTrail' : @ radius * center -> [Point] @ 
+-- | 'semicircleCCW' : @ base_vector_vector -> CatTrail @ 
 -- 
--- Make a semicircle from two Bezier curves. Although this function 
--- produces an approximation of a circle, the approximation seems
--- fine in practice.
+-- Make a counter-clockwise semicircle from two Bezier curves. 
+-- Although this function produces an approximation of a 
+-- semicircle, the approximation seems fine in practice.
 --
-semicircleBelowTrail :: (Real u, Floating u) => Vec2 u -> CatTrail u
-semicircleBelowTrail base_vec =
+semicircleCCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
+semicircleCCW base_vec =
               catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
     `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
   where
@@ -478,28 +479,46 @@ semicircleBelowTrail base_vec =
 
 
 
--- | 'bezierMinorArc' : @ apex_angle * radius * inclination -> CatTrail @
+-- | 'minorArcCW' : @ angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang <= 90deg.
 --
-minorArcTrail :: (Real u, Floating u)
+minorArcCW :: (Real u, Floating u)
               => Radian -> u -> Radian -> CatTrail u
-minorArcTrail ang radius theta = 
+minorArcCW ang radius theta = 
     catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
   where
     kfactor = fromRadian $ ang / (0.5*pi)
     rl      = kfactor * radius * kappa
-    totang  = circularModulo $ ang + theta
+    totang  = circularModulo $ theta + (half_pi - ang)
 
-    p0      = dispParallel radius theta zeroPt
-    p1      = dispPerpendicular rl theta p0
-    p2      = dispPerpendicular (-rl) totang p3
-    p3      = dispParallel radius totang zeroPt
-
-
+    p0      = displace (theta_up    radius theta) zeroPt
+    p1      = displace (theta_right rl     theta) p0
+    p2      = displace (theta_up    rl     totang) p3
+    p3      = displace (avec totang radius) zeroPt
 
 
--- | 'bezierArcPoints' : @ apex_angle * radius * inclination -> Trail @
+-- | 'minorArcCCW' : @ angle * radius * inclination -> CatTrail @
+--
+-- > ang should be in the range 0 < ang <= 90deg.
+--
+minorArcCCW :: (Real u, Floating u)
+              => Radian -> u -> Radian -> CatTrail u
+minorArcCCW ang radius theta = 
+    catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
+  where
+    kfactor = fromRadian $ ang / (0.5*pi)
+    rl      = kfactor * radius * kappa
+    totang  = circularModulo $ theta - half_pi + ang
+
+    p0      = displace (theta_down  radius theta) zeroPt
+    p1      = displace (theta_right rl     theta) p0
+    p2      = displace (theta_down  rl     totang) p3
+    p3      = displace (avec totang radius) zeroPt
+
+
+
+-- | 'arcTrailCW' : @ apex_angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang < 360deg.
 --
@@ -508,28 +527,63 @@ minorArcTrail ang radius theta =
 -- > if 180 < ang <= 270 returns 3 segments
 -- > if 270 < ang <  360 returns 4 segmenets
 --
-arcTrail :: (Real u, Floating u)
-         => Radian -> u -> Radian -> CatTrail u
-arcTrail ang radius theta = go (circularModulo ang)
+arcTrailCW :: (Real u, Floating u)
+            => Radian -> u -> Radian -> CatTrail u
+arcTrailCW ang radius theta = go (circularModulo ang)
   where
     go a | a <= half_pi = wedge1 a
          | a <= pi      = wedge2 (a/2)
          | a <= 1.5*pi  = wedge3 (a/3)
          | otherwise    = wedge4 (a/4)
     
-    wedge1 a =           minorArcTrail a radius theta
+    wedge1 a =           minorArcCW a radius theta
 
-    wedge2 a =           minorArcTrail a radius theta
-               `mappend` minorArcTrail a radius (theta+a)
+    wedge2 a =           minorArcCW a radius theta
+               `mappend` minorArcCW a radius (theta-a)
 
-    wedge3 a =           minorArcTrail a radius theta
-               `mappend` minorArcTrail a radius (theta+a)
-               `mappend` minorArcTrail a radius (theta+a+a)
+    wedge3 a =           minorArcCW a radius theta
+               `mappend` minorArcCW a radius (theta - a)
+               `mappend` minorArcCW a radius (theta - 2*a)
   
-    wedge4 a =           minorArcTrail a radius theta
-               `mappend` minorArcTrail a radius (theta+a)
-               `mappend` minorArcTrail a radius (theta+a+a)
-               `mappend` minorArcTrail a radius (theta+a+a+a)
+    wedge4 a =           minorArcCW a radius theta
+               `mappend` minorArcCW a radius (theta - a)
+               `mappend` minorArcCW a radius (theta - 2 *a)
+               `mappend` minorArcCW a radius (theta - 3 *a)
+
+
+
+
+-- | 'arcTrailCCW' : @ apex_angle * radius * inclination -> CatTrail @
+--
+-- > ang should be in the range 0 < ang < 360deg.
+--
+-- > if   0 < ang <=  90 returns 1 segment
+-- > if  90 < ang <= 180 returns 2 segments
+-- > if 180 < ang <= 270 returns 3 segments
+-- > if 270 < ang <  360 returns 4 segmenets
+--
+arcTrailCCW :: (Real u, Floating u)
+            => Radian -> u -> Radian -> CatTrail u
+arcTrailCCW ang radius theta = go (circularModulo ang)
+  where
+    go a | a <= half_pi = wedge1 a
+         | a <= pi      = wedge2 (a/2)
+         | a <= 1.5*pi  = wedge3 (a/3)
+         | otherwise    = wedge4 (a/4)
+    
+    wedge1 a =           minorArcCCW a radius theta
+
+    wedge2 a =           minorArcCCW a radius theta
+               `mappend` minorArcCCW a radius (theta+a)
+
+    wedge3 a =           minorArcCCW a radius theta
+               `mappend` minorArcCCW a radius (theta+a)
+               `mappend` minorArcCCW a radius (theta+a+a)
+  
+    wedge4 a =           minorArcCCW a radius theta
+               `mappend` minorArcCCW a radius (theta+a)
+               `mappend` minorArcCCW a radius (theta+a+a)
+               `mappend` minorArcCCW a radius (theta+a+a+a)
 
 
 
@@ -606,13 +660,13 @@ sawtoothWave n unit ang
 
 
 
-semicircAWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
-semicircAWave i unit ang = 
-    mconcat $ replicate i $ semicircleAboveTrail (avec ang unit)
-
-semicircBWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
-semicircBWave i unit ang = 
-    mconcat $ replicate i $ semicircleBelowTrail (avec ang unit)
+semicircleWave :: (Real u, Floating u) 
+               => ClockDirection ->  Int -> u -> Radian -> CatTrail u
+semicircleWave cdir i unit ang = 
+    mconcat $ replicate i $ fn cdir (avec ang unit)
+  where
+    fn CCW = semicircleCCW
+    fn _   = semicircleCW
 
 
 
