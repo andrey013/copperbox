@@ -52,10 +52,10 @@ tdrawing = do
 
 
 stick1 :: CatTrail Double
-stick1 = trail_right 25 `mappend` arcTrailCCW (d2r 315.0) 20 0
+stick1 = trail_right 25 `mappend` circleSweepCCW (d2r 315.0) 20 0
 
 stick2 :: CatTrail Double
-stick2 = trail_right 25 `mappend` arcTrailCW (d2r 315.0) 20 0
+stick2 = trail_right 25 `mappend` circleSweepCW (d2r 315.0) 20 0
 
 stick3 :: CatTrail Double
 stick3 = trail_right 15 `mappend` semicircleCW (hvec 30)

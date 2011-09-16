@@ -36,6 +36,9 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , diamondTrail
   , polygonTrail
 
+
+  , catline
+  , catcurve
   
   , trail_up
   , trail_down
@@ -82,10 +85,10 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , semicircleCW
   , semicircleCCW
 
-  , minorArcCW
-  , minorArcCCW
-  , arcTrailCW
-  , arcTrailCCW
+  , minorCircleSweepCW
+  , minorCircleSweepCCW
+  , circleSweepCW
+  , circleSweepCCW
 
   , sineWave
   , sineWave1
@@ -479,13 +482,13 @@ semicircleCCW base_vec =
 
 
 
--- | 'minorArcCW' : @ angle * radius * inclination -> CatTrail @
+-- | 'minorCircleSweepCW' : @ angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang <= 90deg.
 --
-minorArcCW :: (Real u, Floating u)
-              => Radian -> u -> Radian -> CatTrail u
-minorArcCW ang radius theta = 
+minorCircleSweepCW :: (Real u, Floating u)
+                   => Radian -> u -> Radian -> CatTrail u
+minorCircleSweepCW ang radius theta = 
     catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
   where
     kfactor = fromRadian $ ang / (0.5*pi)
@@ -498,13 +501,13 @@ minorArcCW ang radius theta =
     p3      = displace (avec totang radius) zeroPt
 
 
--- | 'minorArcCCW' : @ angle * radius * inclination -> CatTrail @
+-- | 'minorCircleSweepCCW' : @ angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang <= 90deg.
 --
-minorArcCCW :: (Real u, Floating u)
-              => Radian -> u -> Radian -> CatTrail u
-minorArcCCW ang radius theta = 
+minorCircleSweepCCW :: (Real u, Floating u)
+                    => Radian -> u -> Radian -> CatTrail u
+minorCircleSweepCCW ang radius theta = 
     catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
   where
     kfactor = fromRadian $ ang / (0.5*pi)
@@ -518,7 +521,7 @@ minorArcCCW ang radius theta =
 
 
 
--- | 'arcTrailCW' : @ apex_angle * radius * inclination -> CatTrail @
+-- | 'circleSweepCW' : @ apex_angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang < 360deg.
 --
@@ -527,33 +530,33 @@ minorArcCCW ang radius theta =
 -- > if 180 < ang <= 270 returns 3 segments
 -- > if 270 < ang <  360 returns 4 segmenets
 --
-arcTrailCW :: (Real u, Floating u)
-            => Radian -> u -> Radian -> CatTrail u
-arcTrailCW ang radius theta = go (circularModulo ang)
+circleSweepCW :: (Real u, Floating u)
+              => Radian -> u -> Radian -> CatTrail u
+circleSweepCW ang radius theta = go (circularModulo ang)
   where
     go a | a <= half_pi = wedge1 a
          | a <= pi      = wedge2 (a/2)
          | a <= 1.5*pi  = wedge3 (a/3)
          | otherwise    = wedge4 (a/4)
     
-    wedge1 a =           minorArcCW a radius theta
+    wedge1 a =           minorCircleSweepCW a radius theta
 
-    wedge2 a =           minorArcCW a radius theta
-               `mappend` minorArcCW a radius (theta-a)
+    wedge2 a =           minorCircleSweepCW a radius theta
+               `mappend` minorCircleSweepCW a radius (theta-a)
 
-    wedge3 a =           minorArcCW a radius theta
-               `mappend` minorArcCW a radius (theta - a)
-               `mappend` minorArcCW a radius (theta - 2*a)
+    wedge3 a =           minorCircleSweepCW a radius theta
+               `mappend` minorCircleSweepCW a radius (theta - a)
+               `mappend` minorCircleSweepCW a radius (theta - 2*a)
   
-    wedge4 a =           minorArcCW a radius theta
-               `mappend` minorArcCW a radius (theta - a)
-               `mappend` minorArcCW a radius (theta - 2 *a)
-               `mappend` minorArcCW a radius (theta - 3 *a)
+    wedge4 a =           minorCircleSweepCW a radius theta
+               `mappend` minorCircleSweepCW a radius (theta - a)
+               `mappend` minorCircleSweepCW a radius (theta - 2 *a)
+               `mappend` minorCircleSweepCW a radius (theta - 3 *a)
 
 
 
 
--- | 'arcTrailCCW' : @ apex_angle * radius * inclination -> CatTrail @
+-- | 'circleSweepCCW' : @ apex_angle * radius * inclination -> CatTrail @
 --
 -- > ang should be in the range 0 < ang < 360deg.
 --
@@ -562,28 +565,28 @@ arcTrailCW ang radius theta = go (circularModulo ang)
 -- > if 180 < ang <= 270 returns 3 segments
 -- > if 270 < ang <  360 returns 4 segmenets
 --
-arcTrailCCW :: (Real u, Floating u)
-            => Radian -> u -> Radian -> CatTrail u
-arcTrailCCW ang radius theta = go (circularModulo ang)
+circleSweepCCW :: (Real u, Floating u)
+               => Radian -> u -> Radian -> CatTrail u
+circleSweepCCW ang radius theta = go (circularModulo ang)
   where
     go a | a <= half_pi = wedge1 a
          | a <= pi      = wedge2 (a/2)
          | a <= 1.5*pi  = wedge3 (a/3)
          | otherwise    = wedge4 (a/4)
     
-    wedge1 a =           minorArcCCW a radius theta
+    wedge1 a =           minorCircleSweepCCW a radius theta
 
-    wedge2 a =           minorArcCCW a radius theta
-               `mappend` minorArcCCW a radius (theta+a)
+    wedge2 a =           minorCircleSweepCCW a radius theta
+               `mappend` minorCircleSweepCCW a radius (theta+a)
 
-    wedge3 a =           minorArcCCW a radius theta
-               `mappend` minorArcCCW a radius (theta+a)
-               `mappend` minorArcCCW a radius (theta+a+a)
+    wedge3 a =           minorCircleSweepCCW a radius theta
+               `mappend` minorCircleSweepCCW a radius (theta+a)
+               `mappend` minorCircleSweepCCW a radius (theta+a+a)
   
-    wedge4 a =           minorArcCCW a radius theta
-               `mappend` minorArcCCW a radius (theta+a)
-               `mappend` minorArcCCW a radius (theta+a+a)
-               `mappend` minorArcCCW a radius (theta+a+a+a)
+    wedge4 a =           minorCircleSweepCCW a radius theta
+               `mappend` minorCircleSweepCCW a radius (theta+a)
+               `mappend` minorCircleSweepCCW a radius (theta+a+a)
+               `mappend` minorCircleSweepCCW a radius (theta+a+a+a)
 
 
 

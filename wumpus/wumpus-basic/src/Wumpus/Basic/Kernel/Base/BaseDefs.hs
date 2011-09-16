@@ -50,8 +50,9 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Drawing paths and shapes (closed paths)
   , PathMode(..)
   , DrawMode(..)
+  , closedMode
 
-  -- * Drawing /layer/
+  -- * Drawing layers
   , ZDeco(..)  
 
   -- * Alignment
@@ -283,6 +284,15 @@ data PathMode = OSTROKE | CSTROKE | CFILL | CFILL_STROKE
 --
 data DrawMode = DRAW_STROKE | DRAW_FILL | DRAW_FILL_STROKE
   deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+-- | Interpret a 'DrawMode' for a closed path.
+--
+closedMode :: DrawMode -> PathMode
+closedMode DRAW_STROKE      = CSTROKE 
+closedMode DRAW_FILL        = CFILL 
+closedMode DRAW_FILL_STROKE = CFILL_STROKE
+
 
 
 
