@@ -45,6 +45,7 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
   -- * Arc and wedge
   , arc
   , wedge
+  , wedge2
 
   )
 
@@ -164,4 +165,19 @@ wedge mode radius ang = promoteLocTheta $ \pt inclin ->
     
     curves (a:b:c:ps)   = absCurveTo a b c : curves ps
     curves _            = []
+    
+-- | Wedge is drawn at the apex.
+--
+wedge2 :: (Real u, Floating u, InterpretUnit u) 
+       => DrawMode -> u -> Radian -> LocThetaGraphic u
+wedge2 mode radius ang = promoteLocTheta $ \pt inclin -> 
+    let half_ang = 0.5 * ang 
+        line_in  = catline $ avec (inclin + half_ang)   radius
+        line_out = catline $ avec (inclin - half_ang) (-radius)
+        w_arc    = circularArcCW ang radius (inclin - half_pi)
+        ct       = line_in `mappend` w_arc `mappend` line_out
+    in drawCatTrail (closedMode mode) ct `at` pt
+        
+
+        -- Note - shouldn\' use a circle sweep, arc /= circle sweep
     

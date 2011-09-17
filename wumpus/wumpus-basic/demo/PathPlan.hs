@@ -43,6 +43,8 @@ tdrawing = do
     drawl (P2 100 80)  $ drawCatTrail OSTROKE $ stick2
     drawl (P2 180 80)  $ drawCatTrail OSTROKE $ stick3
     drawl (P2 260 80)  $ drawCatTrail OSTROKE $ stick4
+    drawl (P2 340 80)  $ drawCatTrail OSTROKE $ stick5
+    drawl (P2 380 80)  $ drawCatTrail OSTROKE $ stick6
     drawl (P2   0 160) $ drawCatTrail OSTROKE $ sineWave 10 20 0
     drawl (P2 210 160) $ drawCatTrail OSTROKE $ squiggleWave 10 20 0
     drawl (P2   0 200) $ drawCatTrail OSTROKE $ sawtoothWave 10 20 0
@@ -62,6 +64,17 @@ stick3 = trail_right 15 `mappend` semicircleCW (hvec 30)
 
 stick4 :: CatTrail Double
 stick4 = trail_right 15 `mappend` semicircleCCW (hvec 30)
+
+stick5 :: CatTrail Double
+stick5 =      trail_up_right 10 
+    `mappend` circularArcCW (1.5*pi) 20 quarter_pi 
+    `mappend` trail_up_right 10
+
+stick6 :: CatTrail Double
+stick6 =      trail_up_right 10 
+    `mappend` circularArcCCW half_pi 20 quarter_pi 
+    `mappend` trail_up_right 10
+
 
 
 test1 :: Maybe DPoint2

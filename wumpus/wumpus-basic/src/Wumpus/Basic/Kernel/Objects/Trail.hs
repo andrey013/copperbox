@@ -89,6 +89,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , minorCircleSweepCCW
   , circleSweepCW
   , circleSweepCCW
+  , circularArcCW
+  , circularArcCCW
 
   , sineWave
   , sineWave1
@@ -550,8 +552,8 @@ circleSweepCW ang radius theta = go (circularModulo ang)
   
     wedge4 a =           minorCircleSweepCW a radius theta
                `mappend` minorCircleSweepCW a radius (theta - a)
-               `mappend` minorCircleSweepCW a radius (theta - 2 *a)
-               `mappend` minorCircleSweepCW a radius (theta - 3 *a)
+               `mappend` minorCircleSweepCW a radius (theta - 2*a)
+               `mappend` minorCircleSweepCW a radius (theta - 3*a)
 
 
 
@@ -589,6 +591,19 @@ circleSweepCCW ang radius theta = go (circularModulo ang)
                `mappend` minorCircleSweepCCW a radius (theta+a+a+a)
 
 
+-- | inclination is the inclination of the chord.
+--
+circularArcCW :: (Real u, Floating u) => Radian -> u -> Radian -> CatTrail u 
+circularArcCW apex_ang radius inclin = 
+    circleSweepCW apex_ang radius (inclin + 0.5 * apex_ang)
+
+
+-- | inclination is the inclination of the chord.
+--
+circularArcCCW :: (Real u, Floating u) => Radian -> u -> Radian -> CatTrail u 
+circularArcCCW apex_ang radius inclin = 
+    circleSweepCCW apex_ang radius (inclin - 0.5 * apex_ang)
+
 
 -- | Proper semicircles do not make a good squiggle (it needs a 
 -- bit of pinch).
@@ -598,8 +613,8 @@ squiggleWave i unit ang = mconcat $ replicate i $ squiggle1 unit ang
     
 squiggle1 :: (Real u, Floating u) => u -> Radian -> CatTrail u
 squiggle1 unit ang = 
-              catcurve  v1           (vdiff v1 v2) (vdiff v2 v3)
-    `mappend` catcurve (vdiff v3 v4) (vdiff v4 v5) (vdiff v5 v6)
+              catcurve  v1            (vdiff v1 v2)   (vdiff v2 v3)
+    `mappend` catcurve (vdiff v3 v4)  (vdiff v4 v5)   (vdiff v5 v6)
     `mappend` catcurve (vdiff v6 v7)  (vdiff v7 v8)   (vdiff v8 v9)
     `mappend` catcurve (vdiff v9 v10) (vdiff v10 v11) (vdiff v11 v12)
   where
@@ -664,7 +679,7 @@ sawtoothWave n unit ang
 
 
 semicircleWave :: (Real u, Floating u) 
-               => ClockDirection ->  Int -> u -> Radian -> CatTrail u
+               => ClockDirection -> Int -> u -> Radian -> CatTrail u
 semicircleWave cdir i unit ang = 
     mconcat $ replicate i $ fn cdir (avec ang unit)
   where

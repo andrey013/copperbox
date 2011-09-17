@@ -5,6 +5,7 @@ module Wedge where
 
 import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Colour.SVGColours
+import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Extras.Axes
 import Wumpus.Drawing.Extras.Grids
 import Wumpus.Drawing.Text.StandardFontDefs
@@ -43,4 +44,9 @@ grid_pic = udrawTracing (0::Double) $ do
 
     node (5,0) $ grid (dotted_major_grid) 4 3
     node (5,0) $ wedge DRAW_FILL_STROKE radius (0.25*pi) `incline` 0
+    node (5,0) $ smallDisk
+
+    node (5,4) $ grid (dotted_major_grid) 4 3
+    node (5,4) $ wedge2 DRAW_FILL_STROKE radius (0.25*pi) `incline` (0.125 * pi)
+    node (5,4) $ smallDisk
     return ()

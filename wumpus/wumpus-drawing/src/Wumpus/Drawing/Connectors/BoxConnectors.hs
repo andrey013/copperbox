@@ -96,9 +96,9 @@ cfconntube :: (Real u, Floating u) => u -> Vec2 u -> PlacedTrail u
 cfconntube du v1 = 
     placeCatTrail (orthoVec 0 (-du) ang) $ mconcat $
       [ trail_theta_right w ang
-      , semicircleBelowTrail vup
+      , semicircleCCW vup
       , trail_theta_left w ang
-      , semicircleBelowTrail vdown
+      , semicircleCCW vdown
       ]
   where
     ang   = vdirection v1 
