@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Objects.LocImage
 
    , promoteLoc
    , applyLoc
+   , supplyLoc
    , qpromoteLoc
    , qapplyLoc
 
@@ -201,6 +202,12 @@ applyLoc :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
 applyLoc ma pt = normalizeCtxF pt >>= getLocImage ma
 
 
+-- | Flipped version of 'applyLoc'. 
+-- 
+supplyLoc :: InterpretUnit u => Point2 u -> LocImage u a -> Image u a
+supplyLoc = flip at
+
+
 qpromoteLoc :: InterpretUnit u 
             => (Point2 u -> Query u a) -> LocQuery u a
 qpromoteLoc k = LocQuery $ \pt -> dinterpCtxF pt >>= k
@@ -285,12 +292,14 @@ moveStart v1 ma = LocImage $ \pt ->
 
 infixr 1 `at`
 
-
 -- | Downcast a 'LocImage' function by applying it to the supplied 
 -- point, making an 'Image'. 
 -- 
+-- > infixr 1 `at`
+-- 
 at :: InterpretUnit u => LocImage u a -> Point2 u -> Image u a
-at mf pt = normalizeCtxF pt >>= \dpt -> getLocImage mf dpt
+at = applyLoc
+
 
 
 --------------------------------------------------------------------------------

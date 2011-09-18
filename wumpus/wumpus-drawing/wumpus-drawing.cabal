@@ -92,6 +92,7 @@ library
   
   exposed-modules:
     Wumpus.Drawing.Basis.DrawingPrimitives,
+    Wumpus.Drawing.Basis.Symbols,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
     Wumpus.Drawing.Connectors,

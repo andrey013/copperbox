@@ -18,6 +18,9 @@
 --
 -- This module is expected to be imported qualified - other modules
 -- (e.g. shapes and paths) are likely to export conflicting names.
+-- 
+-- \*\* WARNING \*\* - much of this module is probably obsolete 
+-- (except wedge).
 --
 --------------------------------------------------------------------------------
 
@@ -29,8 +32,8 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
 
   -- * Lines
 
-  , hline
-  , vline
+  , horizontalLine
+  , verticalLine
   , pivotLine
 
   , oStraightLines
@@ -45,7 +48,6 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
   -- * Arc and wedge
   , arc
   , wedge
-  , wedge2
 
   )
 
@@ -76,15 +78,16 @@ infixr 6 <>
 --------------------------------------------------------------------------------
 -- Lines
 
+
 -- | Draw a vertical line.
 -- 
-vline :: InterpretUnit u => u -> LocGraphic u 
-vline len = locStraightLine $ vvec len
+verticalLine :: InterpretUnit u => u -> LocGraphic u 
+verticalLine len = locStraightLine $ vvec len
 
 -- | Draw a horizontal line.
 -- 
-hline :: InterpretUnit u => u -> LocGraphic u 
-hline len = locStraightLine $ hvec len
+horizontalLine :: InterpretUnit u => u -> LocGraphic u 
+horizontalLine len = locStraightLine $ hvec len
 
 
 
@@ -145,39 +148,18 @@ arc radius ang = promoteLocTheta $ \pt inclin ->
     let ps = bezierArcPoints ang radius inclin pt
     in liftQuery (curvePP ps) >>= dcOpenPath
 
--- | wedge : radius * apex_angle
+-- | wedge : mode * radius * apex_angle
 -- 
-wedge :: (Floating u, InterpretUnit u) 
-      => DrawMode -> u -> Radian -> LocThetaGraphic u
-wedge mode radius ang = promoteLocTheta $ \pt inclin -> 
-    let ps = bezierArcPoints ang radius inclin pt
-    in uconvertCtxF pt      >>= \dpt -> 
-       mapM uconvertCtxF ps >>= \dps -> 
-       dcClosedPath mode (build dpt dps)
-  where
-    -- Note - this relies on an implicit straight line cycle back 
-    -- to the start point.
-    --
-    build :: DPoint2 -> [DPoint2] -> PrimPath
-    build pt []         = emptyPrimPath pt
-    build pt (p1:ps)    = let cs = curves ps
-                          in absPrimPath pt (absLineTo p1 : cs)
-    
-    curves (a:b:c:ps)   = absCurveTo a b c : curves ps
-    curves _            = []
-    
--- | Wedge is drawn at the apex.
+-- Wedge is drawn at the apex.
 --
-wedge2 :: (Real u, Floating u, InterpretUnit u) 
+wedge :: (Real u, Floating u, InterpretUnit u) 
        => DrawMode -> u -> Radian -> LocThetaGraphic u
-wedge2 mode radius ang = promoteLocTheta $ \pt inclin -> 
+wedge mode radius ang = promoteLocTheta $ \pt inclin -> 
     let half_ang = 0.5 * ang 
         line_in  = catline $ avec (inclin + half_ang)   radius
         line_out = catline $ avec (inclin - half_ang) (-radius)
         w_arc    = circularArcCW ang radius (inclin - half_pi)
         ct       = line_in `mappend` w_arc `mappend` line_out
-    in drawCatTrail (closedMode mode) ct `at` pt
+    in supplyLoc pt $ drawCatTrail (closedMode mode) ct
         
 
-        -- Note - shouldn\' use a circle sweep, arc /= circle sweep
-    

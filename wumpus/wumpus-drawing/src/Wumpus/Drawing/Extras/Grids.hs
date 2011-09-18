@@ -178,8 +178,8 @@ horizontalLines numh w uh props@(GridProps { gp_minor_subdivs = subs })
                   in moveStart (vvec dy) $ minorMajor n subs (vvec dy) mnr mjr
     | otherwise = moveStart (vvec uh) $ duplicate numh (vvec uh) mjr
   where
-    mnr  = localize (minor_line_update props) $ hline w
-    mjr  = localize (major_line_update props) $ hline w
+    mnr  = localize (minor_line_update props) $ horizontalLine w
+    mjr  = localize (major_line_update props) $ horizontalLine w
 
 
 
@@ -191,8 +191,8 @@ verticalLines numv h uw props@(GridProps { gp_minor_subdivs = subs })
                   in moveStart (hvec dx) $ minorMajor n subs (hvec dx) mnr mjr
     | otherwise = moveStart (hvec uw) $ duplicate numv (hvec uw) mjr
   where
-    mnr  = localize (minor_line_update props) $ vline h
-    mjr  = localize (major_line_update props) $ vline h
+    mnr  = localize (minor_line_update props) $ verticalLine h
+    mjr  = localize (major_line_update props) $ verticalLine h
 
 
 

@@ -35,6 +35,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
    
    , promoteLocTheta
    , applyLocTheta
+   , supplyLocTheta
    , qpromoteLocTheta
    , qapplyLocTheta
 
@@ -42,6 +43,7 @@ module Wumpus.Basic.Kernel.Objects.LocThetaImage
 
    , incline
    , atIncline
+   , supplyIncline
    
    )
 
@@ -209,8 +211,12 @@ promoteLocTheta k = LocThetaImage $ \pt ang ->
 
 applyLocTheta :: InterpretUnit u 
               => LocThetaImage u a -> Point2 u -> Radian -> Image u a
-applyLocTheta mq pt ang = 
-    normalizeCtxF pt >>= \dpt -> getLocThetaImage mq dpt ang
+applyLocTheta ma pt ang = 
+    normalizeCtxF pt >>= \dpt -> getLocThetaImage ma dpt ang
+
+supplyLocTheta :: InterpretUnit u 
+               => Point2 u -> Radian -> LocThetaImage u a -> Image u a
+supplyLocTheta pt ang ma = applyLocTheta ma pt ang
 
 
 qpromoteLocTheta :: InterpretUnit u 
@@ -273,5 +279,10 @@ incline ma incl = promoteLoc $ \pt ->
 
 atIncline :: InterpretUnit u 
           => LocThetaImage u a -> Point2 u -> Radian -> Image u a
-atIncline ma pt incl = 
-    normalizeCtxF pt >>= \dpt -> getLocThetaImage ma dpt incl
+atIncline = applyLocTheta
+
+
+-- | Flipped version of 'incline'
+--
+supplyIncline :: InterpretUnit u => Radian -> LocThetaImage u a -> LocImage u a
+supplyIncline = flip incline
