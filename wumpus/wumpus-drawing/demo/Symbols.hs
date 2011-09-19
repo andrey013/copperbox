@@ -49,6 +49,10 @@ symbtable =
     , ("right_slice",           right_slice 14)
     , ("left_triangle",         left_triangle 14)
     , ("right_triangle",        right_triangle 14)
+    , ("hbar",                  hbar 14)
+    , ("vbar",                  vbar 14)
+    , ("dbl_hbar",              dbl_hbar 14)
+    , ("dbl_vbar",              dbl_vbar 14)
     ]
 
 

@@ -39,8 +39,8 @@ module Wumpus.Drawing.Dots.AnchorDots
   , dotNone
   , dotChar
   , dotText
-  , dotHLine
-  , dotVLine
+  , dotHBar
+  , dotVBar
   , dotX
   , dotPlus
   , dotCross
@@ -65,7 +65,6 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
 import qualified Wumpus.Drawing.Dots.SimpleDots as SD
-import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel               
@@ -279,12 +278,12 @@ dotText ss =
 -- Note - maybe Wumpus-Basic should have a @swapAns@ function?
 
 
-dotHLine :: (Floating u, InterpretUnit u) => DotLocImage u
-dotHLine = intoLocImage (circleLDO 0.5) SD.dotHLine
+dotHBar :: (Floating u, InterpretUnit u) => DotLocImage u
+dotHBar = intoLocImage (circleLDO 0.5) SD.dotHBar
 
 
-dotVLine :: (Floating u, InterpretUnit u) => DotLocImage u
-dotVLine = intoLocImage (circleLDO 0.5) SD.dotVLine
+dotVBar :: (Floating u, InterpretUnit u) => DotLocImage u
+dotVBar = intoLocImage (circleLDO 0.5) SD.dotVBar
 
 
 dotX :: (Floating u, InterpretUnit u) => DotLocImage u

@@ -11,7 +11,8 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Symbols
+-- Symbols - many symbols expected to be re-defined as Dots or
+-- character size PosObjects for DocText.
 -- 
 --------------------------------------------------------------------------------
 
@@ -28,6 +29,12 @@ module Wumpus.Drawing.Basis.Symbols
 
   , left_triangle
   , right_triangle
+
+  , hbar
+  , vbar
+  , dbl_hbar
+  , dbl_vbar
+
   )
   where
 
@@ -112,3 +119,25 @@ right_triangle w =
     line_l = catline $ vec (-w) hh
     vbase  = catline $ go_down $ 2*hh
     line_r = catline $ vec w hh
+
+
+hbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+hbar u = 
+    drawPlacedTrail OSTROKE $ placeCatTrail (go_left $ 0.5 * u) $ trail_right u
+
+vbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+vbar u = 
+    drawPlacedTrail OSTROKE $ placeCatTrail (go_down $ 0.5 * u) $ trail_up u
+
+dbl_hbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+dbl_hbar u = line1 <> line2
+  where
+    line1 = moveStart (go_up $ 0.1 * u) $ hbar u
+    line2 = moveStart (go_down $ 0.1 * u) $ hbar u
+
+
+dbl_vbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+dbl_vbar u = line1 <> line2
+  where
+    line1 = moveStart (go_left $ 0.1 * u) $ vbar u
+    line2 = moveStart (go_right $ 0.1 * u) $ vbar u

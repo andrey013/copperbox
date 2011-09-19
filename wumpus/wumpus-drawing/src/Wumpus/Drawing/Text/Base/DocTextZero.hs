@@ -23,6 +23,7 @@ module Wumpus.Drawing.Text.Base.DocTextZero
 
     GenDoc
   , Doc 
+  , GenDocGraphic
   , DocGraphic
   , runGenDoc
 

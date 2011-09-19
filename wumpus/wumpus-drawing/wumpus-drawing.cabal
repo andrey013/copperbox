@@ -128,6 +128,7 @@ library
     Wumpus.Drawing.Text.Base.DocTextZero,
     Wumpus.Drawing.Text.Base.Label,
     Wumpus.Drawing.Text.DirectionZero,
+    Wumpus.Drawing.Text.DocSymbols,
     Wumpus.Drawing.Text.StandardFontDefs,
     Wumpus.Drawing.VersionNumber
 

@@ -38,6 +38,9 @@ dot_pic :: CtxPicture
 dot_pic = drawTracing $ tableGraphic dottable
 
 
+-- Note - dots should probably have lower_case_with_underscore 
+-- names.
+
 dottable :: [(String, DotLocImage Double)]
 dottable =   
     [ ("smallDisk",     smallDisk)
@@ -45,8 +48,8 @@ dottable =
     , ("smallCirc",     smallCirc)
     , ("largeCirc",     largeCirc)
     , ("dotNone",       dotNone)
-    , ("dotHLine",      dotHLine)
-    , ("dotVLine",      dotVLine)
+    , ("dotHBar",       dotHBar)
+    , ("dotVBar",       dotVBar)
     , ("dotX",          dotX)
     , ("dotPlus",       dotPlus)
     , ("dotCross",      dotCross)
@@ -69,10 +72,10 @@ dottable =
 
 tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    drawl pt $ runChain_ chn_alg $ mapM (onChain . makeDotDrawing) imgs
+    drawl pt $ runTableColumnwise row_count (180,36) 
+             $ mapM (chain1 . makeDotDrawing) imgs
   where
     row_count   = 18
-    chn_alg     = tableDown row_count (180,36)
     pt          = displace (vvec $ fromIntegral $ 36 * row_count) zeroPt 
 
 

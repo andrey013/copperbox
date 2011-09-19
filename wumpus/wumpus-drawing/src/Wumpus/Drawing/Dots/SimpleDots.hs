@@ -46,8 +46,8 @@ module Wumpus.Drawing.Dots.SimpleDots
   , dotEscText
 
 
-  , dotHLine
-  , dotVLine
+  , dotHBar
+  , dotVBar
   , dotX
   , dotPlus
   , dotCross
@@ -67,7 +67,7 @@ module Wumpus.Drawing.Dots.SimpleDots
 
   ) where
 
-
+import Wumpus.Drawing.Basis.Symbols
 
 import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
@@ -128,13 +128,13 @@ largeDisk = umark $ dcDisk DRAW_FILL 1
 -- | Stroked disk (circle) - radius 0.25 MarkSize.
 --
 smallCirc :: InterpretUnit u => LocGraphic u
-smallCirc = umark $ dcDisk DRAW_STROKE 0.25
+smallCirc = umark $ ocircle 0.25
 
 
 -- | Stroked disk (circle) - radius 1.0 MarkSize.
 --
 largeCirc :: InterpretUnit u => LocGraphic u
-largeCirc = umark $ dcDisk DRAW_STROKE 1
+largeCirc = umark $ ocircle 1
 
 
 -- possibly:
@@ -169,12 +169,12 @@ axialLine :: (Fractional u, InterpretUnit u) => Vec2 u -> LocGraphic u
 axialLine v = moveStart (negateV (0.5 *^ v)) (locStraightLine v)
 
 
-dotHLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-dotHLine = umark $ axialLine (hvec 1)
+dotHBar :: (Fractional u, InterpretUnit u) => LocGraphic u 
+dotHBar = umark $ hbar 1
 
 
-dotVLine :: (Fractional u, InterpretUnit u) => LocGraphic u 
-dotVLine = umark $ axialLine (vvec 1) 
+dotVBar :: (Fractional u, InterpretUnit u) => LocGraphic u 
+dotVBar = umark $ vbar 1 
 
 
 dotX :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -183,7 +183,7 @@ dotX = umark $ axialLine (vec 0.75 1) `mappend` axialLine (vec (-0.75) 1)
 
 
 dotPlus :: (Fractional u, InterpretUnit u) =>  LocGraphic u
-dotPlus = dotVLine `mappend` dotHLine
+dotPlus = dotVBar `mappend` dotHBar
 
 
 dotCross :: (Floating u, InterpretUnit u) =>  LocGraphic u
@@ -220,7 +220,7 @@ dotSquare = umark $ drawPlacedTrail CSTROKE (rectangleTrail 1 1)
 
 
 dotCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotCircle = umark $ dcDisk DRAW_STROKE 0.5
+dotCircle = umark $ ocircle 0.5
 
 
 dotBCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
