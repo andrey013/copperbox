@@ -13,6 +13,8 @@
 --
 -- Symbols - many symbols expected to be re-defined as Dots or
 -- character size PosObjects for DocText.
+--
+-- \*\* WARNING \*\* - naming conventention is to be determined...
 -- 
 --------------------------------------------------------------------------------
 
@@ -30,6 +32,8 @@ module Wumpus.Drawing.Basis.Symbols
   , left_triangle
   , right_triangle
 
+  , empty_box
+
   , hbar
   , vbar
   , dbl_hbar
@@ -45,6 +49,21 @@ import Wumpus.Basic.Kernel
 import Wumpus.Core                              -- package: wumpus-core
 
 -- import Data.AffineSpace                         -- package: vector-space
+
+--
+-- DESIGN NOTE 
+--
+-- Should names follow the /function scheme/ (camelCase), or the
+-- /data scheme/ (underscore_separators).
+--
+-- Objects here are functions as they take size param, but they
+-- expected to be redefined elsewhere at fixed size and not used 
+-- in /user code/. 
+-- 
+-- Using camelCase here, then under_score in the DocText versions
+-- adds double the function signatures to the Haddock docs.
+--
+
 
 
 ocircle :: InterpretUnit u => u -> LocGraphic u
@@ -120,6 +139,9 @@ right_triangle w =
     vbase  = catline $ go_down $ 2*hh
     line_r = catline $ vec w hh
 
+
+empty_box :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+empty_box w = drawPlacedTrail CSTROKE $ rectangleTrail w w
 
 hbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
 hbar u = 

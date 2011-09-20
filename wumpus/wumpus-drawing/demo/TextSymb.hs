@@ -3,6 +3,7 @@
 
 module TextSymb where
 
+import Wumpus.Drawing.Basis.DrawingPrimitives ( (<>) ) 
 import Wumpus.Drawing.Colour.SVGColours
 import Wumpus.Drawing.Dots.SimpleDots
 import Wumpus.Drawing.Text.DirectionZero
@@ -23,14 +24,14 @@ main = simpleFontLoader main1 >> return ()
 main1 :: FontLoader -> IO ()
 main1 loader = do
     createDirectoryIfMissing True "./out/" 
-    base_metrics <- loader [Right helvetica_family]
+    base_metrics <- loader [Right times_roman_family]
     printLoadErrors base_metrics
     let pic1 = runCtxPictureU (makeCtx base_metrics) drawing01
     writeEPS "./out/text_symb.eps" pic1
     writeSVG "./out/text_symb.svg" pic1
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = set_font helvetica . metricsContext 18
+makeCtx = set_font times_roman . metricsContext 18
 
 
 
@@ -44,7 +45,7 @@ mf :: TraceDrawing Double ()
 mf = localize text_margin_tight  $ do
     draw $ (fn SS VALIGN_LEFT)  `at` P2 0 0
   where
-    fn addr va = runPosObject addr $ runGenDoc va helvetica_family doc1
+    fn addr va = runPosObject addr $ runGenDoc va times_roman_family doc1
 
 
 redPlus :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -53,4 +54,9 @@ redPlus = localize (stroke_colour red) dotPlus
 doc1 :: DocGraphic Double
 doc1 = vcat $ 
     [ string "Text with" <+> ocircle <+> string "embedded symbols."
+    , string "Here is a" <+> small_ocircle <+> string "small_ocircle."
+    , string "f" <+> small_ocircle <+> string "g"
+    , string "Emphatically this ends with a box." <> empty_box
+    , string "This" <+> left_slice <+> string "or" <+> right_slice <+> string "that."
+
     ]
