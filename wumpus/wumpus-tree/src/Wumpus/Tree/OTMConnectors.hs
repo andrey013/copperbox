@@ -47,7 +47,7 @@ radialOTM :: ( Real u, Floating u, InterpretUnit u
           => OTMAnchorConn node u 
 radialOTM _ _ a as = mconcat $ map fn $ radialNodes a as
   where
-    fn (s,t)      = connect s t straightConnector
+    fn (s,t)      = connect straightConnector s t
 
 
 
@@ -121,7 +121,7 @@ familyOTM dir h a xs =
   where
     fn ps = case linkAll ps of
               Nothing -> emptyLocImage `at` (center a)
-              Just path -> drawOpenPath_ path
+              Just path -> drawPath_ OSTROKE path
 
 
 

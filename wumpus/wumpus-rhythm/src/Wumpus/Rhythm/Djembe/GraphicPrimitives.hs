@@ -106,7 +106,7 @@ type PosNoteHead = PosGraphic AfmUnit
 runPosNoteHead :: InterpretUnit u 
                => AfmUnit -> PosNoteHead -> LocGraphic u
 runPosNoteHead dx nh = 
-    uconvF $ ignoreAns $ moveStart (hvec dx) (runPosObject nh BLC)
+    uconvF $ ignoreAns $ moveStart (hvec dx) $ runPosObject BLC nh
 
 
 
@@ -197,9 +197,9 @@ charDesc ch = NoteHeadDesc
   where
     -- Char glyphs can be drawn at north directly.
     --
-    glyph       = ignoreAns $ runPosObject (posChar ch) BLC
+    glyph       = ignoreAns $ runPosObject BLC $ posChar ch
     flam_glyph  = localize (scale_point_size 0.75) $ ignoreAns 
-                      $ runPosObject (posChar ch) NN
+                      $ runPosObject NN $ posChar ch
 
 
 
@@ -214,8 +214,8 @@ diskDesc = NoteHeadDesc
     , nhd_strike_ydist          = disk_ydist
     }
   where
-    glyph       = dcDisk FILL disk_radius
-    flam_glyph  = dcDisk FILL flam_disk_radius
+    glyph       = dcDisk DRAW_FILL disk_radius
+    flam_glyph  = dcDisk DRAW_FILL flam_disk_radius
 
 
 
@@ -239,7 +239,7 @@ periodDesc = NoteHeadDesc
     , nhd_strike_ydist          = period_ydist
     }
   where
-    glyph       = dcDisk FILL period_radius
+    glyph       = dcDisk DRAW_FILL period_radius
 
 
 periodNote :: PosNoteHead 
@@ -369,7 +369,7 @@ single_stem_up = penline $ go_up stem_length
 --
 plainStem :: Stem
 plainStem LEFT_EXT      = const mempty
-plainStem STEM_INNER    = const $ runPathSpec_ single_stem_down PATH_OPEN 
+plainStem STEM_INNER    = const $ runPathSpec_ OSTROKE single_stem_down
 plainStem RIGHT_EXT     = const mempty
 
 
@@ -408,14 +408,14 @@ div_stem_right ext uw = step1 ext >> insertl crossbar >> single_stem_down
     step1 LINE  = penline (go_right hw) 
 
     crossbar    :: LocGraphic AfmUnit
-    crossbar    = moveStart startvec $ hline (-hw)
+    crossbar    = moveStart startvec $ horizontalLine (-hw)
     startvec    = go_down divstem_beam_ydrop
 
 
 divStem :: Stem 
-divStem LEFT_EXT   uw = runPathSpec_ (div_stem_right MOVE uw) PATH_OPEN
-divStem STEM_INNER uw = runPivot single_stem_up (div_stem_right MOVE uw)
-divStem RIGHT_EXT  uw = runPathSpec_ (div_stem_right LINE uw) PATH_OPEN
+divStem LEFT_EXT   uw = runPathSpec_ OSTROKE $ div_stem_right MOVE uw
+divStem STEM_INNER uw = runPivot single_stem_up $ div_stem_right MOVE uw
+divStem RIGHT_EXT  uw = runPathSpec_ OSTROKE $ div_stem_right LINE uw
 
 
 
@@ -437,7 +437,7 @@ swing_stem_right ext  = step1 ext >> insertl swingAngle >> single_stem_down
 
 
 swingAngle :: LocGraphic AfmUnit
-swingAngle = runPathSpec_ ang_path PATH_OPEN
+swingAngle = runPathSpec_ OSTROKE ang_path
   where
     w        = 0.8 * flam_xdist
     w1       = 0.9 * flam_xdist
@@ -448,9 +448,9 @@ swingAngle = runPathSpec_ ang_path PATH_OPEN
 
 
 swingStem :: Stem
-swingStem LEFT_EXT   = const $ runPathSpec_ (swing_stem_right MOVE) PATH_OPEN
-swingStem STEM_INNER = const $ runPivot single_stem_up (swing_stem_right MOVE)
-swingStem RIGHT_EXT  = const $ runPathSpec_ (swing_stem_right LINE) PATH_OPEN
+swingStem LEFT_EXT   = const $ runPathSpec_ OSTROKE $ swing_stem_right MOVE
+swingStem STEM_INNER = const $ runPivot single_stem_up $ swing_stem_right MOVE
+swingStem RIGHT_EXT  = const $ runPathSpec_ OSTROKE $ swing_stem_right LINE
 
 
 
@@ -483,10 +483,10 @@ beamBracket uw n         = runPivot pathl pathr
 
 
 singleBarline :: LocGraphic AfmUnit
-singleBarline = vline stem_top
+singleBarline = verticalLine stem_top
 
 thickBarline :: LocGraphic AfmUnit
-thickBarline = localize dbl_thick $ vline stem_top
+thickBarline = localize dbl_thick $ verticalLine stem_top
   where
     dbl_thick = relative_line_width (2*)
 
@@ -495,7 +495,7 @@ repeatDots = hi_dot <> lo_dot
   where
     hi_dot  = moveStart (go_up hi_repeat_dot_ydist) dot1
     lo_dot  = moveStart (go_up lo_repeat_dot_ydist) dot1 
-    dot1    = dcDisk FILL repeat_dot_radius 
+    dot1    = dcDisk DRAW_FILL repeat_dot_radius 
 
 
 -- | The thin line is draw at the original h-position.
@@ -529,10 +529,10 @@ data Accent = StemAccent (LocGraphic AfmUnit)
 leadinAccent :: Accent
 leadinAccent = StemAccent ( vertical_stalk <> triangle_tip)
   where
-    vertical_stalk = vline leadin_mark_height
+    vertical_stalk = verticalLine leadin_mark_height
 
     triangle_tip   :: LocGraphic AfmUnit
-    triangle_tip   = runPathSpec_ (penlines vpath) $ PATH_CLOSED FILL 
+    triangle_tip   = runPathSpec_ CFILL $ penlines vpath
 
     vh             = 0.75 * leadin_mark_height
     vhmid          = 0.4  * vh
@@ -550,14 +550,14 @@ leadinAccent = StemAccent ( vertical_stalk <> triangle_tip)
 strokeAccent :: Accent
 strokeAccent = StemAccent $ moveStart (go_up accent_stroke_ydist) greater
   where
-    greater = ignoreAns $ runPosObject (posEscChar $ CharEscName "greater") BLC
+    greater = ignoreAns $ runPosObject BLC $ posEscChar $ CharEscName "greater"
 
 
 domHand :: Accent 
 domHand = 
     BaselineAccent $ moveStart (go_down accent_hand_ydist) filled_square
   where
-    filled_square = ctrRectangle FILL hand_side_length hand_side_length
+    filled_square = ctrRectangle DRAW_FILL hand_side_length hand_side_length
 
 
 
@@ -565,7 +565,7 @@ otherHand :: Accent
 otherHand = 
     BaselineAccent $ moveStart (go_down accent_hand_ydist) filled_square
   where
-    filled_square = ctrRectangle STROKE hand_side_length hand_side_length
+    filled_square = ctrRectangle DRAW_STROKE hand_side_length hand_side_length
 
 
 
@@ -578,7 +578,7 @@ otherHand =
 --
 pletBracket :: AfmUnit -> Int -> LocGraphic AfmUnit
 pletBracket pw num = ignoreAns $ 
-    moveStart (go_up plet_ydist) $ runPathSpec (uvoid pathspec) PATH_OPEN
+    moveStart (go_up plet_ydist) $ runPathSpec OSTROKE $ uvoid pathspec
   where
     numw      = numberWidth num
     bhw       = 0.5 * (pw - numw)
@@ -590,7 +590,7 @@ pletBracket pw num = ignoreAns $
                              >> vpenline (-bhh)
 
     text      = moveStart (vvec (-bhh) ^+^ hvec (0.5 * numw)) $ 
-                  localize (scale_point_size 0.75) $ textline (show num) BLC
+                  localize (scale_point_size 0.75) $ textline BLC $ show num
 
 
 numberWidth :: Int -> AfmUnit

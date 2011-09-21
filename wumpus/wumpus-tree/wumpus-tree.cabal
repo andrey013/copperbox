@@ -34,6 +34,9 @@ description:
   .
   v0.17.0 to v0.18
   .
+  * Updated to work with Wumpus-Basic-0.22.0 and 
+    wumpus-drawing-0.7.0.
+  .
   v0.16.0 to v0.17.0:
   .
   * Reworked internals to use the @LocDrawing@ monad from 
