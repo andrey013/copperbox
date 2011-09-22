@@ -155,28 +155,37 @@ instance Monoid (CatTrail u) where
 
 
 drawCatTrail :: InterpretUnit u => PathMode -> CatTrail u -> LocGraphic u
-drawCatTrail mode (CatTrail ct) = promoteLoc $ \pt ->  
-    normalizeCtxF pt >>= \dpt -> 
-    liftQuery (mapM (fmap fn . normalizeCtxF) $ toListH ct) >>= \dxs -> 
-    let pp = relPrimPath dpt dxs in dcPath mode pp
-  where
-    fn (TLine v1)        = relLineTo v1
-    fn (TCurve v1 v2 v3) = relCurveTo v1 v2 v3
+drawCatTrail mode (CatTrail ct) = promoteLoc $ \pt -> 
+    drawTrailBody mode (toListH ct) pt 
 
 
 drawPlacedTrail :: InterpretUnit u => PathMode -> PlacedTrail u -> LocGraphic u
 drawPlacedTrail mode (PlacedTrail v0 xs) = promoteLoc $ \pt -> 
-    normalizeCtxF v0 >>= \dv0 -> 
+    drawTrailBody mode xs (pt .+^ v0)
+
+
+-- | Note - this optimizes contiguous lines that share the same 
+-- direction. 
+--
+drawTrailBody :: InterpretUnit u 
+              => PathMode -> [TrailSegment u] -> Point2 u -> Graphic u
+drawTrailBody mode ts pt = 
     normalizeCtxF pt >>= \dpt -> 
-    liftQuery (mapM (fmap fn . normalizeCtxF) xs) >>= \dxs -> 
-    let pp = relPrimPath (dpt .+^ dv0) dxs in dcPath mode pp
+    mapM normalizeCtxF ts >>= \dxs ->
+    dcPath mode $ relPrimPath dpt $ stepA id dxs
   where
-    fn (TLine v1)        = relLineTo v1
-    fn (TCurve v1 v2 v3) = relCurveTo v1 v2 v3
+    stepA f []                   = toListH f
+    stepA f (TLine v1:ys)        = stepB f (vdirection v1) v1 ys
+    stepA f (TCurve v1 v2 v3:ys) = stepA (f `snocH` relCurveTo v1 v2 v3) ys
+
+    stepB f dir v0 (TLine v1:ys) 
+        | vdirection v1 == dir   = stepB f dir (v0 ^+^ v1) ys
+    stepB f _   v0 ys            = stepA (f `snocH` relLineTo v0) ys
 
 
 
--- | Turn a 'CatRail' into a 'PlacedTrail'.
+
+-- | Turn a 'CatTrail' into a 'PlacedTrail'.
 --
 placeCatTrail :: Vec2 u -> CatTrail u -> PlacedTrail u
 placeCatTrail vinit cat = PlacedTrail { pt_init_vec = vinit
