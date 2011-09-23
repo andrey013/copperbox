@@ -101,6 +101,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
   , tricurve
   , rectcurve
+  , trapcurveCW
+  , trapcurveCCW
   , bowcurve
   , wedgecurve
   , loopcurve
@@ -720,6 +722,27 @@ rectcurve bw h ang = catcurve v1 v2 v3
     v2 = orthoVec bw   0  ang
     v3 = orthoVec 0  (-h) ang
 
+-- | Curve in a trapezium (CW).
+-- 
+trapcurveCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
+trapcurveCW bw h interior_ang ang = catcurve v1 v2 v3
+  where
+    minor_bw = h / (fromRadian $ tan interior_ang)
+    v1       = orthoVec minor_bw                h  ang
+    v2       = orthoVec (bw - (2 * minor_bw))   0  ang
+    v3       = orthoVec minor_bw              (-h) ang
+
+
+
+-- | Curve in a trapezium (CCW).
+-- 
+trapcurveCCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
+trapcurveCCW bw h interior_ang ang = catcurve v1 v2 v3
+  where
+    minor_bw = h / (fromRadian $ tan interior_ang)
+    v1       = orthoVec minor_bw              (-h)  ang
+    v2       = orthoVec (bw - (2 * minor_bw))   0  ang
+    v3       = orthoVec minor_bw                h ang
 
 
 -- | Curve in half a /bowtie/.

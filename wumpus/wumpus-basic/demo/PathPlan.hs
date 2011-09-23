@@ -38,6 +38,7 @@ tdrawing = do
     drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve 40 40 0
     drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve 40 40 0
     drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve 20 40 0
+    drawl (P2 480 0)   $ drawCatTrail OSTROKE $ trapcurveCW 40 15 (d2r 45) 0 
     drawl (P2  20 80)  $ dcCircle DRAW_FILL 20 
     drawl (P2  40 50)  $ drawCatTrail OSTROKE $ stick1
     drawl (P2 100 80)  $ drawCatTrail OSTROKE $ stick2

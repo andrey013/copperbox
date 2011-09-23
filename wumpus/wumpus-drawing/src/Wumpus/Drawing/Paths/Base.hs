@@ -830,8 +830,10 @@ optimizeLines (AbsPath _ sp0 segs _) =
 -- coalesce then the paths are joined directly, otherwise, a
 -- straight line segment is added to join the paths.
 -- 
--- Neither path is /moved/. Consider 'RelPath' if you need 
--- different concatenation.
+-- Neither path is /moved/. Consider 'Trail' if you need a 
+-- path-like object that naturally supports concatenation.
+-- 
+-- \*\* WARNING \*\* - this function is likely to be removed.
 --
 jointedAppend :: (Floating u, Ord u, Tolerance u) 
        => AbsPath u -> AbsPath u -> AbsPath u

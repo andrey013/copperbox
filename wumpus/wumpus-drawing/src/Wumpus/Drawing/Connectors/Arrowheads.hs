@@ -61,7 +61,6 @@ module Wumpus.Drawing.Connectors.Arrowheads
 
 import Wumpus.Drawing.Basis.DrawingPrimitives
 import Wumpus.Drawing.Connectors.Base
-import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
@@ -437,16 +436,29 @@ odiamondWideTip =
       }
 
 
-curveTipPath :: Point2 En -> Radian -> AbsPath En
-curveTipPath pt theta = 
-    jointedAppend (curve1 a b c pt) (curve1 pt z y x)
+curveTipTrail :: Radian -> PlacedTrail En
+curveTipTrail theta = 
+    placeCatTrail dv $ vectrapCCW v1 <> vectrapCCW v2
   where
-    ow  = avec theta (-1)
-    a   = pt .+^ ow ^+^ avec (theta + ang90) 0.5
-    x   = pt .+^ ow ^+^ avec (theta - ang90) 0.5
+    dv  = orthoVec (-1.0)   0.75  theta     -- back and up
+    v1  = orthoVec   1.0  (-0.75) theta     -- fwd and down
+    v2  = orthoVec (-1.0) (-0.75) theta     -- back and down
 
-    (c,b) = trapezoidFromBasePoints 0.125 0.5 pt a
-    (y,z) = trapezoidFromBasePoints 0.125 0.5 x pt
+
+vectrapCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
+vectrapCW v1 = trapcurveCW w h ang45 ang
+  where
+    w   = vlength v1
+    h   = w / 4
+    ang = vdirection v1
+
+
+vectrapCCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
+vectrapCCW v1 = trapcurveCCW w h quarter_pi ang
+  where
+    w   = vlength v1
+    h   = w / 4
+    ang = vdirection v1
 
 
 curveTip :: ArrowTip
@@ -459,20 +471,18 @@ curveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               liftQuery (toPrimPath $ curveTipPath pt theta) >>= dcOpenPath
+               supplyLoc pt $ drawPlacedTrail OSTROKE $ curveTipTrail theta
 
 
 
-curveTipRevPath :: Point2 En -> Radian -> AbsPath En
-curveTipRevPath pt theta = 
-    jointedAppend (curve1 a b c p2) (curve1 p2 z y x)
+curveTipRevTrail :: Radian -> PlacedTrail En
+curveTipRevTrail theta = 
+    placeCatTrail dv $ vectrapCW v1 <> vectrapCW v2
   where
-    p2  = pt .+^ avec theta (-1)
-    a   = pt .+^ avec (theta + ang90) 0.5
-    x   = pt .+^ avec (theta - ang90) 0.5
+    dv  = orthoVec   0.0    0.75  theta     -- just up
+    v1  = orthoVec (-1.0) (-0.75) theta     -- back and down
+    v2  = orthoVec   1.0  (-0.75) theta     -- fwd and down
 
-    (b,c) = trapezoidFromBasePoints 0.125 0.5 a p2
-    (z,y) = trapezoidFromBasePoints 0.125 0.5 p2 x
 
 
 revcurveTip :: ArrowTip
@@ -485,29 +495,6 @@ revcurveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               liftQuery (toPrimPath $ curveTipRevPath pt theta) >>= dcOpenPath
+               supplyLoc pt $ drawPlacedTrail OSTROKE $ curveTipRevTrail theta
 
 
-    
--- | 'trapezoidFromBasePoints' : 
--- @ altitude * ratio_to_base * start_pt * end_pt -> (top_left, top_right) @
---
--- Control points form an isosceles trapezoid.
---
--- The two manufactured control points form the top corners, 
--- so the supplied points map as @start_point == bottom_left@ and 
--- @end_point == bottom_right@.
--- 
-trapezoidFromBasePoints :: (Real u, Floating u) 
-                        => u -> u -> Point2 u -> Point2 u 
-                        -> (Point2 u, Point2 u) 
-trapezoidFromBasePoints u ratio_to_base p1 p2 = (cp1, cp2)
-  where
-    base_vec  = pvec p1 p2
-    base_len  = vlength base_vec
-    theta     = vdirection base_vec
-    half_ulen = 0.5 * ratio_to_base * base_len
-    base_mid  = dispParallel (0.5 * base_len) theta p1
-    ubase_mid = dispPerpendicular u theta base_mid
-    cp1       = dispParallel (-half_ulen) theta ubase_mid
-    cp2       = dispParallel   half_ulen  theta ubase_mid
