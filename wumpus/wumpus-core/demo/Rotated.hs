@@ -24,7 +24,7 @@ main = do
 -- These are out-of-date for version 0.36.0
 
 deg45 :: Radian
-deg45 = d2r (45.0::Double)
+deg45 = d2r 45.0
 
 
 pic1 :: Picture

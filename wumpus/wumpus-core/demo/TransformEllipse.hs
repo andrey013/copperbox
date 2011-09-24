@@ -42,7 +42,7 @@ pic2 = cb `picOver` ell `picOver` xy_frame "rotate 30deg"
      ell  = mkRedEllipse (rotate ang) 20 10 pt
      cb   = rotate ang $ crossbar 20 10 pt
      pt   = P2 70 10
-     ang  = d2r (30::Double)
+     ang  = d2r 30
 
 pic3 :: Picture
 pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
@@ -51,7 +51,7 @@ pic3 = cb `picOver` ell `picOver` xy_frame "rotateAbout (60,0) 30deg"
      cb   = rotateAbout ang pto $ crossbar 20 10 pt
      pt   = P2 70 10
      pto  = P2 60 0 `asTypeOf` dpt
-     ang  = d2r (30::Double)
+     ang  = d2r 30
 
 
 pic4 :: Picture

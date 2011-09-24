@@ -60,10 +60,13 @@ module Wumpus.Core.Geometry
   , vvec
   , avec
   , pvec
+  , orthoVec
   , vreverse
   , vdirection
   , vlength
   , vangle
+  , vsum
+  , vdiff
 
   -- * Point operations
   , zeroPt
@@ -564,6 +567,15 @@ pvec :: Num u => Point2 u -> Point2 u -> Vec2 u
 pvec = flip (.-.)
 
 
+
+-- | Build a vector form its parallel and perpendicular components
+-- and inclination.
+--
+orthoVec :: Floating u => u -> u -> Radian -> Vec2 u 
+orthoVec pall perp ang = avec ang pall ^+^ avec (ang + half_pi) perp
+  where
+    half_pi = 0.5 * pi
+
 -- | 'vreverse' : @ vec -> Vec2 @
 --
 -- Reverse a vector.
@@ -596,6 +608,26 @@ vlength (V2 x y) = sqrt $ x*x + y*y
 vangle :: (Floating u, Real u, InnerSpace (Vec2 u)) 
        => Vec2 u -> Vec2 u -> Radian
 vangle u v = realToFrac $ acos $ (u <.> v) / (magnitude u * magnitude v)
+
+
+-- | Sum a list of Vectors.
+--
+vsum :: Num u => [Vec2 u] -> Vec2 u
+vsum [] = V2 0 0
+vsum (v:vs) = go v vs
+  where
+    go a []     = a
+    go a (b:bs) = go (a ^+^ b) bs
+
+
+-- | Find the /difference/ between two vectors - i.e. flipped
+-- vector subtraction:
+--
+-- > vdiff = flip (^-^)
+-- 
+vdiff :: Num u => Vec2 u -> Vec2 u -> Vec2 u
+vdiff  = flip (^-^)
+
 
 
 --------------------------------------------------------------------------------
@@ -849,12 +881,18 @@ fromRadian = realToFrac . getRadian
 
 -- | Degrees to radians.
 --
-d2r :: (Floating a, Real a) => a -> Radian
+-- Degree type fixed to @Double@, compose @d2r@ with @realToFrac@ 
+-- for @Float@ etc.
+--
+d2r :: Double -> Radian
 d2r = Radian . realToFrac . (*) (pi/180)
 
 -- | Radians to degrees.
 --
-r2d :: (Floating a, Real a) => Radian -> a
+-- Degree type fixed to @Double@, compose @r2d@ with @realToFrac@ 
+-- for @Float@ etc.
+--
+r2d :: Radian -> Double
 r2d = (*) (180/pi) . fromRadian
 
 

@@ -34,5 +34,5 @@ ellipse02 pt = cstroke red default_stroke_attr $
 
 ellipse03 :: DPoint2 -> Primitive
 ellipse03 pt = cstroke red default_stroke_attr $ 
-    curvedPrimPath $ rbezierEllipse 20 30 (negate $ d2r (10::Double)) pt
+    curvedPrimPath $ rbezierEllipse 20 30 (negate $ d2r 10) pt
 
