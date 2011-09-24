@@ -24,6 +24,14 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , half_pi
   , two_pi
 
+  , ang180
+  , ang150
+  , ang120
+  , ang90
+  , ang60
+  , ang45
+  , ang30
+  , ang15
 
   -- * Unit phantom type
   , UNil(..)
@@ -70,8 +78,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , ClockDirection(..)  
 
   -- * Misc
-  , vsum
-  , orthoVec
 
   , both
   , monPreRepeatPost
@@ -80,7 +86,6 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
@@ -98,6 +103,32 @@ half_pi         = 0.5 * pi
 
 two_pi          :: Radian
 two_pi          = 2.0 * pi
+
+
+ang180          :: Radian
+ang180          = pi
+
+ang150          :: Radian
+ang150          = 5 * ang30
+
+ang120          :: Radian 
+ang120          = 3 * ang60
+
+ang90           :: Radian
+ang90           = pi / 2
+
+ang60           :: Radian
+ang60           = pi / 3
+
+ang45           :: Radian 
+ang45           = pi / 4
+
+ang30           :: Radian
+ang30           = pi / 6
+
+ang15           :: Radian
+ang15           = pi / 12
+
 
 
 --------------------------------------------------------------------------------
@@ -366,28 +397,6 @@ data Direction = UP | DOWN | LEFT | RIGHT
 data ClockDirection = CW | CCW
    deriving (Enum,Eq,Ord,Show) 
 
-
--- | Sum a list of Vectors.
---
--- Note - this function is a candidate to go in Wumpus-Core, but
--- it will be added when there is an intrinsic reason to to update
--- Core (bug fix, or API change).
---
-vsum :: Num u => [Vec2 u] -> Vec2 u
-vsum [] = V2 0 0
-vsum (v:vs) = go v vs
-  where
-    go a []     = a
-    go a (b:bs) = go (a ^+^ b) bs
-
-
--- | Build a vector form its parallel and perpendicular components
--- and inclination.
---
--- Candidate for Wumpus-Core.
--- 
-orthoVec :: Floating u => u -> u -> Radian -> Vec2 u 
-orthoVec pall perp ang = avec ang pall ^+^ avec (ang + half_pi) perp
 
 
 

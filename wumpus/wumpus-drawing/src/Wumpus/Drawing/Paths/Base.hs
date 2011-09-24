@@ -85,8 +85,6 @@ module Wumpus.Drawing.Paths.Base
 
   , optimizeLines
 
-  , jointedAppend       -- temporary export
-
   , roundTrail
   , roundInterior
 
@@ -94,8 +92,6 @@ module Wumpus.Drawing.Paths.Base
   -- * Path division
   , pathdiv
 
-  -- * Decorative extension
-  , snocSineWave
 
   ) where
 
@@ -118,21 +114,14 @@ import qualified Data.Traversable as T
 import Prelude hiding ( null, length )
 
 --
--- Design Note - circa version 0.22.0
+-- Design Note
 -- 
--- I\'m not sure the distinction between AbsPath and RelPath
--- still valid.
--- 
--- A path seems a similar object to a connector. Operations like 
--- @midpoint@ suggest it needs to support anchors.
+-- Wumpus has no relative path type. An AbsPath is expected to be 
+-- an /answer/ from some function like an anchor point or a 
+-- bounding box.
 --
--- Also, it ought to support cheap movement (just move the start 
--- point), so the current representation here is deficient.
---
---
--- [LocDrawing introduces the idea of working local coordinate 
--- frame with origin zero - is this appropriate for path 
--- building?]
+-- Wumpus didn\'t always work on this premise, some of the code 
+-- below may contradict this...
 --
 
 
@@ -140,7 +129,7 @@ import Prelude hiding ( null, length )
 
 
 -- | Absolute path data type.
-
+--
 data AbsPath u = AbsPath 
       { _abs_path_length   :: u 
       , _abs_path_start    :: Point2 u
@@ -821,8 +810,9 @@ optimizeLines (AbsPath _ sp0 segs _) =
 --------------------------------------------------------------------------------
 -- Round corners
 
--- The code below may change.
+-- The code below is due to change...
 --
+
 
 -- | Append two AbsPaths. 
 -- 
@@ -969,40 +959,3 @@ pathdiv ana sz end = step . shortenL ana
     step pth | length pth < end = []
              | otherwise         = atstart pth : step (shortenL sz pth)
                           
- 
-
---------------------------------------------------------------------------------
--- Decorative path segments
-
-infixl 5 `snocSineWave`
-
-
--- | Extend the path with a one-phase sine wave. Height is 
--- parametric.
---
--- > infixl 5 `snocSineWave`
---
-snocSineWave :: (Real u, Floating u, Ord u, Tolerance u) 
-             => AbsPath u -> (u,Vec2 u) -> AbsPath u
-snocSineWave abs_path (h,base_vec) = 
-    abs_path `snocCurveTo` (p1,p2,p3) `snocCurveTo` (p4,p5,p6)
-             `snocCurveTo` (p7,p8,p9) `snocCurveTo` (p10,p11,p12)
-  where
-    base1 = vlength base_vec / 12
-    h2    = h * (pi / 6)
-    ang   = vdirection base_vec
-    p0    = _abs_path_end abs_path
-    p1    = displace (orthoVec     base1    h2  ang) p0
-    p2    = displace (orthoVec  (2*base1)   h   ang) p0
-    p3    = displace (orthoVec  (3*base1)   h   ang) p0
-    p4    = displace (orthoVec  (4*base1)   h   ang) p0
-    p5    = displace (orthoVec  (5*base1)   h2  ang) p0
-    p6    = displace (orthoVec  (6*base1)   0   ang) p0
-    p7    = displace (orthoVec  (7*base1) (-h2) ang) p0
-    p8    = displace (orthoVec  (8*base1) (-h)  ang) p0
-    p9    = displace (orthoVec  (9*base1) (-h)  ang) p0
-    p10   = displace (orthoVec (10*base1) (-h)  ang) p0
-    p11   = displace (orthoVec (11*base1) (-h2) ang) p0
-    p12   = displace (orthoVec (12*base1)   0   ang) p0
-
-

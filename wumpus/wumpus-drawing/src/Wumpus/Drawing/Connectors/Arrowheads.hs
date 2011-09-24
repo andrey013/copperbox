@@ -144,16 +144,6 @@ revTripointsFromTip baselen ang = \theta ->
 
 
 
-ang90 :: Radian
-ang90 = pi / 2
-
-ang60 :: Radian
-ang60 = pi / 3
-
-ang45 :: Radian
-ang45 = pi / 4
-
-
 
 
 filledTri :: Radian -> ArrowTip

@@ -397,12 +397,6 @@ trail_theta_down_right u = catline . theta_down_right u
 --
 
 
--- | Helper
---
-vdiff :: Num u => Vec2 u -> Vec2 u -> Vec2 u
-vdiff  = flip (^-^)
-
-
 sineWave :: (Real u, Floating u) => Int -> u -> Radian -> CatTrail u
 sineWave i unit ang = 
     mconcat $ replicate i $ sineWave1 (0.25 * unit) unit ang
@@ -439,8 +433,8 @@ kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
 
 
--- DESIGN NOTE - maybe accounting for CW and CCW would make a 
--- better API than /above/ and /below/.
+-- DESIGN NOTE - different functions for CW and CCW or same 
+-- function with @ClockDirection@ as first argument?
 
 
 -- | 'semicircleCW' : @ base_vector -> CatTrail @ 
