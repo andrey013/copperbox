@@ -20,11 +20,14 @@ module Wumpus.Basic.Kernel.Objects.Trail
   (
 
     TrailSegment(..)
-  , CatTrail(..)        -- temporarily exposed
-  , PlacedTrail(..)     -- temporarily exposed
+  , CatTrail
+  , PlacedTrail
 
   , drawPlacedTrail
   , drawCatTrail
+
+  , destrPlacedTrail
+  , destrCatTrail
 
   , placeCatTrail
   
@@ -155,6 +158,8 @@ instance Monoid (CatTrail u) where
   a `mappend` b = CatTrail $ getCatTrail a `appendH` getCatTrail b
 
 
+--------------------------------------------------------------------------------
+
 
 drawCatTrail :: InterpretUnit u => PathMode -> CatTrail u -> LocGraphic u
 drawCatTrail mode (CatTrail ct) = promoteLoc $ \pt -> 
@@ -184,6 +189,16 @@ drawTrailBody mode ts pt =
         | vdirection v1 == dir   = stepB f dir (v0 ^+^ v1) ys
     stepB f _   v0 ys            = stepA (f `snocH` relLineTo v0) ys
 
+
+-- | /Destructor/ for the opaque 'PlacedTrail' type.
+--
+destrPlacedTrail :: PlacedTrail u -> (Vec2 u, [TrailSegment u])
+destrPlacedTrail (PlacedTrail v0 ss) = (v0,ss)
+
+-- | /Destructor/ for the opaque 'CatTrail' type.
+--
+destrCatTrail :: CatTrail u -> [TrailSegment u]
+destrCatTrail = toListH . getCatTrail
 
 
 

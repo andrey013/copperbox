@@ -36,6 +36,9 @@ module Wumpus.Drawing.Paths.Base
   , vectorPath
   , vectorPathTheta
 
+  , placedTrailPath
+  , catTrailPath
+
   -- * Queries
   , null
   , length
@@ -63,6 +66,9 @@ module Wumpus.Drawing.Paths.Base
   , tipR
   , directionL
   , directionR
+  , isBezierL
+  , isBezierR
+
 
   -- * Path anchors
   , midway
@@ -85,9 +91,8 @@ module Wumpus.Drawing.Paths.Base
 
   , optimizeLines
 
-  , roundTrail
+  , roundExterior
   , roundInterior
-
 
   -- * Path division
   , pathdiv
@@ -100,7 +105,7 @@ module Wumpus.Drawing.Paths.Base
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
-                                   , ViewR(..), viewr, cons, snoc, join )
+                                   , ViewR(..), viewr, cons, snoc )
 import qualified Wumpus.Basic.Utils.JoinList as JL
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -315,6 +320,23 @@ vectorPathTheta :: (Real u, Floating u, Tolerance u)
 vectorPathTheta vs ang = vectorPath $ map (rotate ang) vs
 
 
+placedTrailPath :: (Floating u, Ord u, Tolerance u) 
+                => Point2 u -> PlacedTrail u -> AbsPath u
+placedTrailPath pt trl = 
+    let (v1,ss) = destrPlacedTrail trl in step (emptyPath $ pt .+^ v1) ss
+  where
+    step ac []                   = ac
+    step ac (TLine v1:xs)        = step (ac `snocLine` v1) xs
+    step ac (TCurve v1 v2 v3:xs) = step (snocCurve ac (v1,v2,v3)) xs
+  
+catTrailPath :: (Floating u, Ord u, Tolerance u) 
+             => Point2 u -> CatTrail u -> AbsPath u
+catTrailPath pt trl = step (emptyPath pt) $ destrCatTrail trl
+  where
+    step ac []                   = ac
+    step ac (TLine v1:xs)        = step (ac `snocLine` v1) xs
+    step ac (TCurve v1 v2 v3:xs) = step (snocCurve ac (v1,v2,v3)) xs
+  
 
 --------------------------------------------------------------------------------
 -- Queries
@@ -416,13 +438,15 @@ segmentVector (AbsCurveSeg _ v1 v2 v3) = v1 ^+^ v2 ^+^ v3
 
 
 
--- | Helper - construct a curve segment.
+-- | Helper - construct a line segment.
 -- 
 lineSegment :: Floating u => Point2 u -> Point2 u -> AbsPathSeg u 
-lineSegment p0 p1 = AbsLineSeg len v1
-  where
-    v1  = pvec p0 p1
-    len = vlength v1
+lineSegment p0 p1 = lineSegmentV $ pvec p0 p1
+
+-- | Helper - construct a line segment.
+-- 
+lineSegmentV :: Floating u => Vec2 u -> AbsPathSeg u 
+lineSegmentV v1 = AbsLineSeg (vlength v1) v1
 
 
 -- | Helper - construct a curve segment.
@@ -527,7 +551,7 @@ makeLeftPath u sp se ep | JL.null se = line1 sp ep
 shortenSegL :: (Real u, Floating u) 
             => u -> Point2 u -> AbsPathSeg u -> (Point2 u, AbsPathSeg u)
 shortenSegL n sp (AbsLineSeg  u v1)        = 
-    let v2  = shortenVecL n v1 
+    let v2  = shortenVec n v1 
         sp' = sp .+^ (v1 ^-^ v2)
     in (sp', AbsLineSeg  (u-n) v2)
 
@@ -542,12 +566,10 @@ shortenSegL n sp (AbsCurveSeg u v1 v2 v3)  =
      
 
 
-shortenVecL :: (Real u, Floating u) 
-             => u -> Vec2 u -> Vec2 u
-shortenVecL n v0 = v0 ^-^ v
+shortenVec :: (Real u, Floating u) => u -> Vec2 u -> Vec2 u
+shortenVec n v0 = v0 ^-^ v
   where
     v  = avec (vdirection v0) n
-
 
 
 --------------------------------------------------------------------------------
@@ -583,7 +605,7 @@ makeRightPath u sp se ep | JL.null se = line1 sp ep
 shortenSegR :: (Real u, Floating u) 
             => u -> AbsPathSeg u -> Point2 u -> (AbsPathSeg u, Point2 u)
 shortenSegR n (AbsLineSeg u v1)        ep = 
-    let v2  = shortenVecR n v1 
+    let v2  = shortenVec n v1 
         ep' = ep .-^ (v1 ^+^ v2)
     in (AbsLineSeg (u-n) v2, ep')
 
@@ -597,12 +619,6 @@ shortenSegR n (AbsCurveSeg u v1 v2 v3) ep =
                                                     (BezierCurve p0 p1 p2 ep)
      
 
-
-shortenVecR :: (Real u, Floating u) 
-             => u -> Vec2 u -> Vec2 u
-shortenVecR n v0 = v0 ^-^ v
-  where
-    v  = avec (vdirection v0) n
 
 
 
@@ -639,7 +655,23 @@ directionR (AbsPath _ _ se _) = step $ viewr se
     step (_ :> AbsCurveSeg _ _  _  v3) = vdirection v3
     step _                             = 0
  
+-- | Is the left tip a Bezier curve?
+--
+isBezierL :: AbsPath u -> Bool
+isBezierL (AbsPath _ _ se _) = step $ viewl se
+  where
+    step (AbsCurveSeg _ _ _ _ :< _) = True 
+    step _                          = False
 
+
+ 
+-- | Is the right tip a Bezier curve?
+-- 
+isBezierR :: AbsPath u -> Bool
+isBezierR (AbsPath _ _ se _) = step $ viewr se
+  where
+    step (_ :> AbsCurveSeg _ _ _ _) = True 
+    step _                          = False
 
 
 --------------------------------------------------------------------------------
@@ -810,136 +842,110 @@ optimizeLines (AbsPath _ sp0 segs _) =
 --------------------------------------------------------------------------------
 -- Round corners
 
--- The code below is due to change...
+
+segToCatTrail :: AbsPathSeg u -> CatTrail u
+segToCatTrail (AbsLineSeg _ v1)        = catline v1
+segToCatTrail (AbsCurveSeg _ v1 v2 v3) = catcurve v1 v2 v3
+
+-- | Because lookahead of 2 makes the rounding algos easier we
+-- decons to a list...
 --
+segmentListL :: AbsPath u -> (Point2 u, [AbsPathSeg u])
+segmentListL (AbsPath _ sp se _) = (sp, JL.toList se)
 
-
--- | Append two AbsPaths. 
+-- | Round interior corners of a Path.
+--
+-- The path is treated as open - the start of the initial and end
+-- of the final segments are not rounded. Only straight line to 
+-- straight line joins are rounded, joins to or from Beczier 
+-- curves are not rounded.
 -- 
--- If the end of the first path and the start of the second path
--- coalesce then the paths are joined directly, otherwise, a
--- straight line segment is added to join the paths.
--- 
--- Neither path is /moved/. Consider 'Trail' if you need a 
--- path-like object that naturally supports concatenation.
--- 
--- \*\* WARNING \*\* - this function is likely to be removed.
+-- Caution - all path segments are expected to be longer than
+-- 2x the round corner length, though this is not checked..
 --
-jointedAppend :: (Floating u, Ord u, Tolerance u) 
-       => AbsPath u -> AbsPath u -> AbsPath u
-jointedAppend (AbsPath len1 start1 se1 end1) (AbsPath len2 start2 se2 end2) 
-    | end1 == start2 = AbsPath (len1+len2) start1 (se1 `join` se2) end2 
-    | otherwise      = AbsPath total_len start1 segs end2 
+roundInterior :: (Real u, Floating u,Tolerance u) 
+              => u -> AbsPath u -> AbsPath u
+roundInterior du pth0 = catTrailPath pt ctrail
   where
-    joint     = lineSegment end1 start2
-    total_len = len1 + len2 + segmentLength joint
-    segs      = se1 `join` (cons joint se2)
+    (pt,ss) = segmentListL pth0
+    ctrail  = roundInteriorCat du ss
 
 
-
-
--- | The length of the control-point vector wants to be slighly 
--- longer than half of /d/ (d - being the distance between the 
--- /truncated/ points and the corner).
---
-cornerCurve :: (Real u, Floating u, Tolerance u) 
-            => Point2 u -> Point2 u -> Point2 u -> AbsPath u
-cornerCurve p1 p2 p3 = curve1 p1 cp1 cp2 p3
+roundInteriorCat :: (Real u, Floating u) => u -> [AbsPathSeg u] -> CatTrail u
+roundInteriorCat _  []     = mempty
+roundInteriorCat du (z:zs) = step mempty z zs
   where
-    len1 = 0.6 *  (vlength $ pvec p1 p2)
-    len2 = 0.6 *  (vlength $ pvec p3 p2)
-    cp1  = p1 .+^ (avec (lineAngle p1 p2) len1)
-    cp2  = p3 .+^ (avec (lineAngle p3 p2) len2)
+    step ac (AbsLineSeg _ v1) (AbsLineSeg _ v2:xs) = 
+      let (x,k) = roundAB du v1 v2 in step (ac `mappend` x) k xs
 
+    step ac prev            (x:xs)             = 
+       let tprev = segToCatTrail prev in step (ac `mappend` tprev) x xs
 
--- | 'roundTrail' : @ rounding_distance * [point] -> Path @
---
--- Build a path from the list of vertices, all the interior 
--- corners are rounded by the rounding distance \*and\* final 
--- round corner is created \"incorporating\" the start point (as 
--- the start point becomes a rounded corner the actual path will 
--- not intersect it). 
--- 
--- It is expected that this function will be used to create round 
--- cornered shapes.
--- 
--- 'roundTrail' throws a runtime error if the input list is empty. 
--- If the list has one element /the null path/ is built, if the 
--- list has two elements a straight line is built.
---
-roundTrail :: (Real u, Floating u, Tolerance u) 
-           => u -> [Point2 u] -> AbsPath u 
-roundTrail _ []             = error "roundTrail - empty list."
-roundTrail _ [a]            = zeroPath a
-roundTrail _ [a,b]          = line1 a b
-roundTrail u (start:b:c:xs) = step (lineCurveTrail u start b c) (b:c:xs)
+    step ac prev            []                 = ac `mappend` segToCatTrail prev
+
+roundAB :: (Real u, Floating u) 
+        => u -> Vec2 u -> Vec2 u -> (CatTrail u, AbsPathSeg u)
+roundAB du v1 v2 = 
+    (catline v1' `mappend` tcurve, lineSegmentV v2')
   where
-    step acc (m:n:o:ps)     = let line_tail = lineCurveTrail u m n o
-                              in step (jointedAppend acc line_tail) (n:o:ps)
-    step acc [n,o]          = let tail1 = lineCurveTrail u n o start
-                                  tail2 = lineCurveTrail u o start b 
-                              in jointedAppend (jointedAppend acc tail1) tail2
-    step acc _              = acc
+    v1'      = shortenVec du v1
+    v2'      = shortenVec du v2
+
+    tv1      = avec (vdirection v1) du
+    tv2      = avec (vdirection v2) du
+    base_vec = tv1 ^+^ tv2
+    bw       = vlength base_vec
+    h        = sqrt $ pow2 du - (pow2 $ 0.5 * bw)
+    tcurve   = tricurve bw (-h) (vdirection base_vec)
+    
+    -- note the (-h) in tricurve is wrong, we need to account 
+    -- for CCW or CW properly...
+
+pow2 :: Num a => a -> a
+pow2 x = x ^ (2::Int)
+
+-- Form corners inside a /triangle/ Bezier.
 
 
-
--- | Two parts - line and corner curve...
+-- | Round a \"closed\" path. 
 --
--- Note - the starting point is moved, this function is for 
--- closed, rounded paths.
+-- Caution - all path sgements are expected to be longer than
+-- 2x the round corner length, though this is not checked..
 --
-lineCurveTrail :: (Real u, Floating u, Tolerance u) 
-               => u -> Point2 u -> Point2 u -> Point2 u -> AbsPath u
-lineCurveTrail u a b c = 
-    jointedAppend (line1 p1 p2) (cornerCurve p2 b p3)
+roundExterior :: (Real u, Floating u, Tolerance u) 
+              => u -> AbsPath u -> AbsPath u
+roundExterior du pth0 
+   | isBezierR pth0 || isBezierL pth0 = roundInterior du pth0
+   | otherwise                        = catTrailPath pt ctrail
   where
-    p1 = a .+^ (avec (vdirection $ pvec a b) u)
-    p2 = b .+^ (avec (vdirection $ pvec b a) u)
-    p3 = b .+^ (avec (vdirection $ pvec b c) u)
+   (pt,ss) = segmentListL pth0
+   ctrail  = roundExteriorCat du ss
 
 
--- | 'roundInterior' : @ rounding_distance * [point] -> Path @
---
--- Build a path from the list of vertices, all the interior 
--- corners are rounded by the rounding distance. Unlike 
--- 'roundTrail' there is no /loop around/ to the start point,
--- and start path will begin exactly on the start point and end 
--- exactly on the end point. 
--- 
--- 'roundInterior' throws a runtime error if the input list is 
--- empty. If the list has one element /the null path/ is built, 
--- if the list has two elements a straight line is built.
---
-roundInterior :: (Real u, Floating u, Tolerance u) 
-              => u -> [Point2 u] -> AbsPath u 
-roundInterior _ []             = error "roundEveryInterior - empty list."
-roundInterior _ [a]            = zeroPath a
-roundInterior _ [a,b]          = line1 a b
-roundInterior u (start:b:c:xs) = let (path1,p1) = lineCurveInter1 u start b c
-                                 in step path1 (p1:c:xs)
+roundExteriorCat :: (Real u, Floating u) => u -> [AbsPathSeg u] -> CatTrail u
+roundExteriorCat _  []                        = mempty
+
+roundExteriorCat _  (AbsCurveSeg _ _ _ _ : _) = 
+    error "runExteriorCat - unreachable."
+
+roundExteriorCat du (z@(AbsLineSeg _ v0):zs)  = step0 z zs
   where
-    step acc (m:n:o:ps)     = let (seg2,p1) = lineCurveInter1 u m n o
-                              in step (jointedAppend acc seg2) (p1:o:ps)
-    step acc [n,o]          = jointedAppend acc (line1 n o)
-    step acc _              = acc
+    step0 (AbsLineSeg _ v1) xs = 
+      let seg0 = lineSegmentV $ shortenVec du v1 in step1 mempty seg0 xs
 
+    step0 _                 _  = error "roundExteriorCat - unreachable 1."
+    
+    step1 ac (AbsLineSeg _ v1) (AbsLineSeg _ v2:xs) = 
+      let (x,k) = roundAB du v1 v2 in step1 (ac `mappend` x) k xs
 
+    step1 ac prev              (x:xs)             = 
+      let tprev = segToCatTrail prev in step1 (ac `mappend` tprev) x xs
 
--- | Two parts - line and corner curve...
---
--- Note - draws a straight line from the starting point - this is 
--- the first step of an interior (non-closed) rounded path
---
-lineCurveInter1 :: (Real u, Floating u, Tolerance u) 
-                => u -> Point2 u -> Point2 u -> Point2 u 
-                -> (AbsPath u, Point2 u)
-lineCurveInter1 u a b c = 
-    (jointedAppend (line1 a p2) (cornerCurve p2 b p3), p3)
-  where
-    p2 = b .+^ (avec (vdirection $ pvec b a) u)
-    p3 = b .+^ (avec (vdirection $ pvec b c) u)
- 
+    step1 ac (AbsLineSeg _ v1) []                 = 
+      let (t,_) = roundAB du v1 v0 in ac `mappend` t
 
+    step1 _  _                 []                 = 
+      error "roundExteriorCat - unreachable 2."
 
 --------------------------------------------------------------------------------
 -- Path division

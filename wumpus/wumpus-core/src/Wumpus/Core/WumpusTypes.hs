@@ -37,6 +37,7 @@ module Wumpus.Core.WumpusTypes
   , FontCtx
   , Primitive
   , XLink
+  , SvgAttr
   , PrimPath
   , PrimPathSegment
   , AbsPathSegment

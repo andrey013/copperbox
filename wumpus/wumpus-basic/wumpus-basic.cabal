@@ -55,6 +55,9 @@ description:
   * Added more vector constructors to 
     @Kernel.Objects.Displacement@. 
   .
+  * Added extra methods to the @Decorate@ class for annotating 
+    SVG elements.
+  .
   v0.20.0 to v0.21.0:
   .
   * The code from the @Kernel.Base.UserState@ module has been 

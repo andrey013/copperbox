@@ -157,18 +157,24 @@ instance DrawingCtxM (LocThetaQuery u) where
 --
 
 instance Decorate LocThetaImage where
-  decorate zo ma mz = LocThetaImage $ \pt ang -> 
+  decorate zo ma mz     = LocThetaImage $ \pt ang -> 
     decorate zo (getLocThetaImage ma pt ang) (getLocThetaImage mz pt ang)
 
-  elaborate zo ma f = LocThetaImage $ \pt ang -> 
+  elaborate zo ma f     = LocThetaImage $ \pt ang -> 
     elaborate zo (getLocThetaImage ma pt ang) 
                  (\a -> getLocThetaImage (f a) pt ang)
 
-  obliterate ma = LocThetaImage $ \pt ang -> 
+  obliterate ma         = LocThetaImage $ \pt ang -> 
     obliterate $ getLocThetaImage ma pt ang
 
-  hyperlink xl ma = LocThetaImage $ \pt ang -> 
+  hyperlink xl ma       = LocThetaImage $ \pt ang -> 
     hyperlink xl $ getLocThetaImage ma pt ang
+
+  svgId ss ma           = LocThetaImage $ \pt ang -> 
+    svgId ss $ getLocThetaImage ma pt ang
+
+  svgAnnotate attrs ma  = LocThetaImage $ \pt ang -> 
+    svgAnnotate attrs $ getLocThetaImage ma pt ang
            
 
 

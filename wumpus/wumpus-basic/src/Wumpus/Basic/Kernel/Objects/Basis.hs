@@ -81,11 +81,12 @@ replaceAns a = fmap (const a)
 -- it with the graphic from the second.
 --
 class Decorate (f :: * -> * -> *) where
-  decorate   :: ZDeco -> f u a -> f u z -> f u a
-  elaborate  :: ZDeco -> f u a -> (a -> f u z) -> f u a
-  obliterate :: f u a -> f u a
-  hyperlink  :: XLink -> f u a -> f u a
-
+  decorate    :: ZDeco -> f u a -> f u z -> f u a
+  elaborate   :: ZDeco -> f u a -> (a -> f u z) -> f u a
+  obliterate  :: f u a -> f u a
+  hyperlink   :: XLink -> f u a -> f u a
+  svgId       :: String -> f u a -> f u a
+  svgAnnotate :: [SvgAttr] -> f u a -> f u a
 
 sdecorate :: Decorate f => f u a -> f u z -> f u a
 sdecorate = decorate SUPERIOR

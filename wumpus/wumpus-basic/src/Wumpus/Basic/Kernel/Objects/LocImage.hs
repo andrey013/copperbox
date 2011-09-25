@@ -171,6 +171,10 @@ instance Decorate LocImage where
 
   hyperlink xl ma = LocImage $ \pt -> hyperlink xl $ getLocImage ma pt 
 
+  svgId ss ma = LocImage $ \pt -> svgId ss $ getLocImage ma pt 
+
+  svgAnnotate attrs ma = LocImage $ \pt -> svgAnnotate attrs $ getLocImage ma pt
+
 
 runLocImage :: InterpretUnit u 
             => DrawingContext -> Point2 u -> LocImage u a -> PrimResult u a

@@ -158,18 +158,25 @@ instance DrawingCtxM (ConnectorQuery u) where
 
 
 instance Decorate ConnectorImage where
-  decorate zo ma mz = ConnectorImage $ \p0 p1 -> 
+  decorate zo ma mz     = ConnectorImage $ \p0 p1 -> 
     decorate zo (getConnectorImage ma p0 p1) (getConnectorImage mz p0 p1)
 
-  elaborate zo ma f = ConnectorImage $ \p0 p1 -> 
+  elaborate zo ma f     = ConnectorImage $ \p0 p1 -> 
     elaborate zo (getConnectorImage ma p0 p1) 
                  (\a -> getConnectorImage (f a) p0 p1)
 
-  obliterate ma = ConnectorImage $ \p0 p1 -> 
+  obliterate ma         = ConnectorImage $ \p0 p1 -> 
     obliterate $ getConnectorImage ma p0 p1
 
-  hyperlink xl ma = ConnectorImage $ \p0 p1 -> 
+  hyperlink xl ma       = ConnectorImage $ \p0 p1 -> 
     hyperlink xl $ getConnectorImage ma p0 p1
+
+  svgId ss ma           = ConnectorImage $ \p0 p1 -> 
+    svgId ss $ getConnectorImage ma p0 p1
+
+  svgAnnotate attrs ma  = ConnectorImage $ \p0 p1 -> 
+    svgAnnotate attrs $ getConnectorImage ma p0 p1
+
 
 
 

@@ -173,7 +173,7 @@ primGraphic w = Image $ \_ -> (UNil, w)
 -- 
 clipImage :: PrimPath -> Image u a -> Image u a
 clipImage pp ma = Image $ \ctx -> 
-     let (a,w) = getImage ma ctx in (a, cpmap (clip pp) w)
+     let (a,w) = getImage ma ctx in (a, cpmap (clipPrim pp) w)
 
 
 
@@ -203,12 +203,12 @@ emptyImage = mempty
 
 
 instance Decorate Image where
-  decorate    = decorateImage
-  elaborate   = elaborateImage  
-  obliterate  = obliterateImage
-  hyperlink   = hyperlinkImage
-  
-
+  decorate      = decorateImage
+  elaborate     = elaborateImage  
+  obliterate    = obliterateImage
+  hyperlink     = hyperlinkImage
+  svgId         = svgIdImage  
+  svgAnnotate   = svgAnnotateImage 
 
 -- | Decorate Image.
 --
@@ -239,6 +239,16 @@ hyperlinkImage :: XLink -> Image u a -> Image u a
 hyperlinkImage xl ma = Image $ \ctx -> step (getImage ma ctx)
   where
     step (a,w) = (a, cpmap (xlinkPrim xl) w)
+
+svgIdImage :: String -> Image u a -> Image u a
+svgIdImage ss ma = Image $ \ctx -> step (getImage ma ctx)
+  where
+    step (a,w) = (a, cpmap (xidPrim ss) w)
+
+svgAnnotateImage :: [SvgAttr] -> Image u a -> Image u a
+svgAnnotateImage attrs ma = Image $ \ctx -> step (getImage ma ctx)
+  where
+    step (a,w) = (a, cpmap (annotateGroup attrs) w)
 
 
 --------------------------------------------------------------------------------
