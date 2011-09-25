@@ -50,6 +50,9 @@ description:
   . 
   v0.51.0 to v0.52.0:
   .
+  * Added limited support for adding SVG ids to text and 
+    Primitives.
+  .
   * Fixed types of @d2r@ and @r2d@ to Double for degrees, rather 
     than a parametric (Real a, Floating a) type. Although this is
     less general, it removes the burden of type annotating the 
@@ -57,6 +60,8 @@ description:
   .
   * Added the vector functions @orthoVec@, @vsum@ and @vdiff@ to 
     @Core.Geometry@.
+  .
+  * Re-named @clip@ to @clipPrimitive@
   .
   v0.50.0 to v0.51.0:
   .

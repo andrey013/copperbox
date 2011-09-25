@@ -66,8 +66,8 @@ trivPrim (PClip pp chi)   = PClip pp (trivPrim chi)
 
 
 trivLabel :: PrimLabel -> PrimLabel
-trivLabel (PrimLabel txt ctm) = 
-    PrimLabel txt (trivPrimCTM ctm)
+trivLabel (PrimLabel txt opt_id ctm) = 
+    PrimLabel txt opt_id (trivPrimCTM ctm)
 
 trivEllipse :: PrimEllipse -> PrimEllipse
 trivEllipse (PrimEllipse hw hh ctm) = PrimEllipse hw hh (trivPrimCTM ctm)

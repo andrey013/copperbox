@@ -431,7 +431,7 @@ strokeCircle rgb sa r pt =
 -- encoded in the matrix, hence the @ 0 0 moveto @.
 --
 primLabel :: LabelProps -> PrimLabel -> PsMonad Doc
-primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = bracketPrimCTM ctm mf
+primLabel (LabelProps rgb attrs) (PrimLabel body _ ctm) = bracketPrimCTM ctm mf
   where
     ev    = font_enc_vector $ font_face attrs    
     mf pt = (\rgbd fontd -> vcat [ rgbd, fontd, labelBody ev pt body ]) 

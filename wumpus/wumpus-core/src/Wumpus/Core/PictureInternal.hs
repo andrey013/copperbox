@@ -51,6 +51,8 @@ module Wumpus.Core.PictureInternal
   , isEmptyPath
   , isEmptyLabel
 
+  , pushXIdAnno
+
   ) where
 
 import Wumpus.Core.AffineTrans
@@ -175,15 +177,18 @@ newtype FontCtx = FontCtx { getFontCtx :: FontAttr }
 
 -- | SVG annotations - annotations can be: 
 -- 
--- A hyperlink inside @<a ...> ... </a>@ .
+-- * A hyperlink inside @<a ...> ... </a>@ .
 --
--- A group - @<g ...> ... </g>@
+-- * A group - @<g ...> ... </g>@
 --
--- A group inside a hyperlink.
+-- * A group of annotations inside a hyperlink.
+--
+-- * An @id@.
 --
 data SvgAnno = ALink XLink
              | GAnno [SvgAttr]
              | SvgAG XLink [SvgAttr]
+             | SvgId String
    deriving (Eq,Show)
 
 
@@ -284,6 +289,7 @@ type instance DUnit AbsPathSegment = Double
 --
 data PrimLabel = PrimLabel 
       { label_body      :: LabelBody
+      , label_opt_id    :: Maybe String
       , label_ctm       :: PrimCTM
       }
   deriving (Eq,Show)
@@ -420,8 +426,9 @@ instance Format PrimPathSegment where
   format (RelLineTo pt)         = text "rel_line_to  " <> format pt
 
 instance Format PrimLabel where
-  format (PrimLabel s ctm) = 
+  format (PrimLabel s opt_id ctm) = 
      vcat [ dquotes (format s)
+          , maybe (char '_') text $ opt_id 
           , text "ctm="           <> format ctm
           ]
 
@@ -508,7 +515,7 @@ boundaryPrimPath (PrimPath vs ctm) =
 
 
 labelBoundary :: FontAttr -> PrimLabel -> BoundingBox Double
-labelBoundary attr (PrimLabel body ctm) = 
+labelBoundary attr (PrimLabel body _ ctm) = 
     retraceBoundary (m33 *#) untraf_bbox
   where
     m33         = matrixRepCTM ctm
@@ -720,26 +727,27 @@ translatePath dx dy (PrimPath vs ctm) =
 -- label.
 --
 rotateLabel :: Radian -> PrimLabel -> PrimLabel
-rotateLabel ang (PrimLabel txt ctm) = PrimLabel txt (rotateCTM ang ctm)
+rotateLabel ang (PrimLabel txt opt_id ctm) = 
+    PrimLabel txt opt_id (rotateCTM ang ctm)
 
 
 -- /rotateAbout/ the start-point, /rotate/ the the CTM.
 --
 rotateAboutLabel :: Radian -> DPoint2 -> PrimLabel -> PrimLabel
-rotateAboutLabel ang (P2 x y) (PrimLabel txt ctm) = 
-    PrimLabel txt (rotateAboutCTM ang (P2 x y) ctm)
+rotateAboutLabel ang (P2 x y) (PrimLabel txt opt_id ctm) = 
+    PrimLabel txt opt_id (rotateAboutCTM ang (P2 x y) ctm)
 
 
 scaleLabel :: Double -> Double -> PrimLabel -> PrimLabel
-scaleLabel sx sy (PrimLabel txt ctm) = 
-    PrimLabel txt (scaleCTM sx sy ctm)
+scaleLabel sx sy (PrimLabel txt opt_id ctm) = 
+    PrimLabel txt opt_id (scaleCTM sx sy ctm)
 
 
 -- Change the bottom-left corner.
 --
 translateLabel :: Double -> Double -> PrimLabel -> PrimLabel
-translateLabel dx dy (PrimLabel txt ctm) = 
-    PrimLabel txt (translateCTM dx dy ctm)
+translateLabel dx dy (PrimLabel txt opt_id ctm) = 
+    PrimLabel txt opt_id (translateCTM dx dy ctm)
 
 --------------------------------------------------------------------------------
 -- Ellipse
@@ -852,9 +860,21 @@ isEmptyPath (PrimPath xs _) = null xs
 -- | Is the label empty - if so we might want to avoid printing it.
 --
 isEmptyLabel :: PrimLabel -> Bool
-isEmptyLabel (PrimLabel txt _) = body txt
+isEmptyLabel (PrimLabel txt _ _) = body txt
    where
      body (StdLayout esc) = destrEscapedText null esc
      body (KernTextH xs)  = null xs
      body (KernTextV xs)  = null xs
 
+
+-- | Annotate a Primitive with an @id@ for SVG.
+--
+-- Note - for @PLabel@ this /pushes/ the id /inside/ the 
+-- constructor, for other elements the the id adds an extra layer 
+-- of nesting via the SVG group \<g\> tag.
+-- 
+pushXIdAnno :: String -> Primitive -> Primitive
+pushXIdAnno ss (PLabel props (PrimLabel txt _ ctm )) = 
+    PLabel props $ PrimLabel txt (Just ss) ctm
+ 
+pushXIdAnno ss prim                                  = PSVG (SvgId ss) prim

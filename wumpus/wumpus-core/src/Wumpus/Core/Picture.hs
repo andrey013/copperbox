@@ -50,6 +50,7 @@ module Wumpus.Core.Picture
   , curvedPrimPath
   , xlinkhref
   , xlinkPrim
+  , xidPrim
   , svgattr
   , annotateGroup
   , annotateXLink
@@ -68,7 +69,7 @@ module Wumpus.Core.Picture
   , zfill
 
   , fillStroke
-  , clip
+  , clipPrim
 
   , textlabel
   , rtextlabel
@@ -333,12 +334,26 @@ xlinkhref :: String -> XLink
 xlinkhref = XLink
 
 
--- | Create a hyperlinked Primitive.
+-- | Hyperlinked Primitive.
+--
+-- This encloses the Primitive in an addition @\<g\>@ element.
 --
 -- Note - hyperlinks are ignored in the PostScript output.
 --
 xlinkPrim :: XLink -> Primitive -> Primitive
 xlinkPrim hypl p = PSVG (ALink hypl) p  
+
+
+-- | Annotate a Primitive with an @id@. 
+-- 
+-- For text labels this annotates the label directly, for other
+-- primitives the annotation adds extra nesting with a @\<g\>@ 
+-- element.
+--
+-- Note - ids are ignored in the PostScript output.
+--
+xidPrim :: String -> Primitive -> Primitive
+xidPrim = pushXIdAnno
 
 
 -- | Create an attribute for SVG output.
@@ -488,12 +503,12 @@ fillStroke frgb sa srgb p = PPath (CFillStroke frgb sa srgb) p
 --------------------------------------------------------------------------------
 -- Clipping 
 
--- | 'clip' : @ path * primitive -> Primitive @
+-- | 'clipPrim' : @ path * primitive -> Primitive @
 -- 
 -- Clip a primitive to be inside the supplied path.
 --
-clip :: PrimPath -> Primitive -> Primitive
-clip cp p = PClip cp p
+clipPrim :: PrimPath -> Primitive -> Primitive
+clipPrim cp p = PClip cp p
 
 --------------------------------------------------------------------------------
 -- Labels to primitive
@@ -557,7 +572,7 @@ rescapedlabel :: RGBi -> FontAttr -> EscapedText -> Radian -> DPoint2
               -> Primitive
 rescapedlabel rgb attr txt theta (P2 dx dy) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (StdLayout txt) (makeThetaCTM dx dy theta)
+    lbl = PrimLabel (StdLayout txt) Nothing (makeThetaCTM dx dy theta)
 
 
 -- | 'zescapedlabel' : @ escaped_text * baseline_left -> Primitive @
@@ -605,7 +620,7 @@ zescapedlabel = escapedlabel black wumpus_default_font
 hkernlabel :: RGBi -> FontAttr -> [KerningChar] -> DPoint2 -> Primitive
 hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextH xs) (makeTranslCTM x y)
+    lbl = PrimLabel (KernTextH xs) Nothing (makeTranslCTM x y)
 
 
 
@@ -645,7 +660,7 @@ hkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl
 vkernlabel :: RGBi -> FontAttr -> [KerningChar] -> DPoint2 -> Primitive
 vkernlabel rgb attr xs (P2 x y) = PLabel (LabelProps rgb attr) lbl 
   where
-    lbl = PrimLabel (KernTextV xs) (makeTranslCTM x y)
+    lbl = PrimLabel (KernTextV xs) Nothing (makeTranslCTM x y)
 
 
 

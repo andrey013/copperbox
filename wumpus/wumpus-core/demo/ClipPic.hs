@@ -20,7 +20,8 @@ main = do
 pic1 :: Picture
 pic1 = frame [ body ]
   where
-    body = clip dog_house $ primGroup [ red_circle, green_circle, blue_circle ]
+    body = clipPrim dog_house $ 
+             primGroup [ red_circle, green_circle, blue_circle ]
 
 red_circle :: Primitive 
 red_circle = fillEllipse red 60 60      $ P2 (-20) 0

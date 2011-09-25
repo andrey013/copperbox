@@ -240,6 +240,7 @@ svgAnnoPrim :: SvgAnno -> Doc -> Doc
 svgAnnoPrim (ALink hypl)    d = drawXLink hypl d
 svgAnnoPrim (GAnno xs)      d = drawGProps xs d
 svgAnnoPrim (SvgAG hypl xs) d = drawXLink hypl $ drawGProps xs d 
+svgAnnoPrim (SvgId ss)      d = drawGProps [SvgAttr "id" ss] d 
 
 
 drawXLink :: XLink -> Doc -> Doc
@@ -346,13 +347,13 @@ ellipseProps (EFillStroke frgb attrs srgb) =
 --
 
 primLabel :: LabelProps -> PrimLabel -> SvgMonad Doc
-primLabel (LabelProps rgb attrs) (PrimLabel body ctm) = 
-    (\fa ca -> elem_text (fa <+> ca) (makeTspan rgb dtext))
+primLabel (LabelProps rgb attrs) (PrimLabel body opt_id ctm) = 
+    (\fa ca -> elem_text (id_f $ fa <+> ca) (makeTspan rgb dtext))
       <$> deltaFontAttrs attrs <*> bracketTextCTM ctm coordf
-                               
   where
     coordf = \p0 -> pure $ labelBodyCoords body p0
     dtext  = labelBodyText body
+    id_f   = maybe id (\xid -> (svgAttr "id" (text xid) <+>)) $ opt_id
 
 labelBodyCoords :: LabelBody -> DPoint2 -> Doc
 labelBodyCoords (StdLayout _)  pt = makeXY pt
