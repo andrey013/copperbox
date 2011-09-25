@@ -55,15 +55,18 @@ point_sizes = [10, 12, 18, 24, 36, 48]
 positions :: [Int]
 positions = [0, 12, 27, 49, 78, 122] 
 
--- Note - this chain might be worth putting in a library...
+-- Note - this chain has grown a bit crufty as the implementation 
+-- of chains has changed...
+--
 pointChain :: (Int -> DLocGraphic) -> DLocGraphic
-pointChain fn = runChain_ chn_alg $ mapM (onChain . fn) point_sizes
+pointChain fn = runChain_ chn_alg $ mapM (chain1 . fn) point_sizes
   where
     chn_alg = ChainScheme start step
     start   = \pt -> (pt,point_sizes)
 
-    step _ (pt,[])     = (pt, (displace (vvec 50) pt, []))
-    step _ (pt,(y:ys)) = (pt, (displace (vvec $ fromIntegral $ 2 + y)  pt, ys))
+    step _ (pt,[])     = let pnext = displace (vvec 50) pt in (pnext, (pnext, []))
+    step _ (pt,(y:ys)) = let pnext = displace (vvec $ fromIntegral $ 2 + y) pt
+                         in (pnext, (pnext, ys))
 
 fontGraphic :: RGBi -> FontDef -> DLocGraphic 
 fontGraphic rgb ft = ignoreAns $ pointChain mkGF
@@ -77,9 +80,9 @@ std_ctx = standardContext 10
 
 fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
-    drawl start $ runChain_ chn_alg $ mapM (onChain . uncurry fontGraphic) xs
+    drawl start $ runChain_ chn_alg $ mapM (chain1 . uncurry fontGraphic) xs
   where
-    chn_alg   = tableDown 4 (1,180)
+    chn_alg   = tableColumnwiseScm 4 (2,180)
     start     = P2 0 (4*180)
 
 

@@ -42,9 +42,8 @@ grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
     node (0,(-2)) $ grid (dotted_major_grid) 10 4
 
-    draw $ drawPath_ OSTROKE $ emptyPath zeroPt `snocSineWave` (100,hvec 400)
-    draw $ drawPath_ OSTROKE $ sinewave 100 (V2 400 0)   (P2 0 0)
-    draw $ drawPath_ OSTROKE $ runHPath (sineWave 100 (V2 400 0)) (P2 0 0)
+    drawl (P2 0 0) $ drawCatTrail OSTROKE $ sineWave 3 100 0
+    draw $ drawPath_ OSTROKE $ catTrailPath (P2 0 0) (sineWave 3 100 0)
 
     return ()
 

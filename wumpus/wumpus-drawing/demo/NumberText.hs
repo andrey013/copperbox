@@ -40,7 +40,7 @@ drawing01 = drawTracing $ localize (fill_colour red) $ mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl zeroPt $ runPosObject CENTER $ runDoc VALIGN_LEFT times_roman_family doc
+    drawl zeroPt $ runPosObject CENTER $ runGenDoc VALIGN_LEFT times_roman_family doc
     return ()
   where
     doc = vcat [ float  (0.12112 :: Double)

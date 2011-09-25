@@ -87,12 +87,12 @@ straightconn :: ( Real u, Floating u, InterpretUnit u
              => a -> b -> Image u (AbsPath u)
 straightconn a b =
     let (p0,p1) = radialConnectorPoints a b
-    in connect p0 p1 (rightArrow tri45 connline)
+    in connect (rightArrow tri45 connline) p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u)
               => Anchor u -> Anchor u -> Image u (AbsPath u)
-astraightconn p0 p1 = connect p0 p1 (rightArrow tri45 connline)
+astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@

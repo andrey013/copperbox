@@ -28,14 +28,14 @@ std_attr = fill_colour rosy_brown $ standardContext 12
 chain_pic :: CtxPicture
 chain_pic = drawTracing $ do 
     drawl (zeroPt) $ snapGridX >>= \w -> 
-                     runChain (chainH w) $ mapM onChain [dot1, dot1, dot1]
+                     runChainH w $ mapM chain1 [dot1, dot1, dot1]
 
     drawl (P2 100 0) $ runChain (radialChain 60 (pi*0.25) (d2r (30::Double))) $ 
-              mapM onChain [dot2, dot1, dot2, dot1, dot2]
+              mapM chain1 [dot2, dot1, dot2, dot1, dot2]
                                 
                               
-    drawl (P2 0 200) $ runChain (chainH 60) $ 
-              mapM (onChain . dot) [bisque, gray, khaki, khaki, bisque, gray]
+    drawl (P2 0 200) $ runChainH 60 $ 
+              mapM (chain1 . dot) [bisque, gray, khaki, khaki, bisque, gray]
                                 
 
 

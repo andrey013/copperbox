@@ -45,17 +45,17 @@ dots_list = map fst $ pathdiv 30 20 10 abspath1
 
 
 abspath1 :: AbsPath Double
-abspath1 = runHPath hp zeroPt
+abspath1 = catTrailPath zeroPt hp
   where
-    hp = mconcat [ line_up 60
-                 , line_up_right 40 
-                 , line_down_right 40
-                 , line_down 60
-                 , line_left 20
-                 , line_up   30
-                 , curve (vvec 20) (vec (-10) 10) (hvec (-10))
-                 , curve (hvec (-10)) (vec (-10) (-10)) (vvec (-20))
-                 , line_down 30
+    hp = mconcat [ trail_up 60
+                 , trail_up_right 40 
+                 , trail_down_right 40
+                 , trail_down 60
+                 , trail_left 20
+                 , trail_up   30
+                 , catcurve (vvec 20) (vec (-10) 10) (hvec (-10))
+                 , catcurve (hvec (-10)) (vec (-10) (-10)) (vvec (-20))
+                 , trail_down 30
                  ]
                             
                           

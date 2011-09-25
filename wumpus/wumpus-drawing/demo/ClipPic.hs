@@ -44,7 +44,7 @@ std_ctx = standardContext 14
 
 clip_pic :: CtxPicture
 clip_pic = drawTracing $ localize (fill_colour medium_slate_blue) $ do
-    drawl (P2   0 320) $ drawHPath CFILL path01
+    drawl (P2   0 320) $ runPathSpec_ CFILL path01
     drawl (P2 112 320) $ localize (fill_colour powder_blue) $ 
                            runPathSpec_ CFILL path02
     drawl (P2 384 416) $ runPathSpec_ CFILL path03
@@ -68,7 +68,7 @@ background :: RGBi -> LocGraphic Double
 background rgb = promoteLoc $ \_ -> 
     ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = runChain (tableDown 18 (86,16)) $ mapM onChain $ replicate 112 iheartHaskell
+    ihh = runTableColumnwise 18 (86,16) $ mapM chain1 $ replicate 112 iheartHaskell
                    
 
 -- | This is one for Wumpus-Basic - the set of combinators to 
@@ -81,7 +81,8 @@ zapLocQ ma = promoteLoc $ \pt ->
    let a = runLocQuery ctx pt ma in return a
 
 clip1 :: LocGraphic Double
-clip1 = ignoreAns $ locClipH path01 (background black)
+clip1 = zapLocQ (extrPathSpec path01) >>= \a -> 
+        locClip a (background black)
   
 clip2 :: LocGraphic Double
 clip2 = zapLocQ (extrPathSpec path02) >>= \a -> 
@@ -108,15 +109,15 @@ iheartHaskell = promoteLoc $ \pt ->
 type UPathSpec u = PathSpec u (UNil u)
 
 -- zeroPt
-path01 :: HPath Double
-path01 = mconcat $ 
-    [ hline 80 
-    , line (vec 112 160) 
-    , line (vec (-112) 160)
-    , hline (-80)
-    , line (vec 112 (-160))
-    , line (vec (-112) (-160))
-    ]
+path01 :: UPathSpec Double
+path01 = do 
+    hpenline 80 
+    penline (vec 112 160) 
+    penline (vec (-112) 160)
+    hpenline (-80)
+    penline (vec 112 (-160))
+    penline (vec (-112) (-160))
+    ureturn
 
 
 -- (P2 112 0)
