@@ -33,12 +33,12 @@ pic01 = drawTracing tdrawing
 tdrawing :: TraceDrawing Double ()
 tdrawing = do
     drawl zeroPt $ drawPlacedTrail CFILL_STROKE $ polygonTrail 5 20
-    drawl (P2  80 0)   $ drawCatTrail OSTROKE $ tricurve 40 50 0
-    drawl (P2 160 0)   $ drawCatTrail OSTROKE $ rectcurve 40 50 0
-    drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve 40 40 0
-    drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve 40 40 0
-    drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve 20 40 0
-    drawl (P2 480 0)   $ drawCatTrail OSTROKE $ trapcurveCW 40 15 (d2r 45) 0 
+    drawl (P2  80 0)   $ drawCatTrail OSTROKE $ tricurve CW 40 50 0
+    drawl (P2 160 0)   $ drawCatTrail OSTROKE $ rectcurve CW 40 50 0
+    drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve CW 40 40 0
+    drawl (P2 320 0)   $ drawCatTrail OSTROKE $ wedgecurve CW 40 40 0
+    drawl (P2 400 0)   $ drawCatTrail OSTROKE $ loopcurve CW 20 40 0
+    drawl (P2 480 0)   $ drawCatTrail OSTROKE $ trapcurve CCW 40 15 (d2r 45) 0 
     drawl (P2  20 80)  $ dcCircle DRAW_FILL 20 
     drawl (P2  40 50)  $ drawCatTrail OSTROKE $ stick1
     drawl (P2 100 80)  $ drawCatTrail OSTROKE $ stick2

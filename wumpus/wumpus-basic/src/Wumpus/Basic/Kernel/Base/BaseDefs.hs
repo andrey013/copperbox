@@ -76,6 +76,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   -- * Direction enumeration
   , Direction(..)
   , ClockDirection(..)  
+  , clockDirection
 
   -- * Misc
 
@@ -86,6 +87,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 
 import Wumpus.Core                              -- package: wumpus-core
 
+
+import Data.VectorSpace                         -- package: vector-space
 
 import Control.Applicative
 import Data.Monoid
@@ -398,6 +401,16 @@ data ClockDirection = CW | CCW
    deriving (Enum,Eq,Ord,Show) 
 
 
+
+-- | Note - behaviour at the continuity (0 deg, 180 deg, ...) is
+-- unspecified.
+--
+clockDirection :: (Real u, Floating u) 
+               => Vec2 u -> Vec2 u -> ClockDirection
+clockDirection v1 v2 = if a1 < asum then CW else CCW
+  where
+    a1   = r2d $ vdirection v1
+    asum = r2d $ vdirection (v1 ^+^ v2)
 
 
 -- | Applicative /both/ - run both computations return the pair

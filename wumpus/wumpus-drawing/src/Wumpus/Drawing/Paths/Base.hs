@@ -896,7 +896,8 @@ roundAB du v1 v2 =
     base_vec = tv1 ^+^ tv2
     bw       = vlength base_vec
     h        = sqrt $ pow2 du - (pow2 $ 0.5 * bw)
-    tcurve   = tricurve bw (-h) (vdirection base_vec)
+    clockd   = clockDirection v1 v2
+    tcurve   = tricurve clockd bw (-h) (vdirection base_vec)
     
     -- note the (-h) in tricurve is wrong, we need to account 
     -- for CCW or CW properly...

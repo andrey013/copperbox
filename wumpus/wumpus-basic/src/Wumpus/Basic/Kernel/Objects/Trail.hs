@@ -104,8 +104,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
   , tricurve
   , rectcurve
-  , trapcurveCW
-  , trapcurveCCW
+  , trapcurve
   , bowcurve
   , wedgecurve
   , loopcurve
@@ -710,54 +709,89 @@ semicircleWave cdir i unit ang =
 
 --------------------------------------------------------------------------------
 
+-- | 'tricurve' : @ clock_direction * base_width * height * 
+--      base_inclination -> CatTrail @
+-- 
+-- Curve in a triangle - base_width and height are expected to 
+-- be positive.
+-- 
+tricurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
+tricurve CW  bw h ang = ctriCW bw h ang
+tricurve CCW bw h ang = ctriCW bw (-h) ang
 
 
 -- | Curve in a triangle.
 -- 
-tricurve :: Floating u => u -> u -> Radian -> CatTrail u
-tricurve bw h ang = catcurve v1 zeroVec v2
+ctriCW :: Floating u => u -> u -> Radian -> CatTrail u
+ctriCW bw h ang = catcurve v1 zeroVec v2
   where
     v1 = orthoVec (0.5 * bw) h ang
     v2 = orthoVec (0.5 * bw) (-h) ang
 
 
+-- | 'rectcurve' : @ clock_direction * base_width * height * 
+--      base_inclination -> CatTrail @
+-- 
+-- Curve in a rectangle.
+-- 
+rectcurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
+rectcurve CW  bw h ang = crectCW bw h ang
+rectcurve CCW bw h ang = crectCW bw (-h) ang
+
 
 -- | Curve in a rectangle.
 -- 
-rectcurve :: Floating u => u -> u -> Radian -> CatTrail u
-rectcurve bw h ang = catcurve v1 v2 v3
+crectCW :: Floating u => u -> u -> Radian -> CatTrail u
+crectCW bw h ang = catcurve v1 v2 v3
   where
     v1 = orthoVec 0    h  ang
     v2 = orthoVec bw   0  ang
     v3 = orthoVec 0  (-h) ang
 
+
+
+-- | Curve in a trapezium.
+-- 
+trapcurve :: Floating u 
+          => ClockDirection -> u -> u -> Radian -> Radian -> CatTrail u
+trapcurve CW  bw h interior_ang ang = ctrapCW  bw h interior_ang ang
+trapcurve CCW bw h interior_ang ang = ctrapCCW bw h interior_ang ang
+
 -- | Curve in a trapezium (CW).
 -- 
-trapcurveCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
-trapcurveCW bw h interior_ang ang = catcurve v1 v2 v3
+-- h must be positive.
+--
+ctrapCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
+ctrapCW bw h interior_ang ang = catcurve v1 v2 v3
   where
     minor_bw = h / (fromRadian $ tan interior_ang)
     v1       = orthoVec minor_bw                h  ang
     v2       = orthoVec (bw - (2 * minor_bw))   0  ang
     v3       = orthoVec minor_bw              (-h) ang
 
-
-
 -- | Curve in a trapezium (CCW).
 -- 
-trapcurveCCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
-trapcurveCCW bw h interior_ang ang = catcurve v1 v2 v3
+-- h must be positive.
+--
+ctrapCCW :: Floating u => u -> u -> Radian -> Radian -> CatTrail u
+ctrapCCW bw h interior_ang ang = catcurve v1 v2 v3
   where
     minor_bw = h / (fromRadian $ tan interior_ang)
     v1       = orthoVec minor_bw              (-h)  ang
     v2       = orthoVec (bw - (2 * minor_bw))   0  ang
     v3       = orthoVec minor_bw                h ang
 
+-- | Curve in half a /bowtie/.
+-- 
+bowcurve :: Floating u 
+         => ClockDirection -> u -> u -> Radian -> CatTrail u
+bowcurve CW  bw h ang = cbowCW bw h ang
+bowcurve CCW bw h ang = cbowCW bw (-h) ang
 
 -- | Curve in half a /bowtie/.
 -- 
-bowcurve :: Floating u => u -> u -> Radian -> CatTrail u
-bowcurve bw h ang = catcurve v1 v2 v3
+cbowCW :: Floating u => u -> u -> Radian -> CatTrail u
+cbowCW bw h ang = catcurve v1 v2 v3
   where
     v1 = orthoVec 0    h  ang
     v2 = orthoVec bw (-h)  ang
@@ -766,8 +800,15 @@ bowcurve bw h ang = catcurve v1 v2 v3
 
 -- | Wedge curve formed inside a bowtie rotated by 90deg.
 -- 
-wedgecurve :: Floating u => u -> u -> Radian -> CatTrail u
-wedgecurve bw h ang = catcurve v1 v2 v3
+wedgecurve :: Floating u 
+           => ClockDirection -> u -> u -> Radian -> CatTrail u
+wedgecurve CW  bw h ang = cwedgeCW bw h ang
+wedgecurve CCW bw h ang = cwedgeCW bw (-h) ang
+
+-- | Wedge curve clockwise.
+-- 
+cwedgeCW :: Floating u => u -> u -> Radian -> CatTrail u
+cwedgeCW bw h ang = catcurve v1 v2 v3
   where
     v1 = orthoVec   bw    h  ang
     v2 = orthoVec (-bw)   0  ang
@@ -776,8 +817,16 @@ wedgecurve bw h ang = catcurve v1 v2 v3
 
 -- | Variation of wedge curve that draws a loop.
 -- 
-loopcurve :: Floating u => u -> u -> Radian -> CatTrail u
-loopcurve bw h ang = catcurve v1 v2 v3
+loopcurve :: Floating u 
+          => ClockDirection -> u -> u -> Radian -> CatTrail u
+loopcurve CW  bw h ang = cloopCW bw h ang
+loopcurve CCW bw h ang = cloopCW bw (-h) ang
+
+
+-- | loop curve clockwise.
+-- 
+cloopCW :: Floating u => u -> u -> Radian -> CatTrail u
+cloopCW bw h ang = catcurve v1 v2 v3
   where
     ww = 2.0 * bw 
     v1 = orthoVec  (1.5 * bw)    h  ang

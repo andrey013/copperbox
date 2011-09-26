@@ -436,7 +436,7 @@ curveTipTrail theta =
 
 
 vectrapCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
-vectrapCW v1 = trapcurveCW w h ang45 ang
+vectrapCW v1 = trapcurve CW w h quarter_pi ang
   where
     w   = vlength v1
     h   = w / 4
@@ -444,7 +444,7 @@ vectrapCW v1 = trapcurveCW w h ang45 ang
 
 
 vectrapCCW :: (Real u, Floating u) => Vec2 u -> CatTrail u
-vectrapCCW v1 = trapcurveCCW w h quarter_pi ang
+vectrapCCW v1 = trapcurve CCW w h quarter_pi ang
   where
     w   = vlength v1
     h   = w / 4
