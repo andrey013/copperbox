@@ -79,7 +79,11 @@ solid_stroke_tip :: DrawingContextF
 solid_stroke_tip = reset_drawing_metrics
 
 
+-- NOTE - PointGen is pending replacement by Trails...
+
 type PointGen = Radian -> [Vec2 En]
+
+type TrailGen = Radian -> PlacedTrail En
 
 
 filledTipPath :: PointGen -> LocThetaGraphic En
@@ -100,50 +104,52 @@ openTipPath gen =
       oStraightLines $ map (pt .+^) $ gen theta
 
 
+fillTrailTip :: TrailGen -> LocThetaGraphic En
+fillTrailTip gen_pt = 
+    localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
+      supplyLoc pt $ drawPlacedTrail CFILL $ gen_pt theta
 
--- | Return @o-a@ and @o-b@:
+closedTrailTip :: TrailGen -> LocThetaGraphic En
+closedTrailTip gen_pt = 
+    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
+      supplyLoc pt $ drawPlacedTrail CSTROKE $ gen_pt theta
+
+
+openTrailTip :: TrailGen -> LocThetaGraphic En
+openTrailTip gen_pt = 
+    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
+      supplyLoc pt $ drawPlacedTrail OSTROKE $ gen_pt theta
+
+
+
+
+
+-- | All three lines are stated.
 --
--- >    a
--- >    .\
--- >    . \
--- >  .....o
--- >    . /
--- >    ./
--- >    b
---
-tripointsFromTip :: En -> Radian -> (Radian -> (Vec2 En, Vec2 En))
-tripointsFromTip baselen ang = \theta -> 
-    (avec (theta + au) hyp, avec (theta + ad) hyp)
+closedTriTrail :: Radian -> TrailGen
+closedTriTrail ang theta = 
+    placeCatTrail (vreverse v1) (catline v1 <> catline v2 <> catline v3) 
   where
-    half_ang  = 0.5 * ang 
-    au        = pi - half_ang
-    ad        = half_ang + pi
-    hyp       = baselen / (fromRadian $ cos half_ang)
+    half_ang = 0.5 * ang
+    half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
+    v1       = theta_adj_grazing 1 half_ang theta
+    v2       = theta_bkwd_adj_grazing 1 half_ang theta
+    v3       = theta_up (2 * half_h) theta
 
 
-
--- | Return @o-x@ and @o-a@ and @o-b@:
+-- | All three lines are stated.
 --
--- >       a
--- >      /.
--- >     / .
--- > .. x..o
--- >     \ .
--- >      \.
--- >       b
---
-revTripointsFromTip :: En -> Radian -> (Radian -> (Vec2 En, Vec2 En, Vec2 En))
-revTripointsFromTip baselen ang = \theta -> 
-    (avec theta (-baselen), oa theta, ob theta)
+revClosedTriTrail :: Radian -> TrailGen
+revClosedTriTrail ang theta = 
+    placeCatTrail (vbkwd ^+^ vreverse v1) 
+                  (catline v1 <> catline v2 <> catline v3) 
   where
-    half_ang    = 0.5 * ang 
-    half_height = baselen * (fromRadian $ tan half_ang)
-    oa          = \theta -> avec (theta + ang90) half_height
-    ob          = \theta -> avec (theta - ang90) half_height
-
-
-
-
+    half_ang = 0.5 * ang
+    half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
+    v1       = theta_bkwd_adj_grazing 1 half_ang theta
+    v2       = theta_adj_grazing 1 half_ang theta
+    v3       = theta_up (2 * half_h) theta
+    vbkwd    = theta_left 1.0 theta
 
 
 filledTri :: Radian -> ArrowTip
@@ -151,11 +157,8 @@ filledTri ang =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = filledTipPath spec
+      , tip_deco         = fillTrailTip $ closedTriTrail ang
       }
-  where
-    spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
-                 in [zeroVec, v1, v2]
 
 -- | Filled triangle - apex is 90 deg.
 --
@@ -178,11 +181,8 @@ strokedClosedTri ang =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = closedTipPath spec
+      , tip_deco         = closedTrailTip $ closedTriTrail ang
       }
-  where
-    spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
-                 in [zeroVec, v1, v2]
 
 
 otri90 :: ArrowTip
@@ -200,11 +200,9 @@ filledRevTri ang =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = filledTipPath spec
+      , tip_deco         = fillTrailTip $ revClosedTriTrail ang
       }
-  where
-    spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
-                 in [v0, v1, v2]
+
 
 revtri90 :: ArrowTip
 revtri90 = filledRevTri ang90
@@ -221,12 +219,8 @@ strokedClosedRevTri ang =
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = closedTipPath spec
+      , tip_deco         = closedTrailTip $ revClosedTriTrail ang
       }
-  where
-    spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
-                 in [v0, v1, v2]
-
 
 orevtri90 :: ArrowTip
 orevtri90 = strokedClosedRevTri ang90
@@ -238,17 +232,18 @@ orevtri45 :: ArrowTip
 orevtri45 = strokedClosedRevTri ang45
 
 
-
 strokedBarb :: Radian -> ArrowTip
 strokedBarb ang = 
     ArrowTip
       { retract_distance = const 0
       , tip_half_len     = 0.5
-      , tip_deco         = openTipPath spec
+      , tip_deco         = openTrailTip spec
       }
   where
-    spec theta = let (v1,v2) = tripointsFromTip 1 ang theta 
-                 in [v1,zeroVec,v2]
+    half_ang   = 0.5 * ang
+    spec theta = let v1 = theta_adj_grazing 1 half_ang theta
+                     v2 = theta_bkwd_adj_grazing 1 half_ang theta
+                 in placeCatTrail (vreverse v1) (catline v1 <> catline v2) 
 
 
 barb90 :: ArrowTip
@@ -261,16 +256,23 @@ barb45 :: ArrowTip
 barb45 = strokedBarb ang45
 
 
+
+
 strokedRevBarb :: Radian -> ArrowTip
 strokedRevBarb ang = 
     ArrowTip
       { retract_distance = const 1
       , tip_half_len     = 0.5
-      , tip_deco         = openTipPath spec
+      , tip_deco         = openTrailTip spec
       }
   where
-    spec theta = let (v0,v1,v2) = revTripointsFromTip 1 ang theta 
-                 in [v1,v0,v2]
+    half_ang   = 0.5 * ang
+    spec theta = let v1    = theta_bkwd_adj_grazing 1 half_ang theta
+                     v2    = theta_adj_grazing 1 half_ang theta
+                     vbkwd = theta_left 1 theta
+                 in placeCatTrail (vbkwd ^+^ vreverse v1) 
+                                  (catline v1 <> catline v2) 
+
 
 revbarb90 :: ArrowTip
 revbarb90 = strokedRevBarb ang90

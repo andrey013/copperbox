@@ -72,6 +72,10 @@ module Wumpus.Basic.Kernel.Objects.Displacement
   , theta_down_left
   , theta_down_right
 
+  , theta_adj_grazing
+  , theta_bkwd_adj_grazing
+
+
   ) where
 
 
@@ -318,78 +322,37 @@ theta_down_right d = orthoVec d (-d)
 
 
 
---------------------------------------------------------------------------------
 
-
-{-
-
--- ORPHANS - need a new home...
-
--- | Absolute units.
--- 
-centerRelative :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-               => (Int,Int) -> a -> Query (Anchor u)
-centerRelative coord a = snapmove coord >>= \v -> return $ center a .+^ v
-
--- TODO - These are really for Anchors.
+-- | Return @a-o@ when supplied length of @b-o@ and the grazing 
+-- angle @boa@:
 --
--- Should the have a separate module or be rolled into the same
--- module as the classes?
+-- >    a
+-- >    .\
+-- >    . \
+-- >  ..b..o
 --
-
--- | Value is 1 snap unit right.
+-- This is useful for building arrowhead vectors.
 --
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-right_of        :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-right_of        = centerRelative (1,0)
+theta_adj_grazing :: Floating u => u -> Radian -> Radian -> Vec2 u 
+theta_adj_grazing adj_len ang theta = orthoVec adj_len (-opp) theta
+  where
+    opp = adj_len * (fromRadian $ tan ang)
 
--- | Value is 1 snap move left.
+
+-- | Return @o-c@ when supplied length of @b-o@ and the grazing 
+-- angle @boc@:
 --
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-left_of         :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-left_of         = centerRelative ((-1),0)
-
--- | Value is 1 snap move up, 1 snap move right.
 --
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-above_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-above_right_of  = centerRelative (1,1)
-
--- | Value is 1 snap move below, 1 snap move right.
+-- >  ..b..o
+-- >    . /
+-- >    ./
+-- >    c
 --
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-below_right_of  :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-below_right_of  = centerRelative (1, (-1))
-
--- | Value is 1 snap move up, 1 snap move left.
+-- This is useful for building arrowhead vectors.
 --
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-above_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-above_left_of   = centerRelative ((-1),1)
+theta_bkwd_adj_grazing :: Floating u => u -> Radian -> Radian -> Vec2 u 
+theta_bkwd_adj_grazing adj_len ang theta = orthoVec (-adj_len) (-opp) theta
+  where
+    opp = adj_len * (fromRadian $ tan ang)
 
--- | Value is 1 snap move down, 1 snap move left.
---
--- This function should be considered obsolete, pending a 
--- re-think.
--- 
-below_left_of   :: (CenterAnchor a, Fractional u, InterpretUnit u, u ~ DUnit a) 
-                => a -> Query (Anchor u)
-below_left_of   = centerRelative ((-1),(-1))
- 
 
--}
