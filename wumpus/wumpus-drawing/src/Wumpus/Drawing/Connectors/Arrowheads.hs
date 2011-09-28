@@ -83,7 +83,7 @@ solid_stroke_tip = reset_drawing_metrics
 
 type PointGen = Radian -> [Vec2 En]
 
-type TrailGen = Radian -> PlacedTrail En
+type TrailGen = Radian -> AnaTrail En
 
 
 filledTipPath :: PointGen -> LocThetaGraphic En
@@ -107,18 +107,18 @@ openTipPath gen =
 fillTrailTip :: TrailGen -> LocThetaGraphic En
 fillTrailTip gen_pt = 
     localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawPlacedTrail CFILL $ gen_pt theta
+      supplyLoc pt $ drawAnaTrail CFILL $ gen_pt theta
 
 closedTrailTip :: TrailGen -> LocThetaGraphic En
 closedTrailTip gen_pt = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawPlacedTrail CSTROKE $ gen_pt theta
+      supplyLoc pt $ drawAnaTrail CSTROKE $ gen_pt theta
 
 
 openTrailTip :: TrailGen -> LocThetaGraphic En
 openTrailTip gen_pt = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawPlacedTrail OSTROKE $ gen_pt theta
+      supplyLoc pt $ drawAnaTrail OSTROKE $ gen_pt theta
 
 
 
@@ -128,7 +128,7 @@ openTrailTip gen_pt =
 --
 closedTriTrail :: Radian -> TrailGen
 closedTriTrail ang theta = 
-    placeCatTrail (vreverse v1) (catline v1 <> catline v2 <> catline v3) 
+    anaCatTrail (vreverse v1) (catline v1 <> catline v2 <> catline v3) 
   where
     half_ang = 0.5 * ang
     half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
@@ -141,7 +141,7 @@ closedTriTrail ang theta =
 --
 revClosedTriTrail :: Radian -> TrailGen
 revClosedTriTrail ang theta = 
-    placeCatTrail (vbkwd ^+^ vreverse v1) 
+    anaCatTrail (vbkwd ^+^ vreverse v1) 
                   (catline v1 <> catline v2 <> catline v3) 
   where
     half_ang = 0.5 * ang
@@ -243,7 +243,7 @@ strokedBarb ang =
     half_ang   = 0.5 * ang
     spec theta = let v1 = theta_adj_grazing 1 half_ang theta
                      v2 = theta_bkwd_adj_grazing 1 half_ang theta
-                 in placeCatTrail (vreverse v1) (catline v1 <> catline v2) 
+                 in anaCatTrail (vreverse v1) (catline v1 <> catline v2) 
 
 
 barb90 :: ArrowTip
@@ -270,8 +270,8 @@ strokedRevBarb ang =
     spec theta = let v1    = theta_bkwd_adj_grazing 1 half_ang theta
                      v2    = theta_adj_grazing 1 half_ang theta
                      vbkwd = theta_left 1 theta
-                 in placeCatTrail (vbkwd ^+^ vreverse v1) 
-                                  (catline v1 <> catline v2) 
+                 in anaCatTrail (vbkwd ^+^ vreverse v1) 
+                                (catline v1 <> catline v2) 
 
 
 revbarb90 :: ArrowTip
@@ -428,9 +428,9 @@ odiamondWideTip =
       }
 
 
-curveTipTrail :: Radian -> PlacedTrail En
+curveTipTrail :: Radian -> AnaTrail En
 curveTipTrail theta = 
-    placeCatTrail dv $ vectrapCCW v1 <> vectrapCCW v2
+    anaCatTrail dv $ vectrapCCW v1 <> vectrapCCW v2
   where
     dv  = orthoVec (-1.0)   0.75  theta     -- back and up
     v1  = orthoVec   1.0  (-0.75) theta     -- fwd and down
@@ -463,13 +463,13 @@ curveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               supplyLoc pt $ drawPlacedTrail OSTROKE $ curveTipTrail theta
+               supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipTrail theta
 
 
 
-curveTipRevTrail :: Radian -> PlacedTrail En
+curveTipRevTrail :: Radian -> AnaTrail En
 curveTipRevTrail theta = 
-    placeCatTrail dv $ vectrapCW v1 <> vectrapCW v2
+    anaCatTrail dv $ vectrapCW v1 <> vectrapCW v2
   where
     dv  = orthoVec   0.0    0.75  theta     -- just up
     v1  = orthoVec (-1.0) (-0.75) theta     -- back and down
@@ -487,6 +487,6 @@ revcurveTip =
   where
     body = promoteLocTheta $ \pt theta -> 
              localize (join_bevel . solid_stroke_tip) $ 
-               supplyLoc pt $ drawPlacedTrail OSTROKE $ curveTipRevTrail theta
+               supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipRevTrail theta
 
 

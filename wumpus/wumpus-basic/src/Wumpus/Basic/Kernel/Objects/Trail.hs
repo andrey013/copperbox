@@ -21,19 +21,19 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
     TrailSegment(..)
   , CatTrail
-  , PlacedTrail
+  , AnaTrail
 
-  , drawPlacedTrail
+  , drawAnaTrail
   , drawCatTrail
 
-  , destrPlacedTrail
+  , destrAnaTrail
   , destrCatTrail
 
-  , placeCatTrail
+  , anaCatTrail
   
   , trailIterateLocus
 
-  , placedTrailPoints
+  , anaTrailPoints
 
   , rectangleTrail
   , diamondTrail
@@ -127,19 +127,28 @@ import Data.VectorSpace
 import Data.List ( unfoldr )
 import Data.Monoid
 
-data PlacedTrail u = PlacedTrail
+-- | Trail with an initial (undrawn) movement - an anacrusis.
+--
+-- This allows trails to represent centered objects.
+--
+data AnaTrail u = AnaTrail
       { pt_init_vec :: Vec2 u
       , pt_segments :: [TrailSegment u]
       }
   deriving (Eq,Ord,Show)
 
-type instance DUnit (PlacedTrail u) = u
+type instance DUnit (AnaTrail u) = u
 
+-- | Trail supporting concatenation.
+--
 newtype CatTrail u = CatTrail { getCatTrail :: H (TrailSegment u) }
 
 type instance DUnit (CatTrail u) = u
 
 
+-- | Trail segment - trails are /prototype/ paths, so the are 
+-- built from the usual straight lines and Bezier curves.
+--
 data TrailSegment u = TLine (Vec2 u)
                     | TCurve (Vec2 u) (Vec2 u) (Vec2 u)
   deriving (Eq,Ord,Show)
@@ -165,8 +174,8 @@ drawCatTrail mode (CatTrail ct) = promoteLoc $ \pt ->
     drawTrailBody mode (toListH ct) pt 
 
 
-drawPlacedTrail :: InterpretUnit u => PathMode -> PlacedTrail u -> LocGraphic u
-drawPlacedTrail mode (PlacedTrail v0 xs) = promoteLoc $ \pt -> 
+drawAnaTrail :: InterpretUnit u => PathMode -> AnaTrail u -> LocGraphic u
+drawAnaTrail mode (AnaTrail v0 xs) = promoteLoc $ \pt -> 
     drawTrailBody mode xs (pt .+^ v0)
 
 
@@ -189,10 +198,10 @@ drawTrailBody mode ts pt =
     stepB f _   v0 ys            = stepA (f `snocH` relLineTo v0) ys
 
 
--- | /Destructor/ for the opaque 'PlacedTrail' type.
+-- | /Destructor/ for the opaque 'AnaTrail' type.
 --
-destrPlacedTrail :: PlacedTrail u -> (Vec2 u, [TrailSegment u])
-destrPlacedTrail (PlacedTrail v0 ss) = (v0,ss)
+destrAnaTrail :: AnaTrail u -> (Vec2 u, [TrailSegment u])
+destrAnaTrail (AnaTrail v0 ss) = (v0,ss)
 
 -- | /Destructor/ for the opaque 'CatTrail' type.
 --
@@ -201,20 +210,20 @@ destrCatTrail = toListH . getCatTrail
 
 
 
--- | Turn a 'CatTrail' into a 'PlacedTrail'.
+-- | Turn a 'CatTrail' into a 'AnaTrail'.
 --
-placeCatTrail :: Vec2 u -> CatTrail u -> PlacedTrail u
-placeCatTrail vinit cat = PlacedTrail { pt_init_vec = vinit
+anaCatTrail :: Vec2 u -> CatTrail u -> AnaTrail u
+anaCatTrail vinit cat = AnaTrail { pt_init_vec = vinit
                                       , pt_segments = getCatTrail cat []
                                       }
 
 
 
--- | Create a PlacedTrail from the vector list - each vector in the 
+-- | Create a AnaTrail from the vector list - each vector in the 
 -- input list iterates to the start point rather then the 
 -- cumulative tip.
 --
--- When the PlacedTrail is run, the supplied point is the /locus/ of 
+-- When the AnaTrail is run, the supplied point is the /locus/ of 
 -- the path and it does not form part of the path proper.
 -- 
 -- Like 'trailStartIsLocus', this constructor is typically used to 
@@ -222,16 +231,16 @@ placeCatTrail vinit cat = PlacedTrail { pt_init_vec = vinit
 -- iterated displacements of the center rather than 
 -- /turtle drawing/. 
 -- 
-trailIterateLocus :: Num u => [Vec2 u] -> PlacedTrail u
-trailIterateLocus []      = PlacedTrail zeroVec []
-trailIterateLocus (v0:xs) = PlacedTrail v0 (step v0 xs)
+trailIterateLocus :: Num u => [Vec2 u] -> AnaTrail u
+trailIterateLocus []      = AnaTrail zeroVec []
+trailIterateLocus (v0:xs) = AnaTrail v0 (step v0 xs)
   where
     step v1 []      = [ TLine (v0 ^-^ v1) ]
     step v1 (v2:vs) = TLine (v2 ^-^ v1) : step v2 vs
 
 
-placedTrailPoints :: InterpretUnit u => PlacedTrail u -> LocQuery u [Point2 u]
-placedTrailPoints (PlacedTrail v0 ts) = qpromoteLoc $ \pt -> 
+anaTrailPoints :: InterpretUnit u => AnaTrail u -> LocQuery u [Point2 u]
+anaTrailPoints (AnaTrail v0 ts) = qpromoteLoc $ \pt -> 
     return $ step (pt .+^ v0) ts
   where
     step p1 []                    = [p1]
@@ -241,11 +250,11 @@ placedTrailPoints (PlacedTrail v0 ts) = qpromoteLoc $ \pt ->
                                         p4 = p3 .+^ v3 
                                     in p1 : p2 : p3 : step p4 xs
 
--- | 'rectangleTrail' : @ width * height -> PlacedTrail @
+-- | 'rectangleTrail' : @ width * height -> AnaTrail @
 --
-rectangleTrail :: Fractional u => u -> u -> PlacedTrail u
+rectangleTrail :: Fractional u => u -> u -> AnaTrail u
 rectangleTrail w h = 
-    PlacedTrail { pt_init_vec = ctr_to_bl 
+    AnaTrail { pt_init_vec = ctr_to_bl 
                 , pt_segments = map TLine spec
                 }
   where
@@ -255,9 +264,9 @@ rectangleTrail w h =
 
 
 
--- | 'diamondTrail' : @ half_width * half_height -> PlacedTrail @
+-- | 'diamondTrail' : @ half_width * half_height -> AnaTrail @
 --
-diamondTrail :: Num u => u -> u -> PlacedTrail u
+diamondTrail :: Num u => u -> u -> AnaTrail u
 diamondTrail hw hh = trailIterateLocus [ vs,ve,vn,vw ]
   where
     vs = vvec (-hh)
@@ -266,9 +275,9 @@ diamondTrail hw hh = trailIterateLocus [ vs,ve,vn,vw ]
     vw = hvec (-hw)
 
 
--- | 'polygonTrail' : @ num_points * radius -> PlacedTrail @ 
+-- | 'polygonTrail' : @ num_points * radius -> AnaTrail @ 
 --
-polygonTrail :: Floating u => Int -> u -> PlacedTrail u
+polygonTrail :: Floating u => Int -> u -> AnaTrail u
 polygonTrail n radius = trailIterateLocus $ unfoldr phi (0,top)
   where
     top                     = 0.5*pi

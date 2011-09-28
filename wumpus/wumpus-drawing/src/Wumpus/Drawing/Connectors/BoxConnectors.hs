@@ -32,7 +32,7 @@ import Wumpus.Core                              -- package: wumpus-core
 
 import Data.Monoid
 
--- NOTE - boxes (currently) seem to only support stroke otherwise
+-- NOTE - boxes seem to only support stroke otherwise
 -- they would obliterate what they connect.
 
 
@@ -60,14 +60,14 @@ connbox :: (Real u, Floating u, InterpretUnit u)
         => ConnectorProps -> ConnectorBox u
 connbox props = promoteConn $ \p0 p1 -> 
     connectorBoxHalfSize props >>= \sz ->
-    applyLoc (drawPlacedTrail CSTROKE $ cfconnbox sz (pvec p0 p1)) p0
+    applyLoc (drawAnaTrail CSTROKE $ cfconnbox sz (pvec p0 p1)) p0
 
 
 conntube :: (Real u, Floating u, InterpretUnit u) 
         => ConnectorProps -> ConnectorBox u
 conntube props = promoteConn $ \p0 p1 -> 
     connectorBoxHalfSize props >>= \sz ->
-    applyLoc (drawPlacedTrail CSTROKE $ cfconntube sz (pvec p0 p1)) p0
+    applyLoc (drawAnaTrail CSTROKE $ cfconntube sz (pvec p0 p1)) p0
 
 
 
@@ -75,9 +75,9 @@ conntube props = promoteConn $ \p0 p1 ->
 
 -- | @v1@ is the /interior/ vector.
 --
-cfconnbox :: (Real u, Floating u) => u -> Vec2 u -> PlacedTrail u
+cfconnbox :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
 cfconnbox du v1 = 
-    placeCatTrail (orthoVec (-du) (-du) ang) $ mconcat $
+    anaCatTrail (orthoVec (-du) (-du) ang) $ mconcat $
       [ trail_theta_right w ang
       , trail_theta_up h ang
       , trail_theta_left w ang
@@ -92,9 +92,9 @@ cfconnbox du v1 =
 
 -- | @v1@ is the /interior/ vector.
 --
-cfconntube :: (Real u, Floating u) => u -> Vec2 u -> PlacedTrail u
+cfconntube :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
 cfconntube du v1 = 
-    placeCatTrail (orthoVec 0 (-du) ang) $ mconcat $
+    anaCatTrail (orthoVec 0 (-du) ang) $ mconcat $
       [ trail_theta_right w ang
       , semicircleCCW vup
       , trail_theta_left w ang

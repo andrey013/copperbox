@@ -227,7 +227,7 @@ triangleLDO h = qpromoteLoc $ \pt ->
     uconvertCtx1 h >>= \uh -> 
     let alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices uh
     in (\ps -> polygonAnchor ps pt) 
-         <$> qapplyLoc (placedTrailPoints alg) pt
+         <$> qapplyLoc (anaTrailPoints alg) pt
   where
     fn3 (a,b,c) = [a,b,c]
 

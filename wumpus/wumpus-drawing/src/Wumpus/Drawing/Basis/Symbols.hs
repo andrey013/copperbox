@@ -120,7 +120,7 @@ right_slice radius = moveStart (go_right $ 0.5 * radius) rwedge
 left_triangle :: (Fractional u, InterpretUnit u) 
               => u -> LocGraphic u
 left_triangle w = 
-    drawPlacedTrail CSTROKE $ placeCatTrail (go_left $ 0.5 * w)
+    drawAnaTrail CSTROKE $ anaCatTrail (go_left $ 0.5 * w)
                             $ line_r <> vbase <> line_l
   where
     hh     = 0.40 * w
@@ -131,7 +131,7 @@ left_triangle w =
 right_triangle :: (Fractional u, InterpretUnit u) 
                => u -> LocGraphic u
 right_triangle w = 
-    drawPlacedTrail CSTROKE $ placeCatTrail (go_right $ 0.5 * w)
+    drawAnaTrail CSTROKE $ anaCatTrail (go_right $ 0.5 * w)
                             $ line_l <> vbase <> line_r
   where
     hh     = 0.40 * w
@@ -141,15 +141,15 @@ right_triangle w =
 
 
 empty_box :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
-empty_box w = drawPlacedTrail CSTROKE $ rectangleTrail w w
+empty_box w = drawAnaTrail CSTROKE $ rectangleTrail w w
 
 hbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
 hbar u = 
-    drawPlacedTrail OSTROKE $ placeCatTrail (go_left $ 0.5 * u) $ trail_right u
+    drawAnaTrail OSTROKE $ anaCatTrail (go_left $ 0.5 * u) $ trail_right u
 
 vbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
 vbar u = 
-    drawPlacedTrail OSTROKE $ placeCatTrail (go_down $ 0.5 * u) $ trail_up u
+    drawAnaTrail OSTROKE $ anaCatTrail (go_down $ 0.5 * u) $ trail_up u
 
 dbl_hbar :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
 dbl_hbar u = line1 <> line2

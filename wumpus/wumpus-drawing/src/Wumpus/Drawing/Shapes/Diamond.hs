@@ -154,7 +154,7 @@ mkDiamond hw hh = qpromoteLocTheta $ \ctr theta ->
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
               => u -> u -> u -> LocThetaQuery u (AbsPath u)
 mkDiamondPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
-    qapplyLoc (placedTrailPoints $ diamondTrail hw hh) ctr >>= \ps ->
+    qapplyLoc (anaTrailPoints $ diamondTrail hw hh) ctr >>= \ps ->
     roundCornerShapePath rnd $ map (rotateAbout theta ctr) ps
 
 

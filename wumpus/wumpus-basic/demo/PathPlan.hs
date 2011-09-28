@@ -32,7 +32,7 @@ pic01 = drawTracing tdrawing
 
 tdrawing :: TraceDrawing Double ()
 tdrawing = do
-    drawl zeroPt $ drawPlacedTrail CFILL_STROKE $ polygonTrail 5 20
+    drawl zeroPt $ drawAnaTrail CFILL_STROKE $ polygonTrail 5 20
     drawl (P2  80 0)   $ drawCatTrail OSTROKE $ tricurve CW 40 50 0
     drawl (P2 160 0)   $ drawCatTrail OSTROKE $ rectcurve CW 40 50 0
     drawl (P2 240 0)   $ drawCatTrail OSTROKE $ bowcurve CW 40 40 0

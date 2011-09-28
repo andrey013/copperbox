@@ -32,7 +32,8 @@ description:
   .
   v0.22.0 to v0.23.0:
   .
-  * ?
+  * Renamed the @PlacedTrail@ object to @AnaTrail@ - the prefix 
+    vector is considered an /anacrusis/.
   .
   v0.21.0 to v0.22.0:
   .

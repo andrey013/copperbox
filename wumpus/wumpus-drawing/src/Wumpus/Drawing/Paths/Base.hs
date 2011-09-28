@@ -36,7 +36,7 @@ module Wumpus.Drawing.Paths.Base
   , vectorPath
   , vectorPathTheta
 
-  , placedTrailPath
+  , anaTrailPath
   , catTrailPath
 
   -- * Queries
@@ -320,10 +320,10 @@ vectorPathTheta :: (Real u, Floating u, Tolerance u)
 vectorPathTheta vs ang = vectorPath $ map (rotate ang) vs
 
 
-placedTrailPath :: (Floating u, Ord u, Tolerance u) 
-                => Point2 u -> PlacedTrail u -> AbsPath u
-placedTrailPath pt trl = 
-    let (v1,ss) = destrPlacedTrail trl in step (emptyPath $ pt .+^ v1) ss
+anaTrailPath :: (Floating u, Ord u, Tolerance u) 
+             => Point2 u -> AnaTrail u -> AbsPath u
+anaTrailPath pt trl = 
+    let (v1,ss) = destrAnaTrail trl in step (emptyPath $ pt .+^ v1) ss
   where
     step ac []                   = ac
     step ac (TLine v1:xs)        = step (ac `snocLine` v1) xs
