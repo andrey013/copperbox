@@ -40,7 +40,7 @@ description:
   .
   v0.7.0 to v0.8.0
   .
-  * ?
+  * Added InclineTrails to Drawing.Basis.
   .
   v0.6.0 to v0.7.0
   .
@@ -100,6 +100,7 @@ library
   
   exposed-modules:
     Wumpus.Drawing.Basis.DrawingPrimitives,
+    Wumpus.Drawing.Basis.InclineTrails,
     Wumpus.Drawing.Basis.Symbols,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,
