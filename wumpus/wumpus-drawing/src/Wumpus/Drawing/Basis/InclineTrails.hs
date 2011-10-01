@@ -21,9 +21,11 @@ module Wumpus.Drawing.Basis.InclineTrails
   , incline_square
   , incline_rect
   , incline_diamond
+  , incline_triangle
+  , incline_barb
   , incline_tube
   , incline_chamf_rect
-
+  
   )
   where
 
@@ -64,12 +66,51 @@ incline_diamond h v1 = anaCatTrail zeroVec catt
     hw   = 0.5 * vlength v1
     hh   = 0.5 * h
     ang  = vdirection v1
-    catt = mconcat $ map catline [ orthoVec   hw  (-hh) ang
-                                 , orthoVec   hw    hh  ang 
-                                 , orthoVec (-hw)   hh  ang 
-                                 , orthoVec (-hw) (-hh) ang 
-                                 ]
-           
+    catt = mconcat [ orthoCatTrail   hw  (-hh) ang
+                   , orthoCatTrail   hw    hh  ang 
+                   , orthoCatTrail (-hw)   hh  ang 
+                   , orthoCatTrail (-hw) (-hh) ang 
+                   ]
+
+-- | Note - vector represents midpoint of the baseline to the 
+-- tip. Angle is the ang of the tip.
+--
+-- This trail is primarily for drawing arrowheads.
+-- 
+incline_triangle :: (Real u, Floating u) => Radian -> Vec2 u -> AnaTrail u
+incline_triangle tip_ang v1 = 
+    anaCatTrail (theta_up opposite theta) catt
+  where
+    half_ang = 0.5 * tip_ang
+    theta    = vdirection v1
+    h        = vlength v1
+    opposite = h * (fromRadian $ tan half_ang)
+
+    catt     = mconcat [ trail_theta_adj_grazing h half_ang theta
+                       , trail_theta_bkwd_adj_grazing h half_ang theta
+                       , trail_theta_up (2 * opposite) theta
+                       ]
+
+
+-- | Note - vector represents midpoint of the baseline to the 
+-- tip. Angle is the ang of the tip.
+--
+-- This trail is primarily for drawing arrowheads. The resulting 
+-- path is /open/. 
+-- 
+incline_barb :: (Real u, Floating u) => Radian -> Vec2 u -> AnaTrail u
+incline_barb tip_ang v1 = 
+    anaCatTrail (theta_up opposite theta) catt
+  where
+    half_ang = 0.5 * tip_ang
+    theta    = vdirection v1
+    h        = vlength v1
+    opposite = h * (fromRadian $ tan half_ang)
+
+    catt     = mconcat [ trail_theta_adj_grazing h half_ang theta
+                       , trail_theta_bkwd_adj_grazing h half_ang theta
+                       ]
+
 
 -- | @v1@ is the /interior/ vector.
 --

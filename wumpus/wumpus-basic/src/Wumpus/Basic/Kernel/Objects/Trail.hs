@@ -62,7 +62,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_down_left
   , trail_down_right
 
-  , orthoCatline
+  , orthoCatTrail
 
   , trail_theta_up
   , trail_theta_down
@@ -83,6 +83,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_theta_down_left
   , trail_theta_down_right
 
+  , trail_theta_adj_grazing
+  , trail_theta_bkwd_adj_grazing
 
  
   , semicircleCW
@@ -353,8 +355,10 @@ trail_down_right = catline . go_down_right
 -- | Alternative to @catline@, specifying the vector components 
 -- rather the vector itself.
 --
-orthoCatline :: Floating u => u -> u -> Radian -> CatTrail u 
-orthoCatline x y ang = catline (orthoVec x y ang)
+-- (cf. orthoVec from Wumpus-Core)
+--
+orthoCatTrail :: Floating u => u -> u -> Radian -> CatTrail u 
+orthoCatTrail x y ang = catline (orthoVec x y ang)
 
 
 trail_theta_up :: Floating u => u -> Radian -> CatTrail u
@@ -408,6 +412,37 @@ trail_theta_down_left u = catline . theta_down_left u
 trail_theta_down_right :: Floating u => u -> Radian -> CatTrail u
 trail_theta_down_right u = catline . theta_down_right u
 
+
+
+-- | Return @a-o@ when supplied length of @b-o@ and the grazing 
+-- angle @boa@:
+--
+-- >    a
+-- >    .\
+-- >    . \
+-- >  ..b..o
+--
+-- This is useful for building arrowhead vectors.
+--
+trail_theta_adj_grazing :: Floating u => u -> Radian -> Radian -> CatTrail u 
+trail_theta_adj_grazing adj_len ang = 
+    catline . theta_adj_grazing adj_len ang
+
+
+-- | Return @o-c@ when supplied length of @b-o@ and the grazing 
+-- angle @boc@:
+--
+--
+-- >  ..b..o
+-- >    . /
+-- >    ./
+-- >    c
+--
+-- This is useful for building arrowhead vectors.
+--
+trail_theta_bkwd_adj_grazing :: Floating u => u -> Radian -> Radian -> CatTrail u 
+trail_theta_bkwd_adj_grazing adj_len ang = 
+    catline . theta_bkwd_adj_grazing adj_len ang 
 
 
 --------------------------------------------------------------------------------

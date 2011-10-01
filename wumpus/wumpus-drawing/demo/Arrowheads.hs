@@ -37,7 +37,7 @@ makeCtx = set_font helvetica . metricsContext 14
 
 arrow_drawing :: CtxPicture
 arrow_drawing = 
-    drawTracing $ localize dotted_line $ tableGraphic arrtable
+    drawTracing $ localize line_thick $ tableGraphic arrtable
 
 arrtable :: [(String, ArrowTip)]
 arrtable = 

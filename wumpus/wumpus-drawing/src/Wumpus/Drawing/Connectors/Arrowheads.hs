@@ -72,11 +72,11 @@ import Data.VectorSpace
 
 
 
--- | Arrow tips are drawn with a sloid line even if the connector
+-- | Arrow tips are drawn with a solid line even if the connector
 -- line is dashed (tips also override round corners)
 
 solid_stroke_tip :: DrawingContextF
-solid_stroke_tip = reset_drawing_metrics
+solid_stroke_tip = solid_line -- reset_drawing_metrics
 
 
 -- NOTE - PointGen is pending replacement by Trails...
@@ -142,7 +142,7 @@ closedTriTrail ang theta =
 revClosedTriTrail :: Radian -> TrailGen
 revClosedTriTrail ang theta = 
     anaCatTrail (vbkwd ^+^ vreverse v1) 
-                  (catline v1 <> catline v2 <> catline v3) 
+                (catline v1 <> catline v2 <> catline v3) 
   where
     half_ang = 0.5 * ang
     half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
@@ -155,7 +155,7 @@ revClosedTriTrail ang theta =
 filledTri :: Radian -> ArrowTip
 filledTri ang = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = fillTrailTip $ closedTriTrail ang
       }
@@ -179,7 +179,7 @@ tri45 = filledTri ang45
 strokedClosedTri :: Radian -> ArrowTip
 strokedClosedTri ang = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = closedTrailTip $ closedTriTrail ang
       }
@@ -198,7 +198,7 @@ otri45 = strokedClosedTri ang45
 filledRevTri :: Radian -> ArrowTip
 filledRevTri ang = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 0.5
       , tip_half_len     = 0.5
       , tip_deco         = fillTrailTip $ revClosedTriTrail ang
       }
@@ -217,7 +217,7 @@ revtri45 = filledRevTri ang45
 strokedClosedRevTri :: Radian -> ArrowTip
 strokedClosedRevTri ang = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = closedTrailTip $ revClosedTriTrail ang
       }
@@ -232,10 +232,13 @@ orevtri45 :: ArrowTip
 orevtri45 = strokedClosedRevTri ang45
 
 
+
+-- Maybe Barbs should account for line width?
+
 strokedBarb :: Radian -> ArrowTip
 strokedBarb ang = 
     ArrowTip
-      { retract_distance = const 0
+      { retract_distance = 0
       , tip_half_len     = 0.5
       , tip_deco         = openTrailTip spec
       }
@@ -261,7 +264,7 @@ barb45 = strokedBarb ang45
 strokedRevBarb :: Radian -> ArrowTip
 strokedRevBarb ang = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = openTrailTip spec
       }
@@ -288,7 +291,7 @@ revbarb45 = strokedRevBarb ang45
 perp :: ArrowTip
 perp = 
     ArrowTip
-      { retract_distance = const 0
+      { retract_distance = 0
       , tip_half_len     = 0
       , tip_deco         = openTipPath spec
       }
@@ -301,7 +304,7 @@ perp =
 bracket :: ArrowTip
 bracket = 
     ArrowTip
-      { retract_distance = const 0
+      { retract_distance = 0.0
       , tip_half_len     = 0.5
       , tip_deco         = openTipPath spec
       }
@@ -316,7 +319,7 @@ bracket =
 diskTip :: ArrowTip
 diskTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 0.5
       , tip_half_len     = 0.5
       , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
       }
@@ -330,7 +333,7 @@ diskTip =
 odiskTip :: ArrowTip
 odiskTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
       }
@@ -361,7 +364,7 @@ squareSpec theta = [ oa ^+^ ov, oa, ob, ob ^+^ ov ]
 squareTip :: ArrowTip
 squareTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = filledTipPath squareSpec
       }
@@ -369,7 +372,7 @@ squareTip =
 osquareTip :: ArrowTip
 osquareTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = closedTipPath squareSpec
       }
@@ -397,7 +400,7 @@ diamondSpec width theta = [ ow, oa, zeroVec, ob ]
 diamondTip :: ArrowTip
 diamondTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 0.5
       , tip_half_len     = 0.5
       , tip_deco         = filledTipPath (diamondSpec 1)
       }
@@ -405,7 +408,7 @@ diamondTip =
 odiamondTip :: ArrowTip
 odiamondTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = closedTipPath (diamondSpec 1)
       }
@@ -414,7 +417,7 @@ odiamondTip =
 diamondWideTip :: ArrowTip
 diamondWideTip = 
     ArrowTip
-      { retract_distance = const 2
+      { retract_distance = 1.0
       , tip_half_len     = 1.0
       , tip_deco         = filledTipPath (diamondSpec 2)
       }
@@ -422,7 +425,7 @@ diamondWideTip =
 odiamondWideTip :: ArrowTip
 odiamondWideTip = 
     ArrowTip
-      { retract_distance = const 2
+      { retract_distance = 2.0
       , tip_half_len     = 1.0
       , tip_deco         = closedTipPath (diamondSpec 2)
       }
@@ -456,13 +459,13 @@ vectrapCCW v1 = trapcurve CCW w h quarter_pi ang
 curveTip :: ArrowTip
 curveTip = 
     ArrowTip
-      { retract_distance = const 0
+      { retract_distance = 0
       , tip_half_len     = 0.5
       , tip_deco         = body
       }
   where
     body = promoteLocTheta $ \pt theta -> 
-             localize (join_bevel . solid_stroke_tip) $ 
+             localize (cap_round . join_round . solid_stroke_tip) $ 
                supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipTrail theta
 
 
@@ -480,13 +483,13 @@ curveTipRevTrail theta =
 revcurveTip :: ArrowTip
 revcurveTip = 
     ArrowTip
-      { retract_distance = const 1
+      { retract_distance = 1
       , tip_half_len     = 0.5
       , tip_deco         = body
       }
   where
     body = promoteLocTheta $ \pt theta -> 
-             localize (join_bevel . solid_stroke_tip) $ 
+             localize (cap_round . join_round . solid_stroke_tip) $ 
                supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipRevTrail theta
 
 

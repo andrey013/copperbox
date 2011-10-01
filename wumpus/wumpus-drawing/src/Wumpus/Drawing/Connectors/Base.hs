@@ -43,17 +43,24 @@ import Data.Monoid
 
 
 
--- | The type of Connectors - a query from start and end point to 
--- a Path.
+-- | The type of Connectors - a query from start and end point 
+-- returning an AbsPath.
 --
 type ConnectorPathQuery u = ConnectorQuery u (AbsPath u)
 
+
+
 -- | Arrowhead /algorithm/ - the components of an arrowhead.
 -- 
--- Retract distance may have to account for line width.
+-- Retract distance is rather vague - depending on the arrowhead
+-- it may represent a flush join between the path and the tip
+-- or a join that uses the z-order (tip over path) to create the 
+-- join.
+--
+-- \*\* WARNING \*\* - pending revision...
 --
 data ArrowTip = ArrowTip
-      { retract_distance :: Double -> En
+      { retract_distance :: En
       , tip_half_len     :: En
       , tip_deco         :: LocThetaGraphic En
       }
@@ -68,11 +75,10 @@ type ArrowConnector u = ConnectorImage u (AbsPath u)
 
 runArrowTip :: InterpretUnit u 
             => ArrowTip -> Query u (u, u, LocThetaGraphic u)
-runArrowTip (ArrowTip df len deco) = 
-   getLineWidth             >>= \lw    -> 
-   uconvertCtx1 (df lw)     >>= \uretd ->
-   uconvertCtx1 len         >>= \ulen  ->
-   return (uretd, ulen, uconvF deco)
+runArrowTip (ArrowTip rd hlen deco) = 
+   uconvertCtx1 rd     >>= \urd ->
+   uconvertCtx1 hlen   >>= \uhlen  ->
+   return (urd, uhlen, uconvF deco)
 
 
 -- | Connector with an arrow tip at the end point (i.e right).
