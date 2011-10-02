@@ -35,6 +35,10 @@ description:
   * Renamed the @PlacedTrail@ object to @AnaTrail@ - the prefix 
     vector is considered an /anacrusis/.
   .
+  * Moved @bezierArcPoints@ and @BezierMinorArc@ from 
+    @Basic.Geometry@ and marked the @Basic.Geometry@ code as 
+    obsolute.
+  .
   v0.21.0 to v0.22.0:
   .
   * Reverted argument order of @run@ functions they back to the 

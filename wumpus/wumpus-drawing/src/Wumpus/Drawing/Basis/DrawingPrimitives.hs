@@ -36,25 +36,20 @@ module Wumpus.Drawing.Basis.DrawingPrimitives
   , verticalLine
   , pivotLine
 
-  , oStraightLines
-  , cStraightLines
-
 
   -- * Rectangles
   , blRectangle
   , ctrRectangle
 
 
-  -- * Arc and wedge
-  , arc
+  -- * Wedge
   , wedge
 
   )
 
   where
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -102,15 +97,6 @@ pivotLine lu ru ang = promoteLoc $ \pt ->
     straightLine (pt .+^ avec (ang+pi) lu) (pt .+^ avec ang ru)
 
 
--- | Draw an open path formed from straight line segments.
---
-oStraightLines :: InterpretUnit u => [Point2 u] -> Graphic u
-oStraightLines ps = liftQuery (vertexPP ps) >>= dcOpenPath
-
--- | Draw an closed path formed from straight line segments.
---
-cStraightLines :: InterpretUnit u => DrawMode -> [Point2 u] -> Graphic u
-cStraightLines mode ps = liftQuery (vertexPP ps) >>= dcClosedPath mode
 
 
 --------------------------------------------------------------------------------
@@ -141,12 +127,6 @@ ctrRectangle mode w h =
 -- Wedge
 
 
--- | arc : radius * apex_angle
--- 
-arc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
-arc radius ang = promoteLocTheta $ \pt inclin -> 
-    let ps = bezierArcPoints ang radius inclin pt
-    in liftQuery (curvePP ps) >>= dcOpenPath
 
 -- | wedge : mode * radius * apex_angle
 -- 

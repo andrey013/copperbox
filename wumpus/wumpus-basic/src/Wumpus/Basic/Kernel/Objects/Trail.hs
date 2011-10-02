@@ -39,7 +39,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , rectangleTrail
   , diamondTrail
   , polygonTrail
-
+  , wedgeTrail
 
   , catline
   , catcurve
@@ -291,6 +291,21 @@ polygonTrail n radius = trailIterateLocus $ unfoldr phi (0,top)
     phi (i,ang) | i < n     = Just (avec ang radius, (i+1,ang+theta))
                 | otherwise = Nothing
 
+
+
+-- | wedgeTrail : radius * apex_angle
+-- 
+-- Wedge is drawn at the apex.
+--
+wedgeTrail :: (Real u, Floating u) 
+           => u -> Radian -> Radian -> AnaTrail u
+wedgeTrail radius ang theta = 
+    anaCatTrail zeroVec $ line_in `mappend` w_arc `mappend` line_out
+  where
+    half_ang = 0.5 * ang 
+    line_in  = catline $ avec (theta + half_ang)   radius
+    line_out = catline $ avec (theta - half_ang) (-radius)
+    w_arc    = circularArcCW ang radius (theta - half_pi)
 
 
 

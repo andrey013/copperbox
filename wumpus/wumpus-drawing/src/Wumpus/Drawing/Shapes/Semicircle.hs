@@ -192,7 +192,7 @@ scRadialVec theta radius hminor _ = go (circularModulo theta)
 mkCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
 mkCurve radius theta ctr = BezierCurve p0 p1 p2 p3
   where
-    (BezierCurve p0 p1 p2 p3) = bezierMinorArc half_pi radius theta ctr
+    (p0,p1,p2,p3) = bezierMinorArc half_pi radius theta ctr
 
 
 

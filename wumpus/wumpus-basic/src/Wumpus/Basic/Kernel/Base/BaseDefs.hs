@@ -78,6 +78,11 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , ClockDirection(..)  
   , clockDirection
 
+
+  , bezierArcPoints  
+  , bezierMinorArc
+  
+
   -- * Misc
 
   , both
@@ -88,7 +93,8 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
 import Wumpus.Core                              -- package: wumpus-core
 
 
-import Data.VectorSpace                         -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Control.Applicative
 import Data.Monoid
@@ -411,6 +417,76 @@ clockDirection v1 v2 = if a1 < asum then CW else CCW
   where
     a1   = r2d $ vdirection v1
     asum = r2d $ vdirection (v1 ^+^ v2)
+
+
+
+
+kappa :: Floating u => u
+kappa = 4 * ((sqrt 2 - 1) / 3)
+
+
+
+-- | 'bezierArcPoints' : @ apex_angle * radius * inclination * center -> [Point] @
+--
+-- > ang should be in the range 0 < ang < 360deg.
+--
+-- > if   0 < ang <=  90 returns 4 points
+-- > if  90 < ang <= 180 returns 7 points
+-- > if 180 < ang <= 270 returns 10 points
+-- > if 270 < ang <  360 returns 13 points
+--
+bezierArcPoints ::  Floating u 
+                => Radian -> u -> Radian -> Point2 u -> [Point2 u]
+bezierArcPoints ang radius theta pt = go (circularModulo ang)
+  where
+    go a | a <= half_pi = wedge1 a
+         | a <= pi      = wedge2 (a/2)
+         | a <= 1.5*pi  = wedge3 (a/3)
+         | otherwise    = wedge4 (a/4)
+    
+    wedge1 a = 
+      let (p0,p1,p2,p3) = bezierMinorArc a radius theta pt
+      in [p0,p1,p2,p3]
+
+    wedge2 a = 
+      let (p0,p1,p2,p3) = bezierMinorArc a radius theta pt
+          (_ ,p4,p5,p6) = bezierMinorArc a radius (theta+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6 ] 
+
+    wedge3 a = 
+      let (p0,p1,p2,p3) = bezierMinorArc a radius theta pt
+          (_ ,p4,p5,p6) = bezierMinorArc a radius (theta+a) pt
+          (_ ,p7,p8,p9) = bezierMinorArc a radius (theta+a+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6, p7, p8, p9 ] 
+  
+    wedge4 a = 
+      let (p0,p1,p2,p3)    = bezierMinorArc a radius theta pt
+          (_ ,p4,p5,p6)    = bezierMinorArc a radius (theta+a) pt
+          (_ ,p7,p8,p9)    = bezierMinorArc a radius (theta+a+a) pt
+          (_ ,p10,p11,p12) = bezierMinorArc a radius (theta+a+a+a) pt
+      in [ p0,p1,p2,p3, p4,p5,p6, p7,p8,p9, p10,p11, p12 ] 
+
+
+-- | 'bezierMinorArc' : @ apex_angle * radius * rotation * center -> BezierCurve @
+--
+-- > ang should be in the range 0 < ang <= 90deg.
+--
+bezierMinorArc :: Floating u 
+               => Radian -> u -> Radian -> Point2 u 
+               -> (Point2 u, Point2 u, Point2 u, Point2 u)
+bezierMinorArc ang radius theta pt = (p0,p1,p2,p3)
+  where
+    kfactor = fromRadian $ ang / (0.5*pi)
+    rl      = kfactor * radius * kappa
+    totang  = circularModulo $ ang + theta
+
+    p0      = pt .+^ orthoVec radius 0 theta
+    p1      = p0 .+^ orthoVec 0 rl theta
+    p2      = p3 .+^ orthoVec 0 (-rl) totang
+    p3      = pt .+^ orthoVec radius 0 totang
+
+
+--------------------------------------------------------------------------------
 
 
 -- | Applicative /both/ - run both computations return the pair

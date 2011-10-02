@@ -64,6 +64,9 @@ module Wumpus.Basic.Kernel.Objects.DrawingPrimitives
   , dcDisk
   , dcEllipseDisk
 
+  -- * Arc
+  , dcArc
+
 
   ) where
 
@@ -596,3 +599,16 @@ dcEllipseDisk style rx ry =
                            fillStrokeEllipse frgb attr srgb drx dry pt)
 
 
+
+--------------------------------------------------------------------------------
+
+
+
+-- | dcArc : radius * apex_angle
+-- 
+-- Always open-stroked.
+--
+dcArc :: (Floating u, InterpretUnit u) => u -> Radian -> LocThetaGraphic u
+dcArc radius ang = promoteLocTheta $ \pt inclin -> 
+    let ps = bezierArcPoints ang radius inclin pt
+    in liftQuery (curvePP ps) >>= dcOpenPath

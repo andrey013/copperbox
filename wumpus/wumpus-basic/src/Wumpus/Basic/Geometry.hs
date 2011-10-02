@@ -12,6 +12,7 @@
 --
 -- Import shim for @Wumpus.Basic.Geometry@ modules.
 --
+-- \*\* WARNING \*\* - obsolete.
 --
 --------------------------------------------------------------------------------
 
