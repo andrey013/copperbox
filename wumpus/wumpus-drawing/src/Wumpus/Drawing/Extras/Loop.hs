@@ -16,8 +16,10 @@
 
 module Wumpus.Drawing.Extras.Loop
   ( 
-    loop
-  , loopPoints
+
+    loopPath
+  , loopTrail
+
   ) where
 
 
@@ -31,33 +33,28 @@ import Wumpus.Core                              -- package: wumpus-core
 import Data.AffineSpace                         -- package: vector-space
 
 
--- TODO - Loop is a decoration not a connector.
--- It should probably have the same signature as wedge / arc.
-
--- | Generate a loop - suitable for decorating a circle.
---
--- The radius and the (implicit) start point are the center and 
--- radius of the initial circle not the loop itself.
---
-loop :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-      => u -> Point2 u -> Radian -> Query u (AbsPath u)
-loop zradius zctr ang = return $ curvePath $ loopPoints zradius zctr ang
+import Data.Monoid
 
 
 
--- Should be able to use trig to get a loop suitable for
--- decorating rectangles (provided the start-to-end arc is smaller
--- than the side length
+loopPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+      => u -> Point2 u -> Radian -> AbsPath u
+loopPath zradius ctr incl = anaTrailPath ctr $ loopTrail zradius incl
 
 
 
 
--- | Note - intermediate names and quadrants represent a loop 
--- drawn upwards.
--- 
-loopPoints :: (Real u, Floating u) => u -> Point2 u -> Radian -> [Point2 u]
-loopPoints circ_radius circ_ctr incl = 
-    [ startl, cp1, cp2, kitel, cp3, cp4, top, cp5, cp6, kiter, cp7, cp8, startr ]
+-- This is a legacy definition updated to use Trails, hence it is 
+-- not so clear.
+
+loopTrail :: (Real u, Floating u) => u -> Radian -> AnaTrail u
+loopTrail circ_radius incl = 
+    anaCatTrail (pvec zeroPt startl) $ 
+       mconcat [ diffCurve startl cp1 cp2 kitel
+               , diffCurve kitel  cp3 cp4 top
+               , diffCurve top    cp5 cp6 kiter
+               , diffCurve kiter  cp7 cp8 startr
+               ]
   where
     hw          = 1.25  * circ_radius
     height      = 3.8   * circ_radius
@@ -71,12 +68,12 @@ loopPoints circ_radius circ_ctr incl =
     top_right   = negate $ 0.8 * circ_radius
     top_left    = 0.8 * circ_radius
 
-    top         = dispParallel height incl circ_ctr
-    kiter       = dispOrtho (V2 hminor (-hw)) incl circ_ctr
-    kitel       = dispOrtho (V2 hminor (hw) ) incl circ_ctr
+    top         = dispParallel height incl zeroPt
+    kiter       = dispOrtho (V2 hminor (-hw)) incl zeroPt
+    kitel       = dispOrtho (V2 hminor (hw) ) incl zeroPt
     
-    startr      = circ_ctr .+^ avec (circularModulo $ incl - theta) circ_radius
-    startl      = circ_ctr .+^ avec (circularModulo $ incl + theta) circ_radius
+    startr      = zeroPt .+^ avec (circularModulo $ incl - theta) circ_radius
+    startl      = zeroPt .+^ avec (circularModulo $ incl + theta) circ_radius
 
     -- quadrant III
     cp1         = startl .+^ end_vec 
@@ -93,3 +90,4 @@ loopPoints circ_radius circ_ctr incl =
     -- quadrant IV 
     cp7         = dispParallel minor_down incl kiter
     cp8         = startr .+^ start_vec
+

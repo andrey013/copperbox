@@ -101,8 +101,7 @@ astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop ctr p1 = 
-    liftQuery (loop zradius ctr zincl) >>= \absp -> 
-    rightArrowPath tri45 absp 
+    rightArrowPath tri45 $ loopPath zradius ctr zincl
   where
     v1      = pvec ctr p1
     zradius = vlength v1

@@ -19,10 +19,12 @@
 module Wumpus.Basic.Kernel.Objects.Trail
   (
 
+  -- * Trail types
     TrailSegment(..)
   , CatTrail
   , AnaTrail
 
+  -- * Trail operations
   , drawAnaTrail
   , drawCatTrail
 
@@ -36,14 +38,23 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
   , anaTrailPoints
 
+
+  , catline
+  , catcurve
+  , orthoCatTrail
+
+  , diffCurve
+
+  
+
+  -- * Shape trails
   , rectangleTrail
   , diamondTrail
   , polygonTrail
   , wedgeTrail
 
-  , catline
-  , catcurve
-  
+
+  -- * Named Trail constructors
   , trail_up
   , trail_down
   , trail_left
@@ -63,7 +74,6 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_down_left
   , trail_down_right
 
-  , orthoCatTrail
 
   , trail_theta_up
   , trail_theta_down
@@ -130,7 +140,11 @@ import Data.VectorSpace
 import Data.List ( unfoldr )
 import Data.Monoid
 
--- | Trail with an initial (undrawn) movement - an anacrusis.
+
+--------------------------------------------------------------------------------
+-- Trail types 
+
+-- | Trail with an initial (undrawn) displacement - an anacrusis.
 --
 -- This allows trails to represent centered objects.
 --
@@ -170,6 +184,7 @@ instance Monoid (CatTrail u) where
 
 
 --------------------------------------------------------------------------------
+-- Trail operations
 
 
 drawCatTrail :: InterpretUnit u => PathMode -> CatTrail u -> LocGraphic u
@@ -255,6 +270,36 @@ anaTrailPoints (AnaTrail v0 ts) = qpromoteLoc $ \pt ->
                                         p4 = p3 .+^ v3 
                                     in p1 : p2 : p3 : step p4 xs
 
+
+catline :: Vec2 u -> CatTrail u 
+catline = CatTrail . wrapH . TLine
+
+
+-- | Alternative to @catline@, specifying the vector components 
+-- rather the vector itself.
+--
+-- (cf. orthoVec from Wumpus-Core)
+--
+orthoCatTrail :: Floating u => u -> u -> Radian -> CatTrail u 
+orthoCatTrail x y ang = catline (orthoVec x y ang)
+
+
+catcurve :: Vec2 u -> Vec2 u -> Vec2 u -> CatTrail u
+catcurve v1 v2 v3 = CatTrail $ wrapH $ TCurve v1 v2 v3
+
+-- | Form a Bezier CatTrail from the vectors between four control 
+-- points.
+--
+diffCurve :: Num u 
+          => Point2 u -> Point2 u -> Point2 u -> Point2 u -> CatTrail u
+diffCurve p0 p1 p2 p3 = 
+    catcurve (pvec p0 p1) (pvec p1 p2) (pvec p2 p3)
+
+
+
+--------------------------------------------------------------------------------
+-- Shape Trails
+
 -- | 'rectangleTrail' : @ width * height -> AnaTrail @
 --
 rectangleTrail :: Fractional u => u -> u -> AnaTrail u
@@ -309,14 +354,8 @@ wedgeTrail radius ang theta =
 
 
 
-catline :: Vec2 u -> CatTrail u 
-catline = CatTrail . wrapH . TLine
-
-
-
-catcurve :: Vec2 u -> Vec2 u -> Vec2 u -> CatTrail u
-catcurve v1 v2 v3 = CatTrail $ wrapH $ TCurve v1 v2 v3
-
+--------------------------------------------------------------------------------
+-- Named Trail constructors
 
 trail_up :: Num u => u -> CatTrail u
 trail_up = catline . go_up
@@ -370,13 +409,6 @@ trail_down_right :: Num u => u -> CatTrail u
 trail_down_right = catline . go_down_right
 
 
--- | Alternative to @catline@, specifying the vector components 
--- rather the vector itself.
---
--- (cf. orthoVec from Wumpus-Core)
---
-orthoCatTrail :: Floating u => u -> u -> Radian -> CatTrail u 
-orthoCatTrail x y ang = catline (orthoVec x y ang)
 
 
 trail_theta_up :: Floating u => u -> Radian -> CatTrail u
