@@ -30,6 +30,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , destrCatTrail
 
   , anaCatTrail
+  , modifyAna
   
   , trailIterateLocus
 
@@ -216,10 +217,12 @@ destrCatTrail = toListH . getCatTrail
 --
 anaCatTrail :: Vec2 u -> CatTrail u -> AnaTrail u
 anaCatTrail vinit cat = AnaTrail { pt_init_vec = vinit
-                                      , pt_segments = getCatTrail cat []
-                                      }
+                                 , pt_segments = getCatTrail cat []
+                                 }
 
 
+modifyAna :: (Vec2 u -> Vec2 u) -> AnaTrail u -> AnaTrail u
+modifyAna upd (AnaTrail v1 body) = AnaTrail (upd v1) body
 
 -- | Create a AnaTrail from the vector list - each vector in the 
 -- input list iterates to the start point rather then the 

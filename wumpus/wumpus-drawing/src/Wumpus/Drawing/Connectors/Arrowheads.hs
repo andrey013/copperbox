@@ -60,16 +60,17 @@ module Wumpus.Drawing.Connectors.Arrowheads
 
 
 import Wumpus.Drawing.Basis.DrawingPrimitives
+import Wumpus.Drawing.Basis.InclineTrails
 import Wumpus.Drawing.Connectors.Base
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
+-- import Data.AffineSpace                         -- package: vector-space
 import Data.VectorSpace
 
-
+import Data.Monoid
 
 
 -- | Arrow tips are drawn with a solid line even if the connector
@@ -79,29 +80,8 @@ solid_stroke_tip :: DrawingContextF
 solid_stroke_tip = solid_line -- reset_drawing_metrics
 
 
--- NOTE - PointGen is pending replacement by Trails...
-
-type PointGen = Radian -> [Vec2 En]
 
 type TrailGen = Radian -> AnaTrail En
-
-
-filledTipPath :: PointGen -> LocThetaGraphic En
-filledTipPath gen = 
-    localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
-      cStraightLines DRAW_FILL $ map (pt .+^) $ gen theta
-
-
-closedTipPath :: PointGen -> LocThetaGraphic En
-closedTipPath gen = 
-    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      cStraightLines DRAW_STROKE $ map (pt .+^) $ gen theta
-
-
-openTipPath :: PointGen -> LocThetaGraphic En
-openTipPath gen = 
-    localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      oStraightLines $ map (pt .+^) $ gen theta
 
 
 fillTrailTip :: TrailGen -> LocThetaGraphic En
@@ -127,29 +107,10 @@ openTrailTip gen_pt =
 -- | All three lines are stated.
 --
 closedTriTrail :: Radian -> TrailGen
-closedTriTrail ang theta = 
-    anaCatTrail (vreverse v1) (catline v1 <> catline v2 <> catline v3) 
-  where
-    half_ang = 0.5 * ang
-    half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
-    v1       = theta_adj_grazing 1 half_ang theta
-    v2       = theta_bkwd_adj_grazing 1 half_ang theta
-    v3       = theta_up (2 * half_h) theta
+closedTriTrail ang = \theta ->
+    modifyAna (\v1 -> v1 ^+^ theta_left 1 theta) $
+      incline_triangle ang (avec theta 1)
 
-
--- | All three lines are stated.
---
-revClosedTriTrail :: Radian -> TrailGen
-revClosedTriTrail ang theta = 
-    anaCatTrail (vbkwd ^+^ vreverse v1) 
-                (catline v1 <> catline v2 <> catline v3) 
-  where
-    half_ang = 0.5 * ang
-    half_h   = 1.0 * (fromRadian $ tan half_ang)   -- 1.0 is base_width
-    v1       = theta_bkwd_adj_grazing 1 half_ang theta
-    v2       = theta_adj_grazing 1 half_ang theta
-    v3       = theta_up (2 * half_h) theta
-    vbkwd    = theta_left 1.0 theta
 
 
 filledTri :: Radian -> ArrowTip
@@ -195,12 +156,20 @@ otri45 :: ArrowTip
 otri45 = strokedClosedTri ang45
 
 
+-- | All three lines are stated.
+--
+revClosedTriSpec :: Radian -> TrailGen
+revClosedTriSpec ang = \theta -> 
+{-    modifyAna (\v1 -> v1 ^+^ theta_left 1 theta) $ -}
+      incline_triangle ang (avec theta (-1))
+
+
 filledRevTri :: Radian -> ArrowTip
 filledRevTri ang = 
     ArrowTip
       { retract_distance = 0.5
       , tip_half_len     = 0.5
-      , tip_deco         = fillTrailTip $ revClosedTriTrail ang
+      , tip_deco         = fillTrailTip $ revClosedTriSpec ang
       }
 
 
@@ -219,7 +188,7 @@ strokedClosedRevTri ang =
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = closedTrailTip $ revClosedTriTrail ang
+      , tip_deco         = closedTrailTip $ revClosedTriSpec ang
       }
 
 orevtri90 :: ArrowTip
@@ -232,22 +201,18 @@ orevtri45 :: ArrowTip
 orevtri45 = strokedClosedRevTri ang45
 
 
+barbSpec :: Radian -> TrailGen
+barbSpec ang = \theta -> 
+    modifyAna (\v1 -> v1 ^+^ avec theta (-1)) $ incline_barb ang (avec theta 1)
 
--- Maybe Barbs should account for line width?
 
 strokedBarb :: Radian -> ArrowTip
 strokedBarb ang = 
     ArrowTip
       { retract_distance = 0
       , tip_half_len     = 0.5
-      , tip_deco         = openTrailTip spec
+      , tip_deco         = openTrailTip $ barbSpec ang
       }
-  where
-    half_ang   = 0.5 * ang
-    spec theta = let v1 = theta_adj_grazing 1 half_ang theta
-                     v2 = theta_bkwd_adj_grazing 1 half_ang theta
-                 in anaCatTrail (vreverse v1) (catline v1 <> catline v2) 
-
 
 barb90 :: ArrowTip
 barb90 = strokedBarb ang90
@@ -259,22 +224,16 @@ barb45 :: ArrowTip
 barb45 = strokedBarb ang45
 
 
-
+revBarbSpec :: Radian -> TrailGen
+revBarbSpec ang = \theta -> incline_barb ang (avec theta (-1))
 
 strokedRevBarb :: Radian -> ArrowTip
 strokedRevBarb ang = 
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = openTrailTip spec
+      , tip_deco         = openTrailTip $ revBarbSpec ang 
       }
-  where
-    half_ang   = 0.5 * ang
-    spec theta = let v1    = theta_bkwd_adj_grazing 1 half_ang theta
-                     v2    = theta_adj_grazing 1 half_ang theta
-                     vbkwd = theta_left 1 theta
-                 in anaCatTrail (vbkwd ^+^ vreverse v1) 
-                                (catline v1 <> catline v2) 
 
 
 revbarb90 :: ArrowTip
@@ -287,18 +246,26 @@ revbarb45 :: ArrowTip
 revbarb45 = strokedRevBarb ang45
 
 
+perpSpec :: TrailGen
+perpSpec ang = 
+    anaCatTrail (theta_up 0.5 ang) $ trail_theta_down 1 ang
 
 perp :: ArrowTip
 perp = 
     ArrowTip
       { retract_distance = 0
       , tip_half_len     = 0
-      , tip_deco         = openTipPath spec
+      , tip_deco         = openTrailTip perpSpec
       }
+
+
+bracketSpec :: TrailGen
+bracketSpec ang = anaCatTrail (orthoVec (-0.5) 0.5 ang) catt
   where
-    spec theta = let oa = avec (theta + ang90) 0.5
-                     ob = avec (theta - ang90) 0.5
-                 in [oa, ob]
+    catt = mconcat [ trail_theta_right 0.5 ang
+                   , trail_theta_down  1.0 ang
+                   , trail_theta_left  0.5 ang 
+                   ]
 
 
 bracket :: ArrowTip
@@ -306,28 +273,23 @@ bracket =
     ArrowTip
       { retract_distance = 0.0
       , tip_half_len     = 0.5
-      , tip_deco         = openTipPath spec
+      , tip_deco         = openTrailTip bracketSpec
       }
+
+diskBody :: DrawMode -> Radian -> LocGraphic En
+diskBody mode theta = 
+    localize fill_use_stroke_colour $ moveStart vback $ dcDisk mode 0.5
   where
-    spec theta = let oa = avec (theta + ang90) 0.5
-                     ob = avec (theta - ang90) 0.5
-                     dv = avec theta (-0.5)
-                 in [ oa ^+^ dv, oa, ob, ob ^+^ dv ]
-
-
+    vback = theta_left 0.5 theta
 
 diskTip :: ArrowTip
 diskTip = 
     ArrowTip
       { retract_distance = 0.5
       , tip_half_len     = 0.5
-      , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
+      , tip_deco         = promoteLocTheta $ \pt theta -> 
+                             diskBody DRAW_FILL theta `at` pt
       }
-  where
-    body :: Radian -> LocGraphic En
-    body theta = let v1 = avec theta (-0.5)
-                 in localize fill_use_stroke_colour $ 
-                      moveStart v1 (dcDisk DRAW_FILL 0.5)
 
 
 odiskTip :: ArrowTip
@@ -335,48 +297,34 @@ odiskTip =
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = promoteLocTheta $ \pt theta -> body theta `at` pt
+      , tip_deco         = promoteLocTheta $ \pt theta -> 
+                             diskBody DRAW_STROKE theta `at` pt
       }
-  where
-    body :: Radian -> LocGraphic En
-    body theta = let v1 = avec theta (-0.5)
-                 in localize solid_stroke_tip $ 
-                      moveStart v1 (dcDisk DRAW_STROKE 0.5)
 
 
--- | squareSpec:
+-- | Note - need to draw square East-West rather than West-East
+-- hence the base_width is negative.
 --
--- > 
--- >    ,-----a
--- >    |     |
--- > ...v.....o
--- >    |     | 
--- >    `-----b
---
-squareSpec :: PointGen
-squareSpec theta = [ oa ^+^ ov, oa, ob, ob ^+^ ov ]
-  where
-    oa = avec (theta + ang90) 0.5
-    ob = avec (theta - ang90) 0.5
-    ov = avec theta (-1)
-    
+squareSpec :: TrailGen
+squareSpec theta = incline_square $ avec theta (-1)
+
 
 squareTip :: ArrowTip
 squareTip = 
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = filledTipPath squareSpec
+      , tip_deco         = fillTrailTip squareSpec
       }
+    
 
 osquareTip :: ArrowTip
 osquareTip = 
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = closedTipPath squareSpec
+      , tip_deco         = closedTrailTip squareSpec
       }
-
 
 
 -- | squareSpec:
@@ -388,21 +336,15 @@ osquareTip =
 -- >     \   / 
 -- >       b
 --
-diamondSpec :: En -> PointGen
-diamondSpec width theta = [ ow, oa, zeroVec, ob ]
-  where
-    ow = avec theta (-width)
-    ov = avec theta (negate $ 0.5 * width)
-    oa = ov ^+^ avec (theta + ang90) 0.5
-    ob = ov ^+^ avec (theta - ang90) 0.5
-
+diamondSpec :: En -> TrailGen
+diamondSpec w theta = incline_diamond 1 $ avec theta (-w)
 
 diamondTip :: ArrowTip
 diamondTip = 
     ArrowTip
       { retract_distance = 0.5
       , tip_half_len     = 0.5
-      , tip_deco         = filledTipPath (diamondSpec 1)
+      , tip_deco         = fillTrailTip $ diamondSpec 1
       }
 
 odiamondTip :: ArrowTip
@@ -410,7 +352,7 @@ odiamondTip =
     ArrowTip
       { retract_distance = 1
       , tip_half_len     = 0.5
-      , tip_deco         = closedTipPath (diamondSpec 1)
+      , tip_deco         = closedTrailTip $ diamondSpec 1
       }
 
 
@@ -419,7 +361,7 @@ diamondWideTip =
     ArrowTip
       { retract_distance = 1.0
       , tip_half_len     = 1.0
-      , tip_deco         = filledTipPath (diamondSpec 2)
+      , tip_deco         = fillTrailTip $ diamondSpec 2
       }
 
 odiamondWideTip :: ArrowTip
@@ -427,12 +369,12 @@ odiamondWideTip =
     ArrowTip
       { retract_distance = 2.0
       , tip_half_len     = 1.0
-      , tip_deco         = closedTipPath (diamondSpec 2)
+      , tip_deco         = closedTrailTip $ diamondSpec 2
       }
 
 
-curveTipTrail :: Radian -> AnaTrail En
-curveTipTrail theta = 
+curveTipSpec :: TrailGen
+curveTipSpec theta = 
     anaCatTrail dv $ vectrapCCW v1 <> vectrapCCW v2
   where
     dv  = orthoVec (-1.0)   0.75  theta     -- back and up
@@ -464,14 +406,13 @@ curveTip =
       , tip_deco         = body
       }
   where
-    body = promoteLocTheta $ \pt theta -> 
-             localize (cap_round . join_round . solid_stroke_tip) $ 
-               supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipTrail theta
+    body = localize (cap_round . join_round . solid_stroke_tip) $ 
+             openTrailTip curveTipSpec
 
 
 
-curveTipRevTrail :: Radian -> AnaTrail En
-curveTipRevTrail theta = 
+curveTipRevSpec :: TrailGen
+curveTipRevSpec theta = 
     anaCatTrail dv $ vectrapCW v1 <> vectrapCW v2
   where
     dv  = orthoVec   0.0    0.75  theta     -- just up
@@ -488,8 +429,7 @@ revcurveTip =
       , tip_deco         = body
       }
   where
-    body = promoteLocTheta $ \pt theta -> 
-             localize (cap_round . join_round . solid_stroke_tip) $ 
-               supplyLoc pt $ drawAnaTrail OSTROKE $ curveTipRevTrail theta
+    body = localize (cap_round . join_round . solid_stroke_tip) $ 
+             openTrailTip curveTipRevSpec
 
 
