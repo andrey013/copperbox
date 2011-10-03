@@ -51,8 +51,7 @@ import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Paths
 
-import Wumpus.Basic.Geometry.Quadrant           -- package: wumpus-basic
-import Wumpus.Basic.Kernel hiding ( promoteConn )
+import Wumpus.Basic.Kernel hiding ( promoteConn )     -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -106,9 +105,8 @@ horizontalSrc :: (Real u, Floating u, InterpretUnit u)
               => ProjectionQuery u
 horizontalSrc props p0 p1 = 
     connectorSrcSpace props >>= \sep ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> return $ p0 .+^ go_right sep
-      QUAD_SE -> return $ p0 .+^ go_right sep
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> return $ p0 .+^ go_right sep
       _       -> return $ p0 .+^ go_left sep        
 
 
@@ -119,10 +117,9 @@ horizontalDst :: (Real u, Floating u, InterpretUnit u)
               => ProjectionQuery u
 horizontalDst props p0 p1 = 
     connectorDstSpace props >>= \sep ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> return $ p1 .+^ go_left sep
-      QUAD_SE -> return $ p1 .+^ go_left sep  
-      _       -> return $ p1 .+^ go_right sep
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> return $ p1 .+^ go_left sep
+      _          -> return $ p1 .+^ go_right sep
 
 
 
@@ -132,9 +129,8 @@ verticalSrc :: (Real u, Floating u, InterpretUnit u)
             => ProjectionQuery u
 verticalSrc props p0 p1 =
     connectorSrcSpace props >>= \sep ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> return $ p0 .+^ go_up sep       
-      QUAD_NW -> return $ p0 .+^ go_up sep
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> return $ p0 .+^ go_up sep       
       _       -> return $ p0 .+^ go_down sep
 
 
@@ -144,9 +140,8 @@ verticalDst :: (Real u, Floating u, InterpretUnit u)
             => ProjectionQuery u
 verticalDst props p0 p1 =
     connectorDstSpace props >>= \sep ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> return $ p1 .+^ go_down sep       
-      QUAD_NW -> return $ p1 .+^ go_down sep
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> return $ p1 .+^ go_down sep       
       _       -> return $ p1 .+^ go_up sep
 
 
@@ -246,10 +241,9 @@ connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
            => ConnectorProps -> ConnectorPathQuery u
 connhdiagh props = buildConn props horizontalSrc horizontalDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm, dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> right p0 p1 src_arm dst_arm
-      QUAD_SE -> right p0 p1 src_arm dst_arm
-      _       -> left  p0 p1 src_arm dst_arm
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> right p0 p1 src_arm dst_arm
+      _          -> left  p0 p1 src_arm dst_arm
   where
     right p0 p1 h0 h1 = return $ vertexPath [ p0, p0 .+^ hvec h0
                                             , p1 .-^ hvec h1, p1 ]
@@ -274,9 +268,8 @@ connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
            => ConnectorProps -> ConnectorPathQuery u
 connvdiagv props = buildConn props verticalSrc verticalDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm, dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> up   p0 p1 src_arm dst_arm
-      QUAD_NW -> up   p0 p1 src_arm dst_arm
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> up   p0 p1 src_arm dst_arm
       _       -> down p0 p1 src_arm dst_arm
   where
     up   p0 p1 v0 v1 = return $ vertexPath [ p0, p0 .+^ vvec v0
@@ -301,10 +294,9 @@ conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => ConnectorProps -> ConnectorPathQuery u
 conndiagh props = buildConn props inlineSrc horizontalDst $ \p0 p1 -> 
     connectorArms props >>= \(_,dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> right p0 p1 dst_arm
-      QUAD_SE -> right p0 p1 dst_arm
-      _       -> left  p0 p1 dst_arm
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> right p0 p1 dst_arm
+      _          -> left  p0 p1 dst_arm
   where
     right p0 p1 h1 = return $ vertexPath [ p0, p1 .-^ hvec h1, p1 ]
 
@@ -326,9 +318,8 @@ conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => ConnectorProps -> ConnectorPathQuery u
 conndiagv props = buildConn props inlineSrc verticalDst $ \p0 p1 -> 
     connectorArms props >>= \(_,dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> up    p0 p1 dst_arm
-      QUAD_NW -> up    p0 p1 dst_arm
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> up    p0 p1 dst_arm
       _       -> down  p0 p1 dst_arm
   where
     up   p0 p1 v1 = return $ vertexPath [ p0, p1 .-^ vvec v1, p1 ]
@@ -351,10 +342,9 @@ connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => ConnectorProps -> ConnectorPathQuery u
 connhdiag props = buildConn props horizontalSrc inlineDst $ \p0 p1 -> 
     connectorArms props  >>= \(src_arm,_) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> right p0 p1 src_arm
-      QUAD_SE -> right p0 p1 src_arm
-      _       -> left  p0 p1 src_arm
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> right p0 p1 src_arm
+      _          -> left  p0 p1 src_arm
   where
     right p0 p1 h1 = return $ vertexPath [ p0, p0 .+^ hvec h1, p1 ]
 
@@ -376,9 +366,8 @@ connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
           => ConnectorProps -> ConnectorPathQuery u
 connvdiag props = buildConn props verticalSrc inlineDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm,_) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> up    p0 p1 src_arm
-      QUAD_NW -> up    p0 p1 src_arm
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> up    p0 p1 src_arm
       _       -> down  p0 p1 src_arm
   where
     up   p0 p1 v1 = return $ vertexPath [ p0, p0 .+^ vvec v1, p1 ]
@@ -603,10 +592,9 @@ connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => ConnectorProps -> ConnectorPathQuery u
 connhbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> right p0 p1 src_arm dst_arm
-      QUAD_SE -> right p0 p1 src_arm dst_arm
-      _       -> left  p0 p1 src_arm dst_arm
+    case horizontalDirection $ vdirection $ pvec p0 p1 of
+      RIGHTWARDS -> right p0 p1 src_arm dst_arm
+      _          -> left  p0 p1 src_arm dst_arm
   where
     right p0 p1 h0 h1 = return $ curve1 p0 (p0 .+^ hvec h0) (p1 .-^ hvec h1) p1
 
@@ -632,13 +620,11 @@ connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => ConnectorProps -> ConnectorPathQuery u
 connvbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
-    case quadrant $ vdirection $ pvec p0 p1 of
-      QUAD_NE -> up   p0 p1 src_arm dst_arm
-      QUAD_NW -> up   p0 p1 src_arm dst_arm
+    case verticalDirection $ vdirection $ pvec p0 p1 of
+      UPWARDS -> up   p0 p1 src_arm dst_arm
       _       -> down p0 p1 src_arm dst_arm
   where
     up   p0 p1 v0 v1 = return $ curve1 p0 (p0 .+^ vvec v0) (p1 .-^ vvec v1) p1
-
     down p0 p1 v0 v1 = return $ curve1 p0 (p0 .-^ vvec v0) (p1 .+^ vvec v1) p1
 
 

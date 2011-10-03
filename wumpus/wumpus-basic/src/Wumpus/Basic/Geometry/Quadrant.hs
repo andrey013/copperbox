@@ -18,11 +18,8 @@
 
 module Wumpus.Basic.Geometry.Quadrant
   ( 
-    Quadrant(..)
 
-  , quadrant
-
-  , RadialIntersect
+    RadialIntersect
   , QuadrantAlg(..)
   , runQuadrantAlg
 
@@ -51,21 +48,6 @@ module Wumpus.Basic.Geometry.Quadrant
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
-
-data Quadrant = QUAD_NE | QUAD_NW | QUAD_SW | QUAD_SE
-  deriving (Enum,Eq,Ord,Show)
-
--- | 'quadrant' : @ ang -> Quadrant @
---
--- Get the quadrant of an angle.
---
-quadrant :: Radian -> Quadrant
-quadrant = fn . circularModulo
-  where
-    fn a | a < 0.5*pi   = QUAD_NE
-         | a < pi       = QUAD_NW
-         | a < 1.5*pi   = QUAD_SW
-         | otherwise    = QUAD_SE
 
 
 -- | 'reflectionModuloQI' : @ ang -> Radian @

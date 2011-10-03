@@ -78,6 +78,16 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , ClockDirection(..)  
   , clockDirection
 
+  , HDirection(..)
+  , horizontalDirection
+  , VDirection(..)
+  , verticalDirection
+
+  -- * Quadrant enumeration
+  , Quadrant(..)
+  , quadrant
+
+  -- * Beziers
 
   , bezierArcPoints  
   , bezierMinorArc
@@ -401,6 +411,31 @@ data Direction = UP | DOWN | LEFT | RIGHT
    deriving (Enum,Eq,Ord,Show) 
 
 
+-- | An enumerated type representing horizontal direction.
+--
+data HDirection = LEFTWARDS | RIGHTWARDS
+   deriving (Enum,Eq,Ord,Show) 
+
+
+horizontalDirection :: Radian -> HDirection
+horizontalDirection = fn . circularModulo
+  where
+    fn a | a <= 0.5*pi || a > 1.5*pi = RIGHTWARDS
+         | otherwise                 = LEFTWARDS
+
+-- | An enumerated type representing vertical direction.
+--
+data VDirection = UPWARDS | DOWNWARDS
+   deriving (Enum,Eq,Ord,Show) 
+
+
+verticalDirection :: Radian -> VDirection
+verticalDirection = fn . circularModulo
+  where
+    fn a | a <= pi   = UPWARDS
+         | otherwise = DOWNWARDS
+  
+
 -- | An enumerated type representing /clock/ directions.
 --
 data ClockDirection = CW | CCW
@@ -420,6 +455,27 @@ clockDirection v1 v2 = if a1 < asum then CW else CCW
 
 
 
+-- | An enumerated type representing quadrants.
+-- 
+data Quadrant = QUAD_NE | QUAD_NW | QUAD_SW | QUAD_SE
+  deriving (Enum,Eq,Ord,Show)
+
+-- | 'quadrant' : @ ang -> Quadrant @
+--
+-- Get the quadrant of an angle.
+--
+quadrant :: Radian -> Quadrant
+quadrant = fn . circularModulo
+  where
+    fn a | a < 0.5*pi   = QUAD_NE
+         | a < pi       = QUAD_NW
+         | a < 1.5*pi   = QUAD_SW
+         | otherwise    = QUAD_SE
+
+
+
+--------------------------------------------------------------------------------
+-- Beziers
 
 kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
