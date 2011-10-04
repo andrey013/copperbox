@@ -61,15 +61,17 @@ conntable =
     , ("connhbezier",   C.connhbezier props)
     , ("connvbezier",   C.connvbezier props)
     ]
-  where
-    props = default_connector_props { conn_dst_arm   = 2
-                                    , conn_src_space = 0.5
-                                    , conn_dst_space = 0.5 } 
+
+props :: ConnectorProps
+props = default_connector_props { conn_src_arm   = 2
+                                , conn_dst_arm   = 4
+                                , conn_src_space = 0.5
+                                , conn_dst_space = 0.5 } 
 
 
 tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    drawl start $ ignoreAns $ runTableColumnwise 8 (180,64)
+    drawl start $ ignoreAns $ runTableColumnwise 6 (200,80)
                 $ mapM (chain1 .  makeConnDrawing) conns
   where
     start = P2 0 520 
@@ -82,13 +84,22 @@ std_ctx = fill_colour peru $ standardContext 18
 
 makeConnDrawing :: (String, ConnectorPathQuery Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
-    promoteLoc $ \p0 -> fn p0 (displace (vec 60 40) p0) 
+    promoteLoc $ \p0 -> fn p0 (displace (vec 72 56) p0) 
   where
     fn p0 p1   = mconcat [disk p0, disk p1, dcon p0 p1, lbl p1]
 
     disk pt    = localize (fill_colour red) $ dcDisk DRAW_FILL 2 `at` pt
-    dcon p0 p1 = ignoreAns $ connect (uniformArrow curveTip conn) p0 p1
+    dcon p0 p1 = ignoreAns $ connect biarrow p0 p1
 
     lbl  pt    = ignoreAns $ textline WW ss `at` (displace (hvec 10) pt)
 
+    biarrow    = renderConnectorConfig conf props
+                    
+
+    conf       = ConnectorConfig { conn_arrowl     = Just curveTip
+                                 , conn_arrowr     = Just bracket
+                                 , conn_total_path = conn
+                                 }
+
+                    
 

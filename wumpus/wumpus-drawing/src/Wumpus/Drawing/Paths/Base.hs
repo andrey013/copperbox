@@ -66,6 +66,10 @@ module Wumpus.Drawing.Paths.Base
   , tipR
   , directionL
   , directionR
+
+  , pathStart
+  , pathEnd
+
   , isBezierL
   , isBezierR
 
@@ -636,6 +640,10 @@ tipR (AbsPath _ _ _ ep) = ep
 --------------------------------------------------------------------------------
 -- line direction
 
+-- TODO - Do we want direction or tangent?
+-- Is it correct to negate directionL?
+
+
 -- | Direction of empty path is considered to be 0.
 --
 directionL :: (Real u, Floating u) => AbsPath u -> Radian
@@ -654,6 +662,14 @@ directionR (AbsPath _ _ se _) = step $ viewr se
     step (_ :> AbsLineSeg  _ v1)       = vdirection v1
     step (_ :> AbsCurveSeg _ _  _  v3) = vdirection v3
     step _                             = 0
+
+
+pathStart :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
+pathStart p = (tipL p, directionL p)
+
+pathEnd :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
+pathEnd p = (tipR p, directionR p)
+
  
 -- | Is the left tip a Bezier curve?
 --

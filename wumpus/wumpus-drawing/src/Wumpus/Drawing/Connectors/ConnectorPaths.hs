@@ -52,6 +52,7 @@ import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel hiding ( promoteConn )     -- package: wumpus-basic
+import qualified Wumpus.Basic.Kernel as PC            -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -107,7 +108,7 @@ horizontalSrc props p0 p1 =
     connectorSrcSpace props >>= \sep ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> return $ p0 .+^ go_right sep
-      _       -> return $ p0 .+^ go_left sep        
+      _          -> return $ p0 .+^ go_left sep        
 
 
 
@@ -198,7 +199,7 @@ buildConn props qsrc qdst fn = qpromoteConn $ \p0 p1 ->
 --
 connline :: (Real u, Floating u, InterpretUnit u) 
          => ConnectorProps -> ConnectorPathQuery u
-connline props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+connline props = PC.qpromoteConn $ \p0 p1 -> 
     return $ line1 p0 p1
 
 

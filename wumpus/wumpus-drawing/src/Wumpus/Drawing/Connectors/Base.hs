@@ -30,8 +30,13 @@ module Wumpus.Drawing.Connectors.Base
 
   , rightArrowPath
 
+  -- NEW
+  , ConnectorConfig(..)
+  , renderConnectorConfig
+
   ) where
 
+import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Paths
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -197,3 +202,34 @@ tipDirectionR u absp | u <= 0   = directionR absp
    
 
 
+-- | total_path is the path before accounting for source and dest 
+-- spacing and arrow retract distances.
+--
+data ConnectorConfig u = ConnectorConfig
+      { conn_arrowl     :: Maybe ArrowTip
+      , conn_arrowr     :: Maybe ArrowTip
+      , conn_total_path :: ConnectorPathQuery u 
+      }
+
+-- | NOTE - the prefix /render/ needs (re-) consideration...
+--
+renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
+                      => ConnectorConfig u -> ConnectorProps
+                      -> ConnectorImage u (AbsPath u)
+renderConnectorConfig (ConnectorConfig mbl mbr mf) props = 
+    promoteConn $ \src dst -> 
+      liftQuery (qapplyConn mf src dst) >>= \tot_path -> 
+      connectorSrcSpace props >>= \sepl -> 
+      connectorDstSpace props >>= \sepr ->
+      uconvertCtx1 (maybe 0 retract_distance mbl) >>= \retl -> 
+      uconvertCtx1 (maybe 0 retract_distance mbr) >>= \retr -> 
+      let interim_path = shortenL sepl $ shortenR sepr tot_path
+          (p1,theta1)  = pathStart interim_path
+          (p2,theta2)  = pathEnd   interim_path
+          new_path     = shortenL retl $ shortenR retr interim_path
+          arrl         = mbTip p1 theta1 mbl
+          arrr         = mbTip p2 theta2 mbr
+      in replaceAns tot_path $ 
+            decorate SUPERIOR (drawPath OSTROKE new_path) (arrl `mappend` arrr)
+  where
+    mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
