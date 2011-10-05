@@ -199,7 +199,7 @@ buildConn props qsrc qdst fn = qpromoteConn $ \p0 p1 ->
 --
 connline :: (Real u, Floating u, InterpretUnit u) 
          => ConnectorProps -> ConnectorPathQuery u
-connline props = PC.qpromoteConn $ \p0 p1 -> 
+connline _props = PC.qpromoteConn $ \p0 p1 -> 
     return $ line1 p0 p1
 
 

@@ -61,14 +61,11 @@ module Wumpus.Drawing.Paths.Base
   , shortenL
   , shortenR
 
-  -- * Tips and direction
+  -- * Tips and inclination
   , tipL
   , tipR
-  , directionL
-  , directionR
-
-  , pathStart
-  , pathEnd
+  , inclinationL
+  , inclinationR
 
   , isBezierL
   , isBezierR
@@ -556,7 +553,7 @@ shortenSegL :: (Real u, Floating u)
             => u -> Point2 u -> AbsPathSeg u -> (Point2 u, AbsPathSeg u)
 shortenSegL n sp (AbsLineSeg  u v1)        = 
     let v2  = shortenVec n v1 
-        sp' = sp .+^ (v1 ^-^ v2)
+        sp' = sp .+^ avec (vdirection v1) n
     in (sp', AbsLineSeg  (u-n) v2)
 
 shortenSegL n sp (AbsCurveSeg u v1 v2 v3)  = 
@@ -590,7 +587,7 @@ shortenR n path1@(AbsPath u sp segs endpt)
     | otherwise               = step n (viewr segs) endpt
   where
     step _ EmptyR    _  = AbsPath 0 sp mempty sp 
-    step d (se :> e) ep = let z   = segmentLength e 
+    step d (se :> e) ep = let z     = segmentLength e 
                               enext = ep .-^ segmentVector e
                           in case compare d z of
                               GT -> step (d-z) (viewr se) enext
@@ -610,7 +607,7 @@ shortenSegR :: (Real u, Floating u)
             => u -> AbsPathSeg u -> Point2 u -> (AbsPathSeg u, Point2 u)
 shortenSegR n (AbsLineSeg u v1)        ep = 
     let v2  = shortenVec n v1 
-        ep' = ep .-^ (v1 ^+^ v2)
+        ep' = ep .-^ avec (vdirection v1) n
     in (AbsLineSeg (u-n) v2, ep')
 
 shortenSegR n (AbsCurveSeg u v1 v2 v3) ep = 
@@ -640,35 +637,27 @@ tipR (AbsPath _ _ _ ep) = ep
 --------------------------------------------------------------------------------
 -- line direction
 
--- TODO - Do we want direction or tangent?
--- Is it correct to negate directionL?
 
 
 -- | Direction of empty path is considered to be 0.
 --
-directionL :: (Real u, Floating u) => AbsPath u -> Radian
-directionL (AbsPath _ _ se _)  = step $ viewl se
+inclinationL :: (Real u, Floating u) => AbsPath u -> Radian
+inclinationL (AbsPath _ _ se _)  = step $ viewl se
   where
-    step (AbsLineSeg  _ v1 :< _)       = vdirection $ negateV v1
-    step (AbsCurveSeg _ v1 _  _  :< _) = vdirection $ negateV v1
+    step (AbsLineSeg  _ v1 :< _)       = vdirection v1
+    step (AbsCurveSeg _ v1 _  _  :< _) = vdirection v1
     step _                             = 0
 
 
 -- | Direction of empty path is considered to be 0.
 --
-directionR :: (Real u, Floating u) => AbsPath u -> Radian
-directionR (AbsPath _ _ se _) = step $ viewr se
+inclinationR :: (Real u, Floating u) => AbsPath u -> Radian
+inclinationR (AbsPath _ _ se _) = step $ viewr se
   where
     step (_ :> AbsLineSeg  _ v1)       = vdirection v1
     step (_ :> AbsCurveSeg _ _  _  v3) = vdirection v3
     step _                             = 0
 
-
-pathStart :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
-pathStart p = (tipL p, directionL p)
-
-pathEnd :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
-pathEnd p = (tipR p, directionR p)
 
  
 -- | Is the left tip a Bezier curve?
@@ -698,7 +687,7 @@ isBezierR (AbsPath _ _ se _) = step $ viewr se
 midway :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
 midway pa@(AbsPath u sp _ _) 
     | u == 0    = (sp,0)
-    | otherwise = let pa1 = shortenR (u/2) pa in (tipR pa1, directionR pa1)
+    | otherwise = let pa1 = shortenR (u/2) pa in (tipR pa1, inclinationR pa1)
 
 -- Just the midway point.
 --
@@ -707,14 +696,14 @@ midway_ = fst . midway
 
 
 atstart :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
-atstart pa@(AbsPath _ sp _ _) = (sp, directionL pa)
+atstart pa@(AbsPath _ sp _ _) = (sp, inclinationL pa)
 
 atstart_ :: AbsPath u -> Point2 u
 atstart_ (AbsPath _ sp _ _) = sp
 
 
 atend :: (Real u, Floating u) => AbsPath u -> (Point2 u, Radian)
-atend pa@(AbsPath _ _ _ ep) = (ep, directionR pa)
+atend pa@(AbsPath _ _ _ ep) = (ep, inclinationR pa)
  
 
 atend_ :: AbsPath u -> Point2 u

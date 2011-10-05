@@ -193,12 +193,12 @@ leftRightArrowPath algl algr full_path =
 -- | Helper - direction looks best at half the retract distance.
 --
 tipDirectionL :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionL u absp | u <= 0   = directionL absp
-                     |otherwise = directionL $ shortenL (0.5*u) absp
+tipDirectionL u absp | u <= 0   = inclinationL absp
+                     |otherwise = inclinationL $ shortenL (0.5*u) absp
    
 tipDirectionR :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionR u absp | u <= 0   = directionR absp
-                     |otherwise = directionR $ shortenR (0.5*u) absp
+tipDirectionR u absp | u <= 0   = inclinationR absp
+                     |otherwise = inclinationR $ shortenR (0.5*u) absp
    
 
 
@@ -224,10 +224,10 @@ renderConnectorConfig (ConnectorConfig mbl mbr mf) props =
       uconvertCtx1 (maybe 0 retract_distance mbl) >>= \retl -> 
       uconvertCtx1 (maybe 0 retract_distance mbr) >>= \retr -> 
       let interim_path = shortenL sepl $ shortenR sepr tot_path
-          (p1,theta1)  = pathStart interim_path
-          (p2,theta2)  = pathEnd   interim_path
+          (p1,theta1)  = atstart interim_path
+          (p2,theta2)  = atend   interim_path
           new_path     = shortenL retl $ shortenR retr interim_path
-          arrl         = mbTip p1 theta1 mbl
+          arrl         = mbTip p1 (pi + theta1) mbl
           arrr         = mbTip p2 theta2 mbr
       in replaceAns tot_path $ 
             decorate SUPERIOR (drawPath OSTROKE new_path) (arrl `mappend` arrr)
