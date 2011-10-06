@@ -51,8 +51,7 @@ import Wumpus.Drawing.Connectors.Base
 import Wumpus.Drawing.Connectors.ConnectorProps
 import Wumpus.Drawing.Paths
 
-import Wumpus.Basic.Kernel hiding ( promoteConn )     -- package: wumpus-basic
-import qualified Wumpus.Basic.Kernel as PC            -- package: wumpus-basic
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -60,29 +59,28 @@ import Data.AffineSpace                         -- package: vector-space
 
 
 
-type ProjectionQuery u = 
-      ConnectorProps -> Point2 u -> Point2 u -> Query u (Point2 u)
 
 inlineSrc :: (Real u, Floating u, InterpretUnit u) 
-          => ProjectionQuery u
+          => SpacingProjection u
 inlineSrc props p0 p1 = 
     connectorSrcSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
     in return $ p0 .+^ avec ang sep
 
 inlineDst :: (Real u, Floating u, InterpretUnit u) 
-          => ProjectionQuery u
+          => SpacingProjection u
 inlineDst props p0 p1 = 
     connectorDstSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
     in return $ p1 .-^ avec ang sep
+
 
 -- | Like 'inlineSrc' but /expands/ rather than /contracts/.
 -- 
 -- Use for loops.
 --
 extlineSrc :: (Real u, Floating u, InterpretUnit u) 
-          => ProjectionQuery u
+          => SpacingProjection u
 extlineSrc props p0 p1 = 
     connectorSrcSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
@@ -94,7 +92,7 @@ extlineSrc props p0 p1 =
 -- Use for loops.
 --
 extlineDst :: (Real u, Floating u, InterpretUnit u) 
-          => ProjectionQuery u
+          => SpacingProjection u
 extlineDst props p0 p1 = 
     connectorDstSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
@@ -103,7 +101,7 @@ extlineDst props p0 p1 =
 -- | Horizontal \"orthonormal\" version of 'inlineSrc'.
 --
 horizontalSrc :: (Real u, Floating u, InterpretUnit u) 
-              => ProjectionQuery u
+              => SpacingProjection u
 horizontalSrc props p0 p1 = 
     connectorSrcSpace props >>= \sep ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
@@ -115,7 +113,7 @@ horizontalSrc props p0 p1 =
 -- | Horizontal \"orthonormal\" version of 'inlineDst'.
 --
 horizontalDst :: (Real u, Floating u, InterpretUnit u) 
-              => ProjectionQuery u
+              => SpacingProjection u
 horizontalDst props p0 p1 = 
     connectorDstSpace props >>= \sep ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
@@ -127,7 +125,7 @@ horizontalDst props p0 p1 =
 -- | Vertical \"orthonormal\" version of 'inlineSrc'.
 --
 verticalSrc :: (Real u, Floating u, InterpretUnit u) 
-            => ProjectionQuery u
+            => SpacingProjection u
 verticalSrc props p0 p1 =
     connectorSrcSpace props >>= \sep ->
     case verticalDirection $ vdirection $ pvec p0 p1 of
@@ -138,7 +136,7 @@ verticalSrc props p0 p1 =
 -- | Vertical \"orthonormal\" version of 'inlineDst'.
 --
 verticalDst :: (Real u, Floating u, InterpretUnit u) 
-            => ProjectionQuery u
+            => SpacingProjection u
 verticalDst props p0 p1 =
     connectorDstSpace props >>= \sep ->
     case verticalDirection $ vdirection $ pvec p0 p1 of
@@ -147,14 +145,14 @@ verticalDst props p0 p1 =
 
 
 abovePerpSrc :: (Real u, Floating u, InterpretUnit u) 
-         => ProjectionQuery u
+         => SpacingProjection u
 abovePerpSrc props p0 p1 = 
     connectorSrcSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
     in return $ p0 .+^ avec (ang + half_pi) sep
 
 abovePerpDst :: (Real u, Floating u, InterpretUnit u) 
-         => ProjectionQuery u
+         => SpacingProjection u
 abovePerpDst props p0 p1 =
     connectorDstSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
@@ -162,14 +160,14 @@ abovePerpDst props p0 p1 =
 
 
 belowPerpSrc :: (Real u, Floating u, InterpretUnit u) 
-         => ProjectionQuery u
+         => SpacingProjection u
 belowPerpSrc props p0 p1 =
     connectorSrcSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
     in return $ p0 .+^ avec (ang - half_pi) sep
 
 belowPerpDst :: (Real u, Floating u, InterpretUnit u) 
-         => ProjectionQuery u
+         => SpacingProjection u
 belowPerpDst props p0 p1 =
     connectorDstSpace props >>= \sep -> 
     let ang = vdirection $ pvec p0 p1
@@ -181,13 +179,14 @@ belowPerpDst props p0 p1 =
 -- function accounting for the separator values in the 
 -- DrawingContext.
 --
-buildConn :: (Real u, Floating u, InterpretUnit u) 
-          => ConnectorProps 
-          -> ProjectionQuery u -> ProjectionQuery u
-          -> (Point2 u -> Point2 u -> Query u (AbsPath u))
-          -> ConnectorPathQuery u
-buildConn props qsrc qdst fn = qpromoteConn $ \p0 p1 -> 
-    qsrc props p0 p1 >>= \q0 -> qdst props p0 p1 >>= \q1 -> fn q0 q1
+buildProjConn :: (Real u, Floating u, InterpretUnit u) 
+              => SpacingProjection u -> SpacingProjection u
+              -> (Point2 u -> Point2 u -> Query u (AbsPath u))
+              -> ConnectorPathSpec u
+buildProjConn qsrc qdst fn = 
+    ConnectorPathSpec (CONN_SPACING_PROJECTION qsrc qdst) mf
+  where
+    mf = qpromoteConn $ \p0 p1 -> fn p0 p1
 
 
 
@@ -198,9 +197,10 @@ buildConn props qsrc qdst fn = qpromoteConn $ \p0 p1 ->
 -- | Straight line connector.
 --
 connline :: (Real u, Floating u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connline _props = PC.qpromoteConn $ \p0 p1 -> 
-    return $ line1 p0 p1
+         => ConnectorProps -> ConnectorPathSpec u
+connline _ = ConnectorPathSpec CONN_SPACING_INLINE mf
+  where
+    mf = qpromoteConn $ \p0 p1 -> return $ line1 p0 p1
 
 
 
@@ -216,15 +216,17 @@ connline _props = PC.qpromoteConn $ \p0 p1 ->
 -- 
 --
 connarc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connarc props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
-    let arc_ang = conn_arc_ang props 
-        v1      = pvec p0 p1
-        hlen    = 0.5 * vlength v1
-        ang     = vdirection v1
-        cp0     = p0 .+^ avec (ang + arc_ang) hlen
-        cp1     = p1 .+^ avec (pi + ang - arc_ang) hlen
-    in return $ curve1 p0 cp0 cp1 p1
+        => ConnectorProps -> ConnectorPathSpec u
+connarc props = ConnectorPathSpec CONN_SPACING_INLINE mf
+  where
+    mf = qpromoteConn $ \p0 p1 -> 
+            let arc_ang = conn_arc_ang props 
+                v1      = pvec p0 p1
+                hlen    = 0.5 * vlength v1
+                ang     = vdirection v1
+                cp0     = p0 .+^ avec (ang + arc_ang) hlen
+                cp1     = p1 .+^ avec (pi + ang - arc_ang) hlen
+            in return $ curve1 p0 cp0 cp1 p1
 
 
 
@@ -239,8 +241,8 @@ connarc props = buildConn props inlineSrc inlineDst $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-           => ConnectorProps -> ConnectorPathQuery u
-connhdiagh props = buildConn props horizontalSrc horizontalDst $ \p0 p1 -> 
+           => ConnectorProps -> ConnectorPathSpec u
+connhdiagh props = buildProjConn horizontalSrc horizontalDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm, dst_arm) ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> right p0 p1 src_arm dst_arm
@@ -266,8 +268,8 @@ connhdiagh props = buildConn props horizontalSrc horizontalDst $ \p0 p1 ->
 -- diagonal segment joins the arms. 
 -- 
 connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-           => ConnectorProps -> ConnectorPathQuery u
-connvdiagv props = buildConn props verticalSrc verticalDst $ \p0 p1 -> 
+           => ConnectorProps -> ConnectorPathSpec u
+connvdiagv props = buildProjConn verticalSrc verticalDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm, dst_arm) ->
     case verticalDirection $ vdirection $ pvec p0 p1 of
       UPWARDS -> up   p0 p1 src_arm dst_arm
@@ -292,8 +294,8 @@ connvdiagv props = buildConn props verticalSrc verticalDst $ \p0 p1 ->
 -- end point
 -- 
 conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-conndiagh props = buildConn props inlineSrc horizontalDst $ \p0 p1 -> 
+          => ConnectorProps -> ConnectorPathSpec u
+conndiagh props = buildProjConn inlineSrc horizontalDst $ \p0 p1 -> 
     connectorArms props >>= \(_,dst_arm) ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> right p0 p1 dst_arm
@@ -316,8 +318,8 @@ conndiagh props = buildConn props inlineSrc horizontalDst $ \p0 p1 ->
 -- point.
 -- 
 conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-conndiagv props = buildConn props inlineSrc verticalDst $ \p0 p1 -> 
+          => ConnectorProps -> ConnectorPathSpec u
+conndiagv props = buildProjConn inlineSrc verticalDst $ \p0 p1 -> 
     connectorArms props >>= \(_,dst_arm) ->
     case verticalDirection $ vdirection $ pvec p0 p1 of
       UPWARDS -> up    p0 p1 dst_arm
@@ -340,8 +342,8 @@ conndiagv props = buildConn props inlineSrc verticalDst $ \p0 p1 ->
 -- end point.
 -- 
 connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-connhdiag props = buildConn props horizontalSrc inlineDst $ \p0 p1 -> 
+          => ConnectorProps -> ConnectorPathSpec u
+connhdiag props = buildProjConn horizontalSrc inlineDst $ \p0 p1 -> 
     connectorArms props  >>= \(src_arm,_) ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> right p0 p1 src_arm
@@ -364,8 +366,8 @@ connhdiag props = buildConn props horizontalSrc inlineDst $ \p0 p1 ->
 -- end point.
 -- 
 connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-connvdiag props = buildConn props verticalSrc inlineDst $ \p0 p1 -> 
+          => ConnectorProps -> ConnectorPathSpec u
+connvdiag props = buildProjConn verticalSrc inlineDst $ \p0 p1 -> 
     connectorArms props >>= \(src_arm,_) ->
     case verticalDirection $ vdirection $ pvec p0 p1 of
       UPWARDS -> up    p0 p1 src_arm
@@ -391,8 +393,8 @@ connvdiag props = buildConn props verticalSrc inlineDst $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connabar props = buildConn props abovePerpSrc abovePerpDst $ \p0 p1 ->
+         => ConnectorProps -> ConnectorPathSpec u
+connabar props = buildProjConn abovePerpSrc abovePerpDst $ \p0 p1 ->
     connectorArms props >>= \(src_arm,dst_arm) ->
     let ang = vdirection $ pvec p0 p1
     in return $ vertexPath [ p0, dispDirectionTheta UP src_arm ang p0
@@ -408,8 +410,8 @@ connabar props = buildConn props abovePerpSrc abovePerpDst $ \p0 p1 ->
 -- The bar is drawn /below/ the points.
 --
 connbbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connbbar props = buildConn props belowPerpSrc belowPerpDst $ \p0 p1 ->
+         => ConnectorProps -> ConnectorPathSpec u
+connbbar props = buildProjConn belowPerpSrc belowPerpDst $ \p0 p1 ->
     connectorArms props >>= \(src_arm, dst_arm) ->
     let ang = vdirection $ pvec p0 p1
     in return $ vertexPath [ p0, dispDirectionTheta DOWN src_arm ang p0
@@ -426,9 +428,9 @@ connbbar props = buildConn props belowPerpSrc belowPerpDst $ \p0 p1 ->
 -- The bar is drawn /above/ the points.
 --
 connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorProps -> ConnectorPathQuery u
-connaright props = 
-    buildConn props verticalSrc horizontalDst $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
+           => ConnectorProps -> ConnectorPathSpec u
+connaright _ = 
+    buildProjConn verticalSrc horizontalDst $ \ p0@(P2 x0 _) p1@(P2 _ y1) ->
       let mid = P2 x0 y1 in return $ vertexPath [p0, mid, p1]
 
 
@@ -441,9 +443,9 @@ connaright props =
 -- The bar is drawn /below/ the points.
 --
 connbright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorProps -> ConnectorPathQuery u
-connbright props = 
-    buildConn props horizontalSrc verticalDst $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
+           => ConnectorProps -> ConnectorPathSpec u
+connbright _ = 
+    buildProjConn horizontalSrc verticalDst $ \ p0@(P2 _ y0) p1@(P2 x1 _) ->
     let mid = P2 x1 y0 in return $ vertexPath [p0, mid, p1]
 
 
@@ -469,9 +471,9 @@ directional src dst arm = if src < dst then arm else negate arm
 -- horizontal distance. 
 --
 connhrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
+        => ConnectorProps -> ConnectorPathSpec u
 connhrr props = 
-    buildConn props horizontalSrc horizontalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+    buildProjConn horizontalSrc horizontalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
     connectorArms props >>= \(src_arm,_) -> 
     let a0 = p0 .+^ hvec (directional x0 x1 src_arm)
         a1 = a0 .+^ vvec (y1 - y0)
@@ -490,9 +492,9 @@ connhrr props =
 -- horizontal distance. 
 --
 connrrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
+        => ConnectorProps -> ConnectorPathSpec u
 connrrh props = 
-    buildConn props horizontalSrc horizontalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+    buildProjConn horizontalSrc horizontalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
       connectorArms props >>= \(_,dst_arm) -> 
       let a1 = p1 .-^ hvec (directional x0 x1 dst_arm)
           a0 = a1 .-^ vvec (y1 - y0)
@@ -508,9 +510,9 @@ connrrh props =
 -- >  o  
 --
 connvrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
+        => ConnectorProps -> ConnectorPathSpec u
 connvrr props = 
-    buildConn props verticalSrc verticalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+    buildProjConn verticalSrc verticalDst $ \p0@(P2 x0 y0) p1@(P2 x1 y1) ->
       connectorArms props >>= \(src_arm,_) -> 
       let a0 = p0 .+^ vvec (directional y0 y1 src_arm)
           a1 = a0 .+^ hvec (x1 - x0)
@@ -526,9 +528,9 @@ connvrr props =
 -- >  o  
 --
 connrrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
+        => ConnectorProps -> ConnectorPathSpec u
 connrrv props = 
-    buildConn props verticalSrc verticalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
+    buildProjConn verticalSrc verticalDst $ \ p0@(P2 x0 y0) p1@(P2 x1 y1) ->
       connectorArms props >>= \(_,dst_arm) -> 
       let a1 = p1 .-^ vvec (directional y0 y1 dst_arm)
           a0 = a1 .-^ hvec (x1 - x0)
@@ -546,7 +548,7 @@ connrrv props =
 -- The loop is drawn /above/ the points.
 --
 connaloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorProps -> ConnectorPathQuery u
+          => ConnectorProps -> ConnectorPathSpec u
 connaloop = loopbody id
 
 -- | Loop connector.
@@ -558,14 +560,14 @@ connaloop = loopbody id
 -- The loop is drawn /above/ the points.
 --
 connbloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorProps -> ConnectorPathQuery u
+          => ConnectorProps -> ConnectorPathSpec u
 connbloop = loopbody negate
 
 -- | Looping just differs on a negate...
 --
 loopbody :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-         => (u -> u) -> ConnectorProps -> ConnectorPathQuery u
-loopbody fn props = buildConn props extlineSrc extlineDst $ \p0 p1 ->
+         => (u -> u) -> ConnectorProps -> ConnectorPathSpec u
+loopbody fn props = buildProjConn extlineSrc extlineDst $ \p0 p1 ->
     connectorArms props  >>= \(src_arm, dst_arm) ->
     connectorLoopSize props >>= \loop_len ->
     let ang = vdirection $ pvec p0 p1 
@@ -590,8 +592,13 @@ loopbody fn props = buildConn props extlineSrc extlineDst $ \p0 p1 ->
 -- with source or destination spacers.
 --
 connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorProps -> ConnectorPathQuery u
-connhbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+            => ConnectorProps -> ConnectorPathSpec u
+connhbezier props = 
+    ConnectorPathSpec CONN_SPACING_INLINE (hbezierQuery props)
+
+hbezierQuery :: (Real u, Floating u, InterpretUnit u, Tolerance u)
+             => ConnectorProps -> ConnectorPathQuery u
+hbezierQuery props = qpromoteConn $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> right p0 p1 src_arm dst_arm
@@ -618,12 +625,17 @@ connhbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 ->
 -- with source or destination spacers.
 --
 connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorProps -> ConnectorPathQuery u
-connvbezier props = buildConn props inlineSrc inlineDst $ \p0 p1 -> 
+            => ConnectorProps -> ConnectorPathSpec u
+connvbezier props = 
+    ConnectorPathSpec CONN_SPACING_INLINE (vbezierQuery props)
+
+vbezierQuery :: (Real u, Floating u, InterpretUnit u, Tolerance u)
+             => ConnectorProps -> ConnectorPathQuery u
+vbezierQuery props = qpromoteConn $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
-    case verticalDirection $ vdirection $ pvec p0 p1 of
-      UPWARDS -> up   p0 p1 src_arm dst_arm
-      _       -> down p0 p1 src_arm dst_arm
+      case verticalDirection $ vdirection $ pvec p0 p1 of
+        UPWARDS -> up   p0 p1 src_arm dst_arm
+        _       -> down p0 p1 src_arm dst_arm
   where
     up   p0 p1 v0 v1 = return $ curve1 p0 (p0 .+^ vvec v0) (p1 .-^ vvec v1) p1
     down p0 p1 v0 v1 = return $ curve1 p0 (p0 .-^ vvec v0) (p1 .+^ vvec v1) p1
