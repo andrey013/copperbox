@@ -38,7 +38,7 @@ conn_pic :: CtxPicture
 conn_pic = drawTracing $ tableGraphic conntable
 
 
-conntable :: [(String, ConnectorPathSpec Double)]
+conntable :: [(String, ConnectorPathQuery Double)]
 conntable = 
     [ ("connline",      C.connline props)
     , ("connarc",       C.connarc props)
@@ -69,7 +69,7 @@ props = default_connector_props { conn_src_arm   = 2
                                 , conn_dst_space = 0.5 } 
 
 
-tableGraphic :: [(String, ConnectorPathSpec Double)] -> TraceDrawing Double ()
+tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
     drawl start $ ignoreAns $ runTableColumnwise 6 (200,80)
                 $ mapM (chain1 .  makeConnDrawing) conns
@@ -82,7 +82,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (String, ConnectorPathSpec Double) -> DLocGraphic 
+makeConnDrawing :: (String, ConnectorPathQuery Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
     promoteLoc $ \p0 -> fn p0 (displace (vec 72 56) p0) 
   where
@@ -98,7 +98,7 @@ makeConnDrawing (ss,conn) =
 
     conf       = ConnectorConfig { conn_arrowl     = Just curveTip
                                  , conn_arrowr     = Just curveTip
-                                 , conn_path_spec  = conn
+                                 , conn_total_path = conn
                                  }
 
                     

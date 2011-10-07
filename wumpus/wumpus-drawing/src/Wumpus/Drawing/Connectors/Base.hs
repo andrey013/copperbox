@@ -18,9 +18,7 @@ module Wumpus.Drawing.Connectors.Base
   ( 
 
 
-    ConnectorPathSpec(..)
-  , ConnectorSpacing(..)
-  , ConnectorPathQuery
+    ConnectorPathQuery
   , SpacingProjection
 
   , ArrowTip(..)
@@ -51,19 +49,6 @@ import Data.Monoid
 
 
 
-data ConnectorPathSpec u = ConnectorPathSpec 
-    { conn_spacing      :: ConnectorSpacing u
-    , conn_path_query   :: ConnectorPathQuery u
-    }
-
-
-data ConnectorSpacing u = CONN_SPACING_INLINE
-                        | CONN_SPACING_PROJECTION 
-                            { conn_project_left  :: SpacingProjection u
-                            , conn_project_right :: SpacingProjection u
-                            }
-
-
 type SpacingProjection u = 
       ConnectorProps -> Point2 u -> Point2 u -> Query u (Point2 u)
 
@@ -90,6 +75,18 @@ data ArrowTip = ArrowTip
       , tip_half_len     :: En
       , tip_deco         :: LocThetaGraphic En
       }
+
+
+-- | total_path is the path before accounting for arrow 
+-- retract distances.
+--
+data ConnectorConfig u = ConnectorConfig
+      { conn_arrowl     :: Maybe ArrowTip
+      , conn_arrowr     :: Maybe ArrowTip
+      , conn_total_path :: ConnectorPathQuery u 
+      }
+
+
 
 -- Ideally there should be a plus operation to combine tips 
 -- allowing double tips.
@@ -223,17 +220,8 @@ tipDirectionR u absp | u <= 0   = inclinationR absp
    
 
 
--- | total_path is the path before accounting for source and dest 
--- spacing and arrow retract distances.
---
-data ConnectorConfig u = ConnectorConfig
-      { conn_arrowl     :: Maybe ArrowTip
-      , conn_arrowr     :: Maybe ArrowTip
-      , conn_path_spec  :: ConnectorPathSpec u 
-      }
 
-
-
+{-
 renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
                       => ConnectorConfig u 
                       -> ConnectorProps
@@ -271,16 +259,15 @@ renderConnectorProj mbl mbr projl projr mf props =
   where
     mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
 
-
+-}
 
 -- | NOTE - the prefix /render/ needs (re-) consideration...
 --
-renderConnectorInline :: (Real u, Floating u, InterpretUnit u)
-                      => Maybe ArrowTip -> Maybe ArrowTip 
-                      -> ConnectorPathQuery u
+renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
+                      => ConnectorConfig u
                       -> ConnectorProps
                       -> ConnectorImage u (AbsPath u)
-renderConnectorInline mbl mbr mf props = 
+renderConnectorConfig (ConnectorConfig mbl mbr mf) props = 
     promoteConn $ \src dst -> 
       liftQuery (qapplyConn mf src dst) >>= \tot_path -> 
       connectorSrcSpace props >>= \sepl -> 
