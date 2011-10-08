@@ -220,47 +220,6 @@ tipDirectionR u absp | u <= 0   = inclinationR absp
    
 
 
-
-{-
-renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
-                      => ConnectorConfig u 
-                      -> ConnectorProps
-                      -> ConnectorImage u (AbsPath u)
-renderConnectorConfig (ConnectorConfig mbl mbr spec) props = go spec
-  where
-    go (ConnectorPathSpec CONN_SPACING_INLINE mf) = 
-        renderConnectorInline mbl mbr mf props
-
-    go (ConnectorPathSpec (CONN_SPACING_PROJECTION projl projr) mf) = 
-        renderConnectorProj mbl mbr projl projr mf props
-
--- | NOTE - the prefix /render/ needs (re-) consideration...
---
-renderConnectorProj :: (Real u, Floating u, InterpretUnit u)
-                    => Maybe ArrowTip -> Maybe ArrowTip 
-                    -> SpacingProjection u -> SpacingProjection u
-                    -> ConnectorPathQuery u
-                    -> ConnectorProps
-                    -> ConnectorImage u (AbsPath u)
-renderConnectorProj mbl mbr projl projr mf props = 
-    promoteConn $ \src0 dst0 -> 
-      liftQuery (projl props src0 dst0) >>= \src -> 
-      liftQuery (projr props src0 dst0) >>= \dst -> 
-      liftQuery (qapplyConn mf src dst) >>= \interim_path -> 
-      uconvertCtx1 (maybe 0 retract_distance mbl) >>= \retl -> 
-      uconvertCtx1 (maybe 0 retract_distance mbr) >>= \retr -> 
-      let (p1,theta1)  = atstart interim_path
-          (p2,theta2)  = atend   interim_path
-          new_path     = shortenL retl $ shortenR retr interim_path
-          arrl         = mbTip p1 (pi + theta1) mbl
-          arrr         = mbTip p2 theta2 mbr
-      in replaceAns interim_path $ 
-            decorate SUPERIOR (drawPath OSTROKE new_path) (arrl `mappend` arrr)
-  where
-    mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
-
--}
-
 -- | NOTE - the prefix /render/ needs (re-) consideration...
 --
 renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)

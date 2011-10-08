@@ -33,7 +33,8 @@ description:
   v0.22.0 to v0.23.0:
   .
   * Renamed the @PlacedTrail@ object to @AnaTrail@ - the prefix 
-    vector is considered an /anacrusis/.
+    vector is considered an /anacrusis/. Tidied up the API of the 
+    @Trail@ module.
   .
   * Moved @bezierArcPoints@ and @BezierMinorArc@ from 
     @Basic.Geometry@ and marked the @Basic.Geometry@ code as 

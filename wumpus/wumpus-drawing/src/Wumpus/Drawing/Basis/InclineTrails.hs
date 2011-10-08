@@ -40,7 +40,7 @@ import Data.Monoid
 
 incline_circle :: (Real u, Floating u) => Vec2 u -> AnaTrail u
 incline_circle v1 = 
-    anaCatTrail zeroVec (semicircleCW v1 <> semicircleCW rv1)
+    anaCatTrail zeroVec (semicircleTrail CW v1 <> semicircleTrail CW rv1)
   where
     rv1 = vreverse v1
 
@@ -118,9 +118,9 @@ incline_tube :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
 incline_tube h v1 = 
     anaCatTrail (theta_down_right hh ang) $ mconcat $
       [ trail_theta_right base_len ang
-      , semicircleCCW vup
+      , semicircleTrail CCW vup
       , trail_theta_left base_len ang
-      , semicircleCCW vdown
+      , semicircleTrail CCW vdown
       ]
   where
     hh        = 0.5 * h

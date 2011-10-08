@@ -96,9 +96,9 @@ cfconntube :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
 cfconntube du v1 = 
     anaCatTrail (orthoVec 0 (-du) ang) $ mconcat $
       [ trail_theta_right w ang
-      , semicircleCCW vup
+      , semicircleTrail CCW vup
       , trail_theta_left w ang
-      , semicircleCCW vdown
+      , semicircleTrail CCW vdown
       ]
   where
     ang   = vdirection v1 

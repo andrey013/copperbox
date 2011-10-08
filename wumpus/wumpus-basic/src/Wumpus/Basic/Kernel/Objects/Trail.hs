@@ -13,6 +13,10 @@
 --
 -- /Trails/ - prototype paths. Less resource heavy than the Path
 -- object in Wumpus-Drawing.
+-- 
+-- @CatTrail@ supports concatenation. @AnaTrail@ supports 
+-- /initial displacement/ - this can account for drawing 
+-- rectangles from their center, for eaxample.
 --
 --------------------------------------------------------------------------------
 
@@ -97,16 +101,12 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_theta_adj_grazing
   , trail_theta_bkwd_adj_grazing
 
- 
-  , semicircleCW
-  , semicircleCCW
 
-  , minorCircleSweepCW
-  , minorCircleSweepCCW
-  , circleSweepCW
-  , circleSweepCCW
-  , circularArcCW
-  , circularArcCCW
+
+  , semicircleTrail
+  , minorCircleSweep
+  , circleSweep
+  , circularArc
 
   , sineWave
   , sineWave1
@@ -115,12 +115,12 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , squiggleWave
   , semicircleWave
 
-  , tricurve
-  , rectcurve
-  , trapcurve
-  , bowcurve
-  , wedgecurve
-  , loopcurve
+  , triCurve
+  , rectCurve
+  , trapCurve
+  , bowCurve
+  , wedgeCurve
+  , loopCurve
 
   ) where
 
@@ -305,8 +305,8 @@ diffCurve p0 p1 p2 p3 =
 rectangleTrail :: Fractional u => u -> u -> AnaTrail u
 rectangleTrail w h = 
     AnaTrail { pt_init_vec = ctr_to_bl 
-                , pt_segments = map TLine spec
-                }
+             , pt_segments = map TLine spec
+             }
   where
     ctr_to_bl = vec (negate $ 0.5*w) (negate $ 0.5*h)
     spec      = [ go_right w, go_up h, go_left w, go_down h ]
@@ -464,8 +464,8 @@ trail_theta_down_right u = catline . theta_down_right u
 
 
 
--- | Return @a-o@ when supplied length of @b-o@ and the grazing 
--- angle @boa@:
+-- | Return the line @a-o@ when supplied length of @b-o@ and the 
+-- grazing angle @boa@:
 --
 -- >    a
 -- >    .\
@@ -479,8 +479,8 @@ trail_theta_adj_grazing adj_len ang =
     catline . theta_adj_grazing adj_len ang
 
 
--- | Return @o-c@ when supplied length of @b-o@ and the grazing 
--- angle @boc@:
+-- | Return the line @o-c@ when supplied length of @b-o@ and the 
+-- grazing angle @boc@:
 --
 --
 -- >  ..b..o
@@ -541,9 +541,27 @@ kappa :: Floating u => u
 kappa = 4 * ((sqrt 2 - 1) / 3)
 
 
--- DESIGN NOTE - different functions for CW and CCW or same 
--- function with @ClockDirection@ as first argument?
+--
+-- DESIGN NOTE 
+--
+-- The API seems better exposing ClockDirection as an argument 
+-- rather than providing two different functions for CW and CCW 
+-- (even though some functions are defined by independent CW and 
+-- CCW versions).
+--
 
+
+-- | 'semicircleCW' : @ base_vector -> CatTrail @ 
+-- 
+-- Make an open clockwise semicircle from two Bezier curves. 
+--
+-- Although this function produces an approximation of a 
+-- semicircle, the approximation seems fine in practice.
+--
+semicircleTrail :: (Real u, Floating u) 
+               => ClockDirection -> Vec2 u -> CatTrail u
+semicircleTrail CW = semicircleCW
+semicircleTrail _  = semicircleCCW
 
 -- | 'semicircleCW' : @ base_vector -> CatTrail @ 
 -- 
@@ -596,6 +614,16 @@ semicircleCCW base_vec =
 
 
 
+-- | 'minorCircleSweep' : @ clock_direction * angle * radius 
+--      * inclination -> CatTrail @
+--
+-- > ang should be in the range 0 < ang <= 90deg.
+--
+minorCircleSweep :: (Real u, Floating u)
+                 => ClockDirection -> Radian -> u -> Radian -> CatTrail u
+minorCircleSweep CW = minorCircleSweepCW 
+minorCircleSweep _  = minorCircleSweepCCW
+
 
 -- | 'minorCircleSweepCW' : @ angle * radius * inclination -> CatTrail @
 --
@@ -634,6 +662,21 @@ minorCircleSweepCCW ang radius theta =
     p2      = displace (theta_down  rl     totang) p3
     p3      = displace (avec totang radius) zeroPt
 
+
+-- | 'circleSweep' : @ clock_direction * apex_angle * radius 
+--      * inclination -> CatTrail @
+--
+-- > ang should be in the range 0 < ang < 360deg.
+--
+-- > if   0 < ang <=  90 returns 1 segment
+-- > if  90 < ang <= 180 returns 2 segments
+-- > if 180 < ang <= 270 returns 3 segments
+-- > if 270 < ang <  360 returns 4 segmenets
+--
+circleSweep :: (Real u, Floating u)
+            => ClockDirection -> Radian -> u -> Radian -> CatTrail u
+circleSweep CW = circleSweepCW
+circleSweep _  = circleSweepCCW
 
 
 -- | 'circleSweepCW' : @ apex_angle * radius * inclination -> CatTrail @
@@ -702,6 +745,11 @@ circleSweepCCW ang radius theta = go (circularModulo ang)
                `mappend` minorCircleSweepCCW a radius (theta+a)
                `mappend` minorCircleSweepCCW a radius (theta+a+a)
                `mappend` minorCircleSweepCCW a radius (theta+a+a+a)
+
+circularArc :: (Real u, Floating u) 
+            => ClockDirection -> Radian -> u -> Radian -> CatTrail u 
+circularArc CW = circularArcCW
+circularArc _  = circularArcCCW
 
 
 -- | inclination is the inclination of the chord.
@@ -803,15 +851,15 @@ semicircleWave cdir i unit ang =
 
 --------------------------------------------------------------------------------
 
--- | 'tricurve' : @ clock_direction * base_width * height * 
+-- | 'triCurve' : @ clock_direction * base_width * height * 
 --      base_inclination -> CatTrail @
 -- 
 -- Curve in a triangle - base_width and height are expected to 
 -- be positive.
 -- 
-tricurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
-tricurve CW  bw h ang = ctriCW bw h ang
-tricurve CCW bw h ang = ctriCW bw (-h) ang
+triCurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
+triCurve CW  bw h ang = ctriCW bw h ang
+triCurve CCW bw h ang = ctriCW bw (-h) ang
 
 
 -- | Curve in a triangle.
@@ -823,14 +871,14 @@ ctriCW bw h ang = catcurve v1 zeroVec v2
     v2 = orthoVec (0.5 * bw) (-h) ang
 
 
--- | 'rectcurve' : @ clock_direction * base_width * height * 
+-- | 'rectCurve' : @ clock_direction * base_width * height * 
 --      base_inclination -> CatTrail @
 -- 
 -- Curve in a rectangle.
 -- 
-rectcurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
-rectcurve CW  bw h ang = crectCW bw h ang
-rectcurve CCW bw h ang = crectCW bw (-h) ang
+rectCurve :: Floating u => ClockDirection -> u -> u -> Radian -> CatTrail u
+rectCurve CW  bw h ang = crectCW bw h ang
+rectCurve CCW bw h ang = crectCW bw (-h) ang
 
 
 -- | Curve in a rectangle.
@@ -846,10 +894,10 @@ crectCW bw h ang = catcurve v1 v2 v3
 
 -- | Curve in a trapezium.
 -- 
-trapcurve :: Floating u 
+trapCurve :: Floating u 
           => ClockDirection -> u -> u -> Radian -> Radian -> CatTrail u
-trapcurve CW  bw h interior_ang ang = ctrapCW  bw h interior_ang ang
-trapcurve CCW bw h interior_ang ang = ctrapCCW bw h interior_ang ang
+trapCurve CW  = ctrapCW
+trapCurve CCW = ctrapCCW
 
 -- | Curve in a trapezium (CW).
 -- 
@@ -877,10 +925,10 @@ ctrapCCW bw h interior_ang ang = catcurve v1 v2 v3
 
 -- | Curve in half a /bowtie/.
 -- 
-bowcurve :: Floating u 
+bowCurve :: Floating u 
          => ClockDirection -> u -> u -> Radian -> CatTrail u
-bowcurve CW  bw h ang = cbowCW bw h ang
-bowcurve CCW bw h ang = cbowCW bw (-h) ang
+bowCurve CW  bw h ang = cbowCW bw h ang
+bowCurve CCW bw h ang = cbowCW bw (-h) ang
 
 -- | Curve in half a /bowtie/.
 -- 
@@ -894,10 +942,10 @@ cbowCW bw h ang = catcurve v1 v2 v3
 
 -- | Wedge curve formed inside a bowtie rotated by 90deg.
 -- 
-wedgecurve :: Floating u 
+wedgeCurve :: Floating u 
            => ClockDirection -> u -> u -> Radian -> CatTrail u
-wedgecurve CW  bw h ang = cwedgeCW bw h ang
-wedgecurve CCW bw h ang = cwedgeCW bw (-h) ang
+wedgeCurve CW  bw h ang = cwedgeCW bw h ang
+wedgeCurve CCW bw h ang = cwedgeCW bw (-h) ang
 
 -- | Wedge curve clockwise.
 -- 
@@ -911,10 +959,10 @@ cwedgeCW bw h ang = catcurve v1 v2 v3
 
 -- | Variation of wedge curve that draws a loop.
 -- 
-loopcurve :: Floating u 
+loopCurve :: Floating u 
           => ClockDirection -> u -> u -> Radian -> CatTrail u
-loopcurve CW  bw h ang = cloopCW bw h ang
-loopcurve CCW bw h ang = cloopCW bw (-h) ang
+loopCurve CW  bw h ang = cloopCW bw h ang
+loopCurve CCW bw h ang = cloopCW bw (-h) ang
 
 
 -- | loop curve clockwise.
