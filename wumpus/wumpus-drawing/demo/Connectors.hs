@@ -50,6 +50,7 @@ conntable =
     , ("connvdiag",     C.connvdiag props)
     , ("connabar",      C.connabar props)
     , ("connbbar",      C.connbbar props)
+    , ("connorthoabar",    C.connorthoabar props)
     , ("connaright",    C.connaright props)
     , ("connbright",    C.connbright props)
     , ("connhrr",       C.connhrr  props)
@@ -64,7 +65,7 @@ conntable =
 
 props :: ConnectorProps
 props = default_connector_props { conn_src_arm   = 2
-                                , conn_dst_arm   = 4
+                                , conn_dst_arm   = 3
                                 , conn_src_space = 0.5
                                 , conn_dst_space = 0.5 } 
 

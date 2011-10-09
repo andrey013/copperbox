@@ -48,7 +48,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , orthoCatTrail
 
   , diffCurve
-
+  , diffLines
   
 
   -- * Shape trails
@@ -78,6 +78,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , trail_down_left
   , trail_down_right
 
+  , trail_para
+  , trail_perp
 
   , trail_theta_up
   , trail_theta_down
@@ -297,6 +299,22 @@ diffCurve p0 p1 p2 p3 =
 
 
 
+-- | Form a CatTrail from the linear segment joining the list of 
+-- points.
+-- 
+-- Some configurations of vectors seem easier to specify using 
+-- located points then making them coordinate free by taking 
+-- the joining vectors.
+--
+diffLines :: Num u => [Point2 u] -> CatTrail u
+diffLines []     = mempty
+diffLines (x:xs) = step mempty x xs 
+  where
+    step ac a (b:bs) = step (ac `mappend` catline (pvec a b)) b bs
+    step ac _ []     = ac
+
+
+
 --------------------------------------------------------------------------------
 -- Shape Trails
 
@@ -409,6 +427,11 @@ trail_down_right :: Num u => u -> CatTrail u
 trail_down_right = catline . go_down_right
 
 
+trail_perp :: Floating u => u -> Radian -> CatTrail u
+trail_perp = trail_theta_up
+
+trail_para :: Floating u => u -> Radian -> CatTrail u
+trail_para = trail_theta_right
 
 
 trail_theta_up :: Floating u => u -> Radian -> CatTrail u

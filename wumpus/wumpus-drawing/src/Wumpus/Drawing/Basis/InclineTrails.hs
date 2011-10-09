@@ -25,7 +25,37 @@ module Wumpus.Drawing.Basis.InclineTrails
   , incline_barb
   , incline_tube
   , incline_chamf_rect
-  
+
+  , trail_diagh
+  , trail_diagv
+  , trail_hdiag
+  , trail_vdiag
+
+  , trail_hdiagh
+  , trail_vdiagv
+
+  , trail_perp_bar
+  , trail_perp_bar2
+
+  , trail_ortho_bar
+  , trail_ortho_bar2
+
+  , trail_hright
+  , trail_vright
+
+  , trail_hrr
+  , trail_vrr
+  , trail_rrh
+  , trail_rrv
+
+  , trail_rect_loop
+
+  , vtriCurve
+  , vrectCurve
+  , vtrapCurve
+  , vbowCurve
+  , vwedgeCurve
+
   )
   where
 
@@ -35,8 +65,12 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.AffineSpace                         -- package: vector-space
 
 import Data.Monoid
+
+
+-- Shapes...
 
 incline_circle :: (Real u, Floating u) => Vec2 u -> AnaTrail u
 incline_circle v1 = 
@@ -144,3 +178,273 @@ incline_chamf_rect h v1 =
     hh        = 0.5 * h
     ang       = vdirection v1 
     base_len  = vlength v1 - h
+
+-- | Diagonal-horizontal trail.
+--
+-- >    --@
+-- >   /
+-- >  o
+-- 
+trail_diagh :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_diagh leg v1 = 
+    let h   = vector_y v1
+        mid = (abs $ vector_x v1) - leg
+    in case horizontalDirection $ vdirection v1 of
+         RIGHTWARDS -> orthoCatTrail mid h 0    <> trail_right leg
+         _          -> orthoCatTrail (-mid) h 0 <> trail_left leg
+
+trail_diagv :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_diagv leg v1 = 
+    let w   = vector_x v1
+        mid = (abs $ vector_y v1) - leg
+    in case verticalDirection $ vdirection v1 of
+         UPWARDS -> orthoCatTrail w mid 0 <> trail_up leg
+         _       -> orthoCatTrail w (-mid) 0 <> trail_down leg
+
+
+trail_hdiag :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_hdiag leg v1 = 
+    let h   = vector_y v1
+        mid = (abs $ vector_x v1) - leg
+    in case horizontalDirection $ vdirection v1 of
+         RIGHTWARDS -> trail_right leg <> orthoCatTrail mid h 0
+         _          -> trail_left  leg <> orthoCatTrail (-mid) h 0
+
+
+trail_vdiag :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_vdiag leg v1 = 
+    let w   = vector_x v1
+        mid = (abs $ vector_y v1) - leg
+    in case verticalDirection $ vdirection v1 of
+         UPWARDS -> trail_up   leg <> orthoCatTrail w mid 0
+         _       -> trail_down leg <> orthoCatTrail w (-mid) 0
+
+
+
+-- | Horizontal-diagonal-horizontal trail.
+--
+-- >      --@
+-- >     /
+-- >  o--
+-- 
+--
+trail_hdiagh :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
+trail_hdiagh legl legr v1 = 
+    let h   = vector_y v1
+        mid = (abs $ vector_x v1) - (legl + legr)
+    in case horizontalDirection $ vdirection v1 of
+         RIGHTWARDS -> mconcat [ trail_right legl
+                               , orthoCatTrail mid h 0
+                               , trail_right legr
+                               ] 
+         _          -> mconcat [ trail_left  legl
+                               , orthoCatTrail (-mid) h 0
+                               , trail_left legr
+                               ] 
+
+
+
+trail_vdiagv :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
+trail_vdiagv legl legr v1 = 
+    let w   = vector_x v1
+        mid = (abs $ vector_y v1) - (legl + legr)
+    in case verticalDirection $ vdirection v1 of
+         UPWARDS -> mconcat [ trail_up legl
+                            , orthoCatTrail w mid 0
+                            , trail_up legr
+                            ] 
+         _       -> mconcat [ trail_down  legl
+                            , orthoCatTrail w (-mid) 0
+                            , trail_down legr
+                            ] 
+
+-- | Uniform leg size.
+--
+trail_perp_bar :: (Real u, Floating u) 
+               => ClockDirection -> u -> Vec2 u -> CatTrail u
+trail_perp_bar CW h v1 = trail_perp_barCW h v1
+trail_perp_bar _  h v1 = trail_perp_barCW (-h) v1
+
+
+trail_perp_barCW :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_perp_barCW h v1 = 
+    trail_theta_up h ang <> catline v1 <> trail_theta_down h ang
+  where
+    ang = vdirection v1
+
+
+-- | Bar connector - independent leg size, legs perpendicular.
+--
+-- 
+-- >  o    @ 
+-- >  |    |
+-- >  '----'  
+--
+-- The bar is drawn /below/ the points.
+--
+trail_perp_bar2 :: (Real u, Floating u) 
+                => ClockDirection -> u -> u -> Vec2 u -> CatTrail u
+trail_perp_bar2 CW h1 h2 v1 = trail_perp_barCW2 h1 h2 v1
+trail_perp_bar2 _  h1 h2 v1 = trail_perp_barCW2 (-h1) (-h2) v1
+
+
+trail_perp_barCW2 :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
+trail_perp_barCW2 h1 h2 v1 = 
+       trail_theta_up h1 ang 
+    <> orthoCatTrail (vlength v1) (negate $ h1 - h2) ang
+    <> trail_theta_down h2 ang
+  where
+    ang = vdirection v1
+
+
+
+-- | First leg size.
+--
+trail_ortho_bar :: (Real u, Floating u) 
+                => ClockDirection -> u -> Vec2 u -> CatTrail u
+trail_ortho_bar CW h v1 = trail_ortho_barCW h v1
+trail_ortho_bar _  h v1 = trail_ortho_barCW (-h) v1
+
+
+trail_ortho_barCW :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
+trail_ortho_barCW h1 v1 = 
+       trail_perp h1 ang
+    <> orthoCatTrail len (negate $ h1 - h2) ang
+    <> trail_perp (-h2) ang
+  where
+    ang = vdirection v1
+    len = vlength v1
+    h2  = h1 - (len * (fromRadian $ tan ang))
+
+
+-- | Independent leg size.
+--
+-- WARNING - API needs more thought.
+--
+trail_ortho_bar2 :: (Real u, Floating u) 
+                 => ClockDirection -> u -> u -> Vec2 u -> CatTrail u
+trail_ortho_bar2 CW h1 h2 v1 = trail_ortho_barCW2 h1 h2 v1
+trail_ortho_bar2 _  h1 h2 v1 = trail_ortho_barCW2 (-h1) (-h2) v1
+
+
+-- | WARNING - uses vvec
+-- 
+trail_ortho_barCW2 :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
+trail_ortho_barCW2 h1 h2 v1 = 
+    diffLines [ p0, p0 .+^ vvec h1, p1 .+^ vvec h2, p1 ]
+  where
+    p0 = zeroPt
+    p1 = p0 .+^ v1
+
+
+
+trail_hright :: Num u => Vec2 u -> CatTrail u
+trail_hright (V2 x y) = trail_right x <> trail_up y
+
+
+trail_vright :: Num u => Vec2 u -> CatTrail u
+trail_vright (V2 x y) = trail_up y <> trail_right x
+
+trail_hrr :: (Floating u, Ord u) => u -> Vec2 u -> CatTrail u
+trail_hrr x1 (V2 x y) = 
+       trail_theta_right x1 ang 
+    <> trail_theta_up y ang 
+    <> trail_theta_right (abs x  - x1) ang
+  where
+    ang = if x < 0 then pi else 0
+
+trail_vrr :: (Floating u, Ord u) => u -> Vec2 u -> CatTrail u
+trail_vrr y1 (V2 x y) = 
+       trail_theta_up y1 ang 
+    <> trail_theta_right x ang 
+    <> trail_theta_up (abs y  - y1) ang
+  where
+    ang = if y < 0 then pi else 0
+
+
+trail_rrh :: (Floating u, Ord u) => u -> Vec2 u -> CatTrail u
+trail_rrh x1 (V2 x y) = 
+       trail_theta_right (abs x  - x1) ang 
+    <> trail_theta_up y ang 
+    <> trail_theta_right x1 ang
+  where
+    ang = if x < 0 then pi else 0
+
+trail_rrv :: (Floating u, Ord u) => u -> Vec2 u -> CatTrail u
+trail_rrv y1 (V2 x y) = 
+       trail_theta_up (abs y - y1) ang 
+    <> trail_theta_right x ang 
+    <> trail_theta_up y1 ang
+  where
+    ang = if y < 0 then pi else 0
+
+
+trail_rect_loop :: (Real u, Floating u) 
+                => ClockDirection -> u -> u -> u -> Vec2 u -> CatTrail u
+trail_rect_loop CW = trail_rect_loopCW
+trail_rect_loop _  = trail_rect_loopCCW
+
+trail_rect_loopCW :: (Real u, Floating u) 
+                  => u -> u -> u -> Vec2 u -> CatTrail u
+trail_rect_loopCW extl extr h v1 = 
+       trail_theta_left  extl ang
+    <> trail_theta_up    h    ang
+    <> trail_theta_right (len + extl + extr) ang
+    <> trail_theta_down  h    ang
+    <> trail_theta_left  extr ang
+  where
+    ang = vdirection v1
+    len = vlength v1
+
+trail_rect_loopCCW :: (Real u, Floating u)
+                   => u -> u -> u -> Vec2 u -> CatTrail u
+trail_rect_loopCCW extl extr h v1 = 
+       trail_theta_left  extl ang
+    <> trail_theta_down  h    ang
+    <> trail_theta_right (len + extl + extr) ang
+    <> trail_theta_up    h    ang
+    <> trail_theta_left  extr ang
+  where
+    ang = vdirection v1
+    len = vlength v1
+
+
+-- | 'triCurve' formulated with a /base vector/ rather than 
+-- base-width and angle of inclination.
+--
+vtriCurve :: (Real u, Floating u) 
+          => ClockDirection -> u -> Vec2 u -> CatTrail u 
+vtriCurve clk h v1 = triCurve clk (vlength v1) h (vdirection v1)
+  
+
+-- | 'rectCurve' formulated with a /base vector/ rather than 
+-- base-width and angle of inclination.
+--
+vrectCurve :: (Real u, Floating u) 
+           => ClockDirection -> u -> Vec2 u -> CatTrail u
+vrectCurve clk h v1 = rectCurve clk (vlength v1) h (vdirection v1)
+
+
+-- | 'trapCurve' formulated with a /base vector/ rather than 
+-- base-width and angle of inclination.
+--
+vtrapCurve :: (Real u, Floating u)
+           => ClockDirection -> u -> Radian -> Vec2 u -> CatTrail u
+vtrapCurve clk h interior_ang v1 = 
+    trapCurve clk (vlength v1) h interior_ang (vdirection v1)
+
+
+-- | 'bowCurve' formulated with a /base vector/ rather than 
+-- base-width and angle of inclination.
+--
+vbowCurve :: (Real u, Floating u)
+          => ClockDirection -> u -> Vec2 u -> CatTrail u
+vbowCurve clk h v1 = bowCurve clk (vlength v1) h (vdirection v1) 
+
+-- | 'wedgeCurve' formulated with a /base vector/ rather than 
+-- base-width and angle of inclination.
+--
+vwedgeCurve :: (Real u, Floating u)
+            => ClockDirection -> u -> Vec2 u -> CatTrail u
+vwedgeCurve clk h v1 = wedgeCurve clk (vlength v1) h (vdirection v1) 
+

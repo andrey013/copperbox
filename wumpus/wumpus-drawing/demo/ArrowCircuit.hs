@@ -110,15 +110,16 @@ rrectangle _r w h = strokedShape (rectangle w h)
 
 -- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
 connline = C.connline default_connector_props
 
-connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+connabar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
          => ConnectorPathQuery u
 connabar = C.connabar default_connector_props
 
 
-connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+connaright :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => ConnectorPathQuery u
 connaright = C.connaright default_connector_props
 

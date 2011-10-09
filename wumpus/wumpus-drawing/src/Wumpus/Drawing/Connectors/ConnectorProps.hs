@@ -25,6 +25,7 @@ module Wumpus.Drawing.Connectors.ConnectorProps
   , connectorSrcSpace
   , connectorDstSpace
   , connectorArms
+  , connectorLegs
   , connectorLoopSize
   , connectorBoxHalfSize 
 
@@ -131,6 +132,15 @@ connectorArms :: (DrawingCtxM m, InterpretUnit u)
 connectorArms props = 
     (\sz -> ( uconvert1 sz $ conn_src_arm props
             , uconvert1 sz $ conn_dst_arm props) )
+        <$> pointSize
+
+-- | /legs/ are Arms + spacing.
+--
+connectorLegs :: (DrawingCtxM m, InterpretUnit u) 
+              => ConnectorProps -> m (u,u)
+connectorLegs props = 
+    (\sz -> ( uconvert1 sz $ conn_src_space props + conn_src_arm props
+            , uconvert1 sz $ conn_dst_space props + conn_dst_arm props ) )
         <$> pointSize
 
 

@@ -79,7 +79,7 @@ stopstate ss =
 
 
 
-straightconn :: ( Real u, Floating u, InterpretUnit u
+straightconn :: ( Real u, Floating u, InterpretUnit u, Tolerance u
                 , u ~ DUnit a, u ~ DUnit b
                 , CenterAnchor a, RadialAnchor a
                 , CenterAnchor b, RadialAnchor b
@@ -90,7 +90,7 @@ straightconn a b =
     in connect (rightArrow tri45 connline) p0 p1
 
 
-astraightconn :: ( Real u, Floating u, InterpretUnit u)
+astraightconn :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
               => Anchor u -> Anchor u -> Image u (AbsPath u)
 astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 
@@ -110,7 +110,8 @@ arrloop ctr p1 =
 
 -- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
 connline = C.connline default_connector_props
 
 

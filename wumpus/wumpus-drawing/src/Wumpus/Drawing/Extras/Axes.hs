@@ -37,7 +37,7 @@ import Data.Monoid
 
 -- | Simple orthonormal axes using snap grid units.
 --
-orthontAxes :: (Real u, Floating u, InterpretUnit u)
+orthontAxes :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => (Int,Int) -> (Int,Int) -> LocGraphic u
 orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) -> 
     snapmove (1,1) >>= \(V2 uw uh) ->
@@ -70,5 +70,6 @@ verticalLabels addr ns =
 
 -- Cf. Parsec\'s Token module...
 --
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
+connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ConnectorPathQuery u
 connline = C.connline default_connector_props

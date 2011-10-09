@@ -24,6 +24,7 @@ module Wumpus.Drawing.Connectors.Base
   , ArrowTip(..)
   , ArrowConnector
 
+  -- OLD
   , leftArrow
   , rightArrow  
   , leftRightArrow
@@ -221,6 +222,9 @@ tipDirectionR u absp | u <= 0   = inclinationR absp
 
 
 -- | NOTE - the prefix /render/ needs (re-) consideration...
+-- 
+-- If it is a good prefix other functions e.g. drawPath should 
+-- use render rather than draw.
 --
 renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
                       => ConnectorConfig u
