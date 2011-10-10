@@ -37,8 +37,9 @@ module Wumpus.Drawing.Basis.InclineTrails
   , trail_perp_bar
   , trail_perp_bar2
 
-  , trail_ortho_bar
-  , trail_ortho_bar2
+  , trail_vflam
+  , trail_ortho_hbar
+  , trail_ortho_vbar
 
   , trail_hright
   , trail_vright
@@ -297,45 +298,85 @@ trail_perp_barCW2 h1 h2 v1 =
     ang = vdirection v1
 
 
-
--- | First leg size.
---
-trail_ortho_bar :: (Real u, Floating u) 
-                => ClockDirection -> u -> Vec2 u -> CatTrail u
-trail_ortho_bar CW h v1 = trail_ortho_barCW h v1
-trail_ortho_bar _  h v1 = trail_ortho_barCW (-h) v1
-
-
-trail_ortho_barCW :: (Real u, Floating u) => u -> Vec2 u -> CatTrail u
-trail_ortho_barCW h1 v1 = 
-       trail_perp h1 ang
-    <> orthoCatTrail len (negate $ h1 - h2) ang
-    <> trail_perp (-h2) ang
-  where
-    ang = vdirection v1
-    len = vlength v1
-    h2  = h1 - (len * (fromRadian $ tan ang))
-
-
 -- | Independent leg size.
 --
--- WARNING - API needs more thought.
---
-trail_ortho_bar2 :: (Real u, Floating u) 
-                 => ClockDirection -> u -> u -> Vec2 u -> CatTrail u
-trail_ortho_bar2 CW h1 h2 v1 = trail_ortho_barCW2 h1 h2 v1
-trail_ortho_bar2 _  h1 h2 v1 = trail_ortho_barCW2 (-h1) (-h2) v1
+trail_vflam :: (Real u, Floating u) 
+            => ClockDirection -> u -> u -> Vec2 u -> CatTrail u
+trail_vflam CW h1 h2 v1 = trail_vflamCW h1 h2 v1
+trail_vflam _  h1 h2 v1 = trail_vflamCW (-h1) (-h2) v1
 
 
--- | WARNING - uses vvec
--- 
-trail_ortho_barCW2 :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
-trail_ortho_barCW2 h1 h2 v1 = 
+trail_vflamCW :: (Real u, Floating u) => u -> u -> Vec2 u -> CatTrail u
+trail_vflamCW h1 h2 v1 = 
     diffLines [ p0, p0 .+^ vvec h1, p1 .+^ vvec h2, p1 ]
   where
     p0 = zeroPt
     p1 = p0 .+^ v1
 
+
+-- | Height is minimum leg height. Ortho bar is horizontal.
+--
+trail_ortho_hbar :: (Real u, Floating u) 
+                 => ClockDirection -> u -> Vec2 u -> CatTrail u
+trail_ortho_hbar CW h v1 = trail_ortho_hbarCW  h v1
+trail_ortho_hbar _  h v1 = trail_ortho_hbarCCW h v1
+
+
+trail_ortho_hbarCW :: (Real u, Floating u) 
+                   => u -> Vec2 u -> CatTrail u
+trail_ortho_hbarCW ymin v1@(V2 x y) = case quadrant $ vdirection v1 of
+    QUAD_NE -> trail_up ymaj <> trail_right x <> trail_down ymin
+    QUAD_SE -> trail_up ymin <> trail_right x <> trail_down ymaj
+    QUAD_NW -> trail_down ymin <> trail_left (abs x) <> trail_up ymaj
+    QUAD_SW -> trail_down ymaj <> trail_left (abs x) <> trail_up ymin
+  where
+    ymaj = ymin + abs y
+
+
+
+
+trail_ortho_hbarCCW :: (Real u, Floating u) 
+                   => u -> Vec2 u -> CatTrail u
+trail_ortho_hbarCCW ymin v1@(V2 x y) = case quadrant $ vdirection v1 of
+    QUAD_NE -> trail_down ymin <> trail_right x <> trail_up ymaj
+    QUAD_SE -> trail_down ymaj <> trail_right x <> trail_up ymin
+    QUAD_NW -> trail_up ymaj <> trail_left (abs x) <> trail_down ymin
+    QUAD_SW -> trail_up ymin <> trail_left (abs x) <> trail_down ymaj
+  where
+    ymaj = ymin + abs y
+
+
+
+
+-- | Width is minimum leg width. Ortho bar is vertical.
+--
+trail_ortho_vbar :: (Real u, Floating u) 
+                 => ClockDirection -> u -> Vec2 u -> CatTrail u
+trail_ortho_vbar CW w v1 = trail_ortho_vbarCW  w v1
+trail_ortho_vbar _  w v1 = trail_ortho_vbarCCW w v1
+
+
+trail_ortho_vbarCW :: (Real u, Floating u) 
+                   => u -> Vec2 u -> CatTrail u
+trail_ortho_vbarCW xmin v1@(V2 x y) = case quadrant $ vdirection v1 of
+    QUAD_NE -> trail_left xmin <> trail_up y <> trail_right xmaj
+    QUAD_NW -> trail_left xmaj <> trail_up y <> trail_right xmin
+    QUAD_SE -> trail_right xmaj <> trail_down (abs y) <> trail_left xmin
+    QUAD_SW -> trail_right xmin <> trail_down (abs y) <> trail_left xmaj
+  where
+    xmaj = xmin + abs x
+
+
+
+trail_ortho_vbarCCW :: (Real u, Floating u) 
+                   => u -> Vec2 u -> CatTrail u
+trail_ortho_vbarCCW xmin v1@(V2 x y) = case quadrant $ vdirection v1 of
+    QUAD_NE -> trail_right xmaj <> trail_up y <> trail_left xmin
+    QUAD_NW -> trail_right xmin <> trail_up y <> trail_left xmaj
+    QUAD_SE -> trail_left  xmin <> trail_down (abs y) <> trail_right xmaj
+    QUAD_SW -> trail_left  xmaj <> trail_down (abs y) <> trail_right xmin
+  where
+    xmaj = xmin + abs x
 
 
 trail_hright :: Num u => Vec2 u -> CatTrail u

@@ -50,7 +50,12 @@ conntable =
     , ("connvdiag",     C.connvdiag props)
     , ("connabar",      C.connabar props)
     , ("connbbar",      C.connbbar props)
-    , ("connorthoabar",    C.connorthoabar props)
+    , ("connaflam",     C.connaflam props)
+    , ("connbflam",     C.connbflam props)
+    , ("connaorthohbar",     C.connaorthohbar props)
+    , ("connborthohbar",     C.connborthohbar props)
+    , ("connaorthovbar",     C.connaorthovbar props)
+    , ("connborthovbar",     C.connborthovbar props)
     , ("connaright",    C.connaright props)
     , ("connbright",    C.connbright props)
     , ("connhrr",       C.connhrr  props)
@@ -85,14 +90,14 @@ std_ctx = fill_colour peru $ standardContext 18
 
 makeConnDrawing :: (String, ConnectorPathQuery Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
-    promoteLoc $ \p0 -> fn p0 (displace (vec 72 56) p0) 
+    promoteLoc $ \p0 -> fn p0 (displace (vec 72 42) p0) 
   where
     fn p0 p1   = mconcat [disk p0, disk p1, dcon p0 p1, lbl p1]
 
     disk pt    = localize (fill_colour red) $ dcDisk DRAW_FILL 2 `at` pt
     dcon p0 p1 = ignoreAns $ connect biarrow p0 p1
 
-    lbl  pt    = ignoreAns $ textline WW ss `at` (displace (hvec 10) pt)
+    lbl  pt    = ignoreAns $ textline WW ss `at` (displace (V2 10 (-10)) pt)
 
     biarrow    = renderConnectorConfig conf props
                     

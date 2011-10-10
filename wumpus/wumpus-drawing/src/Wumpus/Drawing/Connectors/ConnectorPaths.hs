@@ -31,7 +31,14 @@ module Wumpus.Drawing.Connectors.ConnectorPaths
   , connabar
   , connbbar
   
-  , connorthoabar
+  , connaflam
+  , connbflam
+
+  , connaorthohbar
+  , connborthohbar
+
+  , connaorthovbar
+  , connborthovbar
 
   , connaright
   , connbright
@@ -247,19 +254,81 @@ connbbar props = catConnector $ \p0 p1 ->
     return $ trail_perp_bar2 CCW src_leg dst_leg $ pvec p0 p1
 
 
--- | Bar connector.
+-- | /Flam/ connector.
 --
+-- >    ,- '
+-- >  ,-   | 
+-- >  |    |
+-- >  o    @  
+--
+-- The bar is drawn /above/ the points.
+--
+connaflam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorProps -> ConnectorPathQuery u
+connaflam props = catConnector $ \p0 p1 ->
+    connectorLegs props >>= \(src_leg,dst_leg) ->
+    return $ trail_vflam CW src_leg dst_leg $ pvec p0 p1
+
+-- | /Flam/ connector - bleow.
+--
+connbflam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorProps -> ConnectorPathQuery u
+connbflam props = catConnector $ \p0 p1 ->
+    connectorLegs props >>= \(src_leg,dst_leg) ->
+    return $ trail_vflam CCW src_leg dst_leg $ pvec p0 p1
+
+
+
+
+-- | Bar connector - always orthonormal .
+--
+-- >  
 -- >  ,----, 
 -- >  |    |
 -- >  o    @  
 --
 -- The bar is drawn /above/ the points.
 --
-connorthoabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connorthoabar props = catConnector $ \p0 p1 ->
-    connectorLegs props >>= \(src_leg,dst_leg) ->
-    return $ trail_ortho_bar2 CW src_leg dst_leg $ pvec p0 p1
+connaorthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+               => ConnectorProps -> ConnectorPathQuery u
+connaorthohbar props = catConnector $ \p0 p1 ->
+    connectorLoopSize props >>= \looph ->
+    return $ trail_ortho_hbar CW looph $ pvec p0 p1
+
+-- | Bar connector orthonormal - below.
+--
+connborthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+               => ConnectorProps -> ConnectorPathQuery u
+connborthohbar props = catConnector $ \p0 p1 ->
+    connectorLoopSize props >>= \looph ->
+    return $ trail_ortho_hbar CCW looph $ pvec p0 p1
+
+
+
+
+-- | Bar connector - always orthonormal.
+--
+-- >  
+-- >  ,--- o 
+-- >  |   
+-- >  '--- @  
+-- > 
+--
+-- The bar is drawn /left/ of the points.
+--
+connaorthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+               => ConnectorProps -> ConnectorPathQuery u
+connaorthovbar props = catConnector $ \p0 p1 ->
+    connectorLoopSize props >>= \looph ->
+    return $ trail_ortho_vbar CW looph $ pvec p0 p1
+
+-- | Bar connector orthonormal - right of the points.
+--
+connborthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+               => ConnectorProps -> ConnectorPathQuery u
+connborthovbar props = catConnector $ \p0 p1 ->
+    connectorLoopSize props >>= \looph ->
+    return $ trail_ortho_vbar CCW looph $ pvec p0 p1
 
 
 
