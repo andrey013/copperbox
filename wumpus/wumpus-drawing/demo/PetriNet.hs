@@ -99,22 +99,29 @@ transition = greenFill $ borderedShape $ rectangle 32 22
 
 
 
+makeSglArrConn :: ConnectorPathSpec u -> ConnectorConfig u
+makeSglArrConn cspec = 
+    ConnectorConfig
+      { conn_arrowl     = Nothing
+      , conn_arrowr     = Just tri45
+      , conn_path_spec  = cspec
+      }
 
 straightconn :: ConnectorGraphic Double
-straightconn = ignoreAns $ rightArrow tri45 connline
+straightconn = ignoreAns conn_line
 
 
 connectorC :: ConnectorGraphic Double
-connectorC = ignoreAns $ rightArrow tri45 connbbar
+connectorC = ignoreAns connb_bar
 
 connectorC' :: ConnectorGraphic Double
-connectorC' = ignoreAns $ rightArrow tri45 connabar
+connectorC' = ignoreAns conna_bar
 
 connectorD :: ConnectorGraphic Double
-connectorD = ignoreAns $ rightArrow tri45 connarc
+connectorD = ignoreAns conn_arc
 
 connectorD' :: ConnectorGraphic Double
-connectorD' = ignoreAns $ rightArrow tri45 connarc
+connectorD' = ignoreAns conn_arc
 
 
 lblParensParens :: DLocGraphic
@@ -140,21 +147,21 @@ conn_props = (default_connector_props { conn_src_arm = 2
                                       , conn_dst_arm = 2 
                                       , conn_arc_ang =  negate $ pi / 12 })
 
-connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connline = C.connline conn_props
+conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+conn_line = renderConnectorConfig conn_props $ makeSglArrConn C.conn_line
 
 
-connabar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connabar = C.connabar conn_props
+conna_bar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+conna_bar = renderConnectorConfig conn_props $ makeSglArrConn C.conna_bar
 
 
-connbbar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connbbar = C.connbbar conn_props
+connb_bar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+connb_bar = renderConnectorConfig conn_props $ makeSglArrConn C.connb_bar
 
 
-connarc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-        => ConnectorPathQuery u
-connarc = C.connarc conn_props
+conn_arc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ArrowConnector u
+conn_arc = renderConnectorConfig conn_props $ makeSglArrConn C.conn_arc

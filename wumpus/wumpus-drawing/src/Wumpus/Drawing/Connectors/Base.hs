@@ -24,16 +24,8 @@ module Wumpus.Drawing.Connectors.Base
   , ArrowTip(..)
   , ArrowConnector
 
-  -- OLD
-  , leftArrow
-  , rightArrow  
-  , leftRightArrow
-  , uniformArrow  
-
-  , rightArrowPath
-
-  -- NEW
   , ConnectorConfig(..)
+  , ConnectorPathSpec(..)
   , renderConnectorConfig
 
   ) where
@@ -78,13 +70,16 @@ data ArrowTip = ArrowTip
       }
 
 
+newtype ConnectorPathSpec u = ConnectorPathSpec { 
+      getConnectorPathSpec :: ConnectorProps -> ConnectorPathQuery u }
+
 -- | total_path is the path before accounting for arrow 
 -- retract distances.
 --
 data ConnectorConfig u = ConnectorConfig
       { conn_arrowl     :: Maybe ArrowTip
       , conn_arrowr     :: Maybe ArrowTip
-      , conn_total_path :: ConnectorPathQuery u 
+      , conn_path_spec  :: ConnectorPathSpec u 
       }
 
 
@@ -97,129 +92,6 @@ type ArrowConnector u = ConnectorImage u (AbsPath u)
 
 
 
-runArrowTip :: InterpretUnit u 
-            => ArrowTip -> Query u (u, u, LocThetaGraphic u)
-runArrowTip (ArrowTip rd hlen deco) = 
-   uconvertCtx1 rd     >>= \urd ->
-   uconvertCtx1 hlen   >>= \uhlen  ->
-   return (urd, uhlen, uconvF deco)
-
-
--- | Connector with an arrow tip at the end point (i.e right).
---
-rightArrow :: (Real u, Floating u, InterpretUnit u) 
-           => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
-rightArrow alg conn = promoteConn $ \p0 p1 ->
-    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
-    rightArrowPath alg full_path 
-
-
-
--- | Connector with an arrow tip at the start point (i.e left).
---
-leftArrow :: (Real u, Floating u, InterpretUnit u) 
-            => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
-leftArrow alg conn = promoteConn $ \p0 p1 ->
-    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
-    leftArrowPath alg full_path 
-
-
--- | Connector with different arrow tips at the start point and 
--- end points.
---
-leftRightArrow :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip -> ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
-leftRightArrow algl algr conn = promoteConn $ \p0 p1 ->
-    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
-    leftRightArrowPath algl algr full_path 
-
-
-
--- | Connector with the same arrow tip at the start point and 
--- end points.
---
-uniformArrow :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip -> ConnectorPathQuery u -> ArrowConnector u
-uniformArrow alg conn = promoteConn $ \p0 p1 ->
-    applyConn (liftConnectorQuery conn) p0 p1 >>= \full_path -> 
-    leftRightArrowPath alg alg full_path 
-
-
-
--- TODO - possible there are opportunities to be more 
--- compositional here.
-
-
--- | Path with an arrow tip at the start point (i.e left).
---
--- TODO - shortening a curve does not seem to be working properly...
--- 
---
-leftArrowPath :: (Real u, Floating u, InterpretUnit u) 
-              => ArrowTip -> AbsPath u -> Image u (AbsPath u)
-leftArrowPath alg full_path =
-    liftQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
-    let short_path      = if retract > 0 then shortenL retract full_path 
-                                         else full_path
-        mid_ang         = tipDirectionL len full_path
-        tip             = applyLocTheta deco (tipL full_path) mid_ang
-    in replaceAns full_path $ 
-         sdecorate tip $ drawPath OSTROKE short_path
-
-
-
--- | Path with an arrow tip at the end point (i.e right).
---
--- TODO - shortening a curve does not seem to be working properly...
--- 
---
-rightArrowPath :: (Real u, Floating u, InterpretUnit u) 
-               => ArrowTip -> AbsPath u -> Image u (AbsPath u)
-rightArrowPath alg full_path =
-    liftQuery (runArrowTip alg) >>= \(retract, len, deco) -> 
-    let short_path      = if retract > 0 then shortenR retract full_path 
-                                         else full_path
-        mid_ang         = tipDirectionR len full_path
-        tip             = applyLocTheta deco (tipR full_path) mid_ang
-    in replaceAns full_path $ 
-         sdecorate tip $ drawPath OSTROKE short_path
-
-
-
-
--- | Path with an arrow tip at the end point (i.e right).
---
--- TODO - shortening a curve does not seem to be working properly...
--- 
---
-leftRightArrowPath :: (Real u, Floating u, InterpretUnit u) 
-                   => ArrowTip -> ArrowTip -> AbsPath u -> Image u (AbsPath u)
-leftRightArrowPath algl algr full_path =
-    liftQuery (runArrowTip algl) >>= \(retractl, lenl, decol) -> 
-    liftQuery (runArrowTip algr) >>= \(retractr, lenr, decor) -> 
-    let short_path      = shortenPath retractl retractr full_path
-        mid_angl        = tipDirectionL lenl full_path
-        mid_angr        = tipDirectionR lenr full_path
-        tipl            = applyLocTheta decol (tipL full_path) mid_angl
-        tipr            = applyLocTheta decor (tipR full_path) mid_angr
-    in replaceAns full_path $ 
-         sdecorate (tipl `mappend` tipr) $ drawPath OSTROKE short_path
-          
-
-
-
-
--- | Helper - direction looks best at half the retract distance.
---
-tipDirectionL :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionL u absp | u <= 0   = inclinationL absp
-                     |otherwise = inclinationL $ shortenL (0.5*u) absp
-   
-tipDirectionR :: (Real u, Floating u) => u -> AbsPath u -> Radian
-tipDirectionR u absp | u <= 0   = inclinationR absp
-                     |otherwise = inclinationR $ shortenR (0.5*u) absp
-   
-
 
 -- | NOTE - the prefix /render/ needs (re-) consideration...
 -- 
@@ -227,12 +99,12 @@ tipDirectionR u absp | u <= 0   = inclinationR absp
 -- use render rather than draw.
 --
 renderConnectorConfig :: (Real u, Floating u, InterpretUnit u)
-                      => ConnectorConfig u
-                      -> ConnectorProps
+                      => ConnectorProps
+                      -> ConnectorConfig u
                       -> ConnectorImage u (AbsPath u)
-renderConnectorConfig (ConnectorConfig mbl mbr mf) props = 
+renderConnectorConfig props (ConnectorConfig mbl mbr pspec) = 
     promoteConn $ \src dst -> 
-      liftQuery (qapplyConn mf src dst) >>= \tot_path -> 
+      liftQuery (qapplyConn path_spec src dst) >>= \tot_path -> 
       connectorSrcSpace props >>= \sepl -> 
       connectorDstSpace props >>= \sepr ->
       uconvertCtx1 (maybe 0 retract_distance mbl) >>= \retl -> 
@@ -247,3 +119,4 @@ renderConnectorConfig (ConnectorConfig mbl mbr mf) props =
             decorate SUPERIOR (drawPath OSTROKE new_path) (arrl `mappend` arrr)
   where
     mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
+    path_spec    = getConnectorPathSpec pspec props

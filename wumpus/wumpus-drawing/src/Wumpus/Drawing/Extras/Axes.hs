@@ -41,7 +41,7 @@ orthontAxes :: (Real u, Floating u, InterpretUnit u, Tolerance u)
             => (Int,Int) -> (Int,Int) -> LocGraphic u
 orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) -> 
     snapmove (1,1) >>= \(V2 uw uh) ->
-    let conn1 = rightArrow barb45 connline
+    let conn1 = ignoreAns conn_line
         xPtl  = P2 (x - (uw * fromIntegral xl)) y
         xPtr  = P2 (x + (uw * fromIntegral xr)) y
         yPtl  = P2 x (y - (uh * fromIntegral yl))
@@ -70,6 +70,16 @@ verticalLabels addr ns =
 
 -- Cf. Parsec\'s Token module...
 --
-connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connline = C.connline default_connector_props
+conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ArrowConnector u
+conn_line =
+    renderConnectorConfig default_connector_props $ makeSglArrConn C.conn_line
+
+makeSglArrConn :: ConnectorPathSpec u -> ConnectorConfig u
+makeSglArrConn cspec = 
+    ConnectorConfig
+      { conn_arrowl     = Nothing
+      , conn_arrowr     = Just barb45
+      , conn_path_spec  = cspec
+      }
+

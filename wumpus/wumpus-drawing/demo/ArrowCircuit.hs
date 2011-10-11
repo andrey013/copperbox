@@ -65,12 +65,12 @@ body = do
     atext a3 "+1"
     a4 <- drawi $ (strokedShape $ rectangle 66 30) `at` P2 120 0
     atext a4 "DELAY 0"
-    connWith connline (east a1) ((.+^ hvec 76) $ east a1)
-    connWith connline (east a2) ((.+^ hvec 180) $ east a2)
-    connWith connline ((.+^ vvec 40) $ north a2) (north a2)
-    connWith connline ((.+^ vvec 16) $ north a3) (north a3)  
-    connWith connaright  (south a3) (east a4)
-    connWith connabar (west a4)  (southwest a2)
+    connWith conn_line (east a1) ((.+^ hvec 76) $ east a1)
+    connWith conn_line (east a2) ((.+^ hvec 180) $ east a2)
+    connWith conn_line ((.+^ vvec 40) $ north a2) (north a2)
+    connWith conn_line ((.+^ vvec 16) $ north a3) (north a3)  
+    connWith conna_right  (south a3) (east a4)
+    connWith conna_orthovbar    (west a4)  (southwest a2)
     ptext (P2  40  10) "next"
     ptext (P2 152 100) "reset"
     ptext (P2 252  72) "output"
@@ -79,9 +79,9 @@ body = do
     -- Note - need a variant of /bar/ that draws UDLR only.
 
 connWith :: ( Real u, Floating u, InterpretUnit u ) 
-         => ConnectorPathQuery u -> Anchor u -> Anchor u -> TraceDrawing u ()
+         => ArrowConnector u -> Anchor u -> Anchor u -> TraceDrawing u ()
 connWith con a0 a1 = localize double_point_size $ 
-    drawc a0 a1 (rightArrow tri45 con)
+    drawc a0 a1 (ignoreAns con)
 
 
 atext :: ( CenterAnchor (t u), u ~ DUnit (t u)
@@ -110,16 +110,28 @@ rrectangle _r w h = strokedShape (rectangle w h)
 
 -- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connline = C.connline default_connector_props
+conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+conn_line =
+    renderConnectorConfig default_connector_props $ makeSglArrConn C.conn_line
 
-connabar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connabar = C.connabar default_connector_props
+conna_orthovbar :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+conna_orthovbar = 
+    renderConnectorConfig default_connector_props $ 
+      makeSglArrConn C.conna_orthovbar
 
 
-connaright :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-           => ConnectorPathQuery u
-connaright = C.connaright default_connector_props
+conna_right :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+            => ArrowConnector u
+conna_right = 
+    renderConnectorConfig default_connector_props $ makeSglArrConn C.conna_right
 
+
+makeSglArrConn :: ConnectorPathSpec u -> ConnectorConfig u
+makeSglArrConn cspec = 
+    ConnectorConfig
+      { conn_arrowl     = Nothing
+      , conn_arrowr     = Just tri45
+      , conn_path_spec  = cspec
+      }

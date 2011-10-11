@@ -17,42 +17,42 @@
 module Wumpus.Drawing.Connectors.ConnectorPaths
   ( 
 
-    connline
-  , connarc
-  , connhdiagh
-  , connvdiagv
+    conn_line
+  , conn_arc
+  , conn_hdiagh
+  , conn_vdiagv
   
-  , conndiagh
-  , conndiagv
+  , conn_diagh
+  , conn_diagv
 
-  , connhdiag
-  , connvdiag
+  , conn_hdiag
+  , conn_vdiag
 
-  , connabar
-  , connbbar
+  , conna_bar
+  , connb_bar
   
-  , connaflam
-  , connbflam
+  , conna_flam
+  , connb_flam
 
-  , connaorthohbar
-  , connborthohbar
+  , conna_orthohbar
+  , connb_orthohbar
 
-  , connaorthovbar
-  , connborthovbar
+  , conna_orthovbar
+  , connb_orthovbar
 
-  , connaright
-  , connbright
+  , conna_right
+  , connb_right
 
-  , connhrr
-  , connrrh
-  , connvrr
-  , connrrv
+  , conn_hrr
+  , conn_rrh
+  , conn_vrr
+  , conn_rrv
 
-  , connaloop
-  , connbloop
+  , conna_loop
+  , connb_loop
 
-  , connhbezier
-  , connvbezier
+  , conn_hbezier
+  , conn_vbezier
 
   ) where
 
@@ -75,17 +75,17 @@ import Control.Applicative
 -- | Build as Path as a CatTrail between two points.
 --
 catConnector :: (Floating u, Ord u, InterpretUnit u, Tolerance u) 
-             => (Point2 u -> Point2 u -> Query u (CatTrail u)) 
-             -> ConnectorPathQuery u
-catConnector mf = qpromoteConn $ \p0 p1 -> catTrailPath p0 <$> mf p0 p1 
-
+             => (ConnectorProps -> Point2 u -> Point2 u -> Query u (CatTrail u)) 
+             -> ConnectorPathSpec u
+catConnector mf = ConnectorPathSpec $ \props -> 
+    qpromoteConn $ \p0 p1 -> catTrailPath p0 <$> mf props p0 p1 
 
 
 -- | Straight line connector.
 --
-connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connline _ = catConnector $ \p0 p1 -> pure $ catline $ pvec p0 p1
+conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ConnectorPathSpec u
+conn_line = catConnector $ \_ p0 p1 -> pure $ catline $ pvec p0 p1
 
 
 
@@ -99,14 +99,15 @@ connline _ = catConnector $ \p0 p1 -> pure $ catline $ pvec p0 p1
 -- The notion of /above/ is respective to the line direction, of 
 -- course.
 -- 
+-- TODO - above and below versions...
 --
-connarc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connarc props = catConnector $ \p0 p1 -> 
-            let arc_ang = conn_arc_ang props 
-                v1      = pvec p0 p1
-                h       = (0.5 * vlength v1) * (fromRadian $ tan arc_ang)
-            in return $ vtriCurve CW h v1 
+conn_arc :: (Real u, Floating u, Ord u, InterpretUnit u, Tolerance u) 
+        => ConnectorPathSpec u
+conn_arc = catConnector $ \props p0 p1 -> 
+    let arc_ang = conn_arc_ang props 
+        v1      = pvec p0 p1
+        h       = (0.5 * vlength v1) * (fromRadian $ tan arc_ang)
+    in return $ vtriCurve CW h v1 
 
 
 
@@ -120,9 +121,9 @@ connarc props = catConnector $ \p0 p1 ->
 -- Horizontal /arms/ are drawn from the start and end points, a
 -- diagonal segment joins the arms. 
 -- 
-connhdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-           => ConnectorProps -> ConnectorPathQuery u
-connhdiagh props = catConnector $ \p0 p1 -> 
+conn_hdiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+           => ConnectorPathSpec u
+conn_hdiagh = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(src_leg, dst_leg) ->
     return $ trail_hdiagh src_leg dst_leg $ pvec p0 p1
 
@@ -140,9 +141,9 @@ connhdiagh props = catConnector $ \p0 p1 ->
 -- Vertical /arms/ are drawn from the start and end points, a
 -- diagonal segment joins the arms. 
 -- 
-connvdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-           => ConnectorProps -> ConnectorPathQuery u
-connvdiagv props = catConnector $ \p0 p1 -> 
+conn_vdiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+            => ConnectorPathSpec u
+conn_vdiagv = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(src_leg, dst_leg) ->
     return $ trail_vdiagv src_leg dst_leg $ pvec p0 p1
 
@@ -157,9 +158,9 @@ connvdiagv props = catConnector $ \p0 p1 ->
 -- from the start point joining a horizontal arm drawn from the 
 -- end point
 -- 
-conndiagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-conndiagh props = catConnector $ \p0 p1 -> 
+conn_diagh :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+           => ConnectorPathSpec u
+conn_diagh = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(_, dst_leg) ->
     return $ trail_diagh dst_leg $ pvec p0 p1
 
@@ -175,9 +176,9 @@ conndiagh props = catConnector $ \p0 p1 ->
 -- from the start point joining a vertical arm drawn from the end 
 -- point.
 -- 
-conndiagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-conndiagv props = catConnector $ \p0 p1 -> 
+conn_diagv :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+           => ConnectorPathSpec u
+conn_diagv = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(_, dst_leg) ->
     return $ trail_diagv dst_leg $ pvec p0 p1
 
@@ -193,9 +194,9 @@ conndiagv props = catConnector $ \p0 p1 ->
 -- from the start point joining a diagonal segment drawn from the 
 -- end point.
 -- 
-connhdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-connhdiag props = catConnector $ \p0 p1 -> 
+conn_hdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+           => ConnectorPathSpec u
+conn_hdiag = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(src_leg, _) ->
     return $ trail_hdiag src_leg $ pvec p0 p1
 
@@ -211,9 +212,9 @@ connhdiag props = catConnector $ \p0 p1 ->
 -- from the start point joining a vertical segment drawn from the 
 -- end point.
 -- 
-connvdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
-          => ConnectorProps -> ConnectorPathQuery u
-connvdiag props = catConnector $ \p0 p1 -> 
+conn_vdiag :: (Real u, Floating u, Tolerance u, InterpretUnit u)
+           => ConnectorPathSpec u
+conn_vdiag = catConnector $ \props p0 p1 -> 
     connectorLegs props >>= \(src_leg, _) ->
     return $ trail_vdiag src_leg $ pvec p0 p1
 
@@ -232,9 +233,9 @@ connvdiag props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connabar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connabar props = catConnector $ \p0 p1 ->
+conna_bar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+          => ConnectorPathSpec u
+conna_bar = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,dst_leg) ->
     return $ trail_perp_bar2 CW src_leg dst_leg $ pvec p0 p1
 
@@ -247,9 +248,9 @@ connabar props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /below/ the points.
 --
-connbbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connbbar props = catConnector $ \p0 p1 ->
+connb_bar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+          => ConnectorPathSpec u
+connb_bar = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,dst_leg) ->
     return $ trail_perp_bar2 CCW src_leg dst_leg $ pvec p0 p1
 
@@ -263,17 +264,17 @@ connbbar props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connaflam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connaflam props = catConnector $ \p0 p1 ->
+conna_flam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => ConnectorPathSpec u
+conna_flam = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,dst_leg) ->
     return $ trail_vflam CW src_leg dst_leg $ pvec p0 p1
 
 -- | /Flam/ connector - bleow.
 --
-connbflam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-         => ConnectorProps -> ConnectorPathQuery u
-connbflam props = catConnector $ \p0 p1 ->
+connb_flam :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathSpec u
+connb_flam = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,dst_leg) ->
     return $ trail_vflam CCW src_leg dst_leg $ pvec p0 p1
 
@@ -289,17 +290,17 @@ connbflam props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connaorthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-               => ConnectorProps -> ConnectorPathQuery u
-connaorthohbar props = catConnector $ \p0 p1 ->
+conna_orthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+                => ConnectorPathSpec u
+conna_orthohbar = catConnector $ \props p0 p1 ->
     connectorLoopSize props >>= \looph ->
     return $ trail_ortho_hbar CW looph $ pvec p0 p1
 
 -- | Bar connector orthonormal - below.
 --
-connborthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-               => ConnectorProps -> ConnectorPathQuery u
-connborthohbar props = catConnector $ \p0 p1 ->
+connb_orthohbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+                => ConnectorPathSpec u
+connb_orthohbar = catConnector $ \props p0 p1 ->
     connectorLoopSize props >>= \looph ->
     return $ trail_ortho_hbar CCW looph $ pvec p0 p1
 
@@ -316,17 +317,17 @@ connborthohbar props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /left/ of the points.
 --
-connaorthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-               => ConnectorProps -> ConnectorPathQuery u
-connaorthovbar props = catConnector $ \p0 p1 ->
+conna_orthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+                => ConnectorPathSpec u
+conna_orthovbar = catConnector $ \props p0 p1 ->
     connectorLoopSize props >>= \looph ->
     return $ trail_ortho_vbar CW looph $ pvec p0 p1
 
 -- | Bar connector orthonormal - right of the points.
 --
-connborthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-               => ConnectorProps -> ConnectorPathQuery u
-connborthovbar props = catConnector $ \p0 p1 ->
+connb_orthovbar :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+                => ConnectorPathSpec u
+connb_orthovbar = catConnector $ \props p0 p1 ->
     connectorLoopSize props >>= \looph ->
     return $ trail_ortho_vbar CCW looph $ pvec p0 p1
 
@@ -340,9 +341,9 @@ connborthovbar props = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /above/ the points.
 --
-connaright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorProps -> ConnectorPathQuery u
-connaright _ = catConnector $ \p0 p1 ->
+conna_right :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+            => ConnectorPathSpec u
+conna_right = catConnector $ \_ p0 p1 ->
     return $ trail_vright $ pvec p0 p1
 
 
@@ -354,9 +355,9 @@ connaright _ = catConnector $ \p0 p1 ->
 --
 -- The bar is drawn /below/ the points.
 --
-connbright :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-           => ConnectorProps -> ConnectorPathQuery u
-connbright _ = catConnector $ \p0 p1 -> 
+connb_right :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+            => ConnectorPathSpec u
+connb_right = catConnector $ \_ p0 p1 -> 
     return $ trail_hright $ pvec p0 p1
 
 
@@ -373,9 +374,9 @@ connbright _ = catConnector $ \p0 p1 ->
 -- length. The length of the final segment is the remaining 
 -- horizontal distance. 
 --
-connhrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connhrr props = catConnector $ \p0 p1 ->
+conn_hrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathSpec u
+conn_hrr = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,_) ->
     return $ trail_hrr src_leg $ pvec p0 p1
 
@@ -387,13 +388,13 @@ connhrr props = catConnector $ \p0 p1 ->
 -- >     |
 -- >  o--'  
 --
--- The length of the final horizontal segment is the distination 
+-- The length of the final horizontal segment is the destination 
 -- arm length. The length of the initial segment is the remaining
 -- horizontal distance. 
 --
-connrrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connrrh props = catConnector $ \p0 p1 ->
+conn_rrh :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathSpec u
+conn_rrh = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(_,dst_leg) ->
     return $ trail_rrh dst_leg $ pvec p0 p1
 
@@ -406,9 +407,13 @@ connrrh props = catConnector $ \p0 p1 ->
 -- >  |
 -- >  o  
 --
-connvrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connvrr props = catConnector $ \p0 p1 ->
+-- The length of the first vertical segment is the source arm 
+-- length. The length of the final segment is the remaining 
+-- vertical distance. 
+--
+conn_vrr :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathSpec u
+conn_vrr = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(src_leg,_) ->
     return $ trail_vrr src_leg $ pvec p0 p1
 
@@ -421,9 +426,13 @@ connvrr props = catConnector $ \p0 p1 ->
 -- >  |
 -- >  o  
 --
-connrrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorPathQuery u
-connrrv props = catConnector $ \p0 p1 ->
+-- The length of the final vertical segment is the destination 
+-- arm length. The length of the initial segment is the remaining
+-- vertical distance. 
+--
+conn_rrv :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+         => ConnectorPathSpec u
+conn_rrv = catConnector $ \props p0 p1 ->
     connectorLegs props >>= \(_,dst_leg) ->
     return $ trail_rrv dst_leg $ pvec p0 p1
 
@@ -437,9 +446,9 @@ connrrv props = catConnector $ \p0 p1 ->
 --
 -- The loop is drawn /above/ the points.
 --
-connaloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorProps -> ConnectorPathQuery u
-connaloop props = catConnector $ \p0 p1 -> 
+conna_loop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => ConnectorPathSpec u
+conna_loop = catConnector $ \props p0 p1 -> 
     connectorLegs props     >>= \(src_leg,dst_leg) ->
     connectorLoopSize props >>= \looph             ->
     return $ trail_rect_loop CW src_leg dst_leg looph $ pvec p0 p1
@@ -453,9 +462,9 @@ connaloop props = catConnector $ \p0 p1 ->
 --
 -- The loop is drawn /above/ the points.
 --
-connbloop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
-          => ConnectorProps -> ConnectorPathQuery u
-connbloop props = catConnector $ \p0 p1 -> 
+connb_loop :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
+           => ConnectorPathSpec u
+connb_loop = catConnector $ \props p0 p1 -> 
     connectorLegs props     >>= \(src_leg,dst_leg) ->
     connectorLoopSize props >>= \looph             ->
     return $ trail_rect_loop CCW src_leg dst_leg looph $ pvec p0 p1
@@ -473,9 +482,10 @@ connbloop props = catConnector $ \p0 p1 ->
 -- Note - the source and dest arm lengths are doubled, generally 
 -- this produces nicer curves.
 -- 
-connhbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorProps -> ConnectorPathQuery u
-connhbezier props = qpromoteConn $ \p0 p1 -> 
+conn_hbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
+             => ConnectorPathSpec u
+conn_hbezier = ConnectorPathSpec $ \props -> 
+    qpromoteConn $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
     case horizontalDirection $ vdirection $ pvec p0 p1 of
       RIGHTWARDS -> right p0 p1 src_arm dst_arm
@@ -498,9 +508,10 @@ connhbezier props = qpromoteConn $ \p0 p1 ->
 -- Note - the source and dest arm lengths are doubled, generally 
 -- this produces nicer curves.
 --
-connvbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-            => ConnectorProps -> ConnectorPathQuery u
-connvbezier props = qpromoteConn $ \p0 p1 -> 
+conn_vbezier :: (Real u, Floating u, InterpretUnit u, Tolerance u)
+             => ConnectorPathSpec u
+conn_vbezier = ConnectorPathSpec $ \props -> 
+    qpromoteConn $ \p0 p1 -> 
     fmap (\(a,b) -> (2*a,2*b)) (connectorArms props) >>= \(src_arm,dst_arm) ->
       case verticalDirection $ vdirection $ pvec p0 p1 of
         UPWARDS -> up   p0 p1 src_arm dst_arm

@@ -38,44 +38,44 @@ conn_pic :: CtxPicture
 conn_pic = drawTracing $ tableGraphic conntable
 
 
-conntable :: [(String, ConnectorPathQuery Double)]
+conntable :: [(String, ConnectorPathSpec Double)]
 conntable = 
-    [ ("connline",      C.connline props)
-    , ("connarc",       C.connarc props)
-    , ("connhdiagh",    C.connhdiagh props)
-    , ("connvdiagv",    C.connvdiagv props)
-    , ("conndiagh",     C.conndiagh props)
-    , ("conndiagv",     C.conndiagv props)
-    , ("connhdiag",     C.connhdiag props)
-    , ("connvdiag",     C.connvdiag props)
-    , ("connabar",      C.connabar props)
-    , ("connbbar",      C.connbbar props)
-    , ("connaflam",     C.connaflam props)
-    , ("connbflam",     C.connbflam props)
-    , ("connaorthohbar",     C.connaorthohbar props)
-    , ("connborthohbar",     C.connborthohbar props)
-    , ("connaorthovbar",     C.connaorthovbar props)
-    , ("connborthovbar",     C.connborthovbar props)
-    , ("connaright",    C.connaright props)
-    , ("connbright",    C.connbright props)
-    , ("connhrr",       C.connhrr  props)
-    , ("connrrh",       C.connrrh props)
-    , ("connvrr",       C.connvrr props)
-    , ("connrrv",       C.connrrv props)
-    , ("connaloop",     C.connaloop props)
-    , ("connbloop",     C.connbloop props)
-    , ("connhbezier",   C.connhbezier props)
-    , ("connvbezier",   C.connvbezier props)
+    [ ("conn_line",             C.conn_line)
+    , ("conn_arc",              C.conn_arc)
+    , ("conn_hdiagh",           C.conn_hdiagh)
+    , ("conn_vdiagv",           C.conn_vdiagv)
+    , ("conn_diagh",            C.conn_diagh)
+    , ("conn_diagv",            C.conn_diagv)
+    , ("conn_hdiag",            C.conn_hdiag)
+    , ("conn_vdiag",            C.conn_vdiag)
+    , ("conna_bar",             C.conna_bar)
+    , ("connb_bar",             C.connb_bar)
+    , ("conna_flam",            C.conna_flam)
+    , ("connb_flam",            C.connb_flam)
+    , ("conna_orthohbar",       C.conna_orthohbar)
+    , ("connb_orthohbar",       C.connb_orthohbar)
+    , ("conna_orthovbar",       C.conna_orthovbar)
+    , ("connb_orthovbar",       C.connb_orthovbar)
+    , ("conna_right",           C.conna_right)
+    , ("connb_right",           C.connb_right)
+    , ("conn_hrr",              C.conn_hrr )
+    , ("conn_rrh",              C.conn_rrh)
+    , ("conn_vrr",              C.conn_vrr)
+    , ("conn_rrv",              C.conn_rrv)
+    , ("conna_loop",            C.conna_loop)
+    , ("connb_loop",            C.connb_loop)
+    , ("conn_hbezier",          C.conn_hbezier)
+    , ("conn_vbezier",          C.conn_vbezier)
     ]
 
 props :: ConnectorProps
-props = default_connector_props { conn_src_arm   = 2
-                                , conn_dst_arm   = 3
+props = default_connector_props { conn_src_arm   = 1
+                                , conn_dst_arm   = 1.5
                                 , conn_src_space = 0.5
                                 , conn_dst_space = 0.5 } 
 
 
-tableGraphic :: [(String, ConnectorPathQuery Double)] -> TraceDrawing Double ()
+tableGraphic :: [(String, ConnectorPathSpec Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
     drawl start $ ignoreAns $ runTableColumnwise 6 (200,80)
                 $ mapM (chain1 .  makeConnDrawing) conns
@@ -88,7 +88,7 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 
-makeConnDrawing :: (String, ConnectorPathQuery Double) -> DLocGraphic 
+makeConnDrawing :: (String, ConnectorPathSpec Double) -> DLocGraphic 
 makeConnDrawing (ss,conn) = 
     promoteLoc $ \p0 -> fn p0 (displace (vec 72 42) p0) 
   where
@@ -99,12 +99,12 @@ makeConnDrawing (ss,conn) =
 
     lbl  pt    = ignoreAns $ textline WW ss `at` (displace (V2 10 (-10)) pt)
 
-    biarrow    = renderConnectorConfig conf props
+    biarrow    = renderConnectorConfig props conf
                     
 
-    conf       = ConnectorConfig { conn_arrowl     = Just curveTip
-                                 , conn_arrowr     = Just curveTip
-                                 , conn_total_path = conn
+    conf       = ConnectorConfig { conn_arrowl    = Just curveTip
+                                 , conn_arrowr    = Just curveTip
+                                 , conn_path_spec = conn
                                  }
 
                     
