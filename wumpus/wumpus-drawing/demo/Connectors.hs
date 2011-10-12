@@ -41,7 +41,8 @@ conn_pic = drawTracing $ tableGraphic conntable
 conntable :: [(String, ConnectorPathSpec Double)]
 conntable = 
     [ ("conn_line",             C.conn_line)
-    , ("conn_arc",              C.conn_arc)
+    , ("conna_arc",             C.conna_arc)
+    , ("connb_arc",             C.connb_arc)
     , ("conn_hdiagh",           C.conn_hdiagh)
     , ("conn_vdiagv",           C.conn_vdiagv)
     , ("conn_diagh",            C.conn_diagh)

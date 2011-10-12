@@ -112,16 +112,16 @@ straightconn = ignoreAns conn_line
 
 
 connectorC :: ConnectorGraphic Double
-connectorC = ignoreAns connb_bar
+connectorC = ignoreAns conna_bar
 
 connectorC' :: ConnectorGraphic Double
-connectorC' = ignoreAns conna_bar
+connectorC' = ignoreAns connb_bar
 
 connectorD :: ConnectorGraphic Double
-connectorD = ignoreAns conn_arc
+connectorD = ignoreAns conna_arc
 
 connectorD' :: ConnectorGraphic Double
-connectorD' = ignoreAns conn_arc
+connectorD' = ignoreAns connb_arc
 
 
 lblParensParens :: DLocGraphic
@@ -162,6 +162,10 @@ connb_bar :: (Real u, Floating u, InterpretUnit u, Tolerance u)
 connb_bar = renderConnectorConfig conn_props $ makeSglArrConn C.connb_bar
 
 
-conn_arc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ArrowConnector u
-conn_arc = renderConnectorConfig conn_props $ makeSglArrConn C.conn_arc
+conna_arc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+conna_arc = renderConnectorConfig conn_props $ makeSglArrConn C.conna_arc
+
+connb_arc :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+          => ArrowConnector u
+connb_arc = renderConnectorConfig conn_props $ makeSglArrConn C.connb_arc
