@@ -17,12 +17,14 @@
 module Wumpus.Drawing.Connectors.BoxConnectors
   ( 
     ConnectorBox
+  , ConnectorBoxSpec(..)
+  , renderConnectorBoxSpec
   , connbox
   , conntube
 
   ) where
 
--- import Wumpus.Drawing.Connectors.Base
+-- import Wumpus.Drawing.Basis.InclineTrails
 import Wumpus.Drawing.Connectors.ConnectorProps
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
@@ -45,11 +47,28 @@ import Data.Monoid
 --
 type ConnectorBox u = ConnectorGraphic u
 
+newtype ConnectorBoxSpec u = ConnectorBoxSpec { 
+      getConnectorBoxSpec :: ConnectorProps -> ConnectorBox u }
+
+
+renderConnectorBoxSpec :: (Real u, Floating u, InterpretUnit u)
+                       => ConnectorProps
+                       -> ConnectorBoxSpec u
+                       -> ConnectorBox u
+renderConnectorBoxSpec props spec = 
+    getConnectorBoxSpec spec props
+
 
 --
 -- DESIGN NOTE - boxes (probably) should not use source and dest
 -- separators.
 --
+
+boxConnector :: (Floating u, Ord u, InterpretUnit u) 
+             => (ConnectorProps -> Point2 u -> Point2 u -> Image u a) 
+             -> ConnectorBoxSpec u
+boxConnector mf = ConnectorBoxSpec $ \props -> 
+    promoteConn $ \p0 p1 -> ignoreAns $ mf props p0 p1 
 
 
 -- | Draw a stroked, rectangular box around the connector points.
@@ -57,21 +76,21 @@ type ConnectorBox u = ConnectorGraphic u
 -- The rectangle will be inclined to the line.
 --
 connbox :: (Real u, Floating u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorBox u
-connbox props = promoteConn $ \p0 p1 -> 
+        => ConnectorBoxSpec u
+connbox = boxConnector $ \props p0 p1 -> 
     connectorBoxHalfSize props >>= \sz ->
     applyLoc (drawAnaTrail CSTROKE $ cfconnbox sz (pvec p0 p1)) p0
 
 
 conntube :: (Real u, Floating u, InterpretUnit u) 
-        => ConnectorProps -> ConnectorBox u
-conntube props = promoteConn $ \p0 p1 -> 
+         => ConnectorBoxSpec u
+conntube = boxConnector $ \props p0 p1 -> 
     connectorBoxHalfSize props >>= \sz ->
     applyLoc (drawAnaTrail CSTROKE $ cfconntube sz (pvec p0 p1)) p0
 
 
 
--- Box connectors aren\'t especially coordinate free.
+-- Note can\'t use @incline_rect as does not accommodate spacing.
 
 -- | @v1@ is the /interior/ vector.
 --

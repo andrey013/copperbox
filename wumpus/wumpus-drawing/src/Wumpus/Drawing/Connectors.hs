@@ -20,12 +20,10 @@ module Wumpus.Drawing.Connectors
   ( 
     module Wumpus.Drawing.Connectors.Arrowheads
   , module Wumpus.Drawing.Connectors.Base
-  , module Wumpus.Drawing.Connectors.BoxConnectors
   , module Wumpus.Drawing.Connectors.ConnectorProps
 
   ) where
 
 import Wumpus.Drawing.Connectors.Arrowheads
 import Wumpus.Drawing.Connectors.Base
-import Wumpus.Drawing.Connectors.BoxConnectors
 import Wumpus.Drawing.Connectors.ConnectorProps
