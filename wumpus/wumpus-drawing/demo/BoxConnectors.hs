@@ -43,8 +43,8 @@ conn_pic = drawTracing $ tableGraphic conntable
 
 conntable :: [(String, C.ConnectorBoxSpec Double)]
 conntable = 
-    [ ("connbox",      C.connbox)
-    , ("conntube",     C.conntube)
+    [ ("conn_box",      C.conn_box)
+    , ("conn_tube",     C.conn_tube)
     ]
 
 tableGraphic :: [(String, C.ConnectorBoxSpec Double)] -> TraceDrawing Double ()

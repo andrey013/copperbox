@@ -19,20 +19,21 @@ module Wumpus.Drawing.Connectors.BoxConnectors
     ConnectorBox
   , ConnectorBoxSpec(..)
   , renderConnectorBoxSpec
-  , connbox
-  , conntube
+
+  , conn_box
+  , conn_tube
 
   ) where
 
--- import Wumpus.Drawing.Basis.InclineTrails
+import Wumpus.Drawing.Basis.InclineTrails
 import Wumpus.Drawing.Connectors.ConnectorProps
 
 import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
+import Data.VectorSpace                         -- package: vector-space
 
-import Data.Monoid
 
 -- NOTE - boxes seem to only support stroke otherwise
 -- they would obliterate what they connect.
@@ -59,6 +60,9 @@ renderConnectorBoxSpec props spec =
     getConnectorBoxSpec spec props
 
 
+
+
+
 --
 -- DESIGN NOTE - boxes (probably) should not use source and dest
 -- separators.
@@ -71,60 +75,32 @@ boxConnector mf = ConnectorBoxSpec $ \props ->
     promoteConn $ \p0 p1 -> ignoreAns $ mf props p0 p1 
 
 
+adaptAnaTrail :: (Real u, Floating u, Ord u, InterpretUnit u) 
+              => (u -> Vec2 u -> AnaTrail u) 
+              -> ConnectorBoxSpec u
+adaptAnaTrail fn = boxConnector $ \props p0 p1 ->
+    connectorBoxHalfSize props >>= \sz ->
+    let v0    = pvec p0 p1 
+        v1    = v0 ^+^ avec (vdirection v0) (2*sz)
+        vinit = avec (vdirection v0) (-sz)
+    in applyLoc (drawAnaTrail CSTROKE $ fn sz v1) (displace vinit p0)
+    
+
+
 -- | Draw a stroked, rectangular box around the connector points.
 --
 -- The rectangle will be inclined to the line.
 --
-connbox :: (Real u, Floating u, InterpretUnit u) 
+conn_box :: (Real u, Floating u, InterpretUnit u) 
         => ConnectorBoxSpec u
-connbox = boxConnector $ \props p0 p1 -> 
-    connectorBoxHalfSize props >>= \sz ->
-    applyLoc (drawAnaTrail CSTROKE $ cfconnbox sz (pvec p0 p1)) p0
+conn_box = adaptAnaTrail (\sz -> incline_rect (2 * sz))
 
 
-conntube :: (Real u, Floating u, InterpretUnit u) 
+-- | Draw a stroked, tube around the connector points.
+--
+-- The tube will be inclined to the line.
+--
+conn_tube :: (Real u, Floating u, InterpretUnit u) 
          => ConnectorBoxSpec u
-conntube = boxConnector $ \props p0 p1 -> 
-    connectorBoxHalfSize props >>= \sz ->
-    applyLoc (drawAnaTrail CSTROKE $ cfconntube sz (pvec p0 p1)) p0
-
-
-
--- Note can\'t use @incline_rect as does not accommodate spacing.
-
--- | @v1@ is the /interior/ vector.
---
-cfconnbox :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
-cfconnbox du v1 = 
-    anaCatTrail (orthoVec (-du) (-du) ang) $ mconcat $
-      [ trail_theta_right w ang
-      , trail_theta_up h ang
-      , trail_theta_left w ang
-      , trail_theta_down h ang
-      ]
-  where
-    ang = vdirection v1 
-    w   = (2*du) + vlength v1
-    h   = 2*du
-    
-
-
--- | @v1@ is the /interior/ vector.
---
-cfconntube :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
-cfconntube du v1 = 
-    anaCatTrail (orthoVec 0 (-du) ang) $ mconcat $
-      [ trail_theta_right w ang
-      , semicircleTrail CCW vup
-      , trail_theta_left w ang
-      , semicircleTrail CCW vdown
-      ]
-  where
-    ang   = vdirection v1 
-    w     = vlength v1
-    vup   = avec (ang + half_pi) (2*du)
-    vdown = avec (ang - half_pi) (2*du)
-
-    
-
+conn_tube = adaptAnaTrail (\sz -> incline_tube (2 * sz))
 
