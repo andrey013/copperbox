@@ -22,6 +22,8 @@ module Wumpus.Drawing.Connectors.BoxConnectors
 
   , conn_box
   , conn_tube
+  , conn_chamf_box 
+
 
   ) where
 
@@ -103,4 +105,12 @@ conn_box = adaptAnaTrail (\sz -> incline_rect (2 * sz))
 conn_tube :: (Real u, Floating u, InterpretUnit u) 
          => ConnectorBoxSpec u
 conn_tube = adaptAnaTrail (\sz -> incline_tube (2 * sz))
+
+-- | Draw a stroked, chamfered box around the connector points.
+--
+-- The tube will be inclined to the line.
+--
+conn_chamf_box :: (Real u, Floating u, InterpretUnit u) 
+               => ConnectorBoxSpec u
+conn_chamf_box = adaptAnaTrail (\sz -> incline_chamf_rect (2 * sz))
 
