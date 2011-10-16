@@ -53,8 +53,8 @@ module Wumpus.Drawing.Paths.Base
   -- * Conversion
   , toPrimPath
 
-  , drawPath
-  , drawPath_
+  , renderPath
+  , renderPath_
 
   -- * Shortening
   , shortenPath
@@ -101,9 +101,10 @@ module Wumpus.Drawing.Paths.Base
 
   ) where
 
+import Wumpus.Drawing.Basis.BezierCurve
 
+-- import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
                                    , ViewR(..), viewr, cons, snoc )
@@ -211,16 +212,79 @@ instance Functor AbsPathSeg where
 --------------------------------------------------------------------------------
 -- Translate
 
--- Translate is cheap on AbsPath
 
+-- | AbsPathSegments are build from vectors so they do not
+-- respond to translation.
+--
+instance Num u => Translate (AbsPathSeg u) where
+  translate _ _ s1 = s1
+
+-- | Translate is cheap on AbsPath it just moves the start and
+-- end points. The path itself is otherwise built from vectors
+-- so it doesn\'t respond to translation (translate == id).
+--
 instance Num u => Translate (AbsPath u) where
   translate x y (AbsPath len sp se ep) = 
       AbsPath len (translate x y sp) se (translate x y ep)
 
 
+instance (Floating u, Ord u, Tolerance u) => Scale (AbsPathSeg u) where
+  scale sx sy (AbsLineSeg _ v1)        = absLineSeg $ scale sx sy v1
+  scale sx sy (AbsCurveSeg _ v1 v2 v3) = 
+    absCurveSeg (scale sx sy v1) (scale sx sy v2) (scale sx sy v3)
+
+
+instance (Floating u, Ord u, Tolerance u) => Scale (AbsPath u) where
+  scale sx sy = rebuildPath (scale sx sy) (scale sx sy)
+                            (\v1 v2 v3 -> ( scale sx sy v1
+                                          , scale sx sy v2
+                                          , scale sx sy v3 ))
+
+
+instance (Real u, Floating u, Ord u, Tolerance u) => Rotate (AbsPath u) where
+  rotate ang = rebuildPath (rotate ang) (rotate ang)
+                           (\v1 v2 v3 -> ( rotate ang v1
+                                         , rotate ang v2
+                                         , rotate ang v3 ))
+
+-- | I believe this works, though haven\'t convinced myself it is 
+-- correct...
+--
+instance (Real u, Floating u, Ord u, Tolerance u) => RotateAbout (AbsPath u) where
+  rotateAbout ang pt = 
+    rebuildPath (rotateAbout ang pt) (rotateAbout ang pt)
+                (\v1 v2 v3 -> ( rotateAbout ang pt v1
+                              , rotateAbout ang pt v2
+                              , rotateAbout ang pt v3 ))
+
+
+rebuildPath :: (Floating u, Ord u, Tolerance u) 
+            => (Point2 u -> Point2 u) 
+            -> (Vec2 u -> Vec2 u) 
+            -> (Vec2 u -> Vec2 u -> Vec2 u -> (Vec2 u, Vec2 u, Vec2 u))
+            -> AbsPath u 
+            -> AbsPath u
+rebuildPath pointf linef curvef (AbsPath _ sp segs _) = 
+    step (emptyPath $ pointf sp) (viewl segs)
+  where
+    step ac EmptyL                         = ac
+
+    step ac (AbsLineSeg _ v1 :< xs)        = 
+      step (snocLine ac $ linef v1) (viewl xs) 
+
+    step ac (AbsCurveSeg _ v1 v2 v3 :< xs) = 
+      step (snocCurve ac $ curvef v1 v2 v3) (viewl xs) 
 
 --------------------------------------------------------------------------------
 -- Construction
+
+absLineSeg :: Floating u => Vec2 u -> AbsPathSeg u
+absLineSeg v1 = AbsLineSeg (vlength v1) v1
+
+absCurveSeg :: (Floating u, Ord u, Tolerance u) 
+            => Vec2 u -> Vec2 u -> Vec2 u -> AbsPathSeg u
+absCurveSeg v1 v2 v3 = 
+    AbsCurveSeg (bezierLength $ vbezierCurve v1 v2 v3 zeroPt) v1 v2 v3
 
 -- | Create the empty path.
 -- 
@@ -238,10 +302,9 @@ emptyPath = zeroPath
 -- supplied points.
 --
 line1 :: Floating u => Point2 u -> Point2 u -> AbsPath u 
-line1 p0 p1 = AbsPath len p0 (JL.one $ AbsLineSeg len v1) p1
+line1 p0 p1 = AbsPath len p0 (JL.one s1) p1
   where
-    v1  = pvec p0 p1
-    len = vlength v1
+    s1@(AbsLineSeg len _) = absLineSeg $ pvec p0 p1
 
 -- | Create an absolute path from a single cubic Bezier curve.
 --
@@ -469,15 +532,15 @@ zeroPath p0 = AbsPath 0 p0 JL.empty p0
    
 
 
-drawPath :: InterpretUnit u 
+renderPath :: InterpretUnit u 
          => PathMode -> AbsPath u -> Image u (AbsPath u)
-drawPath mode rp = replaceAns rp $ 
+renderPath mode rp = replaceAns rp $ 
     liftQuery (toPrimPath rp) >>= dcPath mode
 
 
-drawPath_ :: InterpretUnit u 
+renderPath_ :: InterpretUnit u 
           => PathMode -> AbsPath u -> Graphic u
-drawPath_ mode rp = liftQuery (toPrimPath rp) >>= dcPath mode
+renderPath_ mode rp = liftQuery (toPrimPath rp) >>= dcPath mode
 
 
 -- | Turn a Path into an ordinary PrimPath.

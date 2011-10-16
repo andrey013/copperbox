@@ -29,8 +29,8 @@ module Wumpus.Basic.Kernel.Objects.Trail
   , AnaTrail
 
   -- * Trail operations
-  , drawAnaTrail
-  , drawCatTrail
+  , renderAnaTrail
+  , renderCatTrail
 
   , destrAnaTrail
   , destrCatTrail
@@ -188,14 +188,17 @@ instance Monoid (CatTrail u) where
 --------------------------------------------------------------------------------
 -- Trail operations
 
-
-drawCatTrail :: InterpretUnit u => PathMode -> CatTrail u -> LocGraphic u
-drawCatTrail mode (CatTrail ct) = promoteLoc $ \pt -> 
+-- | Render a 'CatTrail' to make a drawable 'LocGraphic'.
+--
+renderCatTrail :: InterpretUnit u => PathMode -> CatTrail u -> LocGraphic u
+renderCatTrail mode (CatTrail ct) = promoteLoc $ \pt -> 
     drawTrailBody mode (toListH ct) pt 
 
 
-drawAnaTrail :: InterpretUnit u => PathMode -> AnaTrail u -> LocGraphic u
-drawAnaTrail mode (AnaTrail v0 xs) = promoteLoc $ \pt -> 
+-- | Render an 'AnaTrail' to make a drawable 'LocGraphic'.
+--
+renderAnaTrail :: InterpretUnit u => PathMode -> AnaTrail u -> LocGraphic u
+renderAnaTrail mode (AnaTrail v0 xs) = promoteLoc $ \pt -> 
     drawTrailBody mode xs (pt .+^ v0)
 
 

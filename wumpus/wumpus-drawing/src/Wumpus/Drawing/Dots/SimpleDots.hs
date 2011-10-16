@@ -197,15 +197,15 @@ dotCross =
 
 
 dotDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotDiamond = umark $ drawAnaTrail CSTROKE (diamondTrail 0.5 0.66)
+dotDiamond = umark $ renderAnaTrail CSTROKE (diamondTrail 0.5 0.66)
 
 dotFDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotFDiamond = umark $ drawAnaTrail CFILL (diamondTrail 0.5 0.66)
+dotFDiamond = umark $ renderAnaTrail CFILL (diamondTrail 0.5 0.66)
 
 
 
 dotBDiamond :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotBDiamond = umark $ drawAnaTrail CFILL_STROKE (diamondTrail 0.5 0.66)
+dotBDiamond = umark $ renderAnaTrail CFILL_STROKE (diamondTrail 0.5 0.66)
 
 
 -- | Note disk is filled.
@@ -216,7 +216,7 @@ dotDisk = umark $ dcDisk DRAW_FILL 0.5
 
 
 dotSquare :: (Fractional u, InterpretUnit u) => LocGraphic u
-dotSquare = umark $ drawAnaTrail CSTROKE (rectangleTrail 1 1)
+dotSquare = umark $ renderAnaTrail CSTROKE (rectangleTrail 1 1)
 
 
 dotCircle :: (Fractional u, InterpretUnit u) => LocGraphic u
@@ -229,7 +229,7 @@ dotBCircle = umark $ dcDisk DRAW_FILL_STROKE 0.5
 
 
 dotPentagon :: (Floating u, InterpretUnit u) => LocGraphic u
-dotPentagon = umark $ drawAnaTrail CSTROKE (polygonTrail 5 0.5)
+dotPentagon = umark $ renderAnaTrail CSTROKE (polygonTrail 5 0.5)
  
 
 
@@ -278,7 +278,7 @@ dotFOCross = dotBCircle `mappend` dotCross
 
 
 dotTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-dotTriangle = umark $ drawAnaTrail CSTROKE alg 
+dotTriangle = umark $ renderAnaTrail CSTROKE alg 
   where
     alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices 1
     fn3 = \(a,b,c) -> [a,b,c]

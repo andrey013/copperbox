@@ -140,6 +140,6 @@ wedge mode radius ang = promoteLocTheta $ \pt inclin ->
         line_out = catline $ avec (inclin - half_ang) (-radius)
         w_arc    = circularArc CW ang radius (inclin - half_pi)
         ct       = line_in `mappend` w_arc `mappend` line_out
-    in supplyLoc pt $ drawCatTrail (closedMode mode) ct
+    in supplyLoc pt $ renderCatTrail (closedMode mode) ct
         
 

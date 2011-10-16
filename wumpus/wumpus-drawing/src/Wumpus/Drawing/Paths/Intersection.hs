@@ -28,6 +28,7 @@ module Wumpus.Drawing.Paths.Intersection
 
   ) where
 
+import Wumpus.Drawing.Basis.BezierCurve
 import Wumpus.Drawing.Paths.Base
 
 
@@ -94,12 +95,6 @@ det2'2 (M2'2 a b c d) = a*d - b*c
 
 
 
--- | A Strict cubic Bezier curve.
---
-data BezierCurve u = BezierCurve !(Point2 u) !(Point2 u) !(Point2 u) !(Point2 u)
-  deriving (Eq,Ord,Show)
-
-type instance DUnit (BezierCurve u) = u
 
 
 --------------------------------------------------------------------------------
@@ -211,27 +206,6 @@ cut eqnline (BezierCurve p0 p1 p2 p3) =
     d3  = pointLineDistance p3 eqnline 
 
 
-
--- | Curve subdivision via de Casteljau\'s algorithm.
---
-subdivide :: Fractional u 
-          => BezierCurve u -> (BezierCurve u, BezierCurve u)
-subdivide (BezierCurve p0 p1 p2 p3) =
-    (BezierCurve p0 p01 p012 p0123, BezierCurve p0123 p123 p23 p3)
-  where
-    p01   = midpoint p0    p1
-    p12   = midpoint p1    p2
-    p23   = midpoint p2    p3
-    p012  = midpoint p01   p12
-    p123  = midpoint p12   p23
-    p0123 = midpoint p012  p123
-
--- | 'midpoint' : @ start_point * end_point -> Midpoint @
--- 
--- Mid-point on the line formed between the two supplied points.
---
-midpoint :: Fractional u => Point2 u -> Point2 u -> Point2 u
-midpoint p0 p1 = p0 .+^ v1 ^/ 2 where v1 = p1 .-. p0
 
 
 -- | 'pointLineDistance' : @ point -> line -> Distance @

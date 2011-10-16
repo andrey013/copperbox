@@ -228,7 +228,7 @@ runGenPathSpec st mode ma = promoteLoc $ \pt ->
         dpath     = translate dx dy $ st_cumulative_path s1
         upath     = dinterpF (dc_font_size ctx) dpath
         pctx      = st_pen_ctx s1
-        (_,w2)    = runImage pctx (drawActivePen mode $ st_active_pen s1) 
+        (_,w2)    = runImage pctx (renderActivePen mode $ st_active_pen s1) 
         wfinal    = cpmove (V2 dx dy) $ w1 `mappend` w2
     in replaceAns (a, st_user_state s1, upath) $ primGraphic wfinal
 
@@ -293,9 +293,9 @@ runPathSpec_ mode ma = ignoreAns $ evalGenPathSpec () mode ma
 
 -- | Helper.
 --
-drawActivePen :: PathMode -> ActivePen -> DGraphic 
-drawActivePen _    PEN_UP              = mempty
-drawActivePen mode (PEN_DOWN abs_path) = drawPath_ mode abs_path
+renderActivePen :: PathMode -> ActivePen -> DGraphic 
+renderActivePen _    PEN_UP              = mempty
+renderActivePen mode (PEN_DOWN abs_path) = renderPath_ mode abs_path
 
 
 
@@ -317,7 +317,7 @@ runPivot ma mb = promoteLoc $ \pt ->
         dp1        = normalizeF (dc_font_size ctx) p1
         v1         = pvec dpt dp1
         pctx       = st_pen_ctx s1
-        (_,w2)     = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s1
+        (_,w2)     = runImage pctx $ renderActivePen OSTROKE $ st_active_pen s1
         wfinal     = w1 `mappend` w2
     in primGraphic $ cpmove (negateV v1) wfinal
   where
@@ -393,7 +393,7 @@ movebyImpl :: InterpretUnit u => Vec2 u -> GenPathSpec st u ()
 movebyImpl v1 = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz      = dc_font_size ctx
         dv1     = normalizeF sz v1
-        (_,w1)  = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s
+        (_,w1)  = runImage pctx $ renderActivePen OSTROKE $ st_active_pen s
         cpath   = snocLine (st_cumulative_path s) dv1
     in ((), s { st_active_pen = PEN_UP, st_cumulative_path = cpath }, w1)
 
@@ -433,7 +433,7 @@ vamp :: InterpretUnit u => Vamp u -> GenPathSpec st u ()
 vamp (Vamp v1 conn) = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
     let sz     = dc_font_size ctx
         dv1    = normalizeF sz v1
-        (_,w1) = runImage pctx $ drawActivePen OSTROKE $ st_active_pen s
+        (_,w1) = runImage pctx $ renderActivePen OSTROKE $ st_active_pen s
         upt    = dinterpF sz (tipR $ st_cumulative_path s)
         (_,w2) = runConnectorImage ctx upt (upt .+^ v1) conn
         cpath  = snocLine (st_cumulative_path s) dv1
@@ -443,7 +443,7 @@ vamp (Vamp v1 conn) = GenPathSpec $ \ctx s@(PathSt {st_pen_ctx = pctx}) ->
 
 cycleSubPath :: DrawMode -> GenPathSpec st u ()
 cycleSubPath mode = GenPathSpec $ \_ s@(PathSt {st_pen_ctx = pctx}) ->
-    let (_,w1) = runImage pctx $ drawActivePen (fn mode) (st_active_pen s)
+    let (_,w1) = runImage pctx $ renderActivePen (fn mode) (st_active_pen s)
     in ((), s { st_active_pen = PEN_UP }, w1)
   where
     fn DRAW_STROKE      = CSTROKE

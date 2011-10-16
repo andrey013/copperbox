@@ -101,8 +101,11 @@ library
 
   
   exposed-modules:
+    Wumpus.Drawing.Basis.BezierCurve,
     Wumpus.Drawing.Basis.DrawingPrimitives,
+    Wumpus.Drawing.Basis.Geometry,
     Wumpus.Drawing.Basis.InclineTrails,
+    Wumpus.Drawing.Basis.ShapeTrails,
     Wumpus.Drawing.Basis.Symbols,
     Wumpus.Drawing.Colour.SVGColours,
     Wumpus.Drawing.Colour.X11Colours,

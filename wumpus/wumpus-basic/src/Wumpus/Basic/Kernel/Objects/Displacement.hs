@@ -158,8 +158,8 @@ dispPerpendicular d =
 -- displaced in parallel and the y component displaced
 -- perpendicular. 
 -- 
-dispOrtho :: Floating u => Vec2 u -> ThetaPointDisplace u
-dispOrtho (V2 x y) = \theta -> dispParallel x theta . dispPerpendicular y theta
+dispOrtho :: Floating u => u -> u -> ThetaPointDisplace u
+dispOrtho x y = \theta -> dispParallel x theta . dispPerpendicular y theta
 
 
 

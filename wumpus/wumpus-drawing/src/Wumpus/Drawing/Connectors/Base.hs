@@ -116,7 +116,7 @@ renderConnectorConfig props (ConnectorConfig mbl mbr pspec) =
           arrl         = mbTip p1 (pi + theta1) mbl
           arrr         = mbTip p2 theta2 mbr
       in replaceAns interim_path $ 
-            decorate SUPERIOR (drawPath OSTROKE new_path) (arrl `mappend` arrr)
+           decorate SUPERIOR (renderPath OSTROKE new_path) (arrl `mappend` arrr)
   where
     mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
     path_spec    = getConnectorPathSpec pspec props

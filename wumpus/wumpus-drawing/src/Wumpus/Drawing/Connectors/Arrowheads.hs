@@ -12,6 +12,8 @@
 --
 -- Arrowheads.
 --
+-- \*\* WARNING \*\* - naming scheme due to change.
+--
 --------------------------------------------------------------------------------
 
 module Wumpus.Drawing.Connectors.Arrowheads
@@ -73,6 +75,10 @@ import Data.VectorSpace
 import Data.Monoid
 
 
+
+
+
+
 -- | Arrow tips are drawn with a solid line even if the connector
 -- line is dashed (tips also override round corners)
 
@@ -120,6 +126,21 @@ filledTri ang =
       , tip_half_len     = 0.5
       , tip_deco         = fillTrailTip $ closedTriTrail ang
       }
+
+--
+-- DESIGN NOTE 
+--
+-- Naming scheme should change.
+--
+-- The \"wumpus way\" of naming seems to be coalescing to favour 
+-- underscore separated names rather than camelCase for /data/ 
+-- objects. 
+--
+-- These data objects can still be functions but they are 
+-- distinguished by drawing differently - roughly speaking
+-- the difference between a barb tip and a triangle tip is 
+-- \"what they draw not what they mean\".
+--
 
 -- | Filled triangle - apex is 90 deg.
 --
