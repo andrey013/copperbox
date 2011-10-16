@@ -93,18 +93,18 @@ type TrailGen = Radian -> AnaTrail En
 fillTrailTip :: TrailGen -> LocThetaGraphic En
 fillTrailTip gen_pt = 
     localize fill_use_stroke_colour $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawAnaTrail CFILL $ gen_pt theta
+      supplyLoc pt $ renderAnaTrail CFILL $ gen_pt theta
 
 closedTrailTip :: TrailGen -> LocThetaGraphic En
 closedTrailTip gen_pt = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawAnaTrail CSTROKE $ gen_pt theta
+      supplyLoc pt $ renderAnaTrail CSTROKE $ gen_pt theta
 
 
 openTrailTip :: TrailGen -> LocThetaGraphic En
 openTrailTip gen_pt = 
     localize solid_stroke_tip $ promoteLocTheta $ \pt theta ->
-      supplyLoc pt $ drawAnaTrail OSTROKE $ gen_pt theta
+      supplyLoc pt $ renderAnaTrail OSTROKE $ gen_pt theta
 
 
 
@@ -180,9 +180,7 @@ otri45 = strokedClosedTri ang45
 -- | All three lines are stated.
 --
 revClosedTriSpec :: Radian -> TrailGen
-revClosedTriSpec ang = \theta -> 
-{-    modifyAna (\v1 -> v1 ^+^ theta_left 1 theta) $ -}
-      incline_triangle ang (avec theta (-1))
+revClosedTriSpec ang = \theta -> incline_triangle ang (avec theta (-1))
 
 
 filledRevTri :: Radian -> ArrowTip

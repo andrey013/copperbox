@@ -27,10 +27,11 @@ module Wumpus.Drawing.Shapes.Rectangle
 
   ) where
 
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -124,7 +125,7 @@ instance (Real u, Floating u) =>
   east  = runDisplaceCenter $ \hw _  -> V2 hw 0
   west  = runDisplaceCenter $ \hw _  -> V2 (-hw) 0
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (Rectangle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -132,12 +133,20 @@ instance (Real u, Floating u) =>
   northwest = radialAnchor (0.75*pi)
 
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (Rectangle u) where
-  radialAnchor theta = runDisplaceCenter $ \hw hh -> 
-                          rectRadialVector hw hh theta
+  radialAnchor ang = runDisplaceCenter $ \hw hh -> 
+      maybe zeroVec id $ rectangleRadialAnchor hw hh ang
 
+-- mbLiftVec :: Num u => Point2 u -> Maybe (Point2 u) -> Point2 u
+-- mbLiftVec p0 = maybe p0
 
+rectangleRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                      => u -> u -> Radian -> Maybe (Vec2 u) 
+rectangleRadialAnchor hw hh ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
+  where
+    rp = anaTrailPath zeroPt $ rrectangle_trail (2*hw) (2*hh) 0
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -148,7 +157,7 @@ instance (Real u, Floating u) =>
 rectangle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
           => u -> u -> Shape Rectangle u
 rectangle w h = 
-    makeShape (mkRectangle (0.5*w) (0.5*h)) (mkRectPath 0 (0.5*w) (0.5*h))
+    makeShape (mkRectangle (0.5*w) (0.5*h)) (mkRectPath (0.5*w) (0.5*h))
 
 
 mkRectangle :: InterpretUnit u => u -> u -> LocThetaQuery u (Rectangle u)
@@ -158,12 +167,12 @@ mkRectangle hw hh = qpromoteLocTheta $ \ctr theta ->
                      , rect_hh     = hh
                      }
 
-
 mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-           => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkRectPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
-    let xs       = runVertices4 ctr $ rectangleVertices hw hh
-    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs
-    
+           => u -> u -> LocThetaQuery u (AbsPath u)
+mkRectPath hw hh = qpromoteLocTheta $ \ctr theta -> 
+   return $ anaTrailPath ctr $ rrectangle_trail (2*hw) (2*hh) theta
+
+
+  
 
 

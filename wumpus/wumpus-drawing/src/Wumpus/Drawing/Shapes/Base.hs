@@ -42,6 +42,7 @@ module Wumpus.Drawing.Shapes.Base
   , makeShapeCTM
   , ctmCenter
   , ctmAngle
+  , ctmLocale
   , projectFromCtr
 
   ) where
@@ -246,6 +247,9 @@ ctmCenter = ctm_center
 
 ctmAngle :: ShapeCTM u -> Radian
 ctmAngle = ctm_rotation
+
+ctmLocale :: ShapeCTM u -> (Point2 u, Radian)
+ctmLocale ctm = (ctm_center ctm, ctm_rotation ctm)
 
 
 instance (Fractional u) => Scale (ShapeCTM u) where

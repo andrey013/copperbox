@@ -21,10 +21,14 @@ module Wumpus.Drawing.Paths.Intersection
     Line(..)
   , inclinedLine
   , vectorLine
+  , Ray(..)
+  , inclinedRay
 
   , lineLineIntersection
   , linePathIntersection
   , linePathSegmentIntersection
+  , rayPathIntersection
+  , rayPathSegmentIntersection
 
   ) where
 
@@ -35,7 +39,6 @@ import Wumpus.Drawing.Paths.Base
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
 
 --------------------------------------------------------------------------------
 
@@ -112,9 +115,8 @@ type instance DUnit (Line u) = u
 --
 
 
--- Make an infinite line passing through the supplied point 
+-- | Make an infinite line passing through the supplied point 
 -- inclined by @ang@.
-
 --
 inclinedLine :: Floating u => Point2 u -> Radian -> Line u
 inclinedLine radial_ogin ang = Line radial_ogin (radial_ogin .+^ avec ang 100)
@@ -123,6 +125,23 @@ vectorLine :: Num u => Vec2 u -> Point2 u -> Line u
 vectorLine v1 p0 = Line p0 (p0 .+^ v1)
 
 
+-- | A 'Ray' extends from the first point, through the second to
+-- infinity.
+--
+-- ('Line' extends to infinity in both directions.
+--
+data Ray u = Ray (Point2 u) (Point2 u) 
+  deriving (Eq,Show)
+
+type instance DUnit (Ray u) = u
+
+
+-- | Make an infinite ray starting from the supplied point 
+-- inclined by @ang@.
+--
+inclinedRay :: Floating u => Point2 u -> Radian -> Ray u
+inclinedRay ray_ogin ang = Ray ray_ogin (ray_ogin .+^ avec ang 100)
+  
 
 
 -- | 'interLineLine' : @ line1 * line2 -> Maybe Point @
@@ -168,10 +187,19 @@ linePathIntersection ln = step . pathViewL
 linePathSegmentIntersection :: (Floating u, Ord u, Tolerance u) 
                             => Line u -> PathSegment u -> Maybe (Point2 u)
 linePathSegmentIntersection ln1 (LineSeg _ p0 p1)        = 
-    lineLineIntersection ln1 (Line p0 p1)
+    mbWithin p0 p1 $ lineLineIntersection ln1 (Line p0 p1)
 
 linePathSegmentIntersection (Line pa pb) (CurveSeg _ p0 p1 p2 p3) = 
     lineEqnCurveIntersection (lineEquation pa pb) (BezierCurve p0 p1 p2 p3)
+
+
+mbWithin :: (Floating u, Ord u) 
+         => Point2 u -> Point2 u -> Maybe (Point2 u) -> Maybe (Point2 u)
+mbWithin p0 p1 (Just pt) = 
+    if vlength (pvec p0 p1) >= vlength (pvec p0 pt) then Just pt else Nothing
+
+mbWithin _  _  Nothing   = Nothing
+
 
 lineEqnCurveIntersection :: (Floating u, Ord u, Tolerance u) 
                          => LineEquation u -> BezierCurve u -> Maybe (Point2 u)
@@ -184,6 +212,26 @@ lineEqnCurveIntersection eqnline c0 = step c0
                                in case step a of
                                    Just pt -> Just pt
                                    Nothing -> step b
+
+
+rayPathIntersection :: (Real u, Floating u, Ord u, Tolerance u) 
+                    => Ray u -> AbsPath u -> Maybe (Point2 u)
+rayPathIntersection ry = step . pathViewL
+  where
+    step EmptyPathL = Nothing
+    step (a :<< bs) = let ans = rayPathSegmentIntersection ry a
+                      in case ans of
+                         Nothing -> step (pathViewL bs)
+                         _       -> ans
+
+rayPathSegmentIntersection :: (Real u, Floating u, Ord u, Tolerance u) 
+                           => Ray u -> PathSegment u -> Maybe (Point2 u)
+rayPathSegmentIntersection (Ray p0 p1) seg = 
+    test $ linePathSegmentIntersection (Line p0 p1) seg
+  where
+    test (Just pt) = if vdirection (pvec p0 p1) == vdirection (pvec p0 pt)
+                     then Just pt else Nothing
+    test Nothing   = Nothing
  
 -- | Is the curve cut by the line? 
 --

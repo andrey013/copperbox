@@ -69,8 +69,8 @@ loopTrail circ_radius incl =
     top_left    = 0.8 * circ_radius
 
     top         = dispParallel height incl zeroPt
-    kiter       = dispOrtho (V2 hminor (-hw)) incl zeroPt
-    kitel       = dispOrtho (V2 hminor (hw) ) incl zeroPt
+    kiter       = dispOrtho hminor (-hw) incl zeroPt
+    kitel       = dispOrtho hminor   hw  incl zeroPt
     
     startr      = zeroPt .+^ avec (circularModulo $ incl - theta) circ_radius
     startl      = zeroPt .+^ avec (circularModulo $ incl + theta) circ_radius

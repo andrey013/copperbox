@@ -85,7 +85,7 @@ adaptAnaTrail fn = boxConnector $ \props p0 p1 ->
     let v0    = pvec p0 p1 
         v1    = v0 ^+^ avec (vdirection v0) (2*sz)
         vinit = avec (vdirection v0) (-sz)
-    in applyLoc (drawAnaTrail CSTROKE $ fn sz v1) (displace vinit p0)
+    in applyLoc (renderAnaTrail CSTROKE $ fn sz v1) (displace vinit p0)
     
 
 
