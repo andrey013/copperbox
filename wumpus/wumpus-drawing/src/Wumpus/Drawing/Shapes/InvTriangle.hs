@@ -122,7 +122,7 @@ instance (Real u, Floating u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (InvTriangle u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -131,7 +131,7 @@ instance (Real u, Floating u) =>
 
 
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (InvTriangle u) where
   radialAnchor theta = runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)
 

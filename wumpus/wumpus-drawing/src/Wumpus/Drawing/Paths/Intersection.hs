@@ -195,11 +195,8 @@ linePathSegmentIntersection (Line pa pb) (CurveSeg _ p0 p1 p2 p3) =
 
 mbWithin :: (Floating u, Ord u) 
          => Point2 u -> Point2 u -> Maybe (Point2 u) -> Maybe (Point2 u)
-mbWithin p0 p1 (Just pt) = 
+mbWithin p0 p1 mb = mb >>= \pt -> 
     if vlength (pvec p0 p1) >= vlength (pvec p0 pt) then Just pt else Nothing
-
-mbWithin _  _  Nothing   = Nothing
-
 
 lineEqnCurveIntersection :: (Floating u, Ord u, Tolerance u) 
                          => LineEquation u -> BezierCurve u -> Maybe (Point2 u)
@@ -227,11 +224,10 @@ rayPathIntersection ry = step . pathViewL
 rayPathSegmentIntersection :: (Real u, Floating u, Ord u, Tolerance u) 
                            => Ray u -> PathSegment u -> Maybe (Point2 u)
 rayPathSegmentIntersection (Ray p0 p1) seg = 
-    test $ linePathSegmentIntersection (Line p0 p1) seg
+    test =<< linePathSegmentIntersection (Line p0 p1) seg
   where
-    test (Just pt) = if vdirection (pvec p0 p1) == vdirection (pvec p0 pt)
-                     then Just pt else Nothing
-    test Nothing   = Nothing
+    test pt = if vdirection (pvec p0 p1) == vdirection (pvec p0 pt)
+              then Just pt else Nothing
  
 -- | Is the curve cut by the line? 
 --

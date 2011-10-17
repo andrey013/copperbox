@@ -137,7 +137,7 @@ shapePic :: ( Functor t
          => (t Double -> DTraceDrawing a) -> DShape t -> String -> CtxPicture
 shapePic mf sh name = udrawTracing (0::Double) $ do
     a1  <- localize shapeSty $ drawi $ 
-              uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)
+              uniformScale 2 $ {- rotate05 $ -} shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -147,22 +147,18 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
     draw $ label NORTH_WEST   "(northwest)"   `at` northwest a1
     draw $ label SOUTH_EAST   "(southeast)"   `at` southeast a1
     draw $ label SOUTH_WEST   "(southwest)"   `at` southwest a1
-    draw $ label EAST         "(10 deg)"      `at` radialAnchor deg10 a1
-    draw $ label NORTH_WEST   "(110 deg)"     `at` radialAnchor deg110 a1
-    draw $ label WEST         "(190 deg)"     `at` radialAnchor deg190 a1
-    draw $ label NORTH        "(250 deg)"     `at` radialAnchor deg250 a1
+    draw $ label EAST         "(10 deg)"      `at` radialAnchor (d2r 10) a1
+    draw $ label NORTH_WEST   "(110 deg)"     `at` radialAnchor (d2r 110) a1
+    draw $ label WEST         "(190 deg)"     `at` radialAnchor (d2r 190) a1
+    draw $ label NORTH        "(250 deg)"     `at` radialAnchor (d2r 250) a1
+    draw $ label WEST         "(187 deg)"     `at` radialAnchor (d2r 187) a1
+    draw $ label WEST         "(200 deg)"     `at` radialAnchor (d2r 200) a1
     _ <- mf a1
     return ()    
   where
     shape   = strokedShape $ setDecoration textF sh
     textF   = promoteLocTheta $ \pt _ -> 
                 ignoreAns (multilineText VALIGN_CENTER CENTER name) `at` pt
-
-    deg10   = d2r (10::Double)
-    deg110  = d2r (110::Double)
-    deg190  = d2r (190::Double)
-    deg250  = d2r (250::Double)
-
 
 
 

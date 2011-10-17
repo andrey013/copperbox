@@ -25,11 +25,13 @@ module Wumpus.Drawing.Shapes.Diamond
 
   ) where
 
+
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
 import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Quadrant
 import Wumpus.Basic.Kernel      
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -123,12 +125,19 @@ instance (Real u, Floating u) => CardinalAnchor2 (Diamond u) where
 
 
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
       RadialAnchor (Diamond u) where
   radialAnchor ang = runDisplaceCenter $ \hw hh -> 
-                     diamondRadialVector hw hh ang
+      maybe zeroVec id $ diamondRadialAnchor hw hh ang
 
 
+
+diamondRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                      => u -> u -> Radian -> Maybe (Vec2 u) 
+diamondRadialAnchor hw hh ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
+  where
+    rp = anaTrailPath zeroPt $ diamond_trail (2*hw) (2*hh)
 
 
 --------------------------------------------------------------------------------
@@ -140,7 +149,7 @@ instance (Real u, Floating u) =>
 --
 diamond :: (Real u, Floating u, InterpretUnit u, Tolerance u)
         => u -> u -> Shape Diamond u
-diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath 0 hw hh)
+diamond hw hh = makeShape (mkDiamond hw hh) (mkDiamondPath hw hh)
 
 
 mkDiamond :: InterpretUnit u => u -> u -> LocThetaQuery u (Diamond u)
@@ -152,11 +161,7 @@ mkDiamond hw hh = qpromoteLocTheta $ \ctr theta ->
 
 
 mkDiamondPath :: (Real u, Floating u, InterpretUnit u, Tolerance u)
-              => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkDiamondPath rnd hw hh = qpromoteLocTheta $ \ctr theta -> 
-    qapplyLoc (anaTrailPoints $ diamondTrail hw hh) ctr >>= \ps ->
-    roundCornerShapePath rnd $ map (rotateAbout theta ctr) ps
-
-
-
+              => u -> u -> LocThetaQuery u (AbsPath u)
+mkDiamondPath hw hh = qpromoteLocTheta $ \ctr theta -> 
+    return $ anaTrailPath ctr $ rdiamond_trail (2*hw) (2*hh) theta
 
