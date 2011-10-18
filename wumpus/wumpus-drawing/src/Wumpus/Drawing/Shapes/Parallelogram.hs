@@ -27,10 +27,11 @@ module Wumpus.Drawing.Shapes.Parallelogram
 
   ) where
 
+import Wumpus.Drawing.Basis.Geometry
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
+import Wumpus.Basic.Geometry hiding ( midpoint )      -- package: wumpus-basic
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core

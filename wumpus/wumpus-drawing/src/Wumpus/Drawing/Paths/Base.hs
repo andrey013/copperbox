@@ -103,8 +103,6 @@ module Wumpus.Drawing.Paths.Base
 
 import Wumpus.Drawing.Basis.BezierCurve
 
--- import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-
 import Wumpus.Basic.Kernel
 import Wumpus.Basic.Utils.JoinList ( JoinList, ViewL(..), viewl
                                    , ViewR(..), viewr, cons, snoc )

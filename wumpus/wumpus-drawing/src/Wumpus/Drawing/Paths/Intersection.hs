@@ -144,6 +144,19 @@ inclinedRay ray_ogin ang = Ray ray_ogin (ray_ogin .+^ avec ang 100)
   
 
 
+
+
+pointOnLineSeg :: (Real u, Floating u, Ord u, Tolerance u) 
+               => Point2 u -> (Point2 u, Point2 u) -> Bool
+pointOnLineSeg pt (p0,p1) 
+    | pt == p0 || pt == p1 = True
+    | otherwise            = 
+        vdirection v1 == vdirection v0 && vlength v1 `tLTE`  vlength v0
+  where
+    v0 = pvec p0 p1
+    v1 = pvec p0 pt
+                 
+
 -- | 'interLineLine' : @ line1 * line2 -> Maybe Point @
 -- 
 -- Find the intersection of two lines, if there is one. 
@@ -174,7 +187,7 @@ lineLineIntersection (Line p1 p2) (Line q1 q2) =
     det_ym                = det2'2 yM
 
 
-linePathIntersection :: (Floating u, Ord u, Tolerance u) 
+linePathIntersection :: (Real u, Floating u, Ord u, Tolerance u) 
                      => Line u -> AbsPath u -> Maybe (Point2 u)
 linePathIntersection ln = step . pathViewL
   where
@@ -184,7 +197,7 @@ linePathIntersection ln = step . pathViewL
                          Nothing -> step (pathViewL bs)
                          _       -> ans
 
-linePathSegmentIntersection :: (Floating u, Ord u, Tolerance u) 
+linePathSegmentIntersection :: (Real u, Floating u, Ord u, Tolerance u) 
                             => Line u -> PathSegment u -> Maybe (Point2 u)
 linePathSegmentIntersection ln1 (LineSeg _ p0 p1)        = 
     mbWithin p0 p1 $ lineLineIntersection ln1 (Line p0 p1)
@@ -193,10 +206,10 @@ linePathSegmentIntersection (Line pa pb) (CurveSeg _ p0 p1 p2 p3) =
     lineEqnCurveIntersection (lineEquation pa pb) (BezierCurve p0 p1 p2 p3)
 
 
-mbWithin :: (Floating u, Ord u) 
+mbWithin :: (Real u, Floating u, Ord u, Tolerance u) 
          => Point2 u -> Point2 u -> Maybe (Point2 u) -> Maybe (Point2 u)
 mbWithin p0 p1 mb = mb >>= \pt -> 
-    if vlength (pvec p0 p1) >= vlength (pvec p0 pt) then Just pt else Nothing
+    if pointOnLineSeg pt (p0,p1) then Just pt else Nothing
 
 lineEqnCurveIntersection :: (Floating u, Ord u, Tolerance u) 
                          => LineEquation u -> BezierCurve u -> Maybe (Point2 u)

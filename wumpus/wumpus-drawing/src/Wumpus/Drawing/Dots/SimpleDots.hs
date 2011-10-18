@@ -67,9 +67,9 @@ module Wumpus.Drawing.Dots.SimpleDots
 
   ) where
 
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Basis.Symbols
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
 import Wumpus.Basic.Kernel        
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -278,7 +278,4 @@ dotFOCross = dotBCircle `mappend` dotCross
 
 
 dotTriangle :: (Floating u, InterpretUnit u) => LocGraphic u
-dotTriangle = umark $ renderAnaTrail CSTROKE alg 
-  where
-    alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices 1
-    fn3 = \(a,b,c) -> [a,b,c]
+dotTriangle = umark $ renderAnaTrail CSTROKE $ isosceles_triangle_trail 1 1
