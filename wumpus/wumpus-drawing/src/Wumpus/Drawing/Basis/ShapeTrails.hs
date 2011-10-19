@@ -32,6 +32,10 @@ module Wumpus.Drawing.Basis.ShapeTrails
   , semicircle_trail
   , rsemicircle_trail
 
+  , ellipse_trail
+  , rellipse_trail
+  
+
   )
 
   where
@@ -43,7 +47,8 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
+import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Data.Monoid
 
@@ -116,3 +121,62 @@ rsemicircle_trail r ang =
     hminor = (4 * r) / (3 * pi)
     catt   =  trail_theta_right (2 * r) ang
            <> semicircleTrail CCW (avec ang (negate $ 2 * r) )
+
+
+--------------------------------------------------------------------------------
+-- Re-implementation of Bezier Ellispe from Wumpus-Core 
+-- to make an AnaTrail
+
+kappa :: Floating u => u
+kappa = 4 * ((sqrt 2 - 1) / 3)
+
+
+ellipse_trail :: (Real u, Floating u) 
+               => u -> u -> AnaTrail u
+ellipse_trail rx ry = rellipse_trail rx ry 0
+
+
+-- | 'rellipse_trail' : @ x_radius * y_radius * center * angle -> AnaTrail @ 
+-- 
+-- Make an rotated ellipse from four Bezier curves. 
+-- 
+-- Although this function produces an approximation of a ellipse, 
+-- the approximation seems fine in practice.
+--
+rellipse_trail :: (Real u, Floating u) 
+               => u -> u -> Radian -> AnaTrail u
+rellipse_trail rx ry ang = 
+    anaCatTrail (theta_right rx ang) $ ellipseCat rx ry ang
+
+
+-- TODO - spilt this to define semiellipse trails and add to 
+-- Wumpus-Basic, then it can be used for other things.
+--
+ellipseCat :: (Real u, Floating u) 
+           => u -> u -> Radian -> CatTrail u
+ellipseCat rx ry ang = 
+       catcurve (pvec p00 c01) (pvec c01 c02) (pvec c02 p03)
+    <> catcurve (pvec p03 c04) (pvec c04 c05) (pvec c05 p06) 
+    <> catcurve (pvec p06 c07) (pvec c07 c08) (pvec c08 p09) 
+    <> catcurve (pvec p09 c10) (pvec c10 c11) (pvec c11 p00)
+  where
+    lrx   = rx * kappa
+    lry   = ry * kappa
+    para  = theta_right `flip` ang
+    perp  = theta_up `flip` ang
+
+    p00   = zeroPt .+^ theta_right rx ang
+    c01   = p00 .+^ perp lry
+    c02   = p03 .+^ para lrx
+
+    p03   = zeroPt .+^ theta_up ry ang  
+    c04   = p03 .+^ para (-lrx)
+    c05   = p06 .+^ perp lry
+
+    p06   = zeroPt .+^ theta_left rx ang
+    c07   = p06 .+^ perp (-lry)
+    c08   = p09 .+^ para (-lrx)
+
+    p09   = zeroPt .+^ theta_down ry ang
+    c10   = p09 .+^ para lrx
+    c11   = p00 .+^ perp (-lry)
