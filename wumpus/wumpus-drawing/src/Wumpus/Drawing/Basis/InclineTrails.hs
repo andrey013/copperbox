@@ -18,6 +18,7 @@ module Wumpus.Drawing.Basis.InclineTrails
   (
 
     incline_circle
+  , incline_ellipse
   , incline_square
   , incline_rect
   , incline_diamond
@@ -78,6 +79,14 @@ incline_circle v1 =
     anaCatTrail zeroVec (semicircleTrail CW v1 <> semicircleTrail CW rv1)
   where
     rv1 = vreverse v1
+
+incline_ellipse :: (Real u, Floating u) => u -> Vec2 u -> AnaTrail u
+incline_ellipse ry v1 = 
+    anaCatTrail zeroVec (semiellipseTrail CW ry v1 <> semiellipseTrail CW ry rv1)
+  where
+    rv1 = vreverse v1
+
+
 
 incline_square :: (Real u, Floating u) => Vec2 u -> AnaTrail u
 incline_square v1 = incline_rect (vlength v1) v1

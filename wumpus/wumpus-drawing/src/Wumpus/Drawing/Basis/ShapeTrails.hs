@@ -20,6 +20,9 @@ module Wumpus.Drawing.Basis.ShapeTrails
     circle_trail
   , rcircle_trail
 
+  , ellipse_trail
+  , rellipse_trail
+
   , rectangle_trail
   , rrectangle_trail
 
@@ -32,9 +35,6 @@ module Wumpus.Drawing.Basis.ShapeTrails
   , semicircle_trail
   , rsemicircle_trail
 
-  , ellipse_trail
-  , rellipse_trail
-  
 
   )
 
@@ -47,8 +47,7 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.AffineSpace                         -- package: vector-space
-import Data.VectorSpace
+import Data.VectorSpace                         -- package: vector-space
 
 import Data.Monoid
 
@@ -61,6 +60,15 @@ circle_trail r = rcircle_trail r 0
 rcircle_trail :: (Real u, Floating u) => u -> Radian -> AnaTrail u
 rcircle_trail r ang = 
     modifyAna (\v -> v ^-^ avec ang r) $ incline_circle $ avec ang (2 * r)
+
+
+
+ellipse_trail :: (Real u, Floating u) => u -> u -> AnaTrail u
+ellipse_trail rx ry = rellipse_trail rx ry 0
+
+rellipse_trail :: (Real u, Floating u) => u -> u -> Radian -> AnaTrail u
+rellipse_trail rx ry ang = 
+    modifyAna (\v -> v ^-^ avec ang rx) $ incline_ellipse ry $ avec ang (2 * rx)
 
 
 rectangle_trail :: (Real u, Floating u) => u -> u -> AnaTrail u
@@ -122,6 +130,7 @@ rsemicircle_trail r ang =
     catt   =  trail_theta_right (2 * r) ang
            <> semicircleTrail CCW (avec ang (negate $ 2 * r) )
 
+{-
 
 --------------------------------------------------------------------------------
 -- Re-implementation of Bezier Ellispe from Wumpus-Core 
@@ -180,3 +189,5 @@ ellipseCat rx ry ang =
     p09   = zeroPt .+^ theta_down ry ang
     c10   = p09 .+^ para lrx
     c11   = p00 .+^ perp (-lry)
+
+-}

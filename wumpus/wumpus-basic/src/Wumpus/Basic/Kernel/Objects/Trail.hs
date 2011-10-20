@@ -106,6 +106,7 @@ module Wumpus.Basic.Kernel.Objects.Trail
 
 
   , semicircleTrail
+  , semiellipseTrail
   , minorCircleSweep
   , circleSweep
   , circularArc
@@ -579,13 +580,13 @@ kappa = 4 * ((sqrt 2 - 1) / 3)
 
 -- | 'semicircleCW' : @ base_vector -> CatTrail @ 
 -- 
--- Make an open clockwise semicircle from two Bezier curves. 
+-- Make an open semicircle from two Bezier curves. 
 --
 -- Although this function produces an approximation of a 
 -- semicircle, the approximation seems fine in practice.
 --
 semicircleTrail :: (Real u, Floating u) 
-               => ClockDirection -> Vec2 u -> CatTrail u
+                => ClockDirection -> Vec2 u -> CatTrail u
 semicircleTrail CW = semicircleCW
 semicircleTrail _  = semicircleCCW
 
@@ -638,6 +639,45 @@ semicircleCCW base_vec =
     v5      = orthoVec circum (-rl) ang
     v6      = orthoVec circum 0 ang
 
+
+-- | 'semicircleTrail' : @ clock_direction * ry * base_vector -> CatTrail @ 
+-- 
+-- Make an open semiellipse from two Bezier curves. 
+--
+-- Although this function produces an approximation of a 
+-- semiellipse, the approximation seems fine in practice.
+--
+semiellipseTrail :: (Real u, Floating u) 
+               => ClockDirection -> u -> Vec2 u -> CatTrail u
+semiellipseTrail CW = semiellipseBasis theta_up
+semiellipseTrail _  = semiellipseBasis theta_down
+
+
+
+-- | theta_up for CW, theta_down for CCW...
+--
+semiellipseBasis :: (Real u, Floating u) 
+                 => (u -> Radian -> Vec2 u) -> u -> Vec2 u -> CatTrail u
+semiellipseBasis perpfun ry base_vec = 
+              catcurve (pvec p00 c01) (pvec c01 c02) (pvec c02 p03)
+    `mappend` catcurve (pvec p03 c04) (pvec c04 c05) (pvec c05 p06) 
+  where
+    rx    = 0.5 * vlength base_vec
+    ang   = vdirection base_vec
+    lrx   = rx * kappa
+    lry   = ry * kappa
+    para  = theta_right `flip` ang
+    perp  = perpfun `flip` ang
+
+    p00   = zeroPt .+^ theta_left rx ang
+    c01   = p00 .+^ perp lry
+    c02   = p03 .+^ para (-lrx)
+
+    p03   = zeroPt .+^ perpfun ry ang  
+    c04   = p03 .+^ para lrx
+    c05   = p06 .+^ perp lry
+
+    p06   = zeroPt .+^ theta_right rx ang
 
 
 -- | 'minorCircleSweep' : @ clock_direction * angle * radius 
