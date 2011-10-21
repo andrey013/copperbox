@@ -95,6 +95,8 @@ module Wumpus.Drawing.Paths.Base
   , roundExterior
   , roundInterior
 
+  , deBezier
+
   -- * Path division
   , pathdiv
 
@@ -254,6 +256,8 @@ instance (Real u, Floating u, Ord u, Tolerance u) => RotateAbout (AbsPath u) whe
                 (\v1 v2 v3 -> ( rotateAbout ang pt v1
                               , rotateAbout ang pt v2
                               , rotateAbout ang pt v3 ))
+
+
 
 
 rebuildPath :: (Floating u, Ord u, Tolerance u) 
@@ -923,7 +927,7 @@ segmentListL (AbsPath _ sp se _) = (sp, JL.toList se)
 --
 -- The path is treated as open - the start of the initial and end
 -- of the final segments are not rounded. Only straight line to 
--- straight line joins are rounded, joins to or from Beczier 
+-- straight line joins are rounded, joins to or from Bezier 
 -- curves are not rounded.
 -- 
 -- Caution - all path segments are expected to be longer than
@@ -1013,6 +1017,23 @@ roundExteriorCat du (z@(AbsLineSeg _ v0):zs)  = step0 z zs
 
     step1 _  _                 []                 = 
       error "roundExteriorCat - unreachable 2."
+
+
+-- | Redraw an 'AbsPath' replacing the Bezier curves with three 
+-- lines along the control vectors.
+--
+deBezier :: Floating u => AbsPath u -> AbsPath u
+deBezier (AbsPath _ sp segs _) = 
+    step (emptyPath sp) (viewl segs)
+  where
+    step ac EmptyL                         = ac
+
+    step ac (AbsLineSeg _ v1 :< xs)        = 
+      step (ac `snocLine` v1) (viewl xs) 
+
+    step ac (AbsCurveSeg _ v1 v2 v3 :< xs) = 
+      step (ac `snocLine` v1 `snocLine` v2 `snocLine` v3) (viewl xs) 
+
 
 --------------------------------------------------------------------------------
 -- Path division
