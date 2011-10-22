@@ -93,7 +93,7 @@ instance (Real u, Floating u, Tolerance u) =>
   topLeftCorner  = runRotateAnchor bottomRightCorner
   topRightCorner = runRotateAnchor bottomLeftCorner
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor (InvSemiellipse u) where
   north = runRotateAnchor south
   south = runRotateAnchor north
@@ -101,7 +101,7 @@ instance (Real u, Floating u, Tolerance u) =>
   west  = runRotateAnchor east
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (InvSemiellipse u) where
   northeast = runRotateAnchor southwest
   southeast = runRotateAnchor northwest
@@ -110,7 +110,7 @@ instance (Real u, Floating u, Tolerance u) =>
 
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (InvSemiellipse u) where
   radialAnchor theta = 
     runRotateAnchor (radialAnchor $ circularModulo $ pi+theta)

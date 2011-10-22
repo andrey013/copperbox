@@ -27,6 +27,7 @@ module Wumpus.Drawing.Shapes.Ellipse
 
   ) where
 
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Shapes.Base
 
@@ -148,8 +149,7 @@ mkEllipse rx ry = qpromoteLocTheta $ \ctr theta ->
 
 mkEllipsePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> LocThetaQuery u (AbsPath u)
-mkEllipsePath rx ry = qpromoteLocTheta $ \pt theta -> 
-    let xs = map (rotateAbout theta pt) $ bezierEllipse rx ry pt
-    in return $ curvePath xs
+mkEllipsePath rx ry = qpromoteLocTheta $ \ctr theta -> 
+    return $ anaTrailPath ctr $ rellipse_trail rx ry theta
 
 

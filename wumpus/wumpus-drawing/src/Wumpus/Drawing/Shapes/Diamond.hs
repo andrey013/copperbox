@@ -133,7 +133,7 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
 
 
 diamondRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                      => u -> u -> Radian -> Maybe (Vec2 u) 
+                    => u -> u -> Radian -> Maybe (Vec2 u) 
 diamondRadialAnchor hw hh ang = 
     fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
   where

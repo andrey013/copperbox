@@ -24,16 +24,14 @@ module Wumpus.Drawing.Shapes.Semicircle
 
   ) where
 
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Intersection
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
-
-import Data.AffineSpace                         -- package: vector-space
 
 
 import Control.Applicative
@@ -49,15 +47,6 @@ data Semicircle u = Semicircle
       }
 
 type instance DUnit (Semicircle u) = u
-
--- | Height minor and major.
---
-data SyntheticProps u = SP
-      { sc_hminor  :: u
-      , sc_hmajor  :: u
-      }
-
-type instance DUnit (SyntheticProps u) = u
 
   
 type DSemicircle = Semicircle Double
@@ -76,12 +65,13 @@ instance Functor Semicircle where
 --
 -- to get the yminor.
 --
-synthesizeProps :: Floating u => u -> SyntheticProps u
-synthesizeProps radius = 
-    SP { sc_hminor = hminor, sc_hmajor = hmajor  }
-  where
-    hminor = (4 * radius) / (3 * pi)
-    hmajor = radius - hminor
+
+
+hminor :: Floating u => u -> u
+hminor radius = (4 * radius) / (3 * pi)
+
+hmajor :: Floating u => u -> u
+hmajor radius = radius - hminor radius
 
 
 --------------------------------------------------------------------------------
@@ -112,34 +102,31 @@ instance InterpretUnit u => Translate (Semicircle u) where
 --                           * height_major -> Vec ) * semicircle -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u) 
-                  => (u -> u -> u -> Vec2 u) -> Semicircle u -> Anchor u
+                  => (u -> Vec2 u) -> Semicircle u -> Anchor u
 runDisplaceCenter fn (Semicircle { sc_ctm       = ctm
                                  , sc_radius    = radius }) = 
-    projectFromCtr (fn radius hminor hmajor) ctm
-  where
-    props  = synthesizeProps radius  
-    hminor = sc_hminor props
-    hmajor = sc_hmajor props
+    projectFromCtr (fn radius) ctm
+
 
 instance (Real u, Floating u) => 
     CenterAnchor (Semicircle u) where
-  center = runDisplaceCenter $ \_ _ _ -> V2 0 0
+  center = runDisplaceCenter $ \_ -> V2 0 0
 
 instance (Real u, Floating u) => 
     ApexAnchor (Semicircle u) where
-  apex = runDisplaceCenter $ \_ _    cmaj -> V2 0  cmaj
+  apex = runDisplaceCenter $ \r -> V2 0 (hmajor r)
 
 instance (Real u, Floating u) => 
     BottomCornerAnchor (Semicircle u) where
-  bottomLeftCorner  = runDisplaceCenter $ \r hminor _  -> V2 (-r) (-hminor)
-  bottomRightCorner = runDisplaceCenter $ \r hminor _  -> V2  r   (-hminor)
+  bottomLeftCorner  = runDisplaceCenter $ \r -> V2 (-r) (negate $ hminor r)
+  bottomRightCorner = runDisplaceCenter $ \r -> V2  r   (negate $ hminor r)
 
 instance (Real u, Floating u) => 
     CardinalAnchor (Semicircle u) where
   north = apex
-  south = runDisplaceCenter $ \_ cmin _    -> V2 0  (-cmin)
-  east  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 x 0
-  west  = runDisplaceCenter $ \r cmin _    -> let x = pyth r cmin in V2 (-x) 0
+  south = runDisplaceCenter $ \r -> V2 0  (negate $ hminor r)
+  east  = runDisplaceCenter $ \r -> let x = pyth r (hminor r) in V2 x 0
+  west  = runDisplaceCenter $ \r -> let x = pyth r (hminor r) in V2 (-x) 0
 
 -- | Use Pythagoras formula for working out the /east/ and /west/
 -- distances. A right-triangle is formed below the centroid, 
@@ -151,7 +138,7 @@ pyth hyp s1 = sqrt $ pow2 hyp - pow2 s1
     pow2 = (^ (2::Int))
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (Semicircle u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -161,69 +148,20 @@ instance (Real u, Floating u, Tolerance u) =>
 
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (Semicircle u) where
-  radialAnchor theta = runDisplaceCenter (scRadialVec theta)
+  radialAnchor ang = runDisplaceCenter $ \r ->
+      maybe zeroVec id $ semicircleRadialAnchor r ang
 
--- helpers
 
--- | Semicircle does not fit into a QuadrantAlg easily.
---
--- So all the work has to be done here.
---
-scRadialVec :: (Real u, Floating u, Ord u, Tolerance u)
-            => Radian -> u -> u -> u -> Vec2 u
-scRadialVec theta radius hminor _ = go (circularModulo theta)
+
+semicircleRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                    => u -> Radian -> Maybe (Vec2 u) 
+semicircleRadialAnchor r ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
   where
-    (lang,rang)                     = baselineRange radius hminor
-    (bctr, br, _, bl)               = constructionPoints radius hminor
-    plane                           = inclinedLine zeroPt theta
-    base_line                       = LineSegment bl br
-    left_curve                      = mkCurve radius half_pi bctr
-    right_curve                     = mkCurve radius 0 bctr
-    post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
-    go a 
-      | lang    <= a && a <= rang   = post $ interLinesegLine base_line plane 
-      | half_pi <= a && a <  lang   = post $ interCurveLine left_curve plane
-      | otherwise                   = post $ interCurveLine right_curve plane
+    rp = anaTrailPath zeroPt $ semicircle_trail r
 
-
-
-mkCurve :: Floating u => u -> Radian -> Point2 u -> BezierCurve u
-mkCurve radius theta ctr = BezierCurve p0 p1 p2 p3
-  where
-    (p0,p1,p2,p3) = bezierMinorArc half_pi radius theta ctr
-
-
-
--- | 'constructionPoints' : @ radius * hminor -> 
---     (base_ctr, base_right, apex, base_left) @
---
--- Assumes centroid is (0,0).
---
-constructionPoints :: Num u 
-                   => u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-constructionPoints radius hminor = (bctr, br, apx, bl)
-  where
-    bctr  = P2 0 (-hminor)
-    br    = bctr .+^ hvec radius
-    apx   = bctr .+^ vvec radius
-    bl    = bctr .+^ hvec (-radius)
-
-
-
-
--- | 'baselineRange' : @ radius * hminor -> (left_base_ang, right_base_ang) @
---
--- Find the angle range where a ray from the centroid will cross
--- the baseline rather than cut the curve.
---
-baselineRange :: (Real u, Floating u) => u -> u -> (Radian, Radian)
-baselineRange radius hminor = (lang, rang)
-  where
-    ang   = toRadian $ atan (radius / hminor)
-    lang  = (1.5*pi) - ang
-    rang  = (1.5*pi) + ang
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -232,10 +170,7 @@ baselineRange radius hminor = (lang, rang)
 --
 semicircle :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> Shape Semicircle u
-semicircle radius = 
-    let props = synthesizeProps radius
-    in makeShape (mkSemicircle radius) 
-                 (mkSemicirclePath radius (sc_hminor props))
+semicircle radius = makeShape (mkSemicircle radius) (mkSemicirclePath radius)
           
 
 
@@ -252,8 +187,7 @@ mkSemicircle radius = qpromoteLocTheta $ \ctr theta ->
 -- the center properly...
 --
 mkSemicirclePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                 => u -> u -> LocThetaQuery u (AbsPath u)
-mkSemicirclePath radius cminor = qpromoteLocTheta $ \pt theta ->
-    let ctr = dispPerpendicular (-cminor) theta pt
-    in pure $ curvePath $ bezierArcPoints pi radius theta ctr 
+                 => u -> LocThetaQuery u (AbsPath u)
+mkSemicirclePath radius = qpromoteLocTheta $ \ctr theta ->
+    return $ anaTrailPath ctr $ rsemicircle_trail radius theta
 

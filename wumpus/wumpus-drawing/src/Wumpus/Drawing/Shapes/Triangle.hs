@@ -25,12 +25,12 @@ module Wumpus.Drawing.Shapes.Triangle
   ) where
 
 import Wumpus.Drawing.Basis.ShapeTrails
+import Wumpus.Drawing.Basis.Geometry
 import Wumpus.Drawing.Paths
 import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 

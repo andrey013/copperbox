@@ -168,7 +168,7 @@ mkRectangle hw hh = qpromoteLocTheta $ \ctr theta ->
 mkRectPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
            => u -> u -> LocThetaQuery u (AbsPath u)
 mkRectPath hw hh = qpromoteLocTheta $ \ctr theta -> 
-   return $ anaTrailPath ctr $ rrectangle_trail (2*hw) (2*hh) theta
+    return $ anaTrailPath ctr $ rrectangle_trail (2*hw) (2*hh) theta
 
 
   

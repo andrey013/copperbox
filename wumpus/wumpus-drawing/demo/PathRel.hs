@@ -26,7 +26,8 @@ path_pic :: CtxPicture
 path_pic = drawTracing $ do
     drawl (P2 0 0)   $ path1
     drawl (P2 0 100) $ path2
-    draw $ illustrate1 $ path3 $ P2 0 240
+    draw $ path_as_control_box $ path3 $ P2 0 240
+    draw $ path_with_control_points $ path3 $ P2 300 240
 --    drawl (P2 400 0) $ makePD path_spec2
 --    drawl (P2 0 200) $ makePD path_spec3
 --    drawl (P2 100 200) $ makePD path_spec4

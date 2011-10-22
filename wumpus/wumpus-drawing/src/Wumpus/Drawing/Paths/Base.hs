@@ -96,6 +96,8 @@ module Wumpus.Drawing.Paths.Base
   , roundInterior
 
   , deBezier
+  , pathMajorPoints
+  , pathAllPoints
 
   -- * Path division
   , pathdiv
@@ -1033,6 +1035,37 @@ deBezier (AbsPath _ sp segs _) =
 
     step ac (AbsCurveSeg _ v1 v2 v3 :< xs) = 
       step (ac `snocLine` v1 `snocLine` v2 `snocLine` v3) (viewl xs) 
+
+-- | This does not extract the control points of Bezier curves.
+-- 
+pathMajorPoints :: Num u => AbsPath u -> [Point2 u]
+pathMajorPoints (AbsPath _ sp segs _) = sp : step sp (viewl segs)
+  where
+    step _  EmptyL = []
+
+    step pt (AbsLineSeg _ v1 :< xs)        = 
+      let p1 = pt .+^ v1 in p1 : step p1 (viewl xs) 
+
+    step pt (AbsCurveSeg _ v1 v2 v3 :< xs) = 
+      let p1 = pt .+^ v1 in p1 : step (p1 .+^ (v2 ^+^ v3)) (viewl xs) 
+    
+
+-- | This extracts the control points of Bezier curves.
+-- 
+pathAllPoints :: Num u => AbsPath u -> [Point2 u]
+pathAllPoints (AbsPath _ sp segs _) = sp : step sp (viewl segs)
+  where
+    step _  EmptyL                         = []
+    
+    step pt (AbsLineSeg _ v1 :< xs)        = 
+      let p1 = pt .+^ v1 in p1 : step p1 (viewl xs) 
+
+    step pt (AbsCurveSeg _ v1 v2 v3 :< xs) = 
+      let p1 = pt .+^ v1 
+          p2 = p1 .+^ v2
+          p3 = p2 .+^ v3
+      in p1 : p2 : p3 : step p3 (viewl xs) 
+
 
 
 --------------------------------------------------------------------------------

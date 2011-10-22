@@ -24,16 +24,14 @@ module Wumpus.Drawing.Shapes.Semiellipse
 
   ) where
 
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry.Base               -- package: wumpus-basic
-import Wumpus.Basic.Geometry.Intersection
-import Wumpus.Basic.Kernel
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
-
-import Data.AffineSpace                         -- package: vector-space
 
 import Control.Applicative
 
@@ -51,12 +49,6 @@ data Semiellipse u = Semiellipse
 type instance DUnit (Semiellipse u) = u
 
 
-data SyntheticProps u = SP
-      { se_hminor  :: u
-      , se_hmajor  :: u
-      }
-
-type instance DUnit (SyntheticProps u) = u
   
 type DSemiellipse = Semiellipse Double
 
@@ -65,12 +57,11 @@ instance Functor Semiellipse where
 
 
 
-synthesizeProps :: Floating u => u -> SyntheticProps u
-synthesizeProps ry = 
-    SP { se_hminor = ry_minor, se_hmajor = ry_major }
-  where
-    ry_minor = (4 * ry) / (3 * pi)
-    ry_major = ry - ry_minor
+ryminor :: Floating u => u -> u
+ryminor ry = (4 * ry) / (3 * pi)
+
+rymajor :: Floating u => u -> u
+rymajor ry = ry - ryminor ry
 
 
 --------------------------------------------------------------------------------
@@ -103,41 +94,37 @@ instance InterpretUnit u => Translate (Semiellipse u) where
 --                           * ry_major -> Vec ) * semiellipse -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u) 
-                  => (u -> u -> u -> u -> Vec2 u) -> Semiellipse u -> Anchor u
+                  => (u -> u -> Vec2 u) -> Semiellipse u -> Anchor u
 runDisplaceCenter fn (Semiellipse { se_ctm       = ctm
                                   , se_rx        = rx
                                   , se_ry        = ry  }) = 
-    projectFromCtr (fn rx ry hminor hmajor) ctm
-  where
-    props  = synthesizeProps ry  
-    hminor = se_hminor props
-    hmajor = se_hmajor props
+    projectFromCtr (fn rx ry) ctm
 
 
 
 
 instance (Real u, Floating u) => 
     CenterAnchor (Semiellipse u) where
-  center = runDisplaceCenter $ \_ _ _ _ -> V2 0 0
+  center = runDisplaceCenter $ \_ _ -> V2 0 0
 
 instance (Real u, Floating u, Tolerance u) => 
     ApexAnchor (Semiellipse u) where
-  apex = runDisplaceCenter $ \_ _ _ ry_major -> V2 0 ry_major
+  apex = runDisplaceCenter $ \_ ry -> V2 0 (rymajor ry)
 
 instance (Real u, Floating u) => 
     BottomCornerAnchor (Semiellipse u) where
-  bottomLeftCorner  = runDisplaceCenter $ \rx _ ry_minor _  -> V2 (-rx) (-ry_minor)
-  bottomRightCorner = runDisplaceCenter $ \rx _ ry_minor _  -> V2  rx   (-ry_minor)
+  bottomLeftCorner  = runDisplaceCenter $ \rx ry -> V2 (-rx) (negate $ ryminor ry)
+  bottomRightCorner = runDisplaceCenter $ \rx ry -> V2  rx   (negate $ ryminor ry)
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor (Semiellipse u) where
   north = apex
-  south = runDisplaceCenter $ \_ _ ry_minor _ -> V2 0 (-ry_minor)
+  south = runDisplaceCenter $ \_ ry -> V2 0 (negate $ ryminor ry)
   east  = radialAnchor 0
   west  = radialAnchor pi
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (Semiellipse u) where
   northeast = radialAnchor (0.25*pi)
   southeast = radialAnchor (1.75*pi)
@@ -146,56 +133,18 @@ instance (Real u, Floating u, Tolerance u) =>
 
 
 
-instance (Real u, Floating u, Tolerance u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (Semiellipse u) where
-  radialAnchor theta = runDisplaceCenter (seRadialVec theta)
+  radialAnchor ang = runDisplaceCenter $ \rx ry ->
+      maybe zeroVec id $ semiellipseRadialAnchor rx ry ang
 
 
-seRadialVec :: (Real u, Floating u, Ord u, Tolerance u)
-            => Radian -> u -> u -> u -> u -> Vec2 u
-seRadialVec theta rx ry hminor _ = go theta
+semiellipseRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                        => u -> u -> Radian -> Maybe (Vec2 u) 
+semiellipseRadialAnchor rx ry ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
   where
-    (lang,rang)                     = baselineRange rx hminor
-    (bctr, br, _, bl)               = constructionPoints rx ry hminor
-    plane                           = inclinedLine zeroPt theta
-    base_line                       = LineSegment bl br
-    (right_curve,left_curve)        = bezierSemiellipse rx ry bctr
-    post                            = maybe (V2 0 0) (\(P2 x y) -> V2 x y)
-    go a | lang <= a && a <= rang   = post $ interLinesegLine base_line plane 
-         | half_pi <= a && a < lang = post $ interCurveLine left_curve plane
-         | otherwise                = post $ interCurveLine right_curve plane
-
-
-
--- | 'constructionPoints' : @ rx * ry * hminor -> 
---     (base_ctr, base_right, apex, base_left) @
---
--- Assumes centroid is (0,0).
---
-constructionPoints :: Num u 
-                   => u -> u -> u -> (Point2 u, Point2 u, Point2 u, Point2 u)
-constructionPoints rx ry hminor = (bctr, br, apx, bl)
-  where
-    bctr  = P2 0 (-hminor)
-    br    = bctr .+^ hvec rx
-    apx   = bctr .+^ vvec ry
-    bl    = bctr .+^ hvec (-rx)
-
-
-
-
--- | 'baselineRange' : @ radius * hminor -> (left_base_ang, right_base_ang) @
---
--- Find the angle range where a ray from the centroid will cross
--- the baseline rather than cut the curve.
---
-baselineRange :: (Real u, Floating u) => u -> u -> (Radian, Radian)
-baselineRange rx hminor = (lang, rang)
-  where
-    ang   = toRadian $ atan (rx / hminor)
-    lang  = (1.5*pi) - ang
-    rang  = (1.5*pi) + ang
-
+    rp = anaTrailPath zeroPt $ semiellipse_trail rx ry
 
 
 --------------------------------------------------------------------------------
@@ -206,10 +155,7 @@ baselineRange rx hminor = (lang, rang)
 --
 semiellipse :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
             => u -> u -> Shape Semiellipse u
-semiellipse rx ry = 
-    let props = synthesizeProps ry
-    in makeShape (mkSemiellipse rx ry) 
-                 (mkSemiellipsePath rx ry (se_hminor props))
+semiellipse rx ry = makeShape (mkSemiellipse rx ry) (mkSemiellipsePath rx ry)
           
 
 
@@ -224,46 +170,7 @@ mkSemiellipse rx ry = qpromoteLocTheta $ \ctr theta ->
 
 
 mkSemiellipsePath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                  => u -> u -> u -> LocThetaQuery u (AbsPath u)
-mkSemiellipsePath rx ry hminor = qpromoteLocTheta $ \pt theta ->
-    let ctr = dispPerpendicular (-hminor) theta pt
-        xs  = bezierSemiellipsePoints rx ry ctr
-    in return $ curvePath $ map (rotateAbout theta ctr) xs 
+                  => u -> u -> LocThetaQuery u (AbsPath u)
+mkSemiellipsePath rx ry = qpromoteLocTheta $ \ctr theta ->
+    return $ anaTrailPath ctr $ rsemiellipse_trail rx ry theta
 
-
-bezierSemiellipsePoints :: Floating u
-                        => u -> u -> Point2 u -> [Point2 u]
-bezierSemiellipsePoints rx ry pt = [ p0, c1,c2,p3, c4,c5,p6 ]
-  where 
-    (BezierCurve p0 c1 c2 p3, BezierCurve _ c4 c5 p6) = bezierSemiellipse rx ry pt
-
-
--- For Geometry?
-
--- | Generate the bezier arcs for quadrants I and II. 
---
--- Drawing is expected to proceed CCW.
--- 
--- Note - Point is the (full) ellipse center.
---
-bezierSemiellipse :: Floating u
-                  => u -> u -> Point2 u -> (BezierCurve u, BezierCurve u)
-bezierSemiellipse rx ry (P2 x y) = 
-    (BezierCurve p00 c01 c02 p03, BezierCurve p03 c04 c05 p06)
-  where
-    lrx = rx * kappa
-    lry = ry * kappa
-    p00 = P2 (x + rx) y
-    c01 = p00 .+^ vvec lry
-    c02 = p03 .+^ hvec lrx
-
-    p03 = P2 x (y + ry) 
-    c04 = p03 .+^ hvec (-lrx)
-    c05 = p06 .+^ vvec lry
-
-    p06 = P2 (x - rx) y
-
-
-
-kappa :: Floating u => u
-kappa = 4 * ((sqrt 2 - 1) / 3)

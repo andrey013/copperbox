@@ -137,7 +137,7 @@ shapePic :: ( Functor t
          => (t Double -> DTraceDrawing a) -> DShape t -> String -> CtxPicture
 shapePic mf sh name = udrawTracing (0::Double) $ do
     a1  <- localize shapeSty $ drawi $ 
-              uniformScale 2 $ rotate05 $ shape `at` (P2 100 0)
+              uniformScale 2 $ {- rotate05 $ -} shape `at` (P2 100 0)
     draw $ label NORTH        "(center)"      `at` center a1
     draw $ label NORTH        "(north)"       `at` north a1
     draw $ label SOUTH        "(south)"       `at` south a1
@@ -152,6 +152,9 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
     draw $ label WEST         "(190 deg)"     `at` radialAnchor (d2r 190) a1
     draw $ label NORTH        "(250 deg)"     `at` radialAnchor (d2r 250) a1
     draw $ label WEST         "(200 deg)"     `at` radialAnchor (d2r 200) a1
+
+    draw $ label WEST         "(0 deg)"     `at` radialAnchor (d2r 0) a1
+    draw $ label WEST         "(359 deg)"     `at` radialAnchor (d2r 359) a1
     _ <- mf a1
     return ()    
   where

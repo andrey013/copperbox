@@ -11,8 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This is due to replace the BezierCurve data type in
--- Wumpus.Basic.Geometry...
+-- Datatype for cubic Bezier curve.
 -- 
 --------------------------------------------------------------------------------
 
@@ -27,6 +26,7 @@ module Wumpus.Drawing.Basis.BezierCurve
   , bezierLength
 
   ) where
+
 
 import Wumpus.Drawing.Basis.Geometry
 
