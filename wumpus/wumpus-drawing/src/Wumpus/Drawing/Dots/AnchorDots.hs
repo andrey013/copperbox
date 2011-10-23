@@ -65,9 +65,9 @@ module Wumpus.Drawing.Dots.AnchorDots
 
 import Wumpus.Drawing.Dots.SimpleDots ( MarkSize )
 import qualified Wumpus.Drawing.Dots.SimpleDots as SD
+import Wumpus.Drawing.Paths.Intersection
 
-import Wumpus.Basic.Geometry                    -- package: wumpus-basic
-import Wumpus.Basic.Kernel               
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic          
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -141,16 +141,6 @@ rectCardinal hw hh ctr SOUTH_WEST   = ctr .+^ (vec  (-hw) (-hh) )
 rectCardinal hw _  ctr WEST         = ctr .+^ (hvec (-hw)) 
 rectCardinal hw hh ctr NORTH_WEST   = ctr .+^ (vec  (-hw)  hh) 
 
-polyCardinal :: Floating u => (Radian -> Point2 u) -> Cardinal -> Point2 u
-polyCardinal f NORTH                = f (0.5  * pi)
-polyCardinal f NORTH_EAST           = f (0.25 * pi) 
-polyCardinal f EAST                 = f 0 
-polyCardinal f SOUTH_EAST           = f (1.75 * pi) 
-polyCardinal f SOUTH                = f (1.5  * pi) 
-polyCardinal f SOUTH_WEST           = f (1.25 * pi)
-polyCardinal f WEST                 = f pi 
-polyCardinal f NORTH_WEST           = f (0.75 * pi) 
-
 
 -- | All anchors are the center!
 --
@@ -161,13 +151,25 @@ zeroAnchor ctr =
               , cardinal_anchor = const ctr }
 
 
-rectangleAnchor :: (Real u, Floating u) => u -> u -> Point2 u -> DotAnchor u
+rectangleAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                => u -> u -> Point2 u -> DotAnchor u
 rectangleAnchor hw hh ctr = 
     DotAnchor { center_anchor   = ctr
               , radial_anchor   = fn  
               , cardinal_anchor = rectCardinal hw hh ctr }
   where
-    fn theta =  displace (rectRadialVector hw hh theta) ctr
+    fn theta = let mb_v1 = rectangleRadialIntersect (2*hw) (2*hh) theta
+               in displace (maybe zeroVec id  mb_v1) ctr
+
+triangleAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+               => u -> Point2 u -> DotAnchor u
+triangleAnchor hh ctr = 
+    DotAnchor { center_anchor   = ctr
+              , radial_anchor   = fn  
+              , cardinal_anchor = radialCardinal hh ctr }
+  where
+    fn theta = let mb_v1 = isoscelesTriangleRadialIntersect (2*hh) (2*hh) theta
+               in  displace (maybe zeroVec id mb_v1) ctr
 
 
 circleAnchor :: Floating u => u -> Point2 u -> DotAnchor u
@@ -179,19 +181,9 @@ circleAnchor rad ctr =
     fn theta = displace (avec theta rad) ctr
 
 
-polygonAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-              => [Point2 u] -> Point2 u -> DotAnchor u
-polygonAnchor ps ctr = 
-    DotAnchor { center_anchor   = ctr
-              , radial_anchor   = fn  
-              , cardinal_anchor = polyCardinal fn }
-  where
-    fn theta =  maybe ctr id $ findIntersect ctr theta 
-                             $ polygonLineSegments ps
 
-
-
-bboxRectAnchor  :: (Real u, Floating u) => BoundingBox u -> DotAnchor u
+bboxRectAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+               => BoundingBox u -> DotAnchor u
 bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
    let hw = 0.5 * (x2 - x1)
        hh = 0.5 * (y2 - y1)
@@ -201,7 +193,7 @@ bboxRectAnchor (BBox bl@(P2 x1 y1) (P2 x2 y2)) =
 zeroLDO :: InterpretUnit u => LocQuery u (DotAnchor u)
 zeroLDO = qpromoteLoc $ \pt -> return $ zeroAnchor pt
 
-rectangleLDO :: (Real u, Floating u, InterpretUnit u) 
+rectangleLDO :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
              => MarkSize -> MarkSize -> LocQuery u (DotAnchor u)
 rectangleLDO w h = qpromoteLoc $ \pt -> 
     (\uw uh -> rectangleAnchor (uw*0.5) (uh*0.5) pt) 
@@ -224,12 +216,8 @@ circleLDO rad = qpromoteLoc $ \pt ->
 triangleLDO :: (Real u, Floating u, Tolerance u, InterpretUnit u) 
             => MarkSize -> LocQuery u (DotAnchor u)
 triangleLDO h = qpromoteLoc $ \pt -> 
-    uconvertCtx1 h >>= \uh -> 
-    let alg = trailIterateLocus $ fn3 $ equilateralTriangleVertices uh
-    in (\ps -> polygonAnchor ps pt) 
-         <$> qapplyLoc (anaTrailPoints alg) pt
-  where
-    fn3 (a,b,c) = [a,b,c]
+    (\uh -> triangleAnchor (uh*0.5) pt) 
+      <$> uconvertCtx1 h
 
 
 --------------------------------------------------------------------------------
@@ -260,7 +248,8 @@ largeCirc :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
 largeCirc = intoLocImage (circleLDO 1.00) SD.largeCirc
 
 
-dotChar :: (Floating u, Real u, InterpretUnit u) => Char -> DotLocImage u
+dotChar :: (Floating u, Real u, InterpretUnit u, Tolerance u) 
+        => Char -> DotLocImage u
 dotChar ch = dotText [ch]
 
 
@@ -271,7 +260,8 @@ dotChar ch = dotText [ch]
 --
 
 
-dotText :: (Floating u, Real u, InterpretUnit u) => String -> DotLocImage u 
+dotText :: (Floating u, Real u, InterpretUnit u, Tolerance u) 
+        => String -> DotLocImage u 
 dotText ss = 
     fmap bboxRectAnchor $ runPosObjectBBox CENTER $ posText ss
 
@@ -307,7 +297,8 @@ dotDisk :: (Floating u, InterpretUnit u) => DotLocImage u
 dotDisk = intoLocImage (circleLDO 0.5) SD.dotDisk
 
 
-dotSquare :: (Floating u, Real u, InterpretUnit u) => DotLocImage u
+dotSquare :: (Floating u, Real u, InterpretUnit u, Tolerance u) 
+          => DotLocImage u
 dotSquare = intoLocImage (rectangleLDO 1 1) SD.dotSquare
 
 

@@ -30,12 +30,16 @@ module Wumpus.Drawing.Paths.Intersection
   , rayPathIntersection
   , rayPathSegmentIntersection
 
+  , rectangleRadialIntersect
+  , isoscelesTriangleRadialIntersect
+
   ) where
 
 import Wumpus.Drawing.Basis.BezierCurve
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths.Base
 
-
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 import Wumpus.Core                              -- package: wumpus-core
 
 import Data.AffineSpace                         -- package: vector-space
@@ -287,3 +291,28 @@ pointLineDistance (P2 u v) (LineEquation a b c) =
     base = sqrt $ (a^two) + (b^two)
     two  :: Integer
     two  = 2
+
+
+--------------------------------------------------------------------------------
+-- Intersections on common shapes
+
+-- | Answer is vector from center.
+--
+rectangleRadialIntersect :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+                         => u -> u -> Radian -> Maybe (Vec2 u) 
+rectangleRadialIntersect w h ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
+  where
+    rp = anaTrailPath zeroPt $ rectangle_trail w h
+
+
+
+-- | Answer is vector from centroid.
+--
+isoscelesTriangleRadialIntersect :: (Real u, Floating u
+                                    , InterpretUnit u, Tolerance u) 
+                                 => u -> u -> Radian -> Maybe (Vec2 u) 
+isoscelesTriangleRadialIntersect bw h ang = 
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
+  where
+    rp = anaTrailPath zeroPt $ isosceles_triangle_trail bw h

@@ -11,8 +11,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- This is a scaled down re-work of Wumpus.Basic.Geometry which 
--- is due for removal.
+-- Misc geometric operations.
 -- 
 --------------------------------------------------------------------------------
 

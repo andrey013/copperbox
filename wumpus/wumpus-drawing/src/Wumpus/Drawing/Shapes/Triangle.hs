@@ -164,16 +164,10 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
 instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (Triangle u) where
   radialAnchor ang = runDisplaceCenter $ \bw h -> 
-      maybe zeroVec id $ triangleRadialAnchor bw h ang
+      maybe zeroVec id $ isoscelesTriangleRadialIntersect bw h ang
 
 
 
-triangleRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                      => u -> u -> Radian -> Maybe (Vec2 u) 
-triangleRadialAnchor bw h ang = 
-    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
-  where
-    rp = anaTrailPath zeroPt $ isosceles_triangle_trail bw h
 
     
 --------------------------------------------------------------------------------

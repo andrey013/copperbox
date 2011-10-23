@@ -136,15 +136,8 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
 instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     RadialAnchor (Rectangle u) where
   radialAnchor ang = runDisplaceCenter $ \hw hh -> 
-      maybe zeroVec id $ rectangleRadialAnchor hw hh ang
+      maybe zeroVec id $ rectangleRadialIntersect (2*hw) (2*hh) ang
 
-
-rectangleRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                      => u -> u -> Radian -> Maybe (Vec2 u) 
-rectangleRadialAnchor hw hh ang = 
-    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
-  where
-    rp = anaTrailPath zeroPt $ rectangle_trail (2*hw) (2*hh)
 
 --------------------------------------------------------------------------------
 -- Construction
