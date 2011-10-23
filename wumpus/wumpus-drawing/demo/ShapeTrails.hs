@@ -54,6 +54,8 @@ shape_table =
     , ("rsemicircle_trail",             rsemicircle_trail 20)
     , ("rellipse_trail",                rellipse_trail 30 20)
     , ("rsemiellipse_trail",            rsemiellipse_trail 30 20)
+    , ("rparallelogram_trail",          rparallelogram_trail 30 20 ang60)
+    , ("rtrapezium_trail",              rtrapezium_trail 40 30 ang60)
     ]
 
 

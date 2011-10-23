@@ -38,6 +38,11 @@ module Wumpus.Drawing.Basis.ShapeTrails
   , semiellipse_trail
   , rsemiellipse_trail
 
+  , parallelogram_trail
+  , rparallelogram_trail
+
+  , trapezium_trail
+  , rtrapezium_trail
 
   )
 
@@ -50,7 +55,8 @@ import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
 
-import Data.VectorSpace                         -- package: vector-space
+-- import Data.AffineSpace                         -- package: vector-space
+import Data.VectorSpace
 
 import Data.Monoid
 
@@ -148,3 +154,61 @@ rsemiellipse_trail rx ry ang =
     catt   =  trail_theta_right (2 * rx) ang
            <> semiellipseTrail CCW ry (avec ang (negate $ 2 * rx) )
 
+-- | Note - bottom left angle must be smaller than 180deg, 
+-- otherwise a runtime error is thrown.
+--
+parallelogram_trail :: Floating u => u -> u -> Radian -> AnaTrail u
+parallelogram_trail w h bottom_left_ang = 
+    rparallelogram_trail w h bottom_left_ang 0
+
+-- | Note - bottom left angle must be smaller than 180deg, 
+-- otherwise a runtime error is thrown.
+--
+rparallelogram_trail :: Floating u => u -> u -> Radian -> Radian -> AnaTrail u
+rparallelogram_trail w h bl_ang ang
+    | bl_ang >= ang180 = 
+        error "rparallelogram_trail - bottom left angle >= 180."
+    | otherwise     = anaCatTrail ctr_to_bl catt
+  where
+    -- Note - base_minor is negative for angles > 90
+    base_minor = h / (fromRadian $ tan bl_ang)
+                 
+    vbase      = theta_right w ang
+    vrhs       = orthoVec base_minor h ang
+    vtop       = vreverse vbase
+    vlhs       = vreverse vrhs
+    ctr_to_bl  = vreverse $ 0.5 *^ (vbase ^+^ vrhs)
+    catt       = mconcat $ map catline [ vbase, vrhs, vtop, vlhs ]
+
+
+-- | Note - bottom left angle must be smaller than 180deg, 
+-- otherwise a runtime error is thrown.
+--
+-- Also, no checking is perfomed on the relation between height
+-- and bottom_left ang. Out of range values will draw \"twisted\"
+-- trapezoids.
+-- 
+trapezium_trail :: Floating u => u -> u -> Radian -> AnaTrail u
+trapezium_trail w h bottom_left_ang = 
+    rtrapezium_trail w h bottom_left_ang 0
+
+
+-- | Note - bottom left angle must be smaller than 180deg, 
+-- otherwise a runtime error is thrown.
+--
+rtrapezium_trail :: Floating u => u -> u -> Radian -> Radian -> AnaTrail u
+rtrapezium_trail bw h bl_ang ang  
+    | bl_ang >= ang180 = error "rtrapezium_trail - bottom left angle >= 180."
+    | otherwise        = anaCatTrail ctr_to_bl catt
+  where
+    -- Note - base_minor is negative for angles > 90
+    base_minor = h / (fromRadian $ tan bl_ang)
+    top_width  = bw - (2 * base_minor)
+    vbase      = theta_right bw ang
+    vrhs       = orthoVec (-base_minor) h ang
+    vtop       = theta_left top_width ang
+    vlhs       = orthoVec (-base_minor) (-h) ang
+    ctr_to_bl  = orthoVec (negate $ 0.5 * bw) (negate $ 0.5 * h) ang
+    catt       = mconcat $ map catline [ vbase, vrhs, vtop, vlhs ]
+
+    

@@ -131,7 +131,7 @@ ang150          :: Radian
 ang150          = 5 * ang30
 
 ang120          :: Radian 
-ang120          = 3 * ang60
+ang120          = 2 * ang60
 
 ang90           :: Radian
 ang90           = pi / 2

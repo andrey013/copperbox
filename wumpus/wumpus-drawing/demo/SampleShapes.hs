@@ -68,7 +68,7 @@ shape_list =
       , shapePic (apexAnchor >=> bottomCorners) $ semiellipse 100 150) 
     , ( "trapezium"
       ,  shapePic (bottomCorners >=> topCorners >=> midPoints 4) $ 
-          trapezium 300 200 150)
+          trapezium 300 180 ang60)
     , ( "triangle"
       , shapePic (apexAnchor >=> bottomCorners >=> midPoints 3) $ 
           triangle 300 150 )
@@ -153,8 +153,8 @@ shapePic mf sh name = udrawTracing (0::Double) $ do
     draw $ label NORTH        "(250 deg)"     `at` radialAnchor (d2r 250) a1
     draw $ label WEST         "(200 deg)"     `at` radialAnchor (d2r 200) a1
 
-    draw $ label WEST         "(0 deg)"     `at` radialAnchor (d2r 0) a1
-    draw $ label WEST         "(359 deg)"     `at` radialAnchor (d2r 359) a1
+--    draw $ label WEST         "(0 deg)"     `at` radialAnchor (d2r 0) a1
+    draw $ label NORTH         "(224.5 deg)"     `at` radialAnchor (d2r 225.5) a1
     _ <- mf a1
     return ()    
   where

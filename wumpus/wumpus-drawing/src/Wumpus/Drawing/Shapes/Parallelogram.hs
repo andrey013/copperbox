@@ -28,11 +28,13 @@ module Wumpus.Drawing.Shapes.Parallelogram
   ) where
 
 import Wumpus.Drawing.Basis.Geometry
+import Wumpus.Drawing.Basis.ShapeTrails
 import Wumpus.Drawing.Paths
+import Wumpus.Drawing.Paths.Intersection
 import Wumpus.Drawing.Shapes.Base
 
-import Wumpus.Basic.Geometry hiding ( midpoint )      -- package: wumpus-basic
-import Wumpus.Basic.Kernel
+
+import Wumpus.Basic.Kernel                      -- package: wumpus-basic
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -49,10 +51,10 @@ import Control.Applicative
 -- | A Paralleogram.
 --
 data Parallelogram u = Parallelogram 
-      { pll_ctm         :: ShapeCTM u
-      , pll_base_width  :: !u
-      , pll_height      :: !u
-      , pll_base_l_ang  :: Radian
+      { pll_ctm             :: ShapeCTM u
+      , pll_base_width      :: !u
+      , pll_height          :: !u
+      , pll_base_left_ang   :: Radian
       }
 
 type instance DUnit (Parallelogram u) = u
@@ -89,19 +91,26 @@ instance InterpretUnit u => Translate (Parallelogram u) where
 --------------------------------------------------------------------------------
 -- Anchors
 
--- | 'runDisplaceCenter' : @ ( half_base_width
---                           * half_height 
+-- | 'runDisplaceCenter' : @ ( base_width
+--                           * height 
 --                           * base_minor
---                           * base_major -> Vec ) * parallelogram -> Point @
+--                           -> Vec ) * parallelogram -> Point @
 --
 runDisplaceCenter :: (Real u, Floating u)
                   => (u -> u -> Radian -> Vec2 u) -> Parallelogram u -> Anchor u
-runDisplaceCenter fn (Parallelogram { pll_ctm        = ctm
-                                    , pll_base_width = bw
-                                    , pll_height     = h 
-                                    , pll_base_l_ang = lang }) =
-    projectFromCtr (fn (0.5 * bw) (0.5 * h) lang) ctm
+runDisplaceCenter fn (Parallelogram { pll_ctm           = ctm
+                                    , pll_base_width    = bw
+                                    , pll_height        = h 
+                                    , pll_base_left_ang = lang }) =
+    projectFromCtr (fn bw h lang) ctm
 
+
+runDisplaceCenterHalves :: (Real u, Floating u)
+                        => (u -> u -> Radian -> Vec2 u) 
+                        -> Parallelogram u 
+                        -> Anchor u
+runDisplaceCenterHalves fn = 
+    runDisplaceCenter $ \bw h bl_ang -> fn (0.5*bw) (0.5*h) bl_ang
 
 
 instance (Real u, Floating u) => 
@@ -116,18 +125,18 @@ instance (Real u, Floating u) =>
 
 instance (Real u, Floating u) => 
     TopCornerAnchor (Parallelogram u) where
-  topLeftCorner  = runDisplaceCenter $ \hw hh lang -> 
+  topLeftCorner  = runDisplaceCenterHalves $ \hw hh lang -> 
       let hypo = hh / (fromRadian $ sin lang) in hvec (-hw) ^+^ avec lang hypo
 
-  topRightCorner = runDisplaceCenter $ \hw hh lang ->
+  topRightCorner = runDisplaceCenterHalves $ \hw hh lang ->
       let hypo = hh / (fromRadian $ sin lang) in hvec hw ^+^ avec lang hypo
 
 instance (Real u, Floating u) => 
     BottomCornerAnchor (Parallelogram u) where
-  bottomLeftCorner  = runDisplaceCenter $ \hw hh lang ->
+  bottomLeftCorner  = runDisplaceCenterHalves $ \hw hh lang ->
       let hypo = hh / (fromRadian $ sin lang) in hvec (-hw) ^+^ avec lang (-hypo)
 
-  bottomRightCorner = runDisplaceCenter $ \hw hh lang -> 
+  bottomRightCorner = runDisplaceCenterHalves $ \hw hh lang -> 
       let hypo = hh / (fromRadian $ sin lang) in hvec hw ^+^ avec lang (-hypo)
 
 
@@ -143,26 +152,28 @@ instance (Real u, Floating u) =>
 
 
 
-instance (Real u, Floating u) => 
+instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor (Parallelogram u) where
-  north = runDisplaceCenter $ \_  hh _ -> V2 0 hh
-  south = runDisplaceCenter $ \_  hh _ -> V2 0 (-hh)
-  east  = runDisplaceCenter $ \hw _  _ -> V2 hw 0
-  west  = runDisplaceCenter $ \hw _  _ -> V2 (-hw) 0
+  north = radialAnchor (0.5 * pi)
+  south = radialAnchor (1.5 * pi)
+  east  = radialAnchor 0
+  west  = radialAnchor pi
 
 
 instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
     CardinalAnchor2 (Parallelogram u) where
-  northeast = pllRadialAnchor (0.25*pi)
-  southeast = pllRadialAnchor (1.75*pi)
-  southwest = pllRadialAnchor (1.25*pi)
-  northwest = pllRadialAnchor (0.75*pi)
+  northeast = radialAnchor (0.25*pi)
+  southeast = radialAnchor (1.75*pi)
+  southwest = radialAnchor (1.25*pi)
+  northwest = radialAnchor (0.75*pi)
 
 
 
 instance (Real u, Floating u, InterpretUnit u, Tolerance u) => 
      RadialAnchor (Parallelogram u) where
-   radialAnchor = pllRadialAnchor
+   radialAnchor ang = runDisplaceCenter $ \bw h bl_ang-> 
+      maybe zeroVec id $ pllRadialAnchor bw h bl_ang ang
+
 
 
 -- | Note - it is not worth changing this to a quadrantAlg.
@@ -172,19 +183,12 @@ instance (Real u, Floating u, InterpretUnit u, Tolerance u) =>
 -- needed (rather than better implementation of QuadrantAlg).
 --
 pllRadialAnchor :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                => Radian -> Parallelogram u -> Anchor u
-pllRadialAnchor theta (Parallelogram { pll_ctm         = ctm
-                                     , pll_base_width  = bw
-                                     , pll_height      = h
-                                     , pll_base_l_ang  = lang }) =
-    post $ findIntersect zeroPt theta $ polygonLineSegments ps
-  where 
-    ps    = runVertices4 zeroPt $ parallelogramVertices bw h lang
+                => u -> u -> Radian -> Radian -> Maybe (Vec2 u)
+pllRadialAnchor bw h bl_ang ang =
+    fmap (pvec zeroPt) $ rayPathIntersection (inclinedRay zeroPt ang) rp 
+  where
+    rp = anaTrailPath zeroPt $ parallelogram_trail bw h bl_ang
 
-    post  = \ans -> case ans of 
-                    Nothing       -> projectFromCtr (V2 0 0) ctm
-                    Just (P2 x y) -> projectFromCtr (V2 x y) ctm
-    
 
 --------------------------------------------------------------------------------
 -- Construction
@@ -196,7 +200,7 @@ pllRadialAnchor theta (Parallelogram { pll_ctm         = ctm
 parallelogram :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
               => u -> u -> Radian -> Shape Parallelogram u
 parallelogram bw h lang =
-    makeShape (mkParallelogram bw h lang) (mkParallelogramPath 0 bw h lang)
+    makeShape (mkParallelogram bw h lang) (mkParallelogramPath bw h lang)
 
 
 -- | 'zparallelogram'  : @ base_width * height -> Parallelogram @
@@ -214,21 +218,21 @@ zparallelogram bw h = parallelogram bw h ang
 
 mkParallelogram :: (Real u, Fractional u, InterpretUnit u, Tolerance u) 
                 => u -> u -> Radian -> LocThetaQuery u (Parallelogram u)
-mkParallelogram bw h lang = qpromoteLocTheta $ \ctr theta -> 
-    pure $ Parallelogram { pll_ctm          = makeShapeCTM ctr theta
-                         , pll_base_width   = bw
-                         , pll_height       = h
-                         , pll_base_l_ang   = lang
+mkParallelogram bw h bl_ang = qpromoteLocTheta $ \ctr theta -> 
+    pure $ Parallelogram { pll_ctm            = makeShapeCTM ctr theta
+                         , pll_base_width     = bw
+                         , pll_height         = h
+                         , pll_base_left_ang  = bl_ang
                          }
 
 
 
 
 mkParallelogramPath :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-                    => u -> u -> u -> Radian -> LocThetaQuery u (AbsPath u)
-mkParallelogramPath rnd bw h lang = qpromoteLocTheta $ \ctr theta -> 
-    let xs = runVertices4 ctr  $ parallelogramVertices bw h lang
-    in roundCornerShapePath rnd $ map (rotateAbout theta ctr) xs 
+                    => u -> u -> Radian -> LocThetaQuery u (AbsPath u)
+mkParallelogramPath bw h bl_ang = qpromoteLocTheta $ \ctr theta -> 
+    return $ anaTrailPath ctr $ rparallelogram_trail bw h bl_ang theta
+
                          
 
 

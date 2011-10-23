@@ -245,8 +245,8 @@ rayPathSegmentIntersection (Ray p0 p1) seg =
 -- | Is the curve cut by the line? 
 --
 -- The curve might cut at the start or end points - which is good
--- as it saves performing a subdivision. But make the return type
--- a bit involved.
+-- as it saves performing a subdivision, but it makes the return 
+-- type a bit involved.
 --
 cut :: (Floating u , Ord u, Tolerance u)
     => LineEquation u -> BezierCurve u -> Either (Point2 u) Bool
