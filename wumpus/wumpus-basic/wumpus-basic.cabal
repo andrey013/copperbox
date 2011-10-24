@@ -32,6 +32,12 @@ description:
   .
   v0.22.0 to v0.23.0:
   .
+  * Removed the @Basic.Geometry@ modules, they are superseded in 
+    Wumpus-Drawing. Some of the equivalent functionality is now
+    internal to the respective modules in Wumpus-Drawing - Wumpus
+    has scaled back the amount of /geometric/ types and operations
+    it wants to expose.  
+  .
   * Renamed the @PlacedTrail@ object to @AnaTrail@ - the prefix 
     vector is considered an /anacrusis/. Tidied up the API of the 
     @Trail@ module.
@@ -106,12 +112,6 @@ library
 
   
   exposed-modules:
-    Wumpus.Basic.Geometry,
-    Wumpus.Basic.Geometry.Base,
-    Wumpus.Basic.Geometry.Illustrate,
-    Wumpus.Basic.Geometry.Intersection,
-    Wumpus.Basic.Geometry.Quadrant,
-    Wumpus.Basic.Geometry.Vertices,
     Wumpus.Basic.Kernel,
     Wumpus.Basic.Kernel.Base.BaseDefs,
     Wumpus.Basic.Kernel.Base.DrawingContext,
