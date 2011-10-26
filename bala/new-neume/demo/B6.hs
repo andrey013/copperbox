@@ -7,4 +7,4 @@ import Neume.Core.Pitch
 import Neume.Core.LilyPondMonad
 
 
-demo01 = runLilyPondM $ relNote middle_c dHalf
+demo01 = runLilyPondM $ note middle_c dHalf
