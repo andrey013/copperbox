@@ -31,10 +31,12 @@ module Neume.Core.LilyPondMonad
 import Neume.Core.Duration
 import Neume.Core.LilyPondPretty hiding ( note )
 import Neume.Core.Pitch
+import Neume.Core.Utils.JoinList ( JoinList, one, toList )
 
 import Text.PrettyPrint.HughesPJ
 
 import Control.Applicative hiding ( empty )
+import Data.Monoid
 
 data LyState = LyState 
     { prev_duration :: Duration
@@ -56,23 +58,23 @@ data LyEnv = LyEnv
 --
 
 newtype LilyPondM a = LilyPondM { 
-    getLilyPondM :: LyEnv -> LyState -> (a,LyState,Doc) }
+    getLilyPondM :: LyEnv -> LyState -> (a, LyState, JoinList Doc) }
 
 instance Functor LilyPondM where
   fmap f ma = LilyPondM $ \r s -> 
                 let (a,s1,d1) = getLilyPondM ma r s in (f a, s1, d1) 
 
 instance Applicative LilyPondM where
-  pure a    = LilyPondM $ \r s -> (a, s, empty)
+  pure a    = LilyPondM $ \r s -> (a, s, mempty)
   mf <*> ma = LilyPondM $ \r s -> let (f,s1,d1) = getLilyPondM mf r s
                                       (a,s2,d2) = getLilyPondM ma r s1
-                                  in (f a,s2,d1 <> d2) 
+                                  in (f a,s2,d1 `mappend` d2) 
 
 instance Monad LilyPondM where
   return  = pure
   m >>= k = LilyPondM $ \r s -> let (a,s1,d1) = getLilyPondM m r s
                                     (b,s2,d2) = getLilyPondM (k a) r s1 
-                                in (b,s2,d1 <> d2)
+                                in (b,s2,d1 `mappend` d2)
 
 
 -- | LilyPond\'s default duration is a quarter note.
@@ -84,7 +86,7 @@ instance Monad LilyPondM where
 runLilyPondM :: LilyPondM a -> (a,Doc)
 runLilyPondM ma = post $ getLilyPondM ma r0 s0
   where
-    post (a,_,d1) = (a,d1)
+    post (a,_,jl) = (a,hsep $ toList jl)
 
     s0 = LyState { prev_duration = dQuarter
                  , prev_pitch    = middle_c
@@ -94,7 +96,7 @@ runLilyPondM ma = post $ getLilyPondM ma r0 s0
 
 note :: Pitch -> Duration -> LilyPondM ()
 note p d = LilyPondM $ \(LyEnv fn) s -> 
-    let (doc1,s1) = fn p d s in ((), s1, doc1)
+    let (doc1,s1) = fn p d s in ((), s1, one doc1)
 
 
 relNote :: NextNote
