@@ -20,10 +20,17 @@
 module Neume.Core.LilyPondMonad
   ( 
 
-    LilyPondM
+
+    LyScoreM
+  , runLyScore
+  , execLyScore
+  , version
+
+  , LilyPondM
   , runLilyPondM
 
   , note
+  , beam
 
   ) where 
 
@@ -31,12 +38,64 @@ module Neume.Core.LilyPondMonad
 import Neume.Core.Duration
 import Neume.Core.LilyPondPretty hiding ( note )
 import Neume.Core.Pitch
-import Neume.Core.Utils.JoinList ( JoinList, one, toList )
+import Neume.Core.Utils.JoinList ( JoinList, one, toList, viewl, ViewL(..) )
 
 import Text.PrettyPrint.HughesPJ
 
 import Control.Applicative hiding ( empty )
 import Data.Monoid
+
+
+-- LilyPond has two monads - Notelist and Score.
+
+-- | Score monad is a writer (Doc) and a reader 
+-- (Doc concatenation function).
+newtype LyScoreM ctx a = LyScoreM { getLyScoreM :: DocCat -> (a,Doc) }
+
+type DocCat = Doc -> Doc -> Doc
+
+
+
+instance Functor (LyScoreM ctx) where
+  fmap f ma = LyScoreM $ \op -> let (a,doc1) = getLyScoreM ma op in (f a, doc1)
+
+instance Applicative (LyScoreM ctx) where
+  pure a    = LyScoreM $ \_  -> (a,empty)
+  mf <*> ma = LyScoreM $ \op -> let (f,d1) = getLyScoreM mf op
+                                    (a,d2) = getLyScoreM ma op
+                                in (f a, d1 `op` d2)
+
+instance Monad (LyScoreM ctx) where
+  return  = pure
+  m >>= k = LyScoreM $ \op -> let (a,d1) = getLyScoreM m op
+                                  (b,d2) = getLyScoreM (k a) op
+                              in (b, d1 `op` d2)
+
+
+instance Monoid a => Monoid (LyScoreM ctx a) where
+  mempty          = pure mempty
+  ma `mappend` mb = LyScoreM $ \op -> let (a,d1) = getLyScoreM ma op
+                                          (b,d2) = getLyScoreM mb op
+                                      in (a `mappend` b, d1 `op` d2)
+
+
+
+runLyScore :: LyScoreM ctx a -> (a,Doc)
+runLyScore ma = getLyScoreM ma ($+$)
+
+
+execLyScore :: LyScoreM ctx a -> Doc
+execLyScore = snd . runLyScore
+
+data CT_Toplevel
+
+ct_toplevel :: Doc -> LyScoreM CT_Toplevel ()
+ct_toplevel d1 = LyScoreM $ \_ -> ((),d1)
+
+version :: String -> LyScoreM CT_Toplevel ()
+version ss = ct_toplevel $ lyCommand "version" <+> doubleQuotes (text ss)
+
+
 
 data LyState = LyState 
     { prev_duration :: Duration
@@ -75,6 +134,12 @@ instance Monad LilyPondM where
   m >>= k = LilyPondM $ \r s -> let (a,s1,d1) = getLilyPondM m r s
                                     (b,s2,d2) = getLilyPondM (k a) r s1 
                                 in (b,s2,d1 `mappend` d2)
+
+instance Monoid a => Monoid (LilyPondM a) where
+  mempty          = pure mempty
+  ma `mappend` mb = LilyPondM $ \r s -> let (a,s1,d1) = getLilyPondM ma r s
+                                            (b,s2,d2) = getLilyPondM mb r s1 
+                                        in (a `mappend` b, s2, d1 `mappend` d2)
 
 
 -- | LilyPond\'s default duration is a quarter note.
@@ -121,3 +186,10 @@ absNext (Pitch l oa o) fn d0 d
     pdoc = pitch $ Pitch l oa (fn o)
 
 
+beam :: LilyPondM a -> LilyPondM a
+beam ma = LilyPondM $ \r s -> 
+    let (a,s1,d1) = getLilyPondM ma r s in (a,s1, traf $ viewl d1) 
+  where
+    traf EmptyL    = mempty
+    traf (a :< xs) = let prefix = one a `mappend` one (char '[')
+                     in prefix `mappend` xs `mappend` one (char ']')

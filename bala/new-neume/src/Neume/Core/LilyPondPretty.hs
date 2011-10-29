@@ -17,8 +17,11 @@
 
 module Neume.Core.LilyPondPretty
   (
+
+
+    lyCommand
   -- * Printing glyphs
-    note
+  , note
   , pitch
   , pitchLabel
   , duration
