@@ -29,10 +29,10 @@ module Neume.Core.Utils.Pretty
   , doubleQuote
   , emptyDoc
   , spaceBraces
-  , nestBraces
+  , block
   , optDoc
   , mbDoc   
-  , ppCommand 
+  , command 
 
   , writeDoc
   , printDoc
@@ -109,8 +109,9 @@ spaceBraces d =  char '{' <+> d <+> char '}'
 -- is printed on the current line, then a line break, then the  
 -- expression is printed with indent level two. The closing brace
 -- is printed on a new line.
-nestBraces :: Doc -> Doc
-nestBraces e = lbrace $+$ nest 2 e $+$ rbrace 
+--
+block :: Doc -> Doc -> Doc
+block pre d = vcat [pre <+> lbrace, nest 2 d, rbrace]
 
 
 
@@ -120,8 +121,8 @@ optDoc b doc = if b then doc else empty
 mbDoc ::  (a -> Doc) -> Maybe a -> Doc
 mbDoc f o = maybe empty f o 
 
-ppCommand :: String -> Doc
-ppCommand = (char '\\' <>) . text 
+command :: String -> Doc
+command = (char '\\' <>) . text 
 
 
 writeDoc :: FilePath -> Doc -> IO ()

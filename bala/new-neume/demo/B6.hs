@@ -11,5 +11,5 @@ notelist = relative middle_c $ beam $
     [note middle_c dEighth, note middle_c dEighth]
 
 demo01 = execLyScore $ 
-   version "2.12.2" >> notelist
+   version "2.12.2" >> score notelist
    

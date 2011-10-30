@@ -18,11 +18,10 @@
 module Neume.Core.LilyPondPretty
   (
 
-
-    lyCommand
-  -- * Printing glyphs
-  , note
+    -- * Printing glyphs
+    note
   , pitch
+  , pitchTreble
   , pitchLabel
   , duration
   , rest
@@ -44,8 +43,6 @@ import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.HughesPJ
 
-lyCommand :: String -> Doc
-lyCommand = (char '\\' <>) . text 
 
 
 
@@ -54,15 +51,20 @@ lyCommand = (char '\\' <>) . text
 
 -- | Print a note, the duration is a Maybe value. Nothing indicates
 -- that the note has the same duration as the previous glyph.
+--
 note :: Pitch -> Maybe Duration -> Doc
 note p md = pitch p <> maybe empty duration md
 
--- | Print a Pitch.
+-- | Print a Pitch - middle c is @c'@.
+--
 pitch :: Pitch -> Doc 
 pitch pch@(Pitch _ _ o) = pitchLabel (label pch) <> ove o where
     ove i | i > 0       = text $ replicate i       '\''
           | i < 0       = text $ replicate (abs i) ','
           | otherwise   = empty
+
+pitchTreble :: Pitch -> Doc
+pitchTreble (Pitch l mba o) = pitch $ Pitch l mba (o-3)
 
 
 -- | Print a 'PitchLabel'.
@@ -81,7 +83,7 @@ pitchLabel (PitchLabel l ma) =
 duration :: Duration -> Doc
 duration = maybe empty df . lyRepresentation
   where
-    df (LyCmd ss,dc) = dots dc $ lyCommand ss 
+    df (LyCmd ss,dc) = dots dc $ command ss 
     df (LyNum i,dc)  = dots dc $ int i
 
     dots :: Int -> (Doc -> Doc)
@@ -124,8 +126,8 @@ chordForm xs md = angles (hsep xs) <> maybe empty duration md
 --  \\grace { f32[ e] }
 -- @ 
 graceForm :: [Doc] -> Doc
-graceForm [x] = lyCommand "grace" <+> braces x where
-graceForm xs  = lyCommand "grace" <+> braces (beamForm xs)
+graceForm [x] = command "grace" <+> braces x where
+graceForm xs  = command "grace" <+> braces (beamForm xs)
 
   
 -- | Beams - first element printed outside the square brackets, e.g.:

@@ -26,6 +26,7 @@ module Neume.Core.LilyPondMonad
   , execLyScore
 
   , version
+  , score
   , relative
 
   , LyNoteListM
@@ -47,6 +48,7 @@ module Neume.Core.LilyPondMonad
 import Neume.Core.Duration
 import qualified Neume.Core.LilyPondPretty as PP
 import Neume.Core.Pitch
+import Neume.Core.Utils.Basis
 import Neume.Core.Utils.Pretty
 
 import Text.PrettyPrint.HughesPJ
@@ -103,14 +105,21 @@ execLyScore = snd . runLyScore
 scoreDoc_ :: Doc -> LyScoreM ()
 scoreDoc_ d1 = LyScoreM $ \_ -> ((),d1)
 
+mapDoc :: (Doc -> Doc) -> LyScoreM a -> LyScoreM a
+mapDoc f ma = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r in (a, f d1)
 
 version :: String -> LyScoreM ()
-version ss = scoreDoc_ $ PP.lyCommand "version" <+> doubleQuotes (text ss)
+version ss = scoreDoc_ $ command "version" <+> doubleQuotes (text ss)
 
-relative :: Pitch -> LyNoteListM a -> LyScoreM ()
+score :: LyScoreM a -> LyScoreM a
+score = mapDoc $ block (command "score")
+
+relative :: Pitch -> LyNoteListM a -> LyScoreM a
 relative p ma = LyScoreM $ \_ -> 
-   let (_,d1) = runLyNoteListM (relPitch,relDuration) (p,dQuarter) ma
-   in ((),d1)
+    mapSnd fn $ runLyNoteListM (relPitch,relDuration) (p,dQuarter) ma
+  where
+    fn = block (command "relative" <+> PP.pitchTreble p)
+   
 
 --------------------------------------------------------------------------------
 -- NoteList monad
@@ -124,8 +133,8 @@ data NoteSt = NoteSt
     }
 
 
-type NextPitch = Pitch -> Pitch -> (Doc,Pitch)
-type NextDur   = Duration -> Duration -> (Doc,Duration)
+type NextPitch = Pitch -> Pitch -> (Pitch,Pitch)
+type NextDur   = Duration -> Duration -> (Maybe Duration,Duration)
 
 data NoteEnv = NoteEnv 
     { next_pitch   :: NextPitch
@@ -199,49 +208,43 @@ runsLyNoteListM r0 s0 xs = step s0 xs
                       in (a:as,s2,d:ds)
 
 
-stmap :: (a -> st -> (b,st)) -> st -> [a] -> ([b],st)
-stmap fn s0 = step s0
-  where
-    step s []     = ([],s)
-    step s (x:xs) = let (a,s1)  = fn x s 
-                        (as,s2) = step s1 xs
-                    in (a:as,s2)
 
-relPitch :: Pitch -> Pitch -> (Doc,Pitch)
-relPitch p p0 = let i = lyOctaveDist p0 p in (PP.pitch $ setOctave i p, p)
 
-relDuration :: Duration -> Duration -> (Doc,Duration)
-relDuration d d0 | d == d0   = (empty,d)
-                 | otherwise = (PP.duration d, d)
+relPitch :: Pitch -> Pitch -> (Pitch,Pitch)
+relPitch p p0 = let i = lyOctaveDist p0 p in (setOctave i p, p)
 
-absPitch :: Pitch -> Pitch -> (Doc,Pitch)
-absPitch p p0 = (PP.pitch p,p0)
+relDuration :: Duration -> Duration -> (Maybe Duration,Duration)
+relDuration d d0 | d == d0   = (Nothing,d)
+                 | otherwise = (Just d, d)
+
+absPitch :: (Int -> Int) -> Pitch -> Pitch -> (Pitch,Pitch)
+absPitch fn (Pitch l oa o) p0 = (Pitch l oa $ fn o,p0)
 
 
 
 note :: Pitch -> Duration -> LyNoteListM ()
 note p d = LyNoteListM $ \(NoteEnv fp fd _) (NoteSt p0 d0) -> 
-    let (pdoc,p1) = fp p p0
-        (ddoc,d1) = fd d d0
-    in ((), NoteSt p1 d1, pdoc <> ddoc)
+    let (p_ans,p1) = fp p p0
+        (mb_d,d1)  = fd d d0
+    in ((), NoteSt p1 d1, PP.note p_ans mb_d)
 
 chord :: [Pitch] -> Duration -> LyNoteListM ()
 chord ps d = LyNoteListM $ \(NoteEnv fp fd _) (NoteSt p0 d0) -> 
-   let (ns,p1)   = stmap fp p0 ps 
-       (ddoc,d1) = fd d d0  
-   in ((), NoteSt p1 d1, angles (hsep ns) <> ddoc)
+   let (ns,p1)   = mapFst (map PP.pitch) $ stmap fp p0 ps 
+       (mb_d,d1) = fd d d0  
+   in ((), NoteSt p1 d1, PP.chordForm ns mb_d)
 
 
 rest :: Duration -> LyNoteListM ()
 rest d = LyNoteListM $ \(NoteEnv _ fd _) (NoteSt p0 d0) -> 
-    let (ddoc,d1) = fd d d0
-    in ((), NoteSt p0 d1, char 'r' <> ddoc)
+    let (mb_d,d1) = fd d d0
+    in ((), NoteSt p0 d1, PP.rest mb_d)
 
 
 spacer :: Duration -> LyNoteListM ()
 spacer d = LyNoteListM $ \(NoteEnv _ fd _) (NoteSt p0 d0) -> 
-    let (ddoc,d1) = fd d d0
-    in ((), NoteSt p0 d1, char 's' <> ddoc)
+    let (mb_d,d1) = fd d d0
+    in ((), NoteSt p0 d1, PP.spacer mb_d)
 
 
 
@@ -249,12 +252,8 @@ spacer d = LyNoteListM $ \(NoteEnv _ fd _) (NoteSt p0 d0) ->
 
 -- | beam has to collect Docs as a list, not as a concatenated Doc.
 --
-
 beam :: [LyNoteListM a] -> LyNoteListM ()
 beam ms = LyNoteListM $ \s r -> 
     let (_,s1,ds) = runsLyNoteListM s r ms 
-    in ((), s1, post ds)
-  where
-    post []     = empty
-    post (x:xs) = x <> char '[' <+> hsep xs <> char ']'
+    in ((), s1, PP.beamForm ds)
 
