@@ -21,7 +21,9 @@ module Neume.Core.LilyPondMonad
   ( 
 
 
-    LyScoreM
+    Concat(..)
+
+  , LyScoreM
   , runLyScore
   , execLyScore
 
@@ -36,6 +38,7 @@ module Neume.Core.LilyPondMonad
   , relDuration
   , absPitch
 
+  , time
   , note
   , chord
   , rest
@@ -57,45 +60,60 @@ import Control.Applicative hiding ( empty )
 import Data.Monoid
 
 
+infixl 6 >+>
+infixl 5 >$>
+
+class Monad m => Concat m where
+  (>+>) :: m a -> m b -> m b
+  (>$>) :: m a -> m b -> m b
+
 -- LilyPond has two monads - NoteList and Score.
 
 --------------------------------------------------------------------------------
 -- Score monad
 
--- | Score monad is a writer (Doc) and a reader 
--- (Doc concatenation function).
-newtype LyScoreM a = LyScoreM { getLyScoreM :: DocCat -> (a,Doc) }
-
-type DocCat = Doc -> Doc -> Doc
-
+-- | Score monad is a writer (Doc) and an empty reader 
+-- (expected to be used later).
+-- 
+newtype LyScoreM a = LyScoreM { getLyScoreM :: () -> (a,Doc) }
 
 
 instance Functor LyScoreM where
-  fmap f ma = LyScoreM $ \op -> let (a,doc1) = getLyScoreM ma op in (f a, doc1)
+  fmap f ma = LyScoreM $ \r -> let (a,doc1) = getLyScoreM ma r in (f a, doc1)
 
 instance Applicative LyScoreM where
-  pure a    = LyScoreM $ \_  -> (a,empty)
-  mf <*> ma = LyScoreM $ \op -> let (f,d1) = getLyScoreM mf op
-                                    (a,d2) = getLyScoreM ma op
-                                in (f a, d1 `op` d2)
+  pure a    = LyScoreM $ \_ -> (a,empty)
+  mf <*> ma = LyScoreM $ \r -> let (f,d1) = getLyScoreM mf r
+                                   (a,d2) = getLyScoreM ma r
+                               in (f a, d1 <+> d2)
 
 instance Monad LyScoreM where
   return  = pure
-  m >>= k = LyScoreM $ \op -> let (a,d1) = getLyScoreM m op
-                                  (b,d2) = getLyScoreM (k a) op
-                              in (b, d1 `op` d2)
+  m >>= k = LyScoreM $ \r -> let (a,d1) = getLyScoreM m r
+                                 (b,d2) = getLyScoreM (k a) r
+                             in (b, d1 <+> d2)
+
+
+instance Concat LyScoreM where
+  ma >+> mb = LyScoreM $ \r -> let (_,d1) = getLyScoreM ma r
+                                   (b,d2) = getLyScoreM mb r
+                               in (b, d1 <+> d2)
+
+  ma >$> mb = LyScoreM $ \r -> let (_,d1) = getLyScoreM ma r
+                                   (b,d2) = getLyScoreM mb r
+                               in (b, d1 $+$ d2)
 
 
 instance Monoid a => Monoid (LyScoreM a) where
   mempty          = pure mempty
-  ma `mappend` mb = LyScoreM $ \op -> let (a,d1) = getLyScoreM ma op
-                                          (b,d2) = getLyScoreM mb op
-                                      in (a `mappend` b, d1 `op` d2)
+  ma `mappend` mb = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r
+                                         (b,d2) = getLyScoreM mb r
+                                     in (a `mappend` b, d1 <+> d2)
 
 
 
 runLyScore :: LyScoreM a -> (a,Doc)
-runLyScore ma = getLyScoreM ma ($+$)
+runLyScore ma = getLyScoreM ma ()
 
 
 execLyScore :: LyScoreM a -> Doc
@@ -139,7 +157,6 @@ type NextDur   = Duration -> Duration -> (Maybe Duration,Duration)
 data NoteEnv = NoteEnv 
     { next_pitch   :: NextPitch
     , next_dur     :: NextDur
-    , note_cat     :: DocCat
     }
 
 -- If we are concatenating Docs in the monad should we follow 
@@ -158,24 +175,32 @@ instance Functor LyNoteListM where
 
 instance Applicative LyNoteListM where
   pure a    = LyNoteListM $ \_ s -> (a, s, empty)
-  mf <*> ma = LyNoteListM $ \r s -> let op        = note_cat r
-                                        (f,s1,d1) = getLyNoteListM mf r s
+  mf <*> ma = LyNoteListM $ \r s -> let (f,s1,d1) = getLyNoteListM mf r s
                                         (a,s2,d2) = getLyNoteListM ma r s1
-                                    in (f a,s2,d1 `op` d2) 
+                                    in (f a,s2,d1 <+> d2) 
 
 instance Monad LyNoteListM where
   return  = pure
-  m >>= k = LyNoteListM $ \r s -> let op        = note_cat r
-                                      (a,s1,d1) = getLyNoteListM m r s
+  m >>= k = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM m r s
                                       (b,s2,d2) = getLyNoteListM (k a) r s1 
-                                  in (b,s2,d1 `op` d2)
+                                  in (b,s2,d1 <+> d2)
+
+instance Concat LyNoteListM where
+  ma >+> mb = LyNoteListM $ \r s -> let (_,s1,d1) = getLyNoteListM ma r s
+                                        (b,s2,d2) = getLyNoteListM mb r s1 
+                                    in (b, s2, d1 <+> d2)
+
+  ma >$> mb = LyNoteListM $ \r s -> let (_,s1,d1) = getLyNoteListM ma r s
+                                        (b,s2,d2) = getLyNoteListM mb r s1 
+                                    in (b, s2, d1 $+$ d2)
+
+
 
 instance Monoid a => Monoid (LyNoteListM a) where
   mempty          = pure mempty
-  ma `mappend` mb = LyNoteListM $ \r s -> let op        = note_cat r
-                                              (a,s1,d1) = getLyNoteListM ma r s
+  ma `mappend` mb = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM ma r s
                                               (b,s2,d2) = getLyNoteListM mb r s1 
-                                          in (a `mappend` b, s2, d1 `op` d2)
+                                          in (a `mappend` b, s2, d1 <+> d2)
 
 
 -- | LilyPond\'s default duration is a quarter note.
@@ -196,7 +221,6 @@ runLyNoteListM (fp,fd) (p0,d0) ma = post $ getLyNoteListM ma r0 s0
 
     r0 = NoteEnv { next_pitch = fp 
                  , next_dur   = fd 
-                 , note_cat   = (<+>)
                  }
 
 runsLyNoteListM :: NoteEnv -> NoteSt -> [LyNoteListM a] -> ([a],NoteSt,[Doc])
@@ -220,29 +244,31 @@ relDuration d d0 | d == d0   = (Nothing,d)
 absPitch :: (Int -> Int) -> Pitch -> Pitch -> (Pitch,Pitch)
 absPitch fn (Pitch l oa o) p0 = (Pitch l oa $ fn o,p0)
 
-
+time :: (Int,Int) -> LyNoteListM ()
+time (n,d) = LyNoteListM $ \_ s -> 
+   ((), s, command "time" <+> int n <> char '/' <> int d)
 
 note :: Pitch -> Duration -> LyNoteListM ()
-note p d = LyNoteListM $ \(NoteEnv fp fd _) (NoteSt p0 d0) -> 
+note p d = LyNoteListM $ \(NoteEnv fp fd) (NoteSt p0 d0) -> 
     let (p_ans,p1) = fp p p0
         (mb_d,d1)  = fd d d0
     in ((), NoteSt p1 d1, PP.note p_ans mb_d)
 
 chord :: [Pitch] -> Duration -> LyNoteListM ()
-chord ps d = LyNoteListM $ \(NoteEnv fp fd _) (NoteSt p0 d0) -> 
+chord ps d = LyNoteListM $ \(NoteEnv fp fd) (NoteSt p0 d0) -> 
    let (ns,p1)   = mapFst (map PP.pitch) $ stmap fp p0 ps 
        (mb_d,d1) = fd d d0  
    in ((), NoteSt p1 d1, PP.chordForm ns mb_d)
 
 
 rest :: Duration -> LyNoteListM ()
-rest d = LyNoteListM $ \(NoteEnv _ fd _) (NoteSt p0 d0) -> 
+rest d = LyNoteListM $ \(NoteEnv _ fd) (NoteSt p0 d0) -> 
     let (mb_d,d1) = fd d d0
     in ((), NoteSt p0 d1, PP.rest mb_d)
 
 
 spacer :: Duration -> LyNoteListM ()
-spacer d = LyNoteListM $ \(NoteEnv _ fd _) (NoteSt p0 d0) -> 
+spacer d = LyNoteListM $ \(NoteEnv _ fd) (NoteSt p0 d0) -> 
     let (mb_d,d1) = fd d d0
     in ((), NoteSt p0 d1, PP.spacer mb_d)
 
