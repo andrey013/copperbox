@@ -30,6 +30,7 @@ module Neume.Core.Utils.Pretty
   , emptyDoc
   , spaceBraces
   , block
+  , inlineBlock
   , optDoc
   , mbDoc   
   , command 
@@ -113,6 +114,8 @@ spaceBraces d =  char '{' <+> d <+> char '}'
 block :: Doc -> Doc -> Doc
 block pre d = vcat [pre <+> lbrace, nest 2 d, rbrace]
 
+inlineBlock :: Doc -> Doc -> Doc
+inlineBlock pre d = pre <+> lbrace <+> d <+> rbrace
 
 
 optDoc :: Bool -> Doc -> Doc

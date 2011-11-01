@@ -38,7 +38,11 @@ module Neume.Core.LilyPondMonad
   , relDuration
   , absPitch
 
+  , key
   , time
+  , clef
+  , repeat_volta
+
   , note
   , chord
   , rest
@@ -66,6 +70,11 @@ infixl 5 >$>
 class Monad m => Concat m where
   (>+>) :: m a -> m b -> m b
   (>$>) :: m a -> m b -> m b
+
+class Monad m => LiftDoc m where
+  liftDoc :: Doc -> m ()
+  mapDoc :: (Doc -> Doc) -> m a -> m a
+
 
 -- LilyPond has two monads - NoteList and Score.
 
@@ -120,14 +129,12 @@ execLyScore :: LyScoreM a -> Doc
 execLyScore = snd . runLyScore
 
 
-scoreDoc_ :: Doc -> LyScoreM ()
-scoreDoc_ d1 = LyScoreM $ \_ -> ((),d1)
-
-mapDoc :: (Doc -> Doc) -> LyScoreM a -> LyScoreM a
-mapDoc f ma = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r in (a, f d1)
+instance LiftDoc LyScoreM where
+  liftDoc d1  = LyScoreM $ \_ -> ((),d1)
+  mapDoc f ma = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r in (a, f d1)
 
 version :: String -> LyScoreM ()
-version ss = scoreDoc_ $ command "version" <+> doubleQuotes (text ss)
+version ss = liftDoc $ command "version" <+> doubleQuotes (text ss)
 
 score :: LyScoreM a -> LyScoreM a
 score = mapDoc $ block (command "score")
@@ -244,9 +251,27 @@ relDuration d d0 | d == d0   = (Nothing,d)
 absPitch :: (Int -> Int) -> Pitch -> Pitch -> (Pitch,Pitch)
 absPitch fn (Pitch l oa o) p0 = (Pitch l oa $ fn o,p0)
 
+
+instance LiftDoc LyNoteListM where
+  liftDoc d   = LyNoteListM $ \_ s -> ((), s, d)
+  mapDoc f ma = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM ma r s
+                                      in (a, s1, f d1)
+
+
+key :: PitchLabel -> String -> LyNoteListM ()
+key pl ss = liftDoc $ command "key" <+> pprint pl <+> command ss
+
 time :: (Int,Int) -> LyNoteListM ()
-time (n,d) = LyNoteListM $ \_ s -> 
-   ((), s, command "time" <+> int n <> char '/' <> int d)
+time (n,d) = liftDoc $ command "time" <+> int n <> char '/' <> int d
+
+
+clef :: String -> LyNoteListM ()
+clef ss = liftDoc $ command "clef" <+> text ss
+
+repeat_volta :: Int -> LyNoteListM a -> LyNoteListM a
+repeat_volta i = mapDoc (block prefix) 
+  where
+    prefix = command "repeat" <+> text "volta" <+> int i
 
 note :: Pitch -> Duration -> LyNoteListM ()
 note p d = LyNoteListM $ \(NoteEnv fp fd) (NoteSt p0 d0) -> 
