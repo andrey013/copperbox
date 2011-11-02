@@ -26,6 +26,12 @@ module Neume.Core.NamedElements
   , wn,  hn,  qn,  en, sn, tn
   , dhn, dqn, den, dsn
 
+
+  -- * Rests
+  , wnr, hnr, qnr, enr, snr, tnr
+  , dhnr, dqnr, denr, dsnr
+
+
   -- * Named pitch labels
  
   , c_nat, d_nat, e_nat, f_nat, g_nat, a_nat, b_nat
@@ -144,6 +150,39 @@ den       = note `flip` (dot dEighth)
 
 dsn       :: Pitch -> LyNoteListM ()
 dsn       = note `flip` (dot dSixteenth)
+
+
+-- rests
+
+wnr     :: LyNoteListM ()
+wnr     = rest dWhole
+
+hnr     :: LyNoteListM ()
+hnr     = rest dHalf
+
+qnr     :: LyNoteListM ()
+qnr     = rest dQuarter
+
+enr     :: LyNoteListM ()
+enr     = rest dEighth
+
+snr     :: LyNoteListM ()
+snr     = rest dSixteenth
+
+tnr     :: LyNoteListM ()
+tnr     = rest dThirtySecondth
+
+dhnr    :: LyNoteListM ()
+dhnr    = rest $ dot dHalf
+
+dqnr    :: LyNoteListM ()
+dqnr    = rest $ dot dQuarter
+
+denr    :: LyNoteListM ()
+denr    = rest $ dot dEighth
+
+dsnr    :: LyNoteListM ()
+dsnr    = rest $ dot dSixteenth
 
 --------------------------------------------------------------------------------
 -- Named pitches

@@ -20,8 +20,10 @@
 module Neume.Core.LilyPondMonad
   ( 
 
+    Doc                 -- re-export...
+  , writeScore
 
-    Concat(..)
+  , Concat(..)
 
   , LyScoreM
   , runLyScore
@@ -62,6 +64,10 @@ import Text.PrettyPrint.HughesPJ
 
 import Control.Applicative hiding ( empty )
 import Data.Monoid
+
+
+writeScore :: FilePath -> Doc -> IO ()
+writeScore path = writeFile path . renderDocEighty
 
 
 infixl 6 >+>
@@ -259,7 +265,7 @@ instance LiftDoc LyNoteListM where
 
 
 key :: PitchLabel -> String -> LyNoteListM ()
-key pl ss = liftDoc $ command "key" <+> pprint pl <+> command ss
+key pl ss = liftDoc $ command "key" <+> PP.pitchLabel pl <+> command ss
 
 time :: (Int,Int) -> LyNoteListM ()
 time (n,d) = liftDoc $ command "time" <+> int n <> char '/' <> int d
