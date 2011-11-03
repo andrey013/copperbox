@@ -51,6 +51,9 @@ module Neume.Core.LilyPondMonad
   , spacer
   , beam
 
+  , lbeam
+  , rbeam
+
   ) where 
 
 
@@ -60,7 +63,8 @@ import Neume.Core.Pitch
 import Neume.Core.Utils.Basis
 import Neume.Core.Utils.Pretty
 
-import Text.PrettyPrint.HughesPJ
+import Text.PrettyPrint.HughesPJ hiding ( (<>), (<+>), ($+$) )
+import qualified Text.PrettyPrint.HughesPJ as PP
 
 import Control.Applicative hiding ( empty )
 import Data.Monoid
@@ -70,12 +74,17 @@ writeScore :: FilePath -> Doc -> IO ()
 writeScore path = writeFile path . renderDocEighty
 
 
-infixl 6 >+>
-infixl 5 >$>
+infixl 6 <> 
+infixl 6 <+>
+infixl 5 $+$
 
-class Monad m => Concat m where
-  (>+>) :: m a -> m b -> m b
-  (>$>) :: m a -> m b -> m b
+class Concat a where
+  (<>)  :: a -> a -> a
+  (<+>) :: a -> a -> a
+  ($+$) :: a -> a -> a
+
+
+
 
 class Monad m => LiftDoc m where
   liftDoc :: Doc -> m ()
@@ -83,6 +92,13 @@ class Monad m => LiftDoc m where
 
 
 -- LilyPond has two monads - NoteList and Score.
+
+
+instance Concat Doc where
+  (<>)  = (PP.<>)
+  (<+>) = (PP.<+>)
+  ($+$) = (PP.$+$) 
+
 
 --------------------------------------------------------------------------------
 -- Score monad
@@ -109,14 +125,18 @@ instance Monad LyScoreM where
                              in (b, d1 <+> d2)
 
 
-instance Concat LyScoreM where
-  ma >+> mb = LyScoreM $ \r -> let (_,d1) = getLyScoreM ma r
-                                   (b,d2) = getLyScoreM mb r
-                               in (b, d1 <+> d2)
+instance Monoid a => Concat (LyScoreM a) where
+  ma <>  mb = LyScoreM $ \r -> let (b,d1) = getLyScoreM ma r
+                                   (a,d2) = getLyScoreM mb r
+                               in (a `mappend` b, d1 PP.<> d2)
 
-  ma >$> mb = LyScoreM $ \r -> let (_,d1) = getLyScoreM ma r
+  ma <+> mb = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r
                                    (b,d2) = getLyScoreM mb r
-                               in (b, d1 $+$ d2)
+                               in (a `mappend` b, d1 PP.<+> d2)
+
+  ma $+$ mb = LyScoreM $ \r -> let (a,d1) = getLyScoreM ma r
+                                   (b,d2) = getLyScoreM mb r
+                               in (a `mappend` b, d1 PP.$+$ d2)
 
 
 instance Monoid a => Monoid (LyScoreM a) where
@@ -198,14 +218,18 @@ instance Monad LyNoteListM where
                                       (b,s2,d2) = getLyNoteListM (k a) r s1 
                                   in (b,s2,d1 <+> d2)
 
-instance Concat LyNoteListM where
-  ma >+> mb = LyNoteListM $ \r s -> let (_,s1,d1) = getLyNoteListM ma r s
+instance Monoid a => Concat (LyNoteListM a) where
+  ma <>  mb = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM ma r s
                                         (b,s2,d2) = getLyNoteListM mb r s1 
-                                    in (b, s2, d1 <+> d2)
+                                    in (a `mappend` b, s2, d1 <> d2)
 
-  ma >$> mb = LyNoteListM $ \r s -> let (_,s1,d1) = getLyNoteListM ma r s
+  ma <+> mb = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM ma r s
                                         (b,s2,d2) = getLyNoteListM mb r s1 
-                                    in (b, s2, d1 $+$ d2)
+                                    in (a `mappend` b, s2, d1 <+> d2)
+
+  ma $+$ mb = LyNoteListM $ \r s -> let (a,s1,d1) = getLyNoteListM ma r s
+                                        (b,s2,d2) = getLyNoteListM mb r s1 
+                                    in (a `mappend` b, s2, d1 PP.$+$ d2)
 
 
 
@@ -313,4 +337,13 @@ beam :: [LyNoteListM a] -> LyNoteListM ()
 beam ms = LyNoteListM $ \s r -> 
     let (_,s1,ds) = runsLyNoteListM s r ms 
     in ((), s1, PP.beamForm ds)
+
+-- Note - it might be better to have beam in a higher level layer
+-- and just define lbeam and rbeam here.
+
+lbeam :: LyNoteListM ()
+lbeam = liftDoc lparen
+
+rbeam :: LyNoteListM ()
+rbeam = liftDoc rparen
 
