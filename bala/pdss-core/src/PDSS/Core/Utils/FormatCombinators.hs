@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Sound.PDSS.Utils.FormatCombinators
+-- Module      :  PDSS.Core.Utils.FormatCombinators
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -17,7 +17,7 @@
 -- 
 --------------------------------------------------------------------------------
 
-module Sound.PDSS.Utils.FormatCombinators
+module PDSS.Core.Utils.FormatCombinators
   (
     Doc
   , DocS
@@ -209,12 +209,15 @@ char = Doc1 . showChar
 -- > int  = text . show
 --
 int :: Int -> Doc
-int  = Doc1 . showInt
+int i | i < 0     = Doc1 $ ('-' :) .  showInt (abs i)
+      | otherwise = Doc1 $ showInt i
 
 -- | Show the Integer as a Doc.
 --
 integer :: Integer -> Doc
-integer = Doc1 . showInt
+integer i | i < 0     = Doc1 $ ('-' :) .  showInt (abs i)
+          | otherwise = Doc1 $ showInt i
+
 
 -- | Show an \"integral value\" as a Doc via 'fromIntegral'.
 --

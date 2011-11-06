@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Sound.PDSS.Monad
+-- Module      :  PDSS.Core.Monad
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -15,21 +15,23 @@
 --------------------------------------------------------------------------------
 
 
-module Sound.PDSS.Monad
+module PDSS.Core.Monad
   ( 
 
     GenMonad
   , run
-  , text_
+  , text
+  , bang
 
   ) where 
 
 
-import Sound.PDSS.PDDoc
-import Sound.PDSS.Utils.FormatCombinators
+import PDSS.Core.InternalTypes
+import PDSS.Core.PDDoc
+import PDSS.Core.Utils.FormatCombinators hiding ( text )
 import Control.Applicative hiding ( empty ) 
 
-data St = St () -- to fill
+type St = Int
 
 
 -- | At least a State and Writer....
@@ -58,14 +60,21 @@ instance Monad GenMonad where
 tell :: Doc -> GenMonad ()
 tell d1 = GenMonad $ \s -> ((),s,d1)
 
+next :: (Int -> a) -> GenMonad a
+next f = GenMonad $ \s -> (f s, s + 1, empty)
 
 run :: (Int,Int,Int,Int) -> Int -> GenMonad a -> String
 run (x,y,w,h) sz ma = 
-    runDoc (rec_canvas x y w h sz `vconcat` body)
+    runDoc (rec_canvas0 x y w h sz `vconcat` body)
   where
-    body = let (_,_,d1) = getGenMonad ma (St ()) in d1
+    body = let (_,_,d1) = getGenMonad ma 0 in d1
 
 
 
-text_ :: Int -> Int -> String -> GenMonad ()
-text_ xp yp ss = tell $ rec_text xp yp ss
+text :: Int -> Int -> String -> GenMonad ()
+text x y ss = tell $ rec_text x y ss
+
+bang :: Int -> Int -> GenMonad Bang
+bang x y = do 
+    tell $ rec_bang x y 15 250 50 0 noSRL 0 (-6) default_display
+    next Bang
