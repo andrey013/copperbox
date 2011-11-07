@@ -22,10 +22,13 @@ module PDSS.Core.Monad
   , run
   , text
   , bang
+  
+  , canvas
 
   ) where 
 
 
+import PDSS.Core.Colour
 import PDSS.Core.InternalTypes
 import PDSS.Core.PDDoc
 import PDSS.Core.Utils.FormatCombinators hiding ( text )
@@ -78,3 +81,7 @@ bang :: Int -> Int -> GenMonad Bang
 bang x y = do 
     tell $ rec_bang x y 15 250 50 0 noSRL 0 (-6) default_display
     next Bang
+
+canvas :: Int -> Int -> Int -> Int -> RGBi -> GenMonad ()
+canvas x y w h rgb = 
+    tell $ rec_cnv x y 15 w h noSRL 0 0 default_display

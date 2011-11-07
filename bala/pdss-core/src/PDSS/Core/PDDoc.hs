@@ -27,7 +27,9 @@ module PDSS.Core.PDDoc
   , rec_floatatom0
   , rec_obj
   , rec_bang
+  , rec_cnv
   , rec_text
+  
 
 
   ) where 
@@ -143,6 +145,18 @@ rec_bang x y sz hold interrupt dflt srl xoff yoff props =
                       , sendRecvLabelE srl
                       , int xoff,   int yoff
                       , displayProps props ]
+
+rec_cnv :: Int -> Int 
+        -> Int -> Int -> Int  
+        -> SRL -> Int -> Int -> DisplayProps -> Doc
+rec_cnv x y sz w h srl xoff yoff props = 
+    rec_obj x y "cnv" [ int sz,     int w,      int h
+                      , sendRecvLabelE srl
+                      , int xoff,   int yoff
+                      , displayProps props
+                      , int 0 ]
+
+
 
 -- | Note - semicolon needs manually escaping with a backslash.
 --

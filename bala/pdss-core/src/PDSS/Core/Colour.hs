@@ -39,6 +39,7 @@ module PDSS.Core.Colour
 
 import PDSS.Core.Utils.FormatCombinators
 
+import Data.Int
 import Data.Word
 
 -- | Colours levels are in the range [0..255]
@@ -64,12 +65,15 @@ instance Format RGBi where
 
 
 rgbValue :: RGBi -> Int
-rgbValue (RGBi r g b) = (r' * (-65536)) + (g' * (-256)) + (b' * (-1))
+rgbValue (RGBi r g b) = fromI32 $ (r' * (-65536)) + (g' * (-256)) + (b' * (-1))
   where
     r' = fromIntegral r
     g' = fromIntegral g
     b' = fromIntegral b
 
+
+fromI32 :: Int32 -> Int
+fromI32 = fromIntegral
 
 --------------------------------------------------------------------------------
 
