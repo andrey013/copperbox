@@ -83,6 +83,8 @@ sendRecvLabelD srl =
   hsep $ map mbDash $ [ srl_send srl, srl_receive srl, srl_label srl ]
 
 
+-- This is wrong - different ojects display different props.
+--
 displayProps :: DisplayProps -> Doc
 displayProps props = 
    font (obj_font props) <+> int (obj_fontsize props) 
@@ -153,7 +155,10 @@ rec_cnv x y sz w h srl xoff yoff props =
     rec_obj x y "cnv" [ int sz,     int w,      int h
                       , sendRecvLabelE srl
                       , int xoff,   int yoff
-                      , displayProps props
+                      , font $ obj_font props
+                      , int $ obj_fontsize props
+                      , int $ rgbValue $ obj_bgcolour props
+                      , int $ rgbValue $ obj_lblcolour props
                       , int 0 ]
 
 

@@ -39,7 +39,7 @@ module PDSS.Core.Colour
 
 import PDSS.Core.Utils.FormatCombinators
 
-import Data.Int
+import Data.Bits
 import Data.Word
 
 -- | Colours levels are in the range [0..255]
@@ -63,17 +63,35 @@ instance Format RGBi where
                                           <> comma <> integral b
 
 
-
+-- | Note - Hans-Christoph Steiner\'s guide to the PD file format
+-- is wrong for colour.
+--
+-- Colour is 18-bit.
+-- See the thread in the PD-Dev mailing list:
+--
+-- > 2010-02 - pd file format: color settings
+--
+-- And zac hilbert message here:
+-- 
+-- http://puredata.hurleur.com/sujet-335-puredata-patchfile-format
+--
 rgbValue :: RGBi -> Int
-rgbValue (RGBi r g b) = fromI32 $ (r' * (-65536)) + (g' * (-256)) + (b' * (-1))
+rgbValue (RGBi r g b) = negate $ fromIntegral $ r' + g' + b'
   where
-    r' = fromIntegral r
-    g' = fromIntegral g
-    b' = fromIntegral b
+    r' :: Word32
+    r' = (lowRes r) `shiftL` 12
+    g' = (lowRes g) `shiftL` 6
+    b' = (lowRes b)
+
+ 
+
+-- | Go from 8 bit to 6 bit - range [0..255] changes to [0..63].
+--
+lowRes :: Word8 -> Word32
+lowRes i = ceiling $ (63.0 :: Double) * ((fromIntegral i) / 255.0)
 
 
-fromI32 :: Int32 -> Int
-fromI32 = fromIntegral
+
 
 --------------------------------------------------------------------------------
 

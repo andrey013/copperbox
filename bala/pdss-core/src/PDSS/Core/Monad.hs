@@ -84,4 +84,4 @@ bang x y = do
 
 canvas :: Int -> Int -> Int -> Int -> RGBi -> GenMonad ()
 canvas x y w h rgb = 
-    tell $ rec_cnv x y 15 w h noSRL 0 0 default_display
+    tell $ rec_cnv x y 15 w h noSRL 0 0 (default_display {obj_bgcolour = rgb })
