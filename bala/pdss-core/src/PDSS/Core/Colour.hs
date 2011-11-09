@@ -40,6 +40,7 @@ module PDSS.Core.Colour
 import PDSS.Core.Utils.FormatCombinators
 
 import Data.Bits
+import Data.Int
 import Data.Word
 
 -- | Colours levels are in the range [0..255]
@@ -75,20 +76,36 @@ instance Format RGBi where
 -- 
 -- http://puredata.hurleur.com/sujet-335-puredata-patchfile-format
 --
+{-
 rgbValue :: RGBi -> Int
-rgbValue (RGBi r g b) = negate $ fromIntegral $ r' + g' + b'
+rgbValue (RGBi r g b) = 
+    fromIntegral $   (red   `div` (-4) * 2^12) 
+                   + (green `div` (-4) * 2^6) 
+                   + (blue * (-1))
   where
-    r' :: Word32
-    r' = (lowRes r) `shiftL` 12
-    g' = (lowRes g) `shiftL` 6
-    b' = (lowRes b)
+    red, green, blue :: Int32
+    red   = fromIntegral r
+    green = fromIntegral g
+    blue  = fromIntegral b
+-}
+
+rgbValue :: RGBi -> Int
+rgbValue (RGBi r g b) = sub1 $ fromIntegral rgb * (-1)
+  where
+    r'   :: Word32
+    r'   = (lowRes r) `shiftL` 12
+    g'   = (lowRes g) `shiftL` 6
+    b'   = (lowRes b)
+    rgb  = r' + g' + b'
+
+    sub1 = (subtract 1)
 
  
 
 -- | Go from 8 bit to 6 bit - range [0..255] changes to [0..63].
 --
 lowRes :: Word8 -> Word32
-lowRes i = ceiling $ (63.0 :: Double) * ((fromIntegral i) / 255.0)
+lowRes i = floor $ (63.0 :: Double) * ((fromIntegral i) / 255.0)
 
 
 
