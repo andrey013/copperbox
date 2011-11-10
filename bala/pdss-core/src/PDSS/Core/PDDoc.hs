@@ -27,6 +27,7 @@ module PDSS.Core.PDDoc
   , rec_floatatom0
   , rec_obj
   , rec_bang
+  , rec_vu
   , rec_cnv
   , rec_text
   
@@ -74,26 +75,27 @@ font COURIER   = int 0
 font HELVETICA = int 1
 font TIMES     = int 2
 
-sendRecvLabelE :: SRL -> Doc
-sendRecvLabelE srl = 
-  hsep $ map mbEmpty $ [ srl_send srl, srl_receive srl, srl_label srl ]
+sendD :: SRL -> Doc
+sendD = mbDash . srl_send
 
-sendRecvLabelD :: SRL -> Doc
-sendRecvLabelD srl = 
-  hsep $ map mbDash $ [ srl_send srl, srl_receive srl, srl_label srl ]
+recvD :: SRL -> Doc
+recvD = mbDash . srl_recv
+
+labelD :: SRL -> Doc
+labelD = mbDash . srl_label
+
+sendE :: SRL -> Doc
+sendE = mbEmpty . srl_send
+
+recvE :: SRL -> Doc
+recvE = mbEmpty . srl_recv
+
+labelE :: SRL -> Doc
+labelE = mbEmpty . srl_label
 
 
--- This is wrong - different ojects display different props.
---
-displayProps :: DisplayProps -> Doc
-displayProps props = 
-   font (obj_font props) <+> int (obj_fontsize props) 
-                         <+> int (rgbValue $ obj_bgcolour props)
-                         <+> int (rgbValue $ obj_fgcolour props)
-                         <+> int (rgbValue $ obj_lblcolour props)
-  
-
---   int [font] [fontsize] [bg_color] [fg_color] [label_color] 
+rgbDoc :: RGBi -> Doc
+rgbDoc = int . rgbValue
 
 --------------------------------------------------------------------------------
 -- Print records
@@ -128,10 +130,18 @@ rec_coords xfrom yto xto yfrom w h gop =
 
 rec_floatatom0 :: Int -> Int -> Int -> Int -> Double -> Double -> Doc
 rec_floatatom0 x y w h dmin dmax =
-    recX "floatatom" [ int x, int y, int w, int h
-                     , dtruncFmt dmin, dtruncFmt dmax
+    recX "floatatom" [ int x
+                     , int y
+                     , int w
+                     , int h
+                     , dtruncFmt dmin
+                     , dtruncFmt dmax
                      , posn LEFT
-                     , mbDash Nothing, mbDash Nothing, mbDash Nothing ]
+                     , mbDash Nothing
+                     , mbDash Nothing
+                     , mbDash Nothing 
+                     ]
+
 
 
 rec_obj :: Int -> Int -> String -> [Doc] -> Doc
@@ -139,27 +149,77 @@ rec_obj x y name params =
     recX "obj" (int x : int y : text name : params)
 
 
+
+-- | Bang
+--
+-- > #X obj [2 params] bng [14 params]
+-- 
 rec_bang :: Int -> Int 
          -> Int -> Integer -> Int -> Int 
          -> SRL -> Int -> Int -> DisplayProps -> Doc
 rec_bang x y sz hold interrupt dflt srl xoff yoff props = 
-    rec_obj x y "bng" [ int sz, integer hold, int interrupt, int dflt
-                      , sendRecvLabelE srl
-                      , int xoff,   int yoff
-                      , displayProps props ]
+    rec_obj x y "bng" [ int sz
+                      , integer hold
+                      , int interrupt
+                      , int dflt
+                      , sendE srl
+                      , recvE srl
+                      , labelE srl
+                      , int xoff
+                      , int yoff
+                      , font $ obj_font props
+                      , int $ obj_fontsize props
+                      , rgbDoc $ obj_bgcolour props
+                      , rgbDoc $ obj_fgcolour props
+                      , rgbDoc $ obj_lblcolour props
+                      ]
 
+
+-- | VU meter
+-- 
+-- #X obj [2 params] vu [12 params]
+rec_vu :: Int -> Int 
+       -> Int -> Int
+       -> SRL -> Int -> Int -> DisplayProps -> Bool -> Doc
+rec_vu x y w h srl xoff yoff props logbool = 
+    rec_obj x y "vu" [ int w
+                     , int h
+                     , sendE srl
+                     , recvE srl
+                     , labelE srl
+                     , int xoff
+                     , int yoff
+                     , font $ obj_font props
+                     , int $ obj_fontsize props
+                     , rgbDoc $ obj_bgcolour props
+                     , rgbDoc $ obj_lblcolour props
+                     , intBool logbool
+                     ]
+
+
+
+-- | Canvas
+-- 
+-- > #X obj [2 params] cnv [13 params]
+-- 
 rec_cnv :: Int -> Int 
         -> Int -> Int -> Int  
         -> SRL -> Int -> Int -> DisplayProps -> Doc
 rec_cnv x y sz w h srl xoff yoff props = 
-    rec_obj x y "cnv" [ int sz,     int w,      int h
-                      , sendRecvLabelE srl
-                      , int xoff,   int yoff
+    rec_obj x y "cnv" [ int sz
+                      , int w
+                      , int h
+                      , sendE srl
+                      , recvE srl
+                      , labelE srl
+                      , int xoff
+                      , int yoff
                       , font $ obj_font props
                       , int $ obj_fontsize props
-                      , int $ rgbValue $ obj_bgcolour props
-                      , int $ rgbValue $ obj_lblcolour props
-                      , int 0 ]
+                      , rgbDoc $ obj_bgcolour props
+                      , rgbDoc $ obj_lblcolour props
+                      , int 0 
+                      ]
 
 
 

@@ -44,7 +44,7 @@ data Font = COURIER | HELVETICA | TIMES
 --
 data SRL = SRL
    { srl_send       :: Maybe String
-   , srl_receive    :: Maybe String
+   , srl_recv       :: Maybe String
    , srl_label      :: Maybe String
    }
 

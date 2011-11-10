@@ -40,16 +40,11 @@ module PDSS.Core.Colour
 import PDSS.Core.Utils.FormatCombinators
 
 import Data.Bits
-import Data.Int
 import Data.Word
 
--- | Colours levels are in the range [0..255]
+-- | Colours levels are in the range [0..255] - 8 bit colour - 
+-- although PD only supports 6 bit colour [0..63].
 -- 
--- Note - this is the format used by SVG, whereas PostScript uses 
--- [0..1]. 
---
--- It is more efficient to prefer SVG here.
---
 data RGBi = RGBi !Word8 !Word8 !Word8
   deriving (Eq,Ord,Show)
 
@@ -72,23 +67,10 @@ instance Format RGBi where
 --
 -- > 2010-02 - pd file format: color settings
 --
--- And zac hilbert message here:
+-- And the message from zac hilbert here:
 -- 
 -- http://puredata.hurleur.com/sujet-335-puredata-patchfile-format
 --
-{-
-rgbValue :: RGBi -> Int
-rgbValue (RGBi r g b) = 
-    fromIntegral $   (red   `div` (-4) * 2^12) 
-                   + (green `div` (-4) * 2^6) 
-                   + (blue * (-1))
-  where
-    red, green, blue :: Int32
-    red   = fromIntegral r
-    green = fromIntegral g
-    blue  = fromIntegral b
--}
-
 rgbValue :: RGBi -> Int
 rgbValue (RGBi r g b) = sub1 $ fromIntegral rgb * (-1)
   where
