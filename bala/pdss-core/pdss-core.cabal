@@ -1,0 +1,48 @@
+name:             pdss-core
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Generate Pure Data patches.
+description:
+  Generate Pure Data patches.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo101.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5
+
+  exposed-modules:
+    PDSS.Core.Colour,
+    PDSS.Core.Context,
+    PDSS.Core.InternalTypes,
+    PDSS.Core.Monad
+ 
+  other-modules:
+    PDSS.Core.PDDoc,
+    PDSS.Core.Utils.Common,
+    PDSS.Core.Utils.FormatCombinators
+
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  

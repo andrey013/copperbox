@@ -22,8 +22,9 @@ module PDSS.Core.InternalTypes
   , Font(..)
   , SRL(..)
   , DisplayProps(..)
+  , Point(..)
 
-  , Bang(..)
+--  , Bang(..)
 
   , default_display
   , noSRL
@@ -41,6 +42,8 @@ data Font = COURIER | HELVETICA | TIMES
   deriving (Enum,Eq,Ord,Show)
 
 -- | Send - Receive - Label
+-- 
+-- Labels should not contain spaces.
 --
 data SRL = SRL
    { srl_send       :: Maybe String
@@ -61,6 +64,9 @@ data DisplayProps = DisplayProps
   deriving (Eq,Ord,Show)   
 
 
+
+data Point = Point { point_x :: !Int, point_y :: !Int }
+  deriving (Eq,Ord,Show)
 
 
 newtype Bang = Bang Int
