@@ -3,26 +3,42 @@
 module Demo01 where
 
 import PDSS.Core.Colour
+import PDSS.Core.Context
 import PDSS.Core.Monad
+import PDSS.Core.ObjectBasis
+import PDSS.Core.Objects
+import PDSS.Core.Types
 
 import Data.Bits
 import Data.Word
 
+import Prelude hiding ( print )
+import System.Directory
+
+
+output :: FilePath -> String -> IO ()
+output file_path ss = do
+    createDirectoryIfMissing True "./out/"
+    writeFile file_path ss
+
 demo01 :: IO ()
-demo01 = writeFile "demo01.pd" $ run (467,185,466,155) 12 $ do 
-    text 94 44 "hello pd"
-    b1 <- bang 20 20 
+demo01 = output "./out/demo01.pd" $ run (467,185,466,155) 12 $ do 
+    a <- drawl (P2 30 41) $ floatatom 5
+    b <- drawl (P2 60 88) $ print
+    drawl (P2 94 44) $ text "<--- type in numbers and press 'enter'"
+    drawl (P2 104 87) $ text "<--- this prints to stdout"
+    drawc (outport0 a) (inport0 b) $ connect
     return ()
 
 
 
 
 demo02 :: IO ()
-demo02 = writeFile "demo02.pd" $ run (467,185,420,360) 12 $ do 
-    canvas 10 10  30 60 black
-    canvas 10 90  30 60 red
-    canvas 10 170 30 60 green
-    canvas 10 250 30 60 blue
+demo02 =  output "./out/demo02.pd" $ run (467,185,420,360) 12 $ do 
+    localize (bg_colour black) $ canvas 10 10  30 60
+    localize (bg_colour red)   $ canvas 10 90  30 60
+    localize (bg_colour green) $ canvas 10 170 30 60
+    localize (bg_colour blue)  $ canvas 10 250 30 60
     return ()
 
 

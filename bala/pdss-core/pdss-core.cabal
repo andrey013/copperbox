@@ -32,7 +32,7 @@ library
     PDSS.Core.Monad
  
   other-modules:
-    PDSS.Core.PDDoc,
+    PDSS.Core.PdDoc,
     PDSS.Core.Utils.Common,
     PDSS.Core.Utils.FormatCombinators
 

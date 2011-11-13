@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  PDSS.Core.PDDoc
+-- Module      :  PDSS.Core.PdDoc
 -- Copyright   :  (c) Stephen Tetley 2011
 -- License     :  BSD3
 --
@@ -10,12 +10,12 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC
 --
--- Gen monad
+-- Doc builders.
 --
 --------------------------------------------------------------------------------
 
 
-module PDSS.Core.PDDoc
+module PDSS.Core.PdDoc
   ( 
 
     rec_array
@@ -75,10 +75,10 @@ posn RIGHT  = int 1
 posn TOP    = int 2
 posn BOTTOM = int 3
 
-font :: Font -> Doc
-font COURIER   = int 0
-font HELVETICA = int 1
-font TIMES     = int 2
+fontface :: FontFace -> Doc
+fontface COURIER   = int 0
+fontface HELVETICA = int 1
+fontface TIMES     = int 2
 
 sendD :: SRL -> Doc
 sendD = mbDash . srl_send
@@ -232,7 +232,7 @@ rec_bang x y sz hold interrupt dflt srl xoff yoff props =
                       , labelE srl
                       , int xoff
                       , int yoff
-                      , font $ obj_font props
+                      , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props
                       , rgbDoc $ obj_fgcolour props
@@ -254,7 +254,7 @@ rec_toggle x y sz init_load srl xoff yoff props init_val dflt_val=
                       , labelE srl
                       , int xoff
                       , int yoff
-                      , font $ obj_font props
+                      , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props
                       , rgbDoc $ obj_fgcolour props
@@ -279,7 +279,7 @@ rec_vu x y w h srl xoff yoff props logbool =
                      , labelE srl
                      , int xoff
                      , int yoff
-                     , font $ obj_font props
+                     , fontface $ obj_fontface props
                      , int $ obj_fontsize props
                      , rgbDoc $ obj_bgcolour props
                      , rgbDoc $ obj_lblcolour props
@@ -303,7 +303,7 @@ rec_cnv x y sz w h srl xoff yoff props =
                       , labelE srl
                       , int xoff
                       , int yoff
-                      , font $ obj_font props
+                      , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props
                       , rgbDoc $ obj_lblcolour props

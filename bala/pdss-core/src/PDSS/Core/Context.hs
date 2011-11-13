@@ -1,3 +1,4 @@
+{-# LANGUAGE KindSignatures             #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -22,27 +23,96 @@ module PDSS.Core.Context
 
   , standard_context
 
+  , ContextM(..)
+
+  -- * Getters
+  , getDisplayProps
+
+  -- * Setters
+  , set_font
+  , font_size
+  , font_face
+
+  , bg_colour
+  , fg_colour
+  , label_colour
+  
+
   ) where 
 
 import PDSS.Core.Colour
 import PDSS.Core.InternalTypes
 
+import Control.Applicative
+
 data PdContext = PdContext
-    { ctx_font          :: Font
-    , ctx_font_size     :: Int
-    , ctx_bg_colour     :: RGBi
-    , ctx_fg_colour     :: RGBi
-    , ctx_lbl_colour    :: RGBi
+    { ctx_display_props :: DisplayProps
     }
 
 
 type PdContextF = PdContext -> PdContext
 
 standard_context :: PdContext
-standard_context = PdContext
-    { ctx_font          = COURIER
-    , ctx_font_size     = 12
-    , ctx_bg_colour     = white
-    , ctx_fg_colour     = black
-    , ctx_lbl_colour    = black
-    }
+standard_context = 
+    PdContext { ctx_display_props = default_props }
+
+
+--------------------------------------------------------------------------------
+
+-- | 'ContextM' is equivalent to the to the @MonadReader@ 
+-- class, but the environment type is fixed to 'PdContext'.
+--
+-- To avoid name clashes with @mtl@ this scheme is used:
+--
+-- > askCtx   = ask
+-- > asksCtx  = asks
+-- > localize = local
+--
+class (Applicative m, Monad m) => ContextM (m :: * -> *) where
+  askCtx    :: m PdContext
+  asksCtx   :: (PdContext -> a) -> m a
+  localize  :: (PdContext -> PdContext) -> m a -> m a
+
+  asksCtx f  = f <$> askCtx
+
+
+--------------------------------------------------------------------------------
+-- Getters
+
+getDisplayProps :: ContextM m => m DisplayProps
+getDisplayProps = asksCtx ctx_display_props
+
+
+
+
+--------------------------------------------------------------------------------
+-- Setters
+
+-- helpers 
+
+updateDisplayProps :: (DisplayProps -> DisplayProps) -> PdContextF
+updateDisplayProps fn = 
+    (\s i -> s { ctx_display_props = fn i }) <*> ctx_display_props
+
+
+set_font :: FontFace -> Int -> PdContextF
+set_font ff sz = updateDisplayProps $ \s -> s { obj_fontface  = ff
+                                              , obj_fontsize  = sz }
+
+font_face :: FontFace -> PdContextF
+font_face ff = updateDisplayProps $ \s -> s { obj_fontface  = ff }
+
+font_size :: Int -> PdContextF
+font_size sz = updateDisplayProps $ \s -> s { obj_fontsize  = sz }
+
+
+
+bg_colour :: RGBi -> PdContextF 
+bg_colour rgb = updateDisplayProps $ \s -> s { obj_bgcolour = rgb }
+
+fg_colour :: RGBi -> PdContextF 
+fg_colour rgb = updateDisplayProps $ \s -> s { obj_fgcolour = rgb }
+
+
+label_colour :: RGBi -> PdContextF 
+label_colour rgb = updateDisplayProps $ \s -> s { obj_lblcolour = rgb }
