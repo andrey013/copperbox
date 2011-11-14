@@ -27,6 +27,7 @@ module PDSS.Core.Context
 
   -- * Getters
   , getDisplayProps
+  , getLabelOffsets
 
   -- * Setters
   , set_font
@@ -47,6 +48,8 @@ import Control.Applicative
 
 data PdContext = PdContext
     { ctx_display_props :: DisplayProps
+    , ctx_label_xoff    :: Int
+    , ctx_label_yoff    :: Int
     }
 
 
@@ -54,7 +57,10 @@ type PdContextF = PdContext -> PdContext
 
 standard_context :: PdContext
 standard_context = 
-    PdContext { ctx_display_props = default_props }
+    PdContext { ctx_display_props = default_props
+              , ctx_label_xoff    = 0
+              , ctx_label_yoff    = (-6)
+              }
 
 
 --------------------------------------------------------------------------------
@@ -82,6 +88,8 @@ class (Applicative m, Monad m) => ContextM (m :: * -> *) where
 getDisplayProps :: ContextM m => m DisplayProps
 getDisplayProps = asksCtx ctx_display_props
 
+getLabelOffsets :: ContextM m => m (Int,Int)
+getLabelOffsets = (,) <$> asksCtx ctx_label_xoff <*> asksCtx ctx_label_yoff
 
 
 

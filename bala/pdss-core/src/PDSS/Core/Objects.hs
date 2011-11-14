@@ -19,16 +19,27 @@ module PDSS.Core.Objects
   ( 
 
     connect 
-  , text
+
+  , Floatatom
+  , floatatom
+
+  , Msg
+  , msg
+
 
   , Bang
   , bang
 
+  , Toggle
+  , toggle
+
   , Print
   , print
 
-  , Floatatom
-  , floatatom
+
+  , text
+
+
 
   ) where 
 
@@ -37,9 +48,13 @@ import PDSS.Core.Context
 import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
 import PDSS.Core.PdDoc
+import PDSS.Core.Utils.FormatCombinators
 
 import Prelude hiding ( print ) 
 
+
+
+-- Connect
 
 connect :: ConnectorGraphic 
 connect = promoteConn $ \p0 p1 -> 
@@ -47,11 +62,40 @@ connect = promoteConn $ \p0 p1 ->
                               (parent_obj p1) (port_num p1)
 
 
-text :: String -> LocGraphic
-text ss = promoteLoc $ \(P2 x y) -> 
-    primElement $ rec_text x y ss
+--------------------------------------------------------------------------------
+
+newtype Floatatom = Floatatom { getFloatatom :: Obj }
+
+-- | Width is probably number of chars...
+floatatom :: Int -> LocImage Floatatom
+floatatom w = promoteLoc $ \pt@(P2 x y) ->
+    primObject (rec_floatatom x y w 0 0 LEFT noSRL)
+               (\i -> Floatatom $ Obj { obj_id = i
+                                      , obj_bb = BBox pt (P2 (x+w) (y + 10)) }) 
 
 
+instance HasID Floatatom where
+  getID = obj_id . getFloatatom
+
+
+instance HasOut0 Floatatom
+
+
+--------------------------------------------------------------------------------
+
+newtype Msg = Msg { getMsg :: Obj }
+
+msg :: [String] -> LocImage Msg
+msg xs = promoteLoc $ \pt@(P2 x y) -> 
+    primObject (rec_msg x y $ map string xs)
+               (\i -> Msg $ Obj { obj_id = i
+                                , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
+
+
+
+
+
+--------------------------------------------------------------------------------
 
 
 newtype Bang = Bang { getBang :: Obj }
@@ -66,6 +110,32 @@ bang = promoteLoc $ \pt@(P2 x y) ->
 
 instance HasID Bang where
   getID = obj_id . getBang
+
+
+
+
+
+--------------------------------------------------------------------------------
+
+newtype Toggle = Toggle { getToggle :: Obj }
+
+
+toggle :: Int -> LocImage Toggle
+toggle sz = promoteLoc $ \pt@(P2 x y) ->
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    primObject (rec_toggle x y sz 1 noSRL xoff yoff props 234 234)
+               (\i -> Toggle $ Obj { obj_id = i
+                                 , obj_bb = BBox pt (P2 (x+15) (y+15)) })
+
+
+instance HasID Toggle where
+  getID = obj_id . getToggle
+
+instance HasOut0 Toggle
+
+
+--------------------------------------------------------------------------------
 
 
 newtype Print = Print { getPrint :: Obj }
@@ -84,18 +154,11 @@ instance HasID Print where
 instance HasIn0 Print
 
 
-newtype Floatatom = Floatatom { getFloatatom :: Obj }
-
--- | Width is probably number of chars...
-floatatom :: Int -> LocImage Floatatom
-floatatom w = promoteLoc $ \pt@(P2 x y) ->
-    primObject (rec_floatatom x y w 0 0 LEFT noSRL)
-               (\i -> Floatatom $ Obj { obj_id = i
-                                      , obj_bb = BBox pt (P2 (x+w) (y + 10)) }) 
 
 
-instance HasID Floatatom where
-  getID = obj_id . getFloatatom
+
+text :: String -> LocGraphic
+text ss = promoteLoc $ \(P2 x y) -> 
+    primElement $ rec_text x y ss
 
 
-instance HasOut0 Floatatom

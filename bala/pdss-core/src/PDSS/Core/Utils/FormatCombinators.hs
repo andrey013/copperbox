@@ -35,7 +35,7 @@ module PDSS.Core.Utils.FormatCombinators
   , hsep
   , vcat
 
-  , text
+  , string
   , char
   , int
   , integer
@@ -193,8 +193,8 @@ vcat (x:xs) = step x xs
 -- The string should not contain newlines (though this is not 
 -- enforced). 
 --
-text :: String -> Doc
-text = Doc1 . showString
+string :: String -> Doc
+string = Doc1 . showString
 
 
 -- | Create a document from a literal character.
@@ -205,8 +205,6 @@ char :: Char -> Doc
 char = Doc1 . showChar
 
 -- | Show the Int as a Doc.
---
--- > int  = text . show
 --
 int :: Int -> Doc
 int i | i < 0     = Doc1 $ ('-' :) .  showInt (abs i)
@@ -240,9 +238,9 @@ double = Doc1 . showFloat
 -- No trucation occurs if the value has more than 4 digits.
 --
 hex4 :: Int -> Doc
-hex4 n | n < 0x0010 = text "000" <> showsDoc (showHex n)
-       | n < 0x0100 = text "00"  <> showsDoc (showHex n)
-       | n < 0x1000 = text "0"   <> showsDoc (showHex n)
+hex4 n | n < 0x0010 = string "000" <> showsDoc (showHex n)
+       | n < 0x0100 = string "00"  <> showsDoc (showHex n)
+       | n < 0x1000 = string "0"   <> showsDoc (showHex n)
        | otherwise  = showsDoc (showHex n)
  
 -- | Create a Doc containing a single space character.
@@ -295,16 +293,16 @@ padr i c df = step (length $ df [])
 fillStringR :: Int -> String -> Doc
 fillStringR i s = step (length s)
   where
-    step n | n >= i = text s
-    step n          = text s <> text (replicate (i-n) ' ')
+    step n | n >= i = string s
+    step n          = string s <> string (replicate (i-n) ' ')
 
 -- | Left-padding version of 'fillStringR'.
 --
 fillStringL :: Int -> String -> Doc
 fillStringL i s = step (length s)
   where
-    step n | n >= i = text s
-    step n          = text (replicate (i-n) ' ') <> text s
+    step n | n >= i = string s
+    step n          = string (replicate (i-n) ' ') <> string s
 
 --------------------------------------------------------------------------------
 

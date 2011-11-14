@@ -48,7 +48,7 @@ import PDSS.Core.Utils.FormatCombinators
 
 record :: Char -> String -> [Doc] -> Doc
 record ch ss params = 
-    char '#' <> char ch <+> text ss <+> hsep params <> char ';'
+    char '#' <> char ch <+> string ss <+> hsep params <> char ';'
 
 recA :: [Doc] -> Doc
 recA params = char '#' <> hsep params <> char ';'
@@ -64,10 +64,10 @@ intBool False = int 0
 intBool True  = int 1
 
 mbEmpty :: Maybe String -> Doc
-mbEmpty = maybe (text "empty") text
+mbEmpty = maybe (string "empty") string
 
 mbDash :: Maybe String -> Doc
-mbDash = maybe (char '-') text
+mbDash = maybe (char '-') string
 
 posn :: LabelPosition -> Doc
 posn LEFT   = int 0
@@ -113,7 +113,7 @@ rgbDoc = int . rgbValue
 -- 
 rec_array :: String -> Int -> Bool -> Doc
 rec_array ss sz save = 
-    recX "array" [text ss, int sz, text "float", intBool save]
+    recX "array" [string ss, int sz, string "float", intBool save]
 
 
 
@@ -153,7 +153,7 @@ rec_canvas  x y w h name ool =
                   , int y
                   , int w
                   , int h
-                  , text name
+                  , string name
                   , intBool ool
                   ]
 -- | Connect
@@ -316,7 +316,7 @@ rec_cnv x y sz w h srl xoff yoff props =
 --
 rec_obj :: Int -> Int -> String -> [Doc] -> Doc
 rec_obj x y name params = 
-    recX "obj" (int x : int y : text name : params)
+    recX "obj" (int x : int y : string name : params)
 
 
 -- | Restore
@@ -335,8 +335,8 @@ rec_restore :: Int -> Int -> String -> String -> Doc
 rec_restore x y typ ss = 
     recX "restore" [ int x
                    , int y
-                   , text typ
-                   , text ss
+                   , string typ
+                   , string ss
                    ]
 
 
@@ -371,7 +371,7 @@ rec_text :: Int -> Int -> String -> Doc
 rec_text x y ss = 
     recX "text" [ int x
                 , int y
-                , text ss
+                , string ss
                 ]
 
 

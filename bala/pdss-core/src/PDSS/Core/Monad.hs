@@ -36,7 +36,7 @@ import PDSS.Core.Context
 import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
 import PDSS.Core.PdDoc
-import PDSS.Core.Utils.FormatCombinators hiding ( text )
+import PDSS.Core.Utils.FormatCombinators
 
 
 import Control.Applicative hiding ( empty ) 

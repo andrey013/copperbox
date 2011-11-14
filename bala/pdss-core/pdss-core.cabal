@@ -26,15 +26,20 @@ library
   build-depends:      base              <  5
 
   exposed-modules:
+    PDSS.Core.BoundingBox,
     PDSS.Core.Colour,
     PDSS.Core.Context,
-    PDSS.Core.InternalTypes,
-    PDSS.Core.Monad
+    PDSS.Core.Monad,
+    PDSS.Core.ObjectBasis,
+    PDSS.Core.Objects,
+    PDSS.Core.Types
  
   other-modules:
+    PDSS.Core.InternalTypes,
     PDSS.Core.PdDoc,
     PDSS.Core.Utils.Common,
-    PDSS.Core.Utils.FormatCombinators
+    PDSS.Core.Utils.FormatCombinators,
+    PDSS.Core.Utils.HList
 
   extensions:
     

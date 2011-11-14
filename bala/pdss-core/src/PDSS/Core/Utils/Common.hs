@@ -26,7 +26,7 @@ module PDSS.Core.Utils.Common
   ) where
 
 
-import qualified PDSS.Core.Utils.FormatCombinators as Fmt
+import PDSS.Core.Utils.FormatCombinators
 
 
 
@@ -34,8 +34,8 @@ import qualified PDSS.Core.Utils.FormatCombinators as Fmt
 -- PS Unit
 
 -- 
-dtruncFmt :: Double -> Fmt.Doc
-dtruncFmt = Fmt.text . truncateDouble
+dtruncFmt :: Double -> Doc
+dtruncFmt = string . truncateDouble
 
 
 -- | Truncate the printed decimal representation of a Double.

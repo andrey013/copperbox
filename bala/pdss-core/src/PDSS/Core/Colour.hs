@@ -53,8 +53,8 @@ data RGBi = RGBi !Word8 !Word8 !Word8
 -- instances
 
 instance Format RGBi where
-  format (RGBi 0   0   0)    = text "*black*"
-  format (RGBi 255 255 255)  = text "*white*"
+  format (RGBi 0   0   0)    = string "*black*"
+  format (RGBi 255 255 255)  = string "*white*"
   format (RGBi r   g   b)    = integral r <> comma <> integral g 
                                           <> comma <> integral b
 
