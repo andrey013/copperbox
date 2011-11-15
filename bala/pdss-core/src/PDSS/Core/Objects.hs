@@ -18,7 +18,11 @@
 module PDSS.Core.Objects
   ( 
 
-    connect 
+
+    Array
+  , array
+
+  , connect 
 
   , Floatatom
   , floatatom
@@ -37,6 +41,11 @@ module PDSS.Core.Objects
   , print
 
 
+  , Object2_1
+  , object2_1
+
+  , int_literal
+
   , text
 
 
@@ -54,6 +63,26 @@ import Prelude hiding ( print )
 
 
 
+
+
+--------------------------------------------------------------------------------
+-- Arrays
+
+
+-- Array has no bounding box so it cannot wrap the Obj object.
+--
+newtype Array = Array { _arr_id :: Int }
+
+
+array :: String -> Int -> Int -> Image Array
+array ss sz save = primObject mkDoc Array
+  where
+    mkDoc = rec_array ss sz save
+
+
+
+
+--------------------------------------------------------------------------------
 -- Connect
 
 connect :: ConnectorGraphic 
@@ -92,7 +121,12 @@ msg xs = promoteLoc $ \pt@(P2 x y) ->
                                 , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
 
 
+instance HasID Msg where
+  getID = obj_id . getMsg
 
+
+instance HasIn0  Msg
+instance HasOut0 Msg
 
 
 --------------------------------------------------------------------------------
@@ -138,6 +172,13 @@ instance HasOut0 Toggle
 --------------------------------------------------------------------------------
 
 
+-- Potentially Print should not be a newtype.
+-- 
+-- print is an obj with one in and no out ports.
+--
+-- There will be a lot of boilerplate if every object is newtype wrapped.
+--
+
 newtype Print = Print { getPrint :: Obj }
 
 -- | TODO - correct bounding box...
@@ -154,7 +195,30 @@ instance HasID Print where
 instance HasIn0 Print
 
 
+--------------------------------------------------------------------------------
 
+newtype Object2_1 = Object2_1 { getObject2_1 :: Obj }
+
+object2_1 :: [String] -> LocImage Object2_1 
+object2_1 []          = error "object2_1 - empty list."
+object2_1 (name:args) = promoteLoc $ \pt@(P2 x y) ->
+    primObject (rec_obj x y name (map string args))
+               (\i -> Object2_1 $ Obj { obj_id = i
+                                      , obj_bb = BBox pt (P2 x y) }) 
+
+
+
+instance HasID Object2_1 where
+  getID = obj_id . getObject2_1
+
+instance HasIn0 Object2_1
+instance HasIn1 Object2_1
+
+instance HasOut0 Object2_1
+
+
+int_literal :: Int -> LocImage Object2_1
+int_literal i = object2_1 ["int", show i]
 
 
 text :: String -> LocGraphic

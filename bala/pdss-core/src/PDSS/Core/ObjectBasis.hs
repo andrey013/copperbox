@@ -56,10 +56,18 @@ module PDSS.Core.ObjectBasis
   , HasID(..)
 
   , HasIn0
+  , HasIn1
+  , HasIn2
   , HasOut0
+  , HasOut1
+  , HasOut2
 
   , inport0
+  , inport1
+  , inport2
   , outport0
+  , outport1
+  , outport2
 
   ) where 
 
@@ -410,14 +418,30 @@ class HasID t where
 
 
 
-class HasID t => HasIn0 t
+class HasID  t      => HasIn0 t
+class HasIn0 t      => HasIn1 t
+class HasIn1 t      => HasIn2 t
 
-class HasID t => HasOut0 t
+class HasID   t     => HasOut0 t
+class HasOut0 t     => HasOut1 t
+class HasOut1 t     => HasOut2 t
 
 
 
 inport0 :: HasIn0 t => t -> Port
 inport0 t = Port { parent_obj = getID t, port_num = 0 }
 
+inport1 :: HasIn1 t => t -> Port
+inport1 t = Port { parent_obj = getID t, port_num = 1 }
+
+inport2 :: HasIn2 t => t -> Port
+inport2 t = Port { parent_obj = getID t, port_num = 2 }
+
 outport0 :: HasOut0 t => t -> Port
 outport0 t = Port { parent_obj = getID t, port_num = 0 }
+
+outport1 :: HasOut1 t => t -> Port
+outport1 t = Port { parent_obj = getID t, port_num = 1 }
+
+outport2 :: HasOut2 t => t -> Port
+outport2 t = Port { parent_obj = getID t, port_num = 2 }

@@ -111,9 +111,11 @@ rgbDoc = int . rgbValue
 --
 -- > #X array [2 params] float [1 param]
 -- 
-rec_array :: String -> Int -> Bool -> Doc
+-- Note - PD file format ref is out of date for the save flag.
+-- 
+rec_array :: String -> Int -> Int -> Doc
 rec_array ss sz save = 
-    recX "array" [string ss, int sz, string "float", intBool save]
+    recX "array" [string ss, int sz, string "float", int save]
 
 
 

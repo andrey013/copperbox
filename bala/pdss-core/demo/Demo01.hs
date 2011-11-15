@@ -42,6 +42,9 @@ demo02 =  output "./out/demo02.pd" $ run (467,185,420,360) 12 $ do
     return ()
 
 
+{-
+
+-- Testing...
 
 fromI :: Int -> RGBi
 fromI i = RGBi r g b
@@ -81,3 +84,4 @@ test04 = fromI (-4160)
 
 
 
+-}
