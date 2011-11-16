@@ -41,10 +41,14 @@ module PDSS.Core.Objects
   , print
 
 
-  , Object2_1
-  , object2_1
+  , PdInt
+  , int
 
-  , int_literal
+  , Ftom
+  , ftom
+
+  , Mtof
+  , mtof
 
   , text
 
@@ -57,7 +61,7 @@ import PDSS.Core.Context
 import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
 import PDSS.Core.PdDoc
-import PDSS.Core.Utils.FormatCombinators
+import qualified PDSS.Core.Utils.FormatCombinators as PP
 
 import Prelude hiding ( print ) 
 
@@ -116,7 +120,7 @@ newtype Msg = Msg { getMsg :: Obj }
 
 msg :: [String] -> LocImage Msg
 msg xs = promoteLoc $ \pt@(P2 x y) -> 
-    primObject (rec_msg x y $ map string xs)
+    primObject (rec_msg x y $ map PP.string xs)
                (\i -> Msg $ Obj { obj_id = i
                                 , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
 
@@ -197,29 +201,64 @@ instance HasIn0 Print
 
 --------------------------------------------------------------------------------
 
-newtype Object2_1 = Object2_1 { getObject2_1 :: Obj }
 
-object2_1 :: [String] -> LocImage Object2_1 
-object2_1 []          = error "object2_1 - empty list."
-object2_1 (name:args) = promoteLoc $ \pt@(P2 x y) ->
-    primObject (rec_obj x y name (map string args))
-               (\i -> Object2_1 $ Obj { obj_id = i
-                                      , obj_bb = BBox pt (P2 x y) }) 
+newtype PdInt = PdInt { getPdInt :: Obj }
 
 
+-- | TODO - correct bounding box...
+--
+int :: Int -> LocImage PdInt
+int n = promoteLoc $ \pt@(P2 x y) ->
+    primObject (rec_obj x y "int" [PP.int n])
+               (\i -> PdInt $ Obj { obj_id = i
+                                  , obj_bb = BBox pt (P2 x y) }) 
 
-instance HasID Object2_1 where
-  getID = obj_id . getObject2_1
+instance HasID PdInt where
+  getID = obj_id . getPdInt
 
-instance HasIn0 Object2_1
-instance HasIn1 Object2_1
+instance HasIn0 PdInt
+instance HasIn1 PdInt
 
-instance HasOut0 Object2_1
+instance HasOut0 PdInt
 
 
-int_literal :: Int -> LocImage Object2_1
-int_literal i = object2_1 ["int", show i]
 
+--------------------------------------------------------------------------------
+
+newtype Ftom = Ftom { getFtom :: Obj }
+
+ftom :: LocImage Ftom
+ftom = promoteLoc $ \pt@(P2 x y) ->
+    primObject (rec_obj x y "ftom" [])
+               (\i -> Ftom $ Obj { obj_id = i
+                                 , obj_bb = BBox pt (P2 x y) }) 
+
+instance HasID Ftom where
+  getID = obj_id . getFtom
+
+instance HasIn0 Ftom
+
+instance HasOut0 Ftom
+
+
+
+
+newtype Mtof = Mtof { getMtof :: Obj }
+
+mtof :: LocImage Mtof
+mtof = promoteLoc $ \pt@(P2 x y) ->
+    primObject (rec_obj x y "mtof" [])
+               (\i -> Mtof $ Obj { obj_id = i
+                                 , obj_bb = BBox pt (P2 x y) }) 
+
+instance HasID Mtof where
+  getID = obj_id . getMtof
+
+instance HasIn0 Mtof
+
+instance HasOut0 Mtof
+
+--------------------------------------------------------------------------------
 
 text :: String -> LocGraphic
 text ss = promoteLoc $ \(P2 x y) -> 

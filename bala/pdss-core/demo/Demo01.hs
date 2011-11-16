@@ -9,8 +9,8 @@ import PDSS.Core.ObjectBasis
 import PDSS.Core.Objects
 import PDSS.Core.Types
 
-import Data.Bits
-import Data.Word
+-- import Data.Bits
+-- import Data.Word
 
 import Prelude hiding ( print )
 import System.Directory
