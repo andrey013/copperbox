@@ -20,6 +20,7 @@ module PDSS.Core.Types
   ( 
 
     LabelPosition(..)
+  , FontSize(..)
   , FontFace(..)
   , Point(..)
 

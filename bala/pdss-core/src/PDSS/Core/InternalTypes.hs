@@ -28,6 +28,8 @@ module PDSS.Core.InternalTypes
 
   , unwrapPrimitive
 
+  , FontSize(..)
+
   , ZOrder(..)  
   , LabelPosition(..)
   , FontFace(..)
@@ -77,6 +79,11 @@ instance Monoid Primitive where
 unwrapPrimitive :: Primitive -> Doc
 unwrapPrimitive = vcat . toListH . getPrimitive
   
+
+data FontSize = FONT_08 | FONT_10 | FONT_12 | FONT_16
+              | FONT_24 | FONT_36
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
 
 -- | ZOrder of drawing.
 --

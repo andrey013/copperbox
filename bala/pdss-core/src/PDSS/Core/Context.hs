@@ -26,13 +26,16 @@ module PDSS.Core.Context
   , ContextM(..)
 
   -- * Getters
+  , getFontSize
   , getDisplayProps
   , getLabelOffsets
 
   -- * Setters
-  , set_font
+
   , font_size
-  , font_face
+  , set_label_font
+  , label_font_size
+  , label_font_face
 
   , bg_colour
   , fg_colour
@@ -46,8 +49,13 @@ import PDSS.Core.InternalTypes
 
 import Control.Applicative
 
+
+-- | Canvas has a font size that is inherited by objects 
+-- and comments (text).
+--
 data PdContext = PdContext
-    { ctx_display_props :: DisplayProps
+    { ctx_font_size     :: FontSize
+    , ctx_display_props :: DisplayProps
     , ctx_label_xoff    :: Int
     , ctx_label_yoff    :: Int
     }
@@ -57,7 +65,8 @@ type PdContextF = PdContext -> PdContext
 
 standard_context :: PdContext
 standard_context = 
-    PdContext { ctx_display_props = default_props
+    PdContext { ctx_font_size     = FONT_16
+              , ctx_display_props = default_props
               , ctx_label_xoff    = 0
               , ctx_label_yoff    = (-6)
               }
@@ -85,6 +94,10 @@ class (Applicative m, Monad m) => ContextM (m :: * -> *) where
 --------------------------------------------------------------------------------
 -- Getters
 
+
+getFontSize :: ContextM m => m FontSize
+getFontSize = asksCtx ctx_font_size
+
 getDisplayProps :: ContextM m => m DisplayProps
 getDisplayProps = asksCtx ctx_display_props
 
@@ -103,15 +116,18 @@ updateDisplayProps fn =
     (\s i -> s { ctx_display_props = fn i }) <*> ctx_display_props
 
 
-set_font :: FontFace -> Int -> PdContextF
-set_font ff sz = updateDisplayProps $ \s -> s { obj_fontface  = ff
+font_size :: FontSize -> PdContextF
+font_size sz = \s -> s { ctx_font_size = sz }
+
+set_label_font :: FontFace -> Int -> PdContextF
+set_label_font ff sz = updateDisplayProps $ \s -> s { obj_fontface  = ff
                                               , obj_fontsize  = sz }
 
-font_face :: FontFace -> PdContextF
-font_face ff = updateDisplayProps $ \s -> s { obj_fontface  = ff }
+label_font_face :: FontFace -> PdContextF
+label_font_face ff = updateDisplayProps $ \s -> s { obj_fontface  = ff }
 
-font_size :: Int -> PdContextF
-font_size sz = updateDisplayProps $ \s -> s { obj_fontsize  = sz }
+label_font_size :: Int -> PdContextF
+label_font_size sz = updateDisplayProps $ \s -> s { obj_fontsize  = sz }
 
 
 
