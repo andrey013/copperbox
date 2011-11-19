@@ -21,7 +21,7 @@ module PDSS.Core.BoundingBox
     BoundingBox(..)
   , Boundary(..)
 
-  , boundSize
+  , objectBBox
 
   ) where 
 
@@ -60,6 +60,10 @@ class Boundary t where
 -- Minimum width is 3 chars (any font size).
 --
 
+objectBBox :: FontSize -> Int -> Point -> BoundingBox
+objectBBox sz wc bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where 
+    (w,h) = boundSize sz wc
 
 boundSize :: FontSize -> Int -> (Int,Int)
 boundSize FONT_08 = boundSize08

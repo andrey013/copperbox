@@ -17,9 +17,9 @@
 
 module PDSS.Core.Objects
   ( 
-
-
-    Array
+    module PDSS.Core.Objects.Glue
+   
+  , Array
   , array
 
   , connect 
@@ -37,12 +37,6 @@ module PDSS.Core.Objects
   , Toggle
   , toggle
 
-  , Print
-  , print
-
-
-  , PdInt
-  , int
 
   , Ftom
   , ftom
@@ -50,7 +44,7 @@ module PDSS.Core.Objects
   , Mtof
   , mtof
 
-  , text
+  , comment
 
 
 
@@ -60,6 +54,7 @@ import PDSS.Core.BoundingBox
 import PDSS.Core.Context
 import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
+import PDSS.Core.Objects.Glue
 import PDSS.Core.PdDoc
 import qualified PDSS.Core.Utils.FormatCombinators as PP
 
@@ -167,7 +162,7 @@ toggle sz = promoteLoc $ \pt@(P2 x y) ->
     getLabelOffsets >>= \(xoff,yoff) -> 
     primObject (rec_toggle x y sz 1 noSRL xoff yoff props 234 234)
                (\i -> Toggle $ Obj { obj_id = i
-                                 , obj_bb = BBox pt (P2 (x+15) (y+15)) })
+                                   , obj_bb = BBox pt (P2 (x+15) (y+15)) })
 
 
 instance HasID Toggle where
@@ -176,53 +171,6 @@ instance HasID Toggle where
 instance HasOut0 Toggle
 
 
---------------------------------------------------------------------------------
-
-
--- Potentially Print should not be a newtype.
--- 
--- print is an obj with one in and no out ports.
---
--- There will be a lot of boilerplate if every object is newtype wrapped.
---
-
-newtype Print = Print { getPrint :: Obj }
-
--- | TODO - correct bounding box...
---
-print :: LocImage Print
-print = promoteLoc $ \pt@(P2 x y) ->
-    primObject (rec_obj x y "print" [])
-               (\i -> Print $ Obj { obj_id = i
-                                  , obj_bb = BBox pt (P2 x y) }) 
-
-instance HasID Print where
-  getID = obj_id . getPrint
-
-instance HasIn0 Print
-
-
---------------------------------------------------------------------------------
-
-
-newtype PdInt = PdInt { getPdInt :: Obj }
-
-
--- | TODO - correct bounding box...
---
-int :: Int -> LocImage PdInt
-int n = promoteLoc $ \pt@(P2 x y) ->
-    primObject (rec_obj x y "int" [PP.int n])
-               (\i -> PdInt $ Obj { obj_id = i
-                                  , obj_bb = BBox pt (P2 x y) }) 
-
-instance HasID PdInt where
-  getID = obj_id . getPdInt
-
-instance HasIn0 PdInt
-instance HasIn1 PdInt
-
-instance HasOut0 PdInt
 
 
 
@@ -232,9 +180,9 @@ newtype Ftom = Ftom { getFtom :: Obj }
 
 ftom :: LocImage Ftom
 ftom = promoteLoc $ \pt@(P2 x y) ->
+    getTextBox (length "ftom") pt >>= \bbox ->
     primObject (rec_obj x y "ftom" [])
-               (\i -> Ftom $ Obj { obj_id = i
-                                 , obj_bb = BBox pt (P2 x y) }) 
+               (\i -> Ftom $ Obj { obj_id = i, obj_bb = bbox }) 
 
 instance HasID Ftom where
   getID = obj_id . getFtom
@@ -250,9 +198,9 @@ newtype Mtof = Mtof { getMtof :: Obj }
 
 mtof :: LocImage Mtof
 mtof = promoteLoc $ \pt@(P2 x y) ->
+    getTextBox (length "mtof") pt >>= \bbox ->
     primObject (rec_obj x y "mtof" [])
-               (\i -> Mtof $ Obj { obj_id = i
-                                 , obj_bb = BBox pt (P2 x y) }) 
+               (\i -> Mtof $ Obj { obj_id = i, obj_bb = bbox }) 
 
 instance HasID Mtof where
   getID = obj_id . getMtof
@@ -263,8 +211,8 @@ instance HasOut0 Mtof
 
 --------------------------------------------------------------------------------
 
-text :: String -> LocGraphic
-text ss = promoteLoc $ \(P2 x y) -> 
+comment :: String -> LocGraphic
+comment ss = promoteLoc $ \(P2 x y) -> 
     primElement $ rec_text x y ss
 
 

@@ -30,6 +30,8 @@ module PDSS.Core.Context
   , getDisplayProps
   , getLabelOffsets
 
+  , getTextBox
+
   -- * Setters
 
   , font_size
@@ -44,6 +46,7 @@ module PDSS.Core.Context
 
   ) where 
 
+import PDSS.Core.BoundingBox
 import PDSS.Core.Colour
 import PDSS.Core.InternalTypes
 
@@ -103,6 +106,11 @@ getDisplayProps = asksCtx ctx_display_props
 
 getLabelOffsets :: ContextM m => m (Int,Int)
 getLabelOffsets = (,) <$> asksCtx ctx_label_xoff <*> asksCtx ctx_label_yoff
+
+
+getTextBox :: ContextM m => Int -> Point -> m BoundingBox
+getTextBox wc bl = (\sz -> objectBBox sz wc bl) 
+    <$> asksCtx ctx_font_size
 
 
 

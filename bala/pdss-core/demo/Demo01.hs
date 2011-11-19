@@ -25,8 +25,8 @@ demo01 :: IO ()
 demo01 = output "./out/demo01.pd" $ run (467,185,466,155) 12 $ do 
     a <- drawl (P2 30 41) $ floatatom 5
     b <- drawl (P2 60 88) $ print
-    drawl (P2 94 44) $ text "<--- type in numbers and press 'enter'"
-    drawl (P2 104 87) $ text "<--- this prints to stdout"
+    drawl (P2 94 44) $ comment "<--- type in numbers and press 'enter'"
+    drawl (P2 104 87) $ comment "<--- this prints to stdout"
     drawc (outport0 a) (inport0 b) $ connect
     return ()
 
