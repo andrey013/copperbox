@@ -40,6 +40,10 @@ module PDSS.Core.Objects
   , Toggle
   , toggle
 
+  , Slider
+  , vslider
+  , hslider
+
   , Radio
   , vradio
   , hradio
@@ -60,6 +64,7 @@ import PDSS.Core.Objects.Math
 import PDSS.Core.PdDoc
 import qualified PDSS.Core.Utils.FormatCombinators as PP
 
+import Data.List ( intersperse )
 import Prelude hiding ( print ) 
 
 
@@ -120,10 +125,11 @@ newtype Message = Message { getMessage :: Obj }
 
 message :: [String] -> LocImage Message
 message xs = promoteLoc $ \pt@(P2 x y) -> 
+    getMessageBBox (length ss) pt >>= \bbox ->    
     primObject (rec_msg x y $ map PP.string xs)
-               (\i -> Message $ Obj { obj_id = i
-                                    , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
-
+               (\i -> Message $ Obj { obj_id = i, obj_bb = bbox }) 
+  where
+    ss = concat $ intersperse " " xs
 
 instance HasID Message where
   getID = obj_id . getMessage
@@ -172,6 +178,34 @@ instance HasID Toggle where
 
 instance HasOut0 Toggle
 
+
+
+newtype Slider = Slider { getSlider :: Obj }
+
+instance HasID Slider where
+  getID = obj_id . getSlider
+
+instance HasOut0 Slider
+
+
+vslider :: Int -> Int -> LocImage Slider
+vslider lo hi = promoteLoc $ \pt@(P2 x y) ->
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    let bbox = vsliderBBox 15 128 pt in
+        primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
+                                noSRL xoff yoff props 0 SLIDER_JUMPS)
+                   (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
+
+
+hslider :: Int -> Int -> LocImage Slider
+hslider lo hi = promoteLoc $ \pt@(P2 x y) ->
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    let bbox = vsliderBBox 15 128 pt in
+        primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
+                                noSRL xoff yoff props 0 SLIDER_JUMPS)
+                   (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
 
 
 

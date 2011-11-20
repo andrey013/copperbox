@@ -39,7 +39,7 @@ newtype Mtof = Mtof { getMtof :: Obj }
 
 mtof :: LocImage Mtof
 mtof = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length "mtof") pt >>= \bbox ->
+    getObjectBBox (length "mtof") pt >>= \bbox ->
     primObject (rec_obj x y "mtof" [])
                (\i -> Mtof $ Obj { obj_id = i, obj_bb = bbox }) 
 
@@ -58,7 +58,7 @@ newtype Ftom = Ftom { getFtom :: Obj }
 
 ftom :: LocImage Ftom
 ftom = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length "ftom") pt >>= \bbox ->
+    getObjectBBox (length "ftom") pt >>= \bbox ->
     primObject (rec_obj x y "ftom" [])
                (\i -> Ftom $ Obj { obj_id = i, obj_bb = bbox }) 
 

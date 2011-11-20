@@ -30,6 +30,10 @@ module PDSS.Core.InternalTypes
 
   , FontSize(..)
 
+  , InitLoad(..)
+  , SliderScale(..)
+  , SliderSteady(..)
+
   , ZOrder(..)  
   , LabelPosition(..)
   , FontFace(..)
@@ -92,10 +96,23 @@ data ZOrder = ZABOVE | ZBELOW
 
 
 data LabelPosition = LEFT | RIGHT | TOP | BOTTOM
-  deriving (Enum,Eq,Ord,Show)
+  deriving (Bounded,Enum,Eq,Ord,Show)
 
 data FontFace = COURIER | HELVETICA | TIMES
-  deriving (Enum,Eq,Ord,Show)
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+data InitLoad = NONE_ON_LOAD | DEFAULT_ON_LOAD
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+data SliderScale = SLIDER_LINEAR | SLIDER_LOG
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+data SliderSteady = SLIDER_JUMPS | SLIDER_STEADY
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+
 
 -- | Send - Receive - Label
 -- 

@@ -46,7 +46,7 @@ newtype PdFloat = PdFloat { getPdFloat :: Obj }
 --
 float :: Double -> LocImage PdFloat
 float d = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length ss) pt >>= \bbox ->
+    getObjectBBox (length ss) pt >>= \bbox ->
     primObject (rec_obj x y "float" [PP.double d])
                (\i -> PdFloat $ Obj { obj_id = i, obj_bb = bbox }) 
   where
@@ -72,7 +72,7 @@ newtype PdInt = PdInt { getPdInt :: Obj }
 --
 int :: Int -> LocImage PdInt
 int n = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length ss) pt >>= \bbox ->
+    getObjectBBox (length ss) pt >>= \bbox ->
     primObject (rec_obj x y "int" [PP.int n])
                (\i -> PdInt $ Obj { obj_id = i, obj_bb = bbox }) 
   where
@@ -95,7 +95,7 @@ newtype Print = Print { getPrint :: Obj }
 --
 print :: LocImage Print
 print = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length "print") pt >>= \bbox ->
+    getObjectBBox (length "print") pt >>= \bbox ->
     primObject (rec_obj x y "print" [])
                (\i -> Print $ Obj { obj_id = i, obj_bb = bbox }) 
 

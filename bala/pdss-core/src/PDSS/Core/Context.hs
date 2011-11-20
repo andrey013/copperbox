@@ -30,7 +30,8 @@ module PDSS.Core.Context
   , getDisplayProps
   , getLabelOffsets
 
-  , getTextBox
+  , getObjectBBox
+  , getMessageBBox
 
   -- * Setters
 
@@ -108,10 +109,13 @@ getLabelOffsets :: ContextM m => m (Int,Int)
 getLabelOffsets = (,) <$> asksCtx ctx_label_xoff <*> asksCtx ctx_label_yoff
 
 
-getTextBox :: ContextM m => Int -> Point -> m BoundingBox
-getTextBox wc bl = (\sz -> objectBBox sz wc bl) 
+getObjectBBox :: ContextM m => Int -> Point -> m BoundingBox
+getObjectBBox wc bl = (\sz -> objectBBox sz wc bl) 
     <$> asksCtx ctx_font_size
 
+getMessageBBox :: ContextM m => Int -> Point -> m BoundingBox
+getMessageBBox wc bl = (\sz -> messageBBox sz wc bl) 
+    <$> asksCtx ctx_font_size
 
 
 --------------------------------------------------------------------------------

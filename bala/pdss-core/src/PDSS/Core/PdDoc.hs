@@ -29,6 +29,8 @@ module PDSS.Core.PdDoc
   , rec_obj
   , rec_bang
   , rec_toggle
+  , rec_vslider
+  , rec_hslider
   , rec_vradio
   , rec_hradio 
   , rec_vu
@@ -64,6 +66,18 @@ recX = record 'X'
 intBool :: Bool -> Doc 
 intBool False = int 0
 intBool True  = int 1
+
+initLoad :: InitLoad -> Doc
+initLoad NONE_ON_LOAD    = int 0
+initLoad DEFAULT_ON_LOAD = int 1
+
+sliderScale :: SliderScale -> Doc
+sliderScale SLIDER_LINEAR = int 0 
+sliderScale SLIDER_LOG    = int 1
+
+sliderSteady :: SliderSteady -> Doc
+sliderSteady SLIDER_JUMPS  = int 0 
+sliderSteady SLIDER_STEADY = int 1
 
 mbEmpty :: Maybe String -> Doc
 mbEmpty = maybe (string "empty") string
@@ -266,6 +280,58 @@ rec_toggle x y sz init_load srl xoff yoff props init_val dflt_val=
                       , int init_val
                       , int dflt_val
                       ]
+
+
+-- > #X obj [2 params] [v|h]sl [18 params]
+-- 
+gen_slider :: String -> Int -> Int -> Int -> Int -> Int -> Int 
+            -> SliderScale -> InitLoad
+            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+gen_slider name x y w h lo hi sscale init_load 
+           srl xoff yoff props dflt_val steady =
+    rec_obj x y name [ int w
+                     , int h
+                     , int lo
+                     , int hi
+                     , sliderScale sscale
+                     , initLoad init_load
+                     , sendE srl
+                     , recvE srl
+                     , labelE srl
+                     , int xoff
+                     , int yoff
+                     , fontface $ obj_fontface props
+                     , int $ obj_fontsize props
+                     , rgbDoc $ obj_bgcolour props
+                     , rgbDoc $ obj_fgcolour props
+                     , rgbDoc $ obj_lblcolour props
+                     , int dflt_val
+                     , sliderSteady steady
+                     ]
+
+
+-- | Vslider 
+-- 
+-- > #X obj [2 params] vsl [18 params]
+-- 
+rec_vslider :: Int -> Int -> Int -> Int -> Int -> Int 
+            -> SliderScale -> InitLoad
+            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+rec_vslider = gen_slider "vsl"
+
+
+-- | Hslider 
+-- 
+-- > #X obj [2 params] hsl [18 params]
+-- 
+rec_hslider :: Int -> Int -> Int -> Int -> Int -> Int 
+            -> SliderScale -> InitLoad
+            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+rec_hslider = gen_slider "hsl"
+
+
+
+
 
 -- | Vradio
 -- 
