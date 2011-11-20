@@ -23,6 +23,12 @@ module PDSS.Core.BoundingBox
 
   , objectBBox
 
+  , bangBBox
+  , toggleBBox
+
+  , vradioBBox
+  , hradioBBox  
+
   ) where 
 
 import PDSS.Core.InternalTypes
@@ -53,6 +59,7 @@ class Boundary t where
 
 --------------------------------------------------------------------------------
 
+-- Caution - supplying bottom left might not be idiomatic...
 
 
 -- Object BBox 
@@ -193,3 +200,50 @@ boundSize24 i | i < 4     = (47,34)
 boundSize36 :: Int -> (Int,Int)
 boundSize36 i | i < 4     = (74,34)
               | otherwise = let n = i - 3 in (74 + 23 * n, 34) 
+
+
+-- | TODO - bang and toggle are actually configurable by the 
+-- size param.
+-- 
+-- By the looks of things width and height are 1+ the size.
+--
+bangBBox :: Point -> BoundingBox 
+bangBBox bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where
+    w = 16
+    h = 16
+
+
+
+toggleBBox :: Point -> BoundingBox
+toggleBBox bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where
+    w = 16
+    h = 16
+
+
+-- Radio is oblivious to font size.
+
+
+-- > Width 16 px
+--
+--  2 choices -  31 px
+--  3 choices -  46 px
+--  4 choices -  61 px
+--  5 choices -  76 px
+--  6 choices -  91 px 
+--  7 choices - 106 px
+--  8 choices - 121 px
+
+vradioBBox :: Int -> Point -> BoundingBox
+vradioBBox i bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where
+    w = 16
+    h = let n = i - 1 in 16 + 15 * n
+
+
+hradioBBox :: Int -> Point -> BoundingBox
+hradioBBox i bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where
+    h = 16
+    w = let n = i - 1 in 16 + 15 * n

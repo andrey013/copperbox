@@ -29,6 +29,8 @@ module PDSS.Core.PdDoc
   , rec_obj
   , rec_bang
   , rec_toggle
+  , rec_vradio
+  , rec_hradio 
   , rec_vu
   , rec_cnv
   , rec_restore0
@@ -264,6 +266,56 @@ rec_toggle x y sz init_load srl xoff yoff props init_val dflt_val=
                       , int init_val
                       , int dflt_val
                       ]
+
+-- | Vradio
+-- 
+-- > #X obj [2 params] tgl [15 params]
+-- 
+rec_vradio :: Int -> Int -> Int -> Bool -> Int -> Int
+           -> SRL -> Int -> Int -> DisplayProps -> Int -> Doc
+rec_vradio x y sz new_old init_load num srl xoff yoff props dflt_val = 
+    rec_obj x y "vradio" [ int sz
+                         , intBool new_old
+                         , int init_load
+                         , int num
+                         , sendE srl
+                         , recvE srl
+                         , labelE srl
+                         , int xoff
+                         , int yoff
+                         , fontface $ obj_fontface props
+                         , int $ obj_fontsize props
+                         , rgbDoc $ obj_bgcolour props
+                         , rgbDoc $ obj_fgcolour props
+                         , rgbDoc $ obj_lblcolour props
+                         , int dflt_val
+                         ]
+
+
+
+-- | Hradio
+-- 
+-- > #X obj [2 params] tgl [15 params]
+-- 
+rec_hradio :: Int -> Int -> Int -> Bool -> Int -> Int
+           -> SRL -> Int -> Int -> DisplayProps -> Int -> Doc
+rec_hradio x y sz new_old init_load num srl xoff yoff props dflt_val = 
+    rec_obj x y "hradio" [ int sz
+                         , intBool new_old
+                         , int init_load
+                         , int num
+                         , sendE srl
+                         , recvE srl
+                         , labelE srl
+                         , int xoff
+                         , int yoff
+                         , fontface $ obj_fontface props
+                         , int $ obj_fontsize props
+                         , rgbDoc $ obj_bgcolour props
+                         , rgbDoc $ obj_fgcolour props
+                         , rgbDoc $ obj_lblcolour props
+                         , int dflt_val
+                         ]
 
 
 -- | VU meter

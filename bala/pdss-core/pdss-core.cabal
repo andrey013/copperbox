@@ -32,6 +32,8 @@ library
     PDSS.Core.Monad,
     PDSS.Core.ObjectBasis,
     PDSS.Core.Objects,
+    PDSS.Core.Objects.Glue,
+    PDSS.Core.Objects.Math,
     PDSS.Core.Types
  
   other-modules:

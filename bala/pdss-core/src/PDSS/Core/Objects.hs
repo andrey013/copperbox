@@ -18,6 +18,7 @@
 module PDSS.Core.Objects
   ( 
     module PDSS.Core.Objects.Glue
+  , module PDSS.Core.Objects.Math
    
   , Array
   , array
@@ -27,22 +28,22 @@ module PDSS.Core.Objects
   , Floatatom
   , floatatom
 
-  , Msg
-  , msg
+  , Message
+  , message
 
 
+
+  -- * From the @Put@ menu
   , Bang
   , bang
 
   , Toggle
   , toggle
 
+  , Radio
+  , vradio
+  , hradio
 
-  , Ftom
-  , ftom
-
-  , Mtof
-  , mtof
 
   , comment
 
@@ -55,6 +56,7 @@ import PDSS.Core.Context
 import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
 import PDSS.Core.Objects.Glue
+import PDSS.Core.Objects.Math
 import PDSS.Core.PdDoc
 import qualified PDSS.Core.Utils.FormatCombinators as PP
 
@@ -114,21 +116,21 @@ instance HasOut0 Floatatom
 
 --------------------------------------------------------------------------------
 
-newtype Msg = Msg { getMsg :: Obj }
+newtype Message = Message { getMessage :: Obj }
 
-msg :: [String] -> LocImage Msg
-msg xs = promoteLoc $ \pt@(P2 x y) -> 
+message :: [String] -> LocImage Message
+message xs = promoteLoc $ \pt@(P2 x y) -> 
     primObject (rec_msg x y $ map PP.string xs)
-               (\i -> Msg $ Obj { obj_id = i
-                                , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
+               (\i -> Message $ Obj { obj_id = i
+                                    , obj_bb = BBox pt (P2 (x+10) (y + 10)) }) 
 
 
-instance HasID Msg where
-  getID = obj_id . getMsg
+instance HasID Message where
+  getID = obj_id . getMessage
 
 
-instance HasIn0  Msg
-instance HasOut0 Msg
+instance HasIn0  Message
+instance HasOut0 Message
 
 
 --------------------------------------------------------------------------------
@@ -139,9 +141,9 @@ newtype Bang = Bang { getBang :: Obj }
 bang :: LocImage Bang
 bang = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    primObject (rec_bang x y 15 250 50 0 noSRL 0 (-6) props)
-               (\i -> Bang $ Obj { obj_id = i
-                                 , obj_bb = BBox pt (P2 (x+15) (y+15)) })
+    let bbox = bangBBox pt in 
+        primObject (rec_bang x y 15 250 50 0 noSRL 0 (-6) props)
+                   (\i -> Bang $ Obj { obj_id = i, obj_bb = bbox })
 
 
 instance HasID Bang where
@@ -160,9 +162,9 @@ toggle :: Int -> LocImage Toggle
 toggle sz = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \(xoff,yoff) -> 
-    primObject (rec_toggle x y sz 1 noSRL xoff yoff props 234 234)
-               (\i -> Toggle $ Obj { obj_id = i
-                                   , obj_bb = BBox pt (P2 (x+15) (y+15)) })
+    let bbox = toggleBBox pt in
+        primObject (rec_toggle x y sz 1 noSRL xoff yoff props 234 234)
+                   (\i -> Toggle $ Obj { obj_id = i, obj_bb = bbox })
 
 
 instance HasID Toggle where
@@ -173,41 +175,34 @@ instance HasOut0 Toggle
 
 
 
-
 --------------------------------------------------------------------------------
 
-newtype Ftom = Ftom { getFtom :: Obj }
+newtype Radio = Radio { getRadio :: Obj }
 
-ftom :: LocImage Ftom
-ftom = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length "ftom") pt >>= \bbox ->
-    primObject (rec_obj x y "ftom" [])
-               (\i -> Ftom $ Obj { obj_id = i, obj_bb = bbox }) 
-
-instance HasID Ftom where
-  getID = obj_id . getFtom
-
-instance HasIn0 Ftom
-
-instance HasOut0 Ftom
+vradio :: Int -> LocImage Radio
+vradio num = promoteLoc $ \pt@(P2 x y) ->
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    let bbox = vradioBBox num pt in
+        primObject (rec_vradio x y 15 True 0 num noSRL xoff yoff props 0)
+                   (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
 
 
+hradio :: Int -> LocImage Radio
+hradio num = promoteLoc $ \pt@(P2 x y) ->
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    let bbox = hradioBBox num pt in
+        primObject (rec_hradio x y 15 True 0 num noSRL xoff yoff props 0)
+                   (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
 
 
-newtype Mtof = Mtof { getMtof :: Obj }
 
-mtof :: LocImage Mtof
-mtof = promoteLoc $ \pt@(P2 x y) ->
-    getTextBox (length "mtof") pt >>= \bbox ->
-    primObject (rec_obj x y "mtof" [])
-               (\i -> Mtof $ Obj { obj_id = i, obj_bb = bbox }) 
+instance HasID Radio where
+  getID = obj_id . getRadio
 
-instance HasID Mtof where
-  getID = obj_id . getMtof
+instance HasOut0 Radio
 
-instance HasIn0 Mtof
-
-instance HasOut0 Mtof
 
 --------------------------------------------------------------------------------
 
