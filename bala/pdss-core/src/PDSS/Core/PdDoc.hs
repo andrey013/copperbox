@@ -20,8 +20,8 @@ module PDSS.Core.PdDoc
 
     rec_array
   , rec_array_data
-  , rec_canvas0
-  , rec_canvas
+  , rec_ncanvas0
+  , rec_ncanvas
   , rec_connect
   , rec_coords
   , rec_msg
@@ -34,7 +34,7 @@ module PDSS.Core.PdDoc
   , rec_vradio
   , rec_hradio 
   , rec_vu
-  , rec_cnv
+  , rec_canvas
   , rec_restore0
   , rec_restore
   , rec_symbolatom
@@ -150,8 +150,8 @@ rec_array_data = recA . map dtruncFmt
 -- > #N canvas [5 params]
 -- 
 -- Double is probably encoded ans an Int... needs checking.
-rec_canvas0 :: Int -> Int -> Int -> Int -> Int -> Doc
-rec_canvas0 x y w h font_size = 
+rec_ncanvas0 :: Int -> Int -> Int -> Int -> Int -> Doc
+rec_ncanvas0 x y w h font_size = 
     recN "canvas" [ int x
                   , int y
                   , int w
@@ -165,8 +165,8 @@ rec_canvas0 x y w h font_size =
 -- 
 -- Double is probably encoded ans an Int... needs checking.
 --
-rec_canvas :: Int -> Int -> Int -> Int -> String -> Bool -> Doc
-rec_canvas  x y w h name ool = 
+rec_ncanvas :: Int -> Int -> Int -> Int -> String -> Bool -> Doc
+rec_ncanvas  x y w h name ool = 
     recN "canvas" [ int x
                   , int y
                   , int w
@@ -412,9 +412,9 @@ rec_vu x y w h srl xoff yoff props logbool =
 -- 
 -- > #X obj [2 params] cnv [13 params]
 -- 
-rec_cnv :: Int -> Int -> Int -> Int -> Int  
-        -> SRL -> Int -> Int -> DisplayProps -> Doc
-rec_cnv x y sz w h srl xoff yoff props = 
+rec_canvas :: Int -> Int -> Int -> Int -> Int  
+           -> SRL -> Int -> Int -> DisplayProps -> Doc
+rec_canvas x y sz w h srl xoff yoff props = 
     rec_obj x y "cnv" [ int sz
                       , int w
                       , int h

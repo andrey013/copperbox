@@ -22,12 +22,10 @@ module PDSS.Core.Monad
   , run
 
   , draw
+  , draw_
   , drawl
+  , drawl_
   , drawc
-
---  , bang
-  
-  , canvas
 
   ) where 
 
@@ -73,39 +71,30 @@ instance ContextM GenMonad where
   localize f ma = GenMonad $ \r s -> getGenMonad ma (f r) s
 
 
-tell :: Doc -> GenMonad ()
-tell d1 = GenMonad $ \_ s -> ((),s, primitive d1)
 
 
 run :: (Int,Int,Int,Int) -> Int -> GenMonad a -> String
 run (x,y,w,h) sz ma = 
-    runDoc $ rec_canvas0 x y w h sz `vconcat` (unwrapPrimitive body)
+    runDoc $ rec_ncanvas0 x y w h sz `vconcat` (unwrapPrimitive body)
   where
     body = let (_,_,d1) = getGenMonad ma standard_context zeroSt in d1
 
 
 
 
-{-
-bang :: Int -> Int -> GenMonad Bang
-bang x y = do 
-    tell $ rec_bang x y 15 250 50 0 noSRL 0 (-6) default_display
-    next Bang
--}
-
-canvas :: Int -> Int -> Int -> Int -> GenMonad ()
-canvas x y w h = 
-    getDisplayProps >>= \props -> 
-    tell $ rec_cnv x y 15 w h noSRL 0 0 props
-
-
 draw :: Image a -> GenMonad a
 draw ma = GenMonad $ \r s -> runImage r s ma
                              
+draw_ :: Image a -> GenMonad ()
+draw_ ma = draw ma >> return ()
+
 
 drawl :: Point -> LocImage a -> GenMonad a 
 drawl pt ma = draw $ ma `at` pt
 
+
+drawl_ :: Point -> LocImage a -> GenMonad ()
+drawl_ pt ma = drawl pt ma >> return ()
 
 -- | Note - ports not points.
 -- 

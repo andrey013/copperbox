@@ -35,10 +35,10 @@ demo01 = output "./out/demo01.pd" $ run (467,185,466,155) 12 $ do
 
 demo02 :: IO ()
 demo02 =  output "./out/demo02.pd" $ run (467,185,420,360) 12 $ do 
-    localize (bg_colour black) $ canvas 10 10  30 60
-    localize (bg_colour red)   $ canvas 10 90  30 60
-    localize (bg_colour green) $ canvas 10 170 30 60
-    localize (bg_colour blue)  $ canvas 10 250 30 60
+    drawl_ (P2 10 10)  $ localize (bg_colour black) $ canvas 30 60
+    drawl_ (P2 10 90)  $ localize (bg_colour red)   $ canvas 30 60
+    drawl_ (P2 10 170) $ localize (bg_colour green) $ canvas 30 60
+    drawl_ (P2 10 250) $ localize (bg_colour blue)  $ canvas 30 60
     return ()
 
 

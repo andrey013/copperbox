@@ -49,6 +49,9 @@ module PDSS.Core.Objects
   , hradio
 
 
+  , Canvas
+  , canvas
+
   , comment
 
 
@@ -236,6 +239,27 @@ instance HasID Radio where
   getID = obj_id . getRadio
 
 instance HasOut0 Radio
+
+
+--------------------------------------------------------------------------------
+
+newtype Canvas = Canvas { getCanvas :: Obj }
+
+canvas :: Int -> Int -> LocImage Canvas
+canvas w h = promoteLoc $ \pt@(P2 x y) -> 
+    getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \(xoff,yoff) -> 
+    let bbox = BBox pt (P2 (x+w) (y+h)) in
+        primObject (rec_canvas x y 15 w h noSRL xoff yoff props)
+                   (\i -> Canvas $ Obj { obj_id = i, obj_bb = bbox })
+
+
+
+-- A canvas has an id, but it (probably) does not have any ports. 
+
+instance HasID Canvas where
+  getID = obj_id . getCanvas
+
 
 
 --------------------------------------------------------------------------------
