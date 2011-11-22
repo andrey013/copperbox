@@ -31,8 +31,11 @@ module PDSS.Core.InternalTypes
   , FontSize(..)
 
   , InitLoad(..)
+  , NewOld(..)
   , SliderScale(..)
   , SliderSteady(..)
+  , Offsets(..)
+
 
   , ZOrder(..)  
   , LabelPosition(..)
@@ -101,9 +104,15 @@ data LabelPosition = LEFT | RIGHT | TOP | BOTTOM
 data FontFace = COURIER | HELVETICA | TIMES
   deriving (Bounded,Enum,Eq,Ord,Show)
 
-
+-- | Default is NONE_ON_LOAD
+--
 data InitLoad = NONE_ON_LOAD | DEFAULT_ON_LOAD
   deriving (Bounded,Enum,Eq,Ord,Show)
+
+data NewOld = NEW_AND_OLD | NEW_ONLY
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+
 
 data SliderScale = SLIDER_LINEAR | SLIDER_LOG
   deriving (Bounded,Enum,Eq,Ord,Show)
@@ -111,6 +120,8 @@ data SliderScale = SLIDER_LINEAR | SLIDER_LOG
 data SliderSteady = SLIDER_JUMPS | SLIDER_STEADY
   deriving (Bounded,Enum,Eq,Ord,Show)
 
+data Offsets = Offsets { x_offset :: !Int, y_offset :: !Int }
+  deriving (Eq,Ord,Show)
 
 
 
@@ -141,9 +152,6 @@ data DisplayProps = DisplayProps
 data Point = P2 { point_x :: !Int, point_y :: !Int }
   deriving (Eq,Ord,Show)
 
-
-newtype Bang = Bang Int
-  deriving (Eq,Ord,Show)
 
 
 default_props :: DisplayProps

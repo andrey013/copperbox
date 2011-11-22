@@ -71,6 +71,11 @@ initLoad :: InitLoad -> Doc
 initLoad NONE_ON_LOAD    = int 0
 initLoad DEFAULT_ON_LOAD = int 1
 
+
+newOld :: NewOld -> Doc
+newOld NEW_AND_OLD = int 0
+newOld NEW_ONLY    = int 1
+
 sliderScale :: SliderScale -> Doc
 sliderScale SLIDER_LINEAR = int 0 
 sliderScale SLIDER_LOG    = int 1
@@ -239,8 +244,8 @@ rec_msg x y args = recX "msg" (int x : int y : args)
 -- > #X obj [2 params] bng [14 params]
 -- 
 rec_bang :: Int -> Int -> Int -> Integer -> Int -> Int 
-         -> SRL -> Int -> Int -> DisplayProps -> Doc
-rec_bang x y sz hold interrupt dflt srl xoff yoff props = 
+         -> SRL -> Offsets -> DisplayProps -> Doc
+rec_bang x y sz hold interrupt dflt srl offs props = 
     rec_obj x y "bng" [ int sz
                       , integer hold
                       , int interrupt
@@ -248,8 +253,8 @@ rec_bang x y sz hold interrupt dflt srl xoff yoff props =
                       , sendE srl
                       , recvE srl
                       , labelE srl
-                      , int xoff
-                      , int yoff
+                      , int $ x_offset offs
+                      , int $ y_offset offs
                       , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props
@@ -262,16 +267,16 @@ rec_bang x y sz hold interrupt dflt srl xoff yoff props =
 -- 
 -- > #X obj [2 params] tgl [14 params]
 -- 
-rec_toggle :: Int -> Int -> Int -> Int
-           -> SRL -> Int -> Int -> DisplayProps -> Int -> Int -> Doc
-rec_toggle x y sz init_load srl xoff yoff props init_val dflt_val= 
+rec_toggle :: Int -> Int -> Int -> InitLoad
+           -> SRL -> Offsets -> DisplayProps -> Int -> Int -> Doc
+rec_toggle x y sz init_load srl offs props init_val dflt_val= 
     rec_obj x y "tgl" [ int sz
-                      , int init_load
+                      , initLoad init_load
                       , sendE srl
                       , recvE srl
                       , labelE srl
-                      , int xoff
-                      , int yoff
+                      , int $ x_offset offs
+                      , int $ y_offset offs
                       , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props
@@ -286,9 +291,9 @@ rec_toggle x y sz init_load srl xoff yoff props init_val dflt_val=
 -- 
 gen_slider :: String -> Int -> Int -> Int -> Int -> Int -> Int 
             -> SliderScale -> InitLoad
-            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+            -> SRL -> Offsets -> DisplayProps -> Int -> SliderSteady -> Doc
 gen_slider name x y w h lo hi sscale init_load 
-           srl xoff yoff props dflt_val steady =
+           srl offs props dflt_val steady =
     rec_obj x y name [ int w
                      , int h
                      , int lo
@@ -298,8 +303,8 @@ gen_slider name x y w h lo hi sscale init_load
                      , sendE srl
                      , recvE srl
                      , labelE srl
-                     , int xoff
-                     , int yoff
+                     , int $ x_offset offs
+                     , int $ y_offset offs
                      , fontface $ obj_fontface props
                      , int $ obj_fontsize props
                      , rgbDoc $ obj_bgcolour props
@@ -316,7 +321,7 @@ gen_slider name x y w h lo hi sscale init_load
 -- 
 rec_vslider :: Int -> Int -> Int -> Int -> Int -> Int 
             -> SliderScale -> InitLoad
-            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+            -> SRL -> Offsets -> DisplayProps -> Int -> SliderSteady -> Doc
 rec_vslider = gen_slider "vsl"
 
 
@@ -326,10 +331,37 @@ rec_vslider = gen_slider "vsl"
 -- 
 rec_hslider :: Int -> Int -> Int -> Int -> Int -> Int 
             -> SliderScale -> InitLoad
-            -> SRL -> Int -> Int -> DisplayProps -> Int -> SliderSteady -> Doc
+            -> SRL -> Offsets -> DisplayProps -> Int -> SliderSteady -> Doc
 rec_hslider = gen_slider "hsl"
 
 
+
+
+
+
+
+ 
+-- > #X obj [2 params] [v|h]radio [15 params]
+-- 
+gen_radio :: String -> Int -> Int -> Int -> NewOld -> InitLoad -> Int
+          -> SRL -> Offsets -> DisplayProps -> Int -> Doc
+gen_radio name x y sz new_old init_load num srl offs props dflt_val = 
+    rec_obj x y name [ int sz
+                     , newOld new_old
+                     , initLoad init_load
+                     , int num
+                     , sendE srl
+                     , recvE srl
+                     , labelE srl
+                     , int $ x_offset offs
+                     , int $ y_offset offs
+                     , fontface $ obj_fontface props
+                     , int $ obj_fontsize props
+                     , rgbDoc $ obj_bgcolour props
+                     , rgbDoc $ obj_fgcolour props
+                     , rgbDoc $ obj_lblcolour props
+                     , int dflt_val
+                     ]
 
 
 
@@ -337,25 +369,9 @@ rec_hslider = gen_slider "hsl"
 -- 
 -- > #X obj [2 params] tgl [15 params]
 -- 
-rec_vradio :: Int -> Int -> Int -> Bool -> Int -> Int
-           -> SRL -> Int -> Int -> DisplayProps -> Int -> Doc
-rec_vradio x y sz new_old init_load num srl xoff yoff props dflt_val = 
-    rec_obj x y "vradio" [ int sz
-                         , intBool new_old
-                         , int init_load
-                         , int num
-                         , sendE srl
-                         , recvE srl
-                         , labelE srl
-                         , int xoff
-                         , int yoff
-                         , fontface $ obj_fontface props
-                         , int $ obj_fontsize props
-                         , rgbDoc $ obj_bgcolour props
-                         , rgbDoc $ obj_fgcolour props
-                         , rgbDoc $ obj_lblcolour props
-                         , int dflt_val
-                         ]
+rec_vradio :: Int -> Int -> Int -> NewOld -> InitLoad -> Int
+           -> SRL -> Offsets -> DisplayProps -> Int -> Doc
+rec_vradio = gen_radio "vradio" 
 
 
 
@@ -363,25 +379,9 @@ rec_vradio x y sz new_old init_load num srl xoff yoff props dflt_val =
 -- 
 -- > #X obj [2 params] tgl [15 params]
 -- 
-rec_hradio :: Int -> Int -> Int -> Bool -> Int -> Int
-           -> SRL -> Int -> Int -> DisplayProps -> Int -> Doc
-rec_hradio x y sz new_old init_load num srl xoff yoff props dflt_val = 
-    rec_obj x y "hradio" [ int sz
-                         , intBool new_old
-                         , int init_load
-                         , int num
-                         , sendE srl
-                         , recvE srl
-                         , labelE srl
-                         , int xoff
-                         , int yoff
-                         , fontface $ obj_fontface props
-                         , int $ obj_fontsize props
-                         , rgbDoc $ obj_bgcolour props
-                         , rgbDoc $ obj_fgcolour props
-                         , rgbDoc $ obj_lblcolour props
-                         , int dflt_val
-                         ]
+rec_hradio :: Int -> Int -> Int -> NewOld -> InitLoad -> Int
+           -> SRL -> Offsets -> DisplayProps -> Int -> Doc
+rec_hradio = gen_radio "hradio"
 
 
 -- | VU meter
@@ -390,15 +390,15 @@ rec_hradio x y sz new_old init_load num srl xoff yoff props dflt_val =
 --
 rec_vu :: Int -> Int 
        -> Int -> Int
-       -> SRL -> Int -> Int -> DisplayProps -> Bool -> Doc
-rec_vu x y w h srl xoff yoff props logbool = 
+       -> SRL -> Offsets -> DisplayProps -> Bool -> Doc
+rec_vu x y w h srl offs props logbool = 
     rec_obj x y "vu" [ int w
                      , int h
                      , sendE srl
                      , recvE srl
                      , labelE srl
-                     , int xoff
-                     , int yoff
+                     , int $ x_offset offs
+                     , int $ y_offset offs
                      , fontface $ obj_fontface props
                      , int $ obj_fontsize props
                      , rgbDoc $ obj_bgcolour props
@@ -413,16 +413,16 @@ rec_vu x y w h srl xoff yoff props logbool =
 -- > #X obj [2 params] cnv [13 params]
 -- 
 rec_canvas :: Int -> Int -> Int -> Int -> Int  
-           -> SRL -> Int -> Int -> DisplayProps -> Doc
-rec_canvas x y sz w h srl xoff yoff props = 
+           -> SRL -> Offsets -> DisplayProps -> Doc
+rec_canvas x y sz w h srl offs props = 
     rec_obj x y "cnv" [ int sz
                       , int w
                       , int h
                       , sendE srl
                       , recvE srl
                       , labelE srl
-                      , int xoff
-                      , int yoff
+                      , int $ x_offset offs
+                      , int $ y_offset offs
                       , fontface $ obj_fontface props
                       , int $ obj_fontsize props
                       , rgbDoc $ obj_bgcolour props

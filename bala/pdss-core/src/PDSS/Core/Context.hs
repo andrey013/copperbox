@@ -60,8 +60,7 @@ import Control.Applicative
 data PdContext = PdContext
     { ctx_font_size     :: FontSize
     , ctx_display_props :: DisplayProps
-    , ctx_label_xoff    :: Int
-    , ctx_label_yoff    :: Int
+    , ctx_label_offsets :: Offsets
     }
 
 
@@ -71,8 +70,7 @@ standard_context :: PdContext
 standard_context = 
     PdContext { ctx_font_size     = FONT_16
               , ctx_display_props = default_props
-              , ctx_label_xoff    = 0
-              , ctx_label_yoff    = (-6)
+              , ctx_label_offsets = Offsets { x_offset = 0, y_offset = (-6) }
               }
 
 
@@ -105,8 +103,8 @@ getFontSize = asksCtx ctx_font_size
 getDisplayProps :: ContextM m => m DisplayProps
 getDisplayProps = asksCtx ctx_display_props
 
-getLabelOffsets :: ContextM m => m (Int,Int)
-getLabelOffsets = (,) <$> asksCtx ctx_label_xoff <*> asksCtx ctx_label_yoff
+getLabelOffsets :: ContextM m => m Offsets
+getLabelOffsets = asksCtx ctx_label_offsets
 
 
 getObjectBBox :: ContextM m => Int -> Point -> m BoundingBox

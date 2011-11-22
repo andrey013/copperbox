@@ -150,8 +150,9 @@ newtype Bang = Bang { getBang :: Obj }
 bang :: LocImage Bang
 bang = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
+    getLabelOffsets >>= \offs ->
     let bbox = bangBBox pt in 
-        primObject (rec_bang x y 15 250 50 0 noSRL 0 (-6) props)
+        primObject (rec_bang x y 15 250 50 0 noSRL offs props)
                    (\i -> Bang $ Obj { obj_id = i, obj_bb = bbox })
 
 
@@ -170,9 +171,9 @@ newtype Toggle = Toggle { getToggle :: Obj }
 toggle :: Int -> LocImage Toggle
 toggle sz = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = toggleBBox pt in
-        primObject (rec_toggle x y sz 1 noSRL xoff yoff props 234 234)
+        primObject (rec_toggle x y sz DEFAULT_ON_LOAD noSRL offs props 234 234)
                    (\i -> Toggle $ Obj { obj_id = i, obj_bb = bbox })
 
 
@@ -194,20 +195,20 @@ instance HasOut0 Slider
 vslider :: Int -> Int -> LocImage Slider
 vslider lo hi = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = vsliderBBox 15 128 pt in
         primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
-                                noSRL xoff yoff props 0 SLIDER_JUMPS)
+                                noSRL offs props 0 SLIDER_JUMPS)
                    (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
 
 
 hslider :: Int -> Int -> LocImage Slider
 hslider lo hi = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = vsliderBBox 15 128 pt in
         primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
-                                noSRL xoff yoff props 0 SLIDER_JUMPS)
+                                noSRL offs props 0 SLIDER_JUMPS)
                    (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
 
 
@@ -219,18 +220,18 @@ newtype Radio = Radio { getRadio :: Obj }
 vradio :: Int -> LocImage Radio
 vradio num = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = vradioBBox num pt in
-        primObject (rec_vradio x y 15 True 0 num noSRL xoff yoff props 0)
+        primObject (rec_vradio x y 15 NEW_ONLY NONE_ON_LOAD num noSRL offs props 0)
                    (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
 
 
 hradio :: Int -> LocImage Radio
 hradio num = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = hradioBBox num pt in
-        primObject (rec_hradio x y 15 True 0 num noSRL xoff yoff props 0)
+        primObject (rec_hradio x y 15 NEW_ONLY NONE_ON_LOAD num noSRL offs props 0)
                    (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
 
 
@@ -248,9 +249,9 @@ newtype Canvas = Canvas { getCanvas :: Obj }
 canvas :: Int -> Int -> LocImage Canvas
 canvas w h = promoteLoc $ \pt@(P2 x y) -> 
     getDisplayProps >>= \props -> 
-    getLabelOffsets >>= \(xoff,yoff) -> 
+    getLabelOffsets >>= \offs -> 
     let bbox = BBox pt (P2 (x+w) (y+h)) in
-        primObject (rec_canvas x y 15 w h noSRL xoff yoff props)
+        primObject (rec_canvas x y 15 w h noSRL offs props)
                    (\i -> Canvas $ Obj { obj_id = i, obj_bb = bbox })
 
 
