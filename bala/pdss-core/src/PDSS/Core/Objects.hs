@@ -152,7 +152,7 @@ bang = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs ->
     let bbox = bangBBox pt in 
-        primObject (rec_bang x y 15 250 50 0 noSRL offs props)
+        primObject (rec_bang x y 15 250 50 NONE_ON_LOAD noSRL offs props)
                    (\i -> Bang $ Obj { obj_id = i, obj_bb = bbox })
 
 

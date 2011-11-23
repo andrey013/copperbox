@@ -31,6 +31,8 @@ module PDSS.Core.InternalTypes
   , FontSize(..)
 
   , InitLoad(..)
+  , OpenOnLoad(..)
+  , GraphOnParent(..)
   , NewOld(..)
   , SliderScale(..)
   , SliderSteady(..)
@@ -104,10 +106,32 @@ data LabelPosition = LEFT | RIGHT | TOP | BOTTOM
 data FontFace = COURIER | HELVETICA | TIMES
   deriving (Bounded,Enum,Eq,Ord,Show)
 
--- | Default is NONE_ON_LOAD
+
+
+
+-- | Default is NONE_ON_LOAD (aka 0).
 --
 data InitLoad = NONE_ON_LOAD | DEFAULT_ON_LOAD
   deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+-- | A canvas (ncanvas rather than cnv) may be open or closed on 
+-- load.
+-- 
+-- Default is CLOSED_ON_LOAD (aka 0).
+-- 
+data OpenOnLoad = CLOSED_ON_LOAD | OPEN_ON_LOAD
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+
+-- | Default is GRAPH_AS_OBJECT (aka 0).
+-- 
+data GraphOnParent = GRAPH_AS_OBJECT | GRAPH_ON_PARENT
+  deriving (Bounded,Enum,Eq,Ord,Show)
+
+
+
 
 data NewOld = NEW_AND_OLD | NEW_ONLY
   deriving (Bounded,Enum,Eq,Ord,Show)
@@ -127,7 +151,8 @@ data Offsets = Offsets { x_offset :: !Int, y_offset :: !Int }
 
 -- | Send - Receive - Label
 -- 
--- Labels should not contain spaces.
+-- Labels should not contain spaces - Pd rewrites user entered
+-- string s with spaces to use underscores instead.
 --
 data SRL = SRL
    { srl_send       :: Maybe String

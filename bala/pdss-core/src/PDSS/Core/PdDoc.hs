@@ -71,6 +71,13 @@ initLoad :: InitLoad -> Doc
 initLoad NONE_ON_LOAD    = int 0
 initLoad DEFAULT_ON_LOAD = int 1
 
+openOnLoad :: OpenOnLoad -> Doc
+openOnLoad CLOSED_ON_LOAD = int 0
+openOnLoad OPEN_ON_LOAD   = int 1
+
+graphOnParent :: GraphOnParent -> Doc
+graphOnParent GRAPH_AS_OBJECT = int 0
+graphOnParent GRAPH_ON_PARENT = int 1
 
 newOld :: NewOld -> Doc
 newOld NEW_AND_OLD = int 0
@@ -170,14 +177,14 @@ rec_ncanvas0 x y w h font_size =
 -- 
 -- Double is probably encoded ans an Int... needs checking.
 --
-rec_ncanvas :: Int -> Int -> Int -> Int -> String -> Bool -> Doc
+rec_ncanvas :: Int -> Int -> Int -> Int -> String -> OpenOnLoad -> Doc
 rec_ncanvas  x y w h name ool = 
     recN "canvas" [ int x
                   , int y
                   , int w
                   , int h
                   , string name
-                  , intBool ool
+                  , openOnLoad ool
                   ]
 -- | Connect
 -- 
@@ -194,7 +201,7 @@ rec_connect src out dst inn =
 --
 -- > #X coords [7 params]
 --
-rec_coords :: Int -> Int -> Int -> Int -> Int -> Int -> Bool -> Doc
+rec_coords :: Int -> Int -> Int -> Int -> Int -> Int -> GraphOnParent -> Doc
 rec_coords xfrom yto xto yfrom w h gop = 
     recX "coords" [ int xfrom
                   , int yto
@@ -202,7 +209,7 @@ rec_coords xfrom yto xto yfrom w h gop =
                   , int yfrom
                   , int w
                   , int h
-                  , intBool gop 
+                  , graphOnParent gop 
                   ]
 
 -- | Floatatom
@@ -243,13 +250,13 @@ rec_msg x y args = recX "msg" (int x : int y : args)
 --
 -- > #X obj [2 params] bng [14 params]
 -- 
-rec_bang :: Int -> Int -> Int -> Integer -> Int -> Int 
-         -> SRL -> Offsets -> DisplayProps -> Doc
-rec_bang x y sz hold interrupt dflt srl offs props = 
+rec_bang :: Int -> Int -> Int -> Integer -> Int 
+         -> InitLoad -> SRL -> Offsets -> DisplayProps -> Doc
+rec_bang x y sz hold interrupt bol srl offs props = 
     rec_obj x y "bng" [ int sz
                       , integer hold
                       , int interrupt
-                      , int dflt
+                      , initLoad bol
                       , sendE srl
                       , recvE srl
                       , labelE srl
@@ -290,8 +297,8 @@ rec_toggle x y sz init_load srl offs props init_val dflt_val=
 -- > #X obj [2 params] [v|h]sl [18 params]
 -- 
 gen_slider :: String -> Int -> Int -> Int -> Int -> Int -> Int 
-            -> SliderScale -> InitLoad
-            -> SRL -> Offsets -> DisplayProps -> Int -> SliderSteady -> Doc
+           -> SliderScale -> InitLoad
+           -> SRL -> Offsets -> DisplayProps -> Int -> SliderSteady -> Doc
 gen_slider name x y w h lo hi sscale init_load 
            srl offs props dflt_val steady =
     rec_obj x y name [ int w
