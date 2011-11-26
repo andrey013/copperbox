@@ -18,11 +18,7 @@
 module PDSS.Core.Objects.Math
   ( 
 
-
-    Mtof
-  , mtof
-
-  , Ftom
+    mtof
   , ftom
 
   ) where 
@@ -32,41 +28,23 @@ import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
 import PDSS.Core.PdDoc
 
+import Data.Sized.Ix                            -- package: sized-types
 
 
 
-newtype Mtof = Mtof { getMtof :: Obj }
-
-mtof :: LocImage Mtof
+mtof :: LocObject X1 X1
 mtof = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox (length "mtof") pt >>= \bbox ->
     primObject (rec_obj x y "mtof" [])
-               (\i -> Mtof $ Obj { obj_id = i, obj_bb = bbox }) 
-
-instance HasID Mtof where
-  getID = obj_id . getMtof
-
-instance HasIn0 Mtof
-
-instance HasOut0 Mtof
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
 
 
 
 --------------------------------------------------------------------------------
 
-newtype Ftom = Ftom { getFtom :: Obj }
 
-ftom :: LocImage Ftom
+ftom :: LocObject X1 X1
 ftom = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox (length "ftom") pt >>= \bbox ->
     primObject (rec_obj x y "ftom" [])
-               (\i -> Ftom $ Obj { obj_id = i, obj_bb = bbox }) 
-
-instance HasID Ftom where
-  getID = obj_id . getFtom
-
-instance HasIn0 Ftom
-
-instance HasOut0 Ftom
-
-
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 

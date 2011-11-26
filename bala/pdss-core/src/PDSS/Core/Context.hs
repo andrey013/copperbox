@@ -32,6 +32,7 @@ module PDSS.Core.Context
 
   , getObjectBBox
   , getMessageBBox
+  , getBangOnLoad
 
   -- * Setters
 
@@ -43,7 +44,10 @@ module PDSS.Core.Context
   , bg_colour
   , fg_colour
   , label_colour
-  
+
+
+  , bang_on_load
+  , no_bang_on_load  
 
   ) where 
 
@@ -61,6 +65,7 @@ data PdContext = PdContext
     { ctx_font_size     :: FontSize
     , ctx_display_props :: DisplayProps
     , ctx_label_offsets :: Offsets
+    , ctx_bang_on_load  :: InitLoad
     }
 
 
@@ -71,6 +76,7 @@ standard_context =
     PdContext { ctx_font_size     = FONT_16
               , ctx_display_props = default_props
               , ctx_label_offsets = Offsets { x_offset = 0, y_offset = (-6) }
+              , ctx_bang_on_load  = NONE_ON_LOAD
               }
 
 
@@ -115,6 +121,9 @@ getMessageBBox :: ContextM m => Int -> Point -> m BoundingBox
 getMessageBBox wc bl = (\sz -> messageBBox sz wc bl) 
     <$> asksCtx ctx_font_size
 
+getBangOnLoad :: ContextM m => m InitLoad 
+getBangOnLoad = asksCtx ctx_bang_on_load
+
 
 --------------------------------------------------------------------------------
 -- Setters
@@ -125,6 +134,9 @@ updateDisplayProps :: (DisplayProps -> DisplayProps) -> PdContextF
 updateDisplayProps fn = 
     (\s i -> s { ctx_display_props = fn i }) <*> ctx_display_props
 
+
+
+--- Setters 
 
 font_size :: FontSize -> PdContextF
 font_size sz = \s -> s { ctx_font_size = sz }
@@ -150,3 +162,9 @@ fg_colour rgb = updateDisplayProps $ \s -> s { obj_fgcolour = rgb }
 
 label_colour :: RGBi -> PdContextF 
 label_colour rgb = updateDisplayProps $ \s -> s { obj_lblcolour = rgb }
+
+bang_on_load :: PdContextF 
+bang_on_load = \s -> s { ctx_bang_on_load = DEFAULT_ON_LOAD }
+
+no_bang_on_load :: PdContextF 
+no_bang_on_load = \s -> s { ctx_bang_on_load = NONE_ON_LOAD }

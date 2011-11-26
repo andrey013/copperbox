@@ -20,38 +20,24 @@ module PDSS.Core.Objects
     module PDSS.Core.Objects.Glue
   , module PDSS.Core.Objects.Math
    
-  , Array
   , array
 
   , connect 
 
-  , Floatatom
   , floatatom
 
-  , Message
   , message
 
 
 
   -- * From the @Put@ menu
-  , Bang
   , bang
-
-  , Toggle
   , toggle
-
-  , Slider
   , vslider
   , hslider
-
-  , Radio
   , vradio
   , hradio
-
-
-  , Canvas
   , canvas
-
   , comment
 
 
@@ -66,6 +52,8 @@ import PDSS.Core.Objects.Glue
 import PDSS.Core.Objects.Math
 import PDSS.Core.PdDoc
 import qualified PDSS.Core.Utils.FormatCombinators as PP
+
+import Data.Sized.Ix                            -- package: sized-types
 
 import Data.List ( intersperse )
 import Prelude hiding ( print ) 
@@ -105,59 +93,39 @@ connect = promoteConn $ \p0 p1 ->
 
 --------------------------------------------------------------------------------
 
-newtype Floatatom = Floatatom { getFloatatom :: Obj }
 
 -- | Width is probably number of chars...
-floatatom :: Int -> LocImage Floatatom
+floatatom :: Int -> LocObject X0 X1
 floatatom w = promoteLoc $ \pt@(P2 x y) ->
     primObject (rec_floatatom x y w 0 0 LEFT noSRL)
-               (\i -> Floatatom $ Obj { obj_id = i
-                                      , obj_bb = BBox pt (P2 (x+w) (y + 10)) }) 
-
-
-instance HasID Floatatom where
-  getID = obj_id . getFloatatom
-
-
-instance HasOut0 Floatatom
+               (\i -> Obj { obj_id = i
+                          , obj_bb = BBox pt (P2 (x+w) (y + 10)) }) 
 
 
 --------------------------------------------------------------------------------
 
-newtype Message = Message { getMessage :: Obj }
 
-message :: [String] -> LocImage Message
+message :: [String] -> LocObject X1 X1
 message xs = promoteLoc $ \pt@(P2 x y) -> 
     getMessageBBox (length ss) pt >>= \bbox ->    
     primObject (rec_msg x y $ map PP.string xs)
-               (\i -> Message $ Obj { obj_id = i, obj_bb = bbox }) 
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
   where
     ss = concat $ intersperse " " xs
 
-instance HasID Message where
-  getID = obj_id . getMessage
-
-
-instance HasIn0  Message
-instance HasOut0 Message
 
 
 --------------------------------------------------------------------------------
 
 
-newtype Bang = Bang { getBang :: Obj }
-
-bang :: LocImage Bang
+bang :: LocObject X0 X1
 bang = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs ->
+    getBangOnLoad   >>= \bol -> 
     let bbox = bangBBox pt in 
-        primObject (rec_bang x y 15 250 50 NONE_ON_LOAD noSRL offs props)
-                   (\i -> Bang $ Obj { obj_id = i, obj_bb = bbox })
-
-
-instance HasID Bang where
-  getID = obj_id . getBang
+        primObject (rec_bang x y 15 250 50 bol noSRL offs props)
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
 
 
@@ -165,101 +133,70 @@ instance HasID Bang where
 
 --------------------------------------------------------------------------------
 
-newtype Toggle = Toggle { getToggle :: Obj }
 
-
-toggle :: Int -> LocImage Toggle
+toggle :: Int -> LocObject X0 X1
 toggle sz = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = toggleBBox pt in
         primObject (rec_toggle x y sz DEFAULT_ON_LOAD noSRL offs props 234 234)
-                   (\i -> Toggle $ Obj { obj_id = i, obj_bb = bbox })
-
-
-instance HasID Toggle where
-  getID = obj_id . getToggle
-
-instance HasOut0 Toggle
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
 
 
-newtype Slider = Slider { getSlider :: Obj }
 
-instance HasID Slider where
-  getID = obj_id . getSlider
-
-instance HasOut0 Slider
-
-
-vslider :: Int -> Int -> LocImage Slider
+vslider :: Int -> Int -> LocObject X0 X1
 vslider lo hi = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = vsliderBBox 15 128 pt in
         primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
                                 noSRL offs props 0 SLIDER_JUMPS)
-                   (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
 
-hslider :: Int -> Int -> LocImage Slider
+hslider :: Int -> Int -> LocObject X0 X1
 hslider lo hi = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = vsliderBBox 15 128 pt in
         primObject (rec_vslider x y 15 28 lo hi SLIDER_LINEAR NONE_ON_LOAD
                                 noSRL offs props 0 SLIDER_JUMPS)
-                   (\i -> Slider $ Obj { obj_id = i, obj_bb = bbox })
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
 
 
 --------------------------------------------------------------------------------
 
-newtype Radio = Radio { getRadio :: Obj }
-
-vradio :: Int -> LocImage Radio
+vradio :: Int -> LocObject X0 X1
 vradio num = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = vradioBBox num pt in
         primObject (rec_vradio x y 15 NEW_ONLY NONE_ON_LOAD num noSRL offs props 0)
-                   (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
 
-hradio :: Int -> LocImage Radio
+hradio :: Int -> LocObject X0 X1
 hradio num = promoteLoc $ \pt@(P2 x y) ->
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = hradioBBox num pt in
         primObject (rec_hradio x y 15 NEW_ONLY NONE_ON_LOAD num noSRL offs props 0)
-                   (\i -> Radio $ Obj { obj_id = i, obj_bb = bbox })
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
-
-
-instance HasID Radio where
-  getID = obj_id . getRadio
-
-instance HasOut0 Radio
 
 
 --------------------------------------------------------------------------------
 
-newtype Canvas = Canvas { getCanvas :: Obj }
-
-canvas :: Int -> Int -> LocImage Canvas
+canvas :: Int -> Int -> LocObject X0 X0
 canvas w h = promoteLoc $ \pt@(P2 x y) -> 
     getDisplayProps >>= \props -> 
     getLabelOffsets >>= \offs -> 
     let bbox = BBox pt (P2 (x+w) (y+h)) in
         primObject (rec_canvas x y 15 w h noSRL offs props)
-                   (\i -> Canvas $ Obj { obj_id = i, obj_bb = bbox })
+                   (\i -> Obj { obj_id = i, obj_bb = bbox })
 
-
-
--- A canvas has an id, but it (probably) does not have any ports. 
-
-instance HasID Canvas where
-  getID = obj_id . getCanvas
 
 
 

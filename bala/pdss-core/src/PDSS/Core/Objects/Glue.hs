@@ -18,13 +18,8 @@
 module PDSS.Core.Objects.Glue
   ( 
 
-    PdFloat
-  , float
-
-  , PdInt
+    float
   , int
-
-  , Print
   , print
 
   ) where 
@@ -35,74 +30,59 @@ import PDSS.Core.ObjectBasis
 import PDSS.Core.PdDoc
 import qualified PDSS.Core.Utils.FormatCombinators as PP
 
+import Data.Sized.Ix                            -- package: sized types
+
 import Prelude hiding ( print ) 
 
 
 
-newtype PdFloat = PdFloat { getPdFloat :: Obj }
 
 
 -- | TODO - correct bounding box...
 --
-float :: Double -> LocImage PdFloat
+float :: Double -> LocObject X2 X1
 float d = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox (length ss) pt >>= \bbox ->
     primObject (rec_obj x y "float" [PP.double d])
-               (\i -> PdFloat $ Obj { obj_id = i, obj_bb = bbox }) 
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
   where
     -- WARNING - uses Haskell show likely to be invalid for Pd...
     ss = "float " ++ show d
 
 
-instance HasID PdFloat where
-  getID = obj_id . getPdFloat
-
-instance HasIn0 PdFloat
-instance HasIn1 PdFloat
-
-instance HasOut0 PdFloat
 
 --------------------------------------------------------------------------------
 
 
-newtype PdInt = PdInt { getPdInt :: Obj }
 
 
 -- | TODO - correct bounding box...
 --
-int :: Int -> LocImage PdInt
+int :: Int -> LocObject X2 X1
 int n = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox (length ss) pt >>= \bbox ->
     primObject (rec_obj x y "int" [PP.int n])
-               (\i -> PdInt $ Obj { obj_id = i, obj_bb = bbox }) 
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
   where
     ss = "int " ++ show n
 
 
-instance HasID PdInt where
-  getID = obj_id . getPdInt
-
-instance HasIn0 PdInt
-instance HasIn1 PdInt
-
-instance HasOut0 PdInt
 
 
-
-newtype Print = Print { getPrint :: Obj }
+-- newtype Print = Print { getPrint :: Obj }
 
 -- | TODO - correct bounding box...
 --
-print :: LocImage Print
+print :: LocObject X1 X0
 print = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox (length "print") pt >>= \bbox ->
     primObject (rec_obj x y "print" [])
-               (\i -> Print $ Obj { obj_id = i, obj_bb = bbox }) 
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
 
-instance HasID Print where
-  getID = obj_id . getPrint
+-- instance HasID Print where
+--   getID = obj_id . getPrint
 
-instance HasIn0 Print
+-- instance HasIn0 Print
 
 
 --------------------------------------------------------------------------------

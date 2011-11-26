@@ -23,7 +23,8 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base              <  5
+  build-depends:      base              <  5,
+                      sized-types       >= 3.4 && < 4.0
 
   exposed-modules:
     PDSS.Core.BoundingBox,

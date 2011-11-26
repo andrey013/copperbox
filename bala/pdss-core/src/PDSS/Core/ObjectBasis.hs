@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -21,6 +22,7 @@ module PDSS.Core.ObjectBasis
     Obj(..)
 
   , Image   
+  , Object
   , Query
   , Graphic
 
@@ -33,6 +35,7 @@ module PDSS.Core.ObjectBasis
   , LocImage
   , LocQuery
   , LocGraphic
+  , LocObject
 
   , runLocImage
   , runLocQuery
@@ -76,6 +79,9 @@ import PDSS.Core.InternalTypes
 import PDSS.Core.Context
 import PDSS.Core.Utils.FormatCombinators
 
+
+import Data.Sized.Ix                            -- package: sized-types
+
 import Control.Applicative
 import Data.Monoid
 
@@ -87,7 +93,7 @@ type PrimResult a = (a,GenSt,Primitive)
 
 -- | Bang is defined by size which is the same length in both directions.
 -- 
-data Obj = Obj
+data Obj iix oix = Obj
     { obj_id   :: Int
     , obj_bb   :: BoundingBox
     }
@@ -101,6 +107,8 @@ data Obj = Obj
 newtype Image a = Image { 
     getImage :: PdContext -> GenSt -> (a, GenSt, Primitive) }
 
+
+type Object iix oix = Image (Obj iix oix)
 
 -- | Note - queries don\'t have access to the object counter.
 --
@@ -217,6 +225,9 @@ newtype LocQuery a = LocQuery { getLocQuery :: Point -> Query a }
 
 
 type LocGraphic = LocImage ()
+
+type LocObject iix oix = LocImage (Obj iix oix)
+
 
 -- Functor
 
@@ -426,6 +437,30 @@ class HasID   t     => HasOut0 t
 class HasOut0 t     => HasOut1 t
 class HasOut1 t     => HasOut2 t
 
+instance HasID (Obj iix oix) where
+  getID = obj_id
+
+
+
+instance HasIn0 (Obj X1 a) 
+instance HasIn0 (Obj X2 a) 
+instance HasIn0 (Obj X3 a) 
+
+instance HasIn1 (Obj X2 a) 
+instance HasIn1 (Obj X3 a) 
+
+instance HasIn2 (Obj X3 a) 
+
+
+
+instance HasOut0 (Obj a X1) 
+instance HasOut0 (Obj a X2) 
+instance HasOut0 (Obj a X3) 
+
+instance HasOut1 (Obj a X2) 
+instance HasOut1 (Obj a X3) 
+
+instance HasOut2 (Obj a X3) 
 
 
 inport0 :: HasIn0 t => t -> Port
