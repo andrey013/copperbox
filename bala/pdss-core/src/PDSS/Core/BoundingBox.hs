@@ -21,9 +21,11 @@ module PDSS.Core.BoundingBox
     BoundingBox(..)
   , Boundary(..)
 
-  , objectBBox
 
+  -- * Boundary claculations
+  , objectBBox
   , messageBBox
+  , atomBBox
 
   , bangBBox
   , toggleBBox
@@ -222,9 +224,9 @@ objSize36 i | i < 4     = (74,34)
 
 
 messageBBox :: FontSize -> Int -> Point -> BoundingBox
-messageBBox sz wc bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+messageBBox sz cc bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
   where 
-    (w,h) = msgSize sz wc
+    (w,h) = msgSize sz cc
 
 msgSize :: FontSize -> Int -> (Int,Int)
 msgSize FONT_08 = extObjWidth 4 . objSize08
@@ -236,6 +238,127 @@ msgSize FONT_36 = extObjWidth 10 . objSize36
 
 extObjWidth :: Int -> (Int,Int) -> (Int,Int)
 extObjWidth x1 (x0,y0) = (x0 + x1,y0)
+
+
+-- | Float or symbol atoms.
+--
+atomBBox :: FontSize -> Int -> Point -> BoundingBox
+atomBBox sz cc bl@(P2 x y) = BBox bl (P2 (x+w) (y+h))
+  where 
+    (w,h) = atomSize sz cc
+
+atomSize :: FontSize -> Int -> (Int,Int)
+atomSize FONT_08 = atomSize08
+atomSize FONT_10 = atomSize10
+atomSize FONT_12 = atomSize12
+atomSize FONT_16 = atomSize16
+atomSize FONT_24 = atomSize24 
+atomSize FONT_36 = atomSize36
+
+
+-- 
+-- > 8 pt. Height 15 px
+--
+--  5 chars -  28 px 
+--  6 chars -  33 px
+--  7 chars -  38 px
+--  8 chars -  43 px
+--  9 chars -  48 px
+-- 10 chars -  53 px
+-- 
+--Iincrement 5.
+--
+-- No \"minimum\" size - 1 char width is less wide than 2 chars, 
+-- which in turn is less than 3 chars.
+--
+atomSize08 :: Int -> (Int,Int)
+atomSize08 i = (3 + 5 * i, 15)
+
+-- 
+-- > 10 pt. Height 17 px
+--
+-- 
+--  5 chars -  33 px 
+--  6 chars -  39 px
+--  7 chars -  45 px
+--  8 chars -  51 px
+--  9 chars -  57 px
+-- 10 chars -  63 px
+-- 
+-- Increment 6
+--
+atomSize10 :: Int -> (Int,Int)
+atomSize10 i = (3 + 6 * i, 17)
+
+-- 
+-- > 12 pt. Height 20 px
+--
+-- 
+--  5 chars -  38 px 
+--  6 chars -  45 px
+--  7 chars -  52 px
+--  8 chars -  59 px
+--  9 chars -  68 px
+-- 10 chars -  73 px
+-- 
+-- Increment 7
+--
+atomSize12 :: Int -> (Int,Int)
+atomSize12 i = (3 + 7 * i, 20)
+
+
+
+
+
+
+-- 
+-- > 16 pt. Height 23 px
+--
+-- 
+--  5 chars -  53 px 
+--  6 chars -  63 px
+--  7 chars -  73 px
+--  8 chars -  83 px
+--  9 chars -  93 px
+-- 10 chars - 103 px
+-- 
+-- Increment 10
+--
+atomSize16 :: Int -> (Int,Int)
+atomSize16 i = (3 + 10 * i, 23)
+
+-- 
+-- > 24 pt. Height 33 px
+--
+-- 
+--  5 chars -  73 px 
+--  6 chars -  87 px
+--  7 chars - 101 px
+--  8 chars - 115 px
+--  9 chars - 129 px
+-- 10 chars - 143 px
+-- 
+-- Increment 14
+--
+atomSize24 :: Int -> (Int,Int)
+atomSize24 i = (3 + 14 * i, 33)
+
+
+-- 
+-- > 36 pt. Height 48 px
+--
+-- 
+--  5 chars - 118 px 
+--  6 chars - 141 px
+--  7 chars - 164 px
+--  8 chars - 187 px
+--  9 chars - 210 px
+-- 10 chars - 233 px
+-- 
+-- Increment 23
+--
+atomSize36 :: Int -> (Int,Int)
+atomSize36 i = (3 + 23 * i, 48)
 
 
 -- | TODO - bang and toggle are actually configurable by the 

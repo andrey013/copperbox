@@ -37,6 +37,8 @@ import PDSS.Core.PdDoc
 import PDSS.Core.Utils.FormatCombinators
 
 
+import Data.Sized.Ix                            -- package: sized-types
+
 import Control.Applicative hiding ( empty ) 
 import Data.Monoid
 
@@ -98,5 +100,8 @@ drawl_ pt ma = drawl pt ma >> return ()
 
 -- | Note - ports not points.
 -- 
-drawc :: Port -> Port -> ConnectorImage a -> GenMonad a 
-drawc p1 p2 ma = draw (connector ma p1 p2)
+drawc :: (HasIndex ixa ixi, Size ixi, HasIndex ixb ixo, Size ixo) 
+      => (Obj z1 ixa, ixi) -> (Obj ixb z2, ixo) -> ConnectorImage a 
+      -> GenMonad a 
+drawc (obja,ixi) (objb,ixo) ma = 
+    draw $ connector ma (outport ixi obja) (inport ixo objb)

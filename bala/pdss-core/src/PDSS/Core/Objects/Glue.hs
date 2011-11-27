@@ -19,16 +19,15 @@ module PDSS.Core.Objects.Glue
   ( 
 
     float
+  , symbol
   , int
   , print
+  , send 
+  , receive
 
   ) where 
 
-import PDSS.Core.Context
-import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
-import PDSS.Core.PdDoc
-import qualified PDSS.Core.Utils.FormatCombinators as PP
 
 import Data.Sized.Ix                            -- package: sized types
 
@@ -38,51 +37,42 @@ import Prelude hiding ( print )
 
 
 
--- | TODO - correct bounding box...
+-- | Float constant.
 --
+-- WARNING - uses Haskell show likely to be invalid for Pd...
 float :: Double -> LocObject X2 X1
-float d = promoteLoc $ \pt@(P2 x y) ->
-    getObjectBBox (length ss) pt >>= \bbox ->
-    primObject (rec_obj x y "float" [PP.double d])
-               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
-  where
-    -- WARNING - uses Haskell show likely to be invalid for Pd...
-    ss = "float " ++ show d
+float d = genLocObject "float" [show d]
 
 
+-- | Symbol constant.
+-- 
+-- Should not contain spaces - unchecked.
+--
+symbol :: String -> LocObject X2 X1
+symbol ss = genLocObject "symbol" [ss]
 
---------------------------------------------------------------------------------
 
-
-
-
--- | TODO - correct bounding box...
+-- | Integer constant.
 --
 int :: Int -> LocObject X2 X1
-int n = promoteLoc $ \pt@(P2 x y) ->
-    getObjectBBox (length ss) pt >>= \bbox ->
-    primObject (rec_obj x y "int" [PP.int n])
-               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
-  where
-    ss = "int " ++ show n
+int i = genLocObject "int" [show i]
 
 
 
 
--- newtype Print = Print { getPrint :: Obj }
-
--- | TODO - correct bounding box...
---
 print :: LocObject X1 X0
-print = promoteLoc $ \pt@(P2 x y) ->
-    getObjectBBox (length "print") pt >>= \bbox ->
-    primObject (rec_obj x y "print" [])
-               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
+print = genLocObject "print" []
 
--- instance HasID Print where
---   getID = obj_id . getPrint
+-- | Farnell p. 171.
+--
+send :: String -> LocObject X1 X0
+send name = genLocObject "send" [name]
 
--- instance HasIn0 Print
+-- | Farnell p. 171.
+--
+receive :: String -> LocObject X0 X1
+receive name = genLocObject "receive" [name]
+
 
 
 --------------------------------------------------------------------------------

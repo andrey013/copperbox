@@ -25,6 +25,7 @@ module PDSS.Core.Objects
   , connect 
 
   , floatatom
+  , symbolatom
 
   , message
 
@@ -55,14 +56,10 @@ import qualified PDSS.Core.Utils.FormatCombinators as PP
 
 import Data.Sized.Ix                            -- package: sized-types
 
-import Data.List ( intersperse )
 import Prelude hiding ( print ) 
 
 
 
-
-
--- Helper
 
 
 --------------------------------------------------------------------------------
@@ -70,6 +67,8 @@ import Prelude hiding ( print )
 
 
 -- Array has no bounding box so it cannot wrap the Obj object.
+-- 
+-- Maybe we still need the getID typeclass...
 --
 newtype Array = Array { _arr_id :: Int }
 
@@ -94,12 +93,22 @@ connect = promoteConn $ \p0 p1 ->
 --------------------------------------------------------------------------------
 
 
--- | Width is probably number of chars...
-floatatom :: Int -> LocObject X0 X1
+-- | Width is number of chars - default (for context?) is 5.
+--
+floatatom :: Int -> LocObject X1 X1
 floatatom w = promoteLoc $ \pt@(P2 x y) ->
+    getAtomBBox w pt >>= \bbox ->    
     primObject (rec_floatatom x y w 0 0 LEFT noSRL)
-               (\i -> Obj { obj_id = i
-                          , obj_bb = BBox pt (P2 (x+w) (y + 10)) }) 
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
+
+
+
+symbolatom :: Int -> LocObject X1 X1
+symbolatom w = promoteLoc $ \pt@(P2 x y) ->
+    getAtomBBox w pt >>= \bbox ->    
+    primObject (rec_symbolatom x y w 0 0 LEFT noSRL)
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
+
 
 
 --------------------------------------------------------------------------------
@@ -111,7 +120,7 @@ message xs = promoteLoc $ \pt@(P2 x y) ->
     primObject (rec_msg x y $ map PP.string xs)
                (\i -> Obj { obj_id = i, obj_bb = bbox }) 
   where
-    ss = concat $ intersperse " " xs
+    ss = concatMap (' ':) xs
 
 
 

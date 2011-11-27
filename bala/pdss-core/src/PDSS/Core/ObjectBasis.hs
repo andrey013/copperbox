@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -44,6 +46,7 @@ module PDSS.Core.ObjectBasis
   , applyLoc
   , at
 
+  , genLocObject
 
   , Port(..)
   , ConnectorImage
@@ -56,28 +59,27 @@ module PDSS.Core.ObjectBasis
   , connector
   , promoteConn
   
-  , HasID(..)
 
-  , HasIn0
-  , HasIn1
-  , HasIn2
-  , HasOut0
-  , HasOut1
-  , HasOut2
+  , PortNum(..)
+  , HasIndex
 
-  , inport0
-  , inport1
-  , inport2
-  , outport0
-  , outport1
-  , outport2
+  , inport
+  , outport
+
+
+  , port1
+  , port2
+  , port3
+  , port4
+  , port5
 
   ) where 
 
 import PDSS.Core.BoundingBox
 import PDSS.Core.InternalTypes
 import PDSS.Core.Context
-import PDSS.Core.Utils.FormatCombinators
+import PDSS.Core.PdDoc
+import qualified PDSS.Core.Utils.FormatCombinators as PP
 
 
 import Data.Sized.Ix                            -- package: sized-types
@@ -204,10 +206,10 @@ liftQuery :: Query a -> Image a
 liftQuery ma = askCtx >>= \r -> return (runQuery r ma)
 
 
-primElement :: Doc -> Graphic
+primElement :: PP.Doc -> Graphic
 primElement d1 = Image $ \_ s -> ((),s, primitive d1)
 
-primObject :: Doc -> (Int -> a) -> Image a
+primObject :: PP.Doc -> (Int -> a) -> Image a
 primObject d1 f = Image $ \_ s -> let (i,s1) = incrSt s in (f i,s1, primitive d1)
 
 
@@ -312,6 +314,17 @@ infixr 1 `at`
 -- 
 at :: LocImage a -> Point -> Image a
 at = applyLoc
+
+
+
+
+genLocObject :: String -> [String] -> LocObject ixa ixb
+genLocObject name args = promoteLoc $ \pt@(P2 x y) ->
+    getObjectBBox len pt >>= \bbox ->
+    primObject (rec_obj x y name $ map PP.string args)
+               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
+  where
+    len = length $ name ++ concatMap (' ':) args
 
 
 
@@ -424,59 +437,53 @@ promoteConn k = ConnectorImage $ \p0 p1 -> k p0 p1
 --------------------------------------------------------------------------------
 -- Anchors
 
-class HasID t where
-  getID :: t -> Int
+
+
+class PortNum ix where
+  portnum :: ix -> Int
 
 
 
-class HasID  t      => HasIn0 t
-class HasIn0 t      => HasIn1 t
-class HasIn1 t      => HasIn2 t
-
-class HasID   t     => HasOut0 t
-class HasOut0 t     => HasOut1 t
-class HasOut1 t     => HasOut2 t
-
-instance HasID (Obj iix oix) where
-  getID = obj_id
+instance PortNum X1 where portnum _ = 0
+instance PortNum X2 where portnum _ = 1
+instance PortNum X3 where portnum _ = 2
 
 
 
-instance HasIn0 (Obj X1 a) 
-instance HasIn0 (Obj X2 a) 
-instance HasIn0 (Obj X3 a) 
-
-instance HasIn1 (Obj X2 a) 
-instance HasIn1 (Obj X3 a) 
-
-instance HasIn2 (Obj X3 a) 
+indexof :: Size ix => ix -> Int
+indexof ix = size ix - 1
 
 
+class HasIndex parent ix
 
-instance HasOut0 (Obj a X1) 
-instance HasOut0 (Obj a X2) 
-instance HasOut0 (Obj a X3) 
+instance HasIndex X1 X1
 
-instance HasOut1 (Obj a X2) 
-instance HasOut1 (Obj a X3) 
+instance HasIndex X2 X1
+instance HasIndex X2 X2
 
-instance HasOut2 (Obj a X3) 
+instance HasIndex X3 X1
+instance HasIndex X3 X2
+instance HasIndex X3 X3
+
+inport :: (HasIndex oix ix, Size ix) => ix -> Obj oix z -> Port
+inport ix parent = Port { parent_obj = obj_id parent, port_num = indexof ix }
+
+outport :: (HasIndex oix ix, Size ix) => ix -> Obj z oix -> Port
+outport ix parent = Port { parent_obj = obj_id parent, port_num = indexof ix }
 
 
-inport0 :: HasIn0 t => t -> Port
-inport0 t = Port { parent_obj = getID t, port_num = 0 }
+port1 :: X1
+port1 = undefined
 
-inport1 :: HasIn1 t => t -> Port
-inport1 t = Port { parent_obj = getID t, port_num = 1 }
+port2 :: X2
+port2 = undefined
 
-inport2 :: HasIn2 t => t -> Port
-inport2 t = Port { parent_obj = getID t, port_num = 2 }
+port3 :: X3
+port3 = undefined
 
-outport0 :: HasOut0 t => t -> Port
-outport0 t = Port { parent_obj = getID t, port_num = 0 }
+port4 :: X4
+port4 = undefined
 
-outport1 :: HasOut1 t => t -> Port
-outport1 t = Port { parent_obj = getID t, port_num = 1 }
+port5 :: X5
+port5 = undefined
 
-outport2 :: HasOut2 t => t -> Port
-outport2 t = Port { parent_obj = getID t, port_num = 2 }

@@ -9,7 +9,8 @@ import PDSS.Core.ObjectBasis
 import PDSS.Core.Objects
 import PDSS.Core.Types
 
--- import Data.Bits
+-- import Data.Sized.Ix                            -- package: sized-types
+
 -- import Data.Word
 
 import Prelude hiding ( print )
@@ -27,7 +28,7 @@ demo01 = output "./out/demo01.pd" $ run (467,185,466,155) 12 $ do
     b <- drawl (P2 60 88) $ print
     drawl (P2 94 44) $ comment "<--- type in numbers and press 'enter'"
     drawl (P2 104 87) $ comment "<--- this prints to stdout"
-    drawc (outport0 a) (inport0 b) $ connect
+    drawc (a,port1) (b,port1) $ connect
     return ()
 
 

@@ -23,28 +23,17 @@ module PDSS.Core.Objects.Math
 
   ) where 
 
-import PDSS.Core.Context
-import PDSS.Core.InternalTypes
 import PDSS.Core.ObjectBasis
-import PDSS.Core.PdDoc
+
 
 import Data.Sized.Ix                            -- package: sized-types
 
 
 
 mtof :: LocObject X1 X1
-mtof = promoteLoc $ \pt@(P2 x y) ->
-    getObjectBBox (length "mtof") pt >>= \bbox ->
-    primObject (rec_obj x y "mtof" [])
-               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
-
-
-
---------------------------------------------------------------------------------
+mtof = genLocObject "mtof" []
 
 
 ftom :: LocObject X1 X1
-ftom = promoteLoc $ \pt@(P2 x y) ->
-    getObjectBBox (length "ftom") pt >>= \bbox ->
-    primObject (rec_obj x y "ftom" [])
-               (\i -> Obj { obj_id = i, obj_bb = bbox }) 
+ftom = genLocObject "from" []
+

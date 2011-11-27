@@ -32,6 +32,8 @@ module PDSS.Core.Context
 
   , getObjectBBox
   , getMessageBBox
+  , getAtomBBox
+
   , getBangOnLoad
 
   -- * Setters
@@ -114,11 +116,15 @@ getLabelOffsets = asksCtx ctx_label_offsets
 
 
 getObjectBBox :: ContextM m => Int -> Point -> m BoundingBox
-getObjectBBox wc bl = (\sz -> objectBBox sz wc bl) 
+getObjectBBox cc bl = (\sz -> objectBBox sz cc bl) 
     <$> asksCtx ctx_font_size
 
 getMessageBBox :: ContextM m => Int -> Point -> m BoundingBox
-getMessageBBox wc bl = (\sz -> messageBBox sz wc bl) 
+getMessageBBox cc bl = (\sz -> messageBBox sz cc bl) 
+    <$> asksCtx ctx_font_size
+
+getAtomBBox :: ContextM m => Int -> Point -> m BoundingBox
+getAtomBBox cc bl = (\sz -> atomBBox sz cc bl) 
     <$> asksCtx ctx_font_size
 
 getBangOnLoad :: ContextM m => m InitLoad 
