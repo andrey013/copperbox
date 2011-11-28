@@ -21,7 +21,10 @@
 module PDSS.Core.ObjectBasis
   ( 
 
-    Obj(..)
+    PdAtom(..)
+  , PdType(..)
+
+  , Obj(..)
 
   , Image   
   , Object
@@ -91,6 +94,28 @@ import Data.Monoid
 
 
 type PrimResult a = (a,GenSt,Primitive)
+
+
+data PdAtom = PdSymbol String
+            | PdInt Int
+            | PdFloat Double
+  deriving (Eq,Ord,Show)
+
+
+atomRep :: PdAtom -> String
+atomRep (PdInt i)     = show i
+atomRep (PdFloat d)   = show d            -- TODO ...
+atomRep (PdSymbol ss) = map swapSpace ss
+  where
+    swapSpace ' ' = '_'
+    swapSpace ch  = ch
+
+
+
+data PdType = TySymbol
+            | TyFloat
+  deriving (Eq,Ord,Show)
+
 
 
 -- | Bang is defined by size which is the same length in both directions.
@@ -318,13 +343,14 @@ at = applyLoc
 
 
 
-genLocObject :: String -> [String] -> LocObject ixa ixb
-genLocObject name args = promoteLoc $ \pt@(P2 x y) ->
+genLocObject :: String -> [PdAtom] -> LocObject ixa ixb
+genLocObject name xs = promoteLoc $ \pt@(P2 x y) ->
     getObjectBBox len pt >>= \bbox ->
     primObject (rec_obj x y name $ map PP.string args)
                (\i -> Obj { obj_id = i, obj_bb = bbox }) 
   where
-    len = length $ name ++ concatMap (' ':) args
+    args = map atomRep xs
+    len  = length $ name ++ concatMap (' ':) args
 
 
 
