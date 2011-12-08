@@ -1,5 +1,5 @@
 name:             data-aviary
-version:          0.2.3
+version:          0.4.0
 license:          BSD3
 license-file:     LICENSE
 copyright:        Stephen Tetley <stephen.tetley@gmail.com>
@@ -8,33 +8,50 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Combinators
 synopsis:         Combinator birds.
 description:
+  .
   A catalogue of the combinator birds (Data.Aviary.Birds etc.) - 
-  these modules are intended more for illustration than utility.
+  these modules are intended for illustration and-or reference
+  (i.e. looking up combinators by their type signature).
   .
-  Data.Aviary.Functional - operations from Applicative, Monad 
-  etc. with their types specialized to the function type. This 
-  might be usefulfor /bird-watching/ i.e. spotting instances 
-  where an Applicative, Monad or whatever operation corresponds 
-  to a combinator bird. Again this module is not intended for 
-  actual use.
+  Using @Data.Aviary@ as a library (i.e. depending on it for 
+  other packages) is not recommended. Whilst Haskell has a fairly
+  meagre set of combinators in the Base libraries, the set is 
+  idiomatic at least. Combinator-mania is initially fun but it 
+  leads to inscrutable code.
+  .
+  .
+  Changelog
+  .
+  0.4.0:
+  .
+  * Removed the \"useful\" combinators. 
+  .
+  * Changed the documentation to emphasize that Data.Aviary is
+    intended for reference and is not recommended as a dependency.
+  * 
+  0.3.0:
+  .
+  * Added Monadic variations.
+  .
+  0.2.3: 
   . 
-  Plus a smaller set (Data.Aviary) intended to be useful, 
-  collecting combinators that have already /escaped/ (published 
-  elsewhere) but aren\'t in Data.Function, along with some 
-  personal favourites.
+  * Added Data.Aviary.BirdsVersion - same as the original Birds 
+    module, but with type signatures following a revised naming 
+    scheme. 
   .
-  Changelog:
+  0.2.2: 
+  . 
+  * Added Data.Aviary.Functional - the Applicative, Monad etc. 
+    combinatorswith implementations and signatures specialized to 
+    the (simple) functional type cf. the Reader monad. 
   .
-  0.2.3 added Data.Aviary.BirdsVersion - same as the original 
-        Birds module, but with type signatures following a 
-        revised naming scheme. 
+  0.2.1: 
   .
-  0.2.2 added Data.Aviary.Functional - Applicative, Monad etc.
-        signatures specialized to the function type. 
+  * Added @dup@ and the /combiner/ variants of cardinal-prime.
   .
-  0.2.1 added @dup@ and the /combiner/ variants of cardinal-prime.
-  .
-  0.2.0 added Haddock docs for @(\#\#)@.
+  0.2.0 
+  . 
+  * Added Haddock docs for @(\#\#)@.
   
 build-type:         Simple
 stability:          unstable
@@ -44,15 +61,14 @@ extra-source-files:
 
 library
   hs-source-dirs:     src
-  build-depends:      base<5
+  build-depends:      base < 5
 
   
   exposed-modules:
-    Data.Aviary,
     Data.Aviary.Birds,
     Data.Aviary.BirdsInter,
     Data.Aviary.BirdsVersion,
-    Data.Aviary.Functional    
+    Data.Aviary.Functional
 
   other-modules:
     

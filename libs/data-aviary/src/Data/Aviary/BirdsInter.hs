@@ -12,8 +12,7 @@
 --
 -- Bird monickered combinators interdefined.
 -- 
--- This module is intended for illustration (the type signatures!) 
--- rather than utility.
+-- This module is intended for illustration rather than utility.
 -- 
 -- The \'long reach\' Turner set { S, K, I, B, C, S\', B\', C\' }
 --
