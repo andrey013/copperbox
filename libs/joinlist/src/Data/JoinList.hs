@@ -76,10 +76,6 @@ module Data.JoinList
   , dropLeft
   , dropRight 
 
-  -- * Zipping (deprecated)
-  , xzip
-  , xzipWith
-
   
   ) where
 
@@ -96,15 +92,22 @@ import Prelude hiding ( (++), concat, foldl, foldr, head,
                         map, null, replicate, reverse,
                         tail )
 
+-- | A Binary tree representation of a list.
+--
 
 data JoinList a = Empty 
-                | Single a 
+                | One a 
                 | JoinList a :++: JoinList a
   deriving (Eq)
 
+
+-- | View from the left (as per Data.Sequence).
+--
 data ViewL a = EmptyL | a :< (JoinList a)
   deriving (Eq,Show)
 
+-- | View from the right (as per Data.Sequence).
+--
 data ViewR a = EmptyR | (JoinList a) :> a
   deriving (Eq,Show)
 
@@ -122,15 +125,15 @@ instance Functor JoinList where
   fmap = map
 
 instance Monad JoinList where
-  return = Single
+  return = One
   Empty      >>= _ = Empty
-  Single a   >>= k = k a
+  One a      >>= k = k a
   (t :++: u) >>= k = (concat $ fmap k t) :++: (concat $ fmap k u)
 
 
 instance Foldable JoinList where
   foldMap _ Empty      = mempty
-  foldMap f (Single a) = f a
+  foldMap f (One a) = f a
   foldMap f (t :++: u) = F.foldMap f t `mappend` F.foldMap f u
 
   foldr                = foldr
@@ -138,7 +141,7 @@ instance Foldable JoinList where
 
 instance Traversable JoinList where
   traverse _ Empty      = pure Empty
-  traverse f (Single a) = Single <$> f a
+  traverse f (One a) = One <$> f a
   traverse f (t :++: u) = (:++:) <$> traverse f t <*> traverse f u
 
 -- Views
@@ -161,7 +164,7 @@ toList = foldl (flip (:)) []
 -- | Build a join list from a regular list.
 fromList :: [a] -> JoinList a
 fromList []     = Empty
-fromList [x]    = Single x
+fromList [x]    = One x
 fromList (x:xs) = x `cons` fromList xs
 
 
@@ -173,7 +176,7 @@ empty = Empty
 
 -- | Create a singleton join list.
 singleton :: a -> JoinList a
-singleton = Single
+singleton = One
 
 
 -- | Cons an element to the front of the join list.
@@ -190,6 +193,7 @@ infixr 5 ++
 -- | Catenate two join lists. Unlike (++) on regular lists, 
 -- catenation on join lists is (relatively) cheap hence the 
 -- name /join list/.
+--
 (++) :: JoinList a -> JoinList a -> JoinList a
 Empty ++ ys    = ys
 xs    ++ Empty = xs
@@ -216,7 +220,7 @@ join = (++)
 -- in constant time.
 head :: JoinList a -> a
 head Empty      = error "Data.JoinList.head: empty list"
-head (Single a) = a
+head (One a)    = a
 head (t :++: _) = head t
 
 
@@ -226,25 +230,25 @@ head (t :++: _) = head t
 -- empty.
 last :: JoinList a -> a
 last Empty      = error "Data.JoinList.head: empty list"
-last (Single a) = a
+last (One a)    = a
 last (_ :++: u) = last u
 
 -- | Extract the elements after the head of a list. An error is thrown
 -- if the list is empty.
 tail :: JoinList a -> JoinList a
 tail Empty             = error "Data.JoinList.tail: empty list"
-tail (Single _)        = Empty
-tail (Single _ :++: u) = u
-tail (t        :++: u) = tail t :++: u
+tail (One _)        = Empty
+tail (One _ :++: u) = u
+tail (t     :++: u) = tail t :++: u
 
 
 -- | Extract all the elements except the last one. An error is thrown
 -- if the list is empty.
 init :: JoinList a -> JoinList a
-init Empty             = error "Data.JoinList.init: empty list"
-init (Single _)        = Empty
-init (t :++: Single _) = t
-init (t :++: u)        = t :++: init u
+init Empty          = error "Data.JoinList.init: empty list"
+init (One _)        = Empty
+init (t :++: One _) = t
+init (t :++: u)     = t :++: init u
 
 
 
@@ -267,14 +271,15 @@ length = gfold 0 (const 1) (+)
 -- | Map a function over a join list.
 map :: (a -> b) -> JoinList a -> JoinList b
 map _ Empty      = Empty
-map f (Single a) = Single (f a)
+map f (One a)    = One (f a)
 map f (a :++: b) = (map f a) :++: (map f b) 
 
 reverse :: JoinList a -> JoinList a
-reverse l = step l Empty where
-  step Empty      acc = acc
-  step (Single a) acc = acc `snoc` a
-  step (t :++: u) acc = step t (step u acc)
+reverse l = go l Empty 
+  where
+    go Empty      acc = acc
+    go (One a)    acc = acc `snoc` a
+    go (t :++: u) acc = go t (go u acc)
 
 
 --------------------------------------------------------------------------------
@@ -282,59 +287,69 @@ reverse l = step l Empty where
 
 -- | Build a join list of n elements. 
 replicate :: Int -> a -> JoinList a
-replicate n a | n > 0     = step (n-1) (Single a)
+replicate n a | n > 0     = step (n-1) (One a)
               | otherwise = Empty
   where
     step 0 xs = xs
-    step i xs = step (i-1) $ Single a :++: xs
+    step i xs = step (i-1) $ One a :++: xs
 
 -- | Repeatedly build a join list by catenating the seed list.
 repeated :: Int -> JoinList a -> JoinList a
-repeated n xs | n > 0     = step (n-1) xs
+repeated n xs | n > 0     = go (n-1) xs
               | otherwise = Empty
   where
-    step 0 ys = ys
-    step i ys = step (i-1) $ xs :++: ys
+    go 0 ys = ys
+    go i ys = go (i-1) $ xs :++: ys
 
 --------------------------------------------------------------------------------
 -- Generalized fold
 
 -- | A generalized fold, where each constructor has an operation.
 gfold :: b                              -- param e, replaces Empty
-      -> (a -> b)                       -- param f, replaces Single
+      -> (a -> b)                       -- param f, replaces One
       -> (b -> b -> b)                  -- param g, replaces Join
       -> JoinList a 
       -> b
 gfold e _ _ Empty      = e
-gfold _ f _ (Single a) = f a
+gfold _ f _ (One a)    = f a
 gfold e f g (t :++: u) = g (gfold e f g t) (gfold e f g u)
 
 -- | Right-associative fold of a JoinList.
 foldr :: (a -> b -> b) -> b -> JoinList a -> b
-foldr _ e Empty      = e
-foldr f e (Single a) = f a e
-foldr f e (t :++: u) = foldr f (foldr f e t) u
+foldr f = go
+  where
+    go e Empty      = e
+    go e (One a)    = f a e
+    go e (t :++: u) = go (go e u) t
 
 
 -- | Left-associative fold of a JoinList.
+--
 foldl :: (b -> a -> b) -> b -> JoinList a -> b
-foldl _ e Empty      = e
-foldl f e (Single a) = f e a
-foldl f e (t :++: u) = foldl f (foldl f e u) t
+foldl f = go 
+  where
+    go e Empty      = e
+    go e (One a)    = f e a
+    go e (t :++:u) = go (go e t) u
+
 
 -- | unfoldl is permitted due to cheap /snoc-ing/.
+--
 unfoldl :: (b -> Maybe (a, b)) -> b -> JoinList a
-unfoldl f = step where
-  step st = case f st of
+unfoldl f = go 
+  where
+    go st = case f st of
               Nothing -> Empty
-              Just (a,st') -> step st' `snoc` a
+              Just (a,st') -> go st' `snoc` a
 
 -- | unfoldr - the /usual/ unfoldr opertation.
+--
 unfoldr :: (b -> Maybe (a, b)) -> b -> JoinList a
-unfoldr f = step where
-  step st = case f st of
+unfoldr f = go 
+  where
+    go st = case f st of
               Nothing -> Empty
-              Just (a,st') -> a `cons` step st'
+              Just (a,st') -> a `cons` go st'
 
 --------------------------------------------------------------------------------
 -- Views
@@ -350,14 +365,15 @@ unfoldr f = step where
 --
 viewl :: JoinList a -> ViewL a
 viewl Empty      = EmptyL
-viewl (Single a) = a :< Empty
-viewl (t :++: u) = step t u where
-   step Empty        r = viewl r
-   step (Single a)   r = a :< r
-   step (t' :++: u') r = step t' (u' :++: r)
+viewl (One a)    = a :< Empty
+viewl (t :++: u) = go t u 
+  where
+   go Empty        r = viewl r
+   go (One a)      r = a :< r
+   go (t' :++: u') r = go t' (u' :++: r)
 
 
--- | Access the rightt end of a sequence.
+-- | Access the right end of a sequence.
 --
 -- Unlike the corresponing operation on Data.Sequence this is 
 -- not a cheap operation, the joinlist must be traversed down 
@@ -368,11 +384,12 @@ viewl (t :++: u) = step t u where
 --
 viewr :: JoinList a -> ViewR a
 viewr Empty      = EmptyR
-viewr (Single a) = Empty :> a
-viewr (t :++: u) = step t u where
-   step l Empty        = viewr l
-   step l (Single a)   = l :> a
-   step l (t' :++: u') = step (l :++: t') u' 
+viewr (One a)    = Empty :> a
+viewr (t :++: u) = go t u 
+  where
+    go l Empty        = viewr l
+    go l (One a)      = l :> a
+    go l (t' :++: u') = go (l :++: t') u' 
 
 --------------------------------------------------------------------------------
 -- take etc
@@ -423,34 +440,5 @@ dropRight i xs | i <= 0 = xs
 dropRight i xs          = case viewr xs of
                             EmptyR -> Empty
                             t :> _ -> dropRight (i-1) t
-
-
-
---------------------------------------------------------------------------------
--- Zipping
-
--- | This function should be considered deprecated.
---
--- /cross zip/ - zip a join list against a regular list, 
--- maintaining the shape of the join list provided the lengths 
--- of the lists match.
---
-xzip :: JoinList a -> [b] -> JoinList (a,b)
-xzip = xzipWith (,)
-
--- | This function should be considered deprecated.
---
--- Generalized cross zip - c.f. zipWith on regular lists.
---
-xzipWith :: (a -> b -> c) -> JoinList a -> [b] -> JoinList c
-xzipWith fn xs0 ys0       = fst $ step xs0 ys0
-  where 
-   step Empty      xs     = (Empty,xs)
-   step (Single a) (x:xs) = (Single (fn a x),xs)
-   step (Single _) []     = (Empty,[])
-   step (t :++: u) xs     = (t' :++: u',xs'') where
-                              (t',xs')  = step t xs
-                              (u',xs'') = step u xs'
-
 
 
