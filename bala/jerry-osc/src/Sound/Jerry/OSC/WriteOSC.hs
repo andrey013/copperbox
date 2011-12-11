@@ -24,10 +24,6 @@ module Sound.Jerry.OSC.WriteOSC
 
     writePacket
   , serializePacket 
-  , putAtom
-    
-  , putInt32
-  , putOscString
 
   ) where
 
@@ -42,30 +38,37 @@ import Data.Binary.Put
 import Data.Char
 
 writePacket :: Packet -> L.ByteString
-writePacket = runPut . putPacket
+writePacket = runPut . packet
 
 serializePacket :: Packet -> String
 serializePacket = map (chr . fromIntegral) . L.unpack . writePacket
 
 
-putPacket :: Packet -> Put
-putPacket (Message addr args) = do
-    putOscString addr
-    putOscString (',':tags)
-    mapM_ putAtom args
-  where
-    tags = map typeTag args
+packet :: Packet -> Put
+packet (Message addr args) =
+    alignedString addr >> arglist args >> mapM_ atom args
     
-putPacket (Bundle) = error "putPacket"
+packet (Bundle tt es) = 
+    alignedString "#bundle" >> timeTag tt >> mapM_ element es
+
+arglist :: [Atom] -> Put
+arglist = alignedString . (',':) . map typeTag
+
+element :: Packet -> Put
+element a = alignedByteString $ runPut (packet a)
 
 
+atom :: Atom -> Put
+atom (Int32 i)       = putInt32 i
+atom (AtomTime t)    = timeTag t
+atom (Float32 d)     = putFloat32 d
+atom (String s)      = alignedString s
+atom (Blob b)        = 
+    putInt32 (fromIntegral $ L.length b) >> alignedByteString b
 
-putAtom :: Atom -> Put
-putAtom (Int32 i)   = putInt32 i
-putAtom (TimeTag )  = undefined
-putAtom (Float32 d) = putFloat32 d
-putAtom (String ss) = undefined
-
+-- | To do
+timeTag :: TimeTag -> Put
+timeTag (TimeTag a b) = putInt32 (fromIntegral a) >> putInt32 (fromIntegral b)
 
 
 putChar8 :: Char -> Put
@@ -78,16 +81,36 @@ putInt32 = putWord32be . fromIntegral
 putFloat32 :: Float -> Put
 putFloat32 = putFloat32be
 
-
--- | The String must be padded to a multiple of 4 bytes.
+-- | Strings are terminated with the null char. They may be padded
+-- with extra null chars to align at 4 bytes.
 --
-putOscString :: String -> Put
-putOscString = step (0::Int)
+alignedString :: String -> Put
+alignedString ss = primString ss >> putCharZero >> addAlign (1 + length ss)
+
+
+-- | ByteStrings are They may be padded with extra null chars to 
+-- align at 4 bytes.
+--
+alignedByteString :: L.ByteString -> Put
+alignedByteString ss = 
+    putLazyByteString ss >> addAlign (fromIntegral $ L.length ss)
+
+
+addAlign :: Int -> Put
+addAlign n = go (n `mod` 4)
   where
-    step n (s:ss) = putChar8 s >> step (n+1) ss
-    step n []     = putChar8 '\0' >> finalize ((n+1) `mod` 4)
-  
-    finalize 1 = putChar8 '\0' >> putChar8 '\0' >> putChar8 '\0'
-    finalize 2 = putChar8 '\0' >> putChar8 '\0'
-    finalize 3 = putChar8 '\0'
-    finalize _ = return ()
+    go 3 = putCharZero 
+    go 2 = putCharZero >> putCharZero
+    go 1 = putCharZero >> putCharZero >> putCharZero
+    go _ = return ()
+
+
+
+
+putCharZero :: Put
+putCharZero = putChar8 '\0'
+
+-- | No packing.
+--
+primString :: String -> Put
+primString = mapM_ putChar8

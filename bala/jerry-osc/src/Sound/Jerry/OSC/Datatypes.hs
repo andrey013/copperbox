@@ -30,6 +30,7 @@ module Sound.Jerry.OSC.Datatypes
 
     Packet(..)
   , Atom(..)
+  , TimeTag(..)
 
   , typeTag
     
@@ -38,24 +39,34 @@ module Sound.Jerry.OSC.Datatypes
 
 import qualified Data.ByteString.Lazy as L
 
+import Data.Word -- temporarily
 
-data Packet = Message { msg_address :: String, arguments :: [Atom] }
-            | Bundle 
+
+data Packet = Message { msg_address :: String
+                      , msg_arguments :: [Atom] 
+                      }
+            | Bundle { bdl_time_tag :: TimeTag
+                     , bdl_elements :: [Packet] 
+                     }
   deriving (Eq,Ord,Show)
 
 
 data Atom = Int32 Int
-          | TimeTag 
+          | AtomTime TimeTag 
           | Float32 Float
           | String String
           | Blob L.ByteString
   deriving (Eq,Ord,Show)
 
+data TimeTag = TimeTag Word32 Word32
+  deriving (Eq,Ord,Show)
 
 
 typeTag :: Atom -> Char
 typeTag (Int32 {})      = 'i'
-typeTag TimeTag         = 't'
+typeTag (AtomTime {})   = 't'
 typeTag (Float32 {})    = 'f'
 typeTag (String {})     = 's'
 typeTag (Blob {})       = 'b'
+
+

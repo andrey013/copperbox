@@ -22,10 +22,6 @@ module Sound.Jerry.OSC.ReadOSC
   (
     
     getPacket
-  , getAtom
-    
-  , getInt32
-  , getFloat32
 
   ) where
 
@@ -36,29 +32,63 @@ import Data.Binary.IEEE754                      -- package: data-binary-ieee754
 
 import Control.Applicative
 import Data.Binary.Get
+import qualified Data.ByteString.Lazy as L
 import Data.Char
 
+-- Bundles require testing for empty.
+
 getPacket :: Get Packet
-getPacket = getChar8 >>= step 
+getPacket = getChar8 >>= go
   where
-    step '#' = stringLiteral "bundle" >> undefined
-    step '/' = (\addr args -> Message ('/':addr) args) 
-                 <$>  getOscString 1 <*> getArgs
-    step _   = error "getPacket"
+    go '#' = Bundle  <$> (stringLiteral "bundle" >> timeTag) <*> bundleElements
+    go '/' = Message <$> addressRest <*> arglist
+    go ch  = fail $ "getPacket - unrecognized initial char " ++ [ch]
+
+
+-- | '/' already consumed.
+-- 
+addressRest :: Get String
+addressRest = primString >>= go
+  where
+    go ss = dropAlign (1 + length ss) >> return ('/':ss)
+
+
                     
+-- | @#bundle@ and TimeTag already consumed.
+--
+bundleElements :: Get [Packet]
+bundleElements = remaining >>= go
+  where
+    go n | n > 0  = (:) <$> sizedGet n getPacket <*> bundleElements
+    go _          = return []
 
-getArgs :: Get [Atom]
-getArgs = getTypeTags >>= mapM getAtom
+-- | /Fork/ a parser, running it on fixed sized input.
+--
+sizedGet :: Integral n => n -> Get a -> Get a
+sizedGet n pf = getLazyByteString (fromIntegral n) >>= go
+  where
+    go ss = return $ runGet pf ss
+
+-- | To do - TimeTag currently not interpreted.
+--
+timeTag :: Get TimeTag
+timeTag = TimeTag <$> getWord32be <*> getWord32be
+
+arglist :: Get [Atom]
+arglist = typeTags >>= mapM atom
 
 
-getTypeTags :: Get [Char]
-getTypeTags = charLiteral ',' >> getOscString 1
+typeTags :: Get [Char]
+typeTags = charLiteral ',' >> oscString
 
-
-getAtom :: Char -> Get Atom
-getAtom 'i' = Int32 <$> getInt32
-getAtom 'f' = Float32 <$> getFloat32
-getAtom _   = error "getAtom failed"
+-- | Parse an atom according to type tag.
+--
+atom :: Char -> Get Atom
+atom 'i' = Int32 <$> getInt32
+atom 'f' = Float32 <$> getFloat32
+atom 's' = String <$> oscString
+atom 'b' = Blob <$> oscBlob
+atom _   = fail "getAtom failed"
 
 getChar8 :: Get Char 
 getChar8 = (chr . fromIntegral) <$> getWord8
@@ -71,16 +101,35 @@ getFloat32 :: Get Float
 getFloat32 = getFloat32be
 
 
--- | Strings must be a multiple of 4 bytes - we may already have 
--- consumed the first byte.
+-- | Strings must be a multiple of 4 bytes.
 --
-getOscString :: Int -> Get String
-getOscString i = getChar8 >>= step (i+1)
-  where
-    step n '\0' | n `mod` 4 == 0 = return []
-    step n '\0'                  = charLiteral '\0' >>= step (n+1)
-    step n ch   = (ch:) <$> (getChar8 >>= step (n+1))
+oscString :: Get String
+oscString = primString >>= \ss -> dropAlign (length ss) >> return ss
 
+oscBlob :: Get L.ByteString
+oscBlob = 
+    getInt32                            >>= \i  -> 
+    getLazyByteString (fromIntegral i)  >>= \ss -> 
+    dropAlign i                         >> 
+    return ss
+
+dropAlign :: Int -> Get ()
+dropAlign i = go (i `mod` 4)
+  where
+    go 3 = skip 1
+    go 2 = skip 2
+    go 1 = skip 3
+    go _ = return ()
+
+
+-- | Just get a string upto the null terminator. Don\'t worry 
+-- about packing to 4 byte boundary.
+--
+primString :: Get String
+primString = getChar8 >>= go
+  where
+    go '\0' = return []
+    go ch   = (ch:) <$> (getChar8 >>= go)
 
 charLiteral :: Char -> Get Char
 charLiteral ch = fn <$> getChar8

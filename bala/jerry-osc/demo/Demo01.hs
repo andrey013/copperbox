@@ -51,5 +51,3 @@ main2 hostname portnum pks = withSocketsDo $ do
     sClose sckt
 
 
-
-test01 = L.unpack $ runPut $ putOscString ",iii"

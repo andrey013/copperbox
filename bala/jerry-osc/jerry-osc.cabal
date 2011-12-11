@@ -1,0 +1,48 @@
+name:             jerry-osc
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Read and write Open Sound Control packets.
+description:
+  .
+  Read and write Open Sound Control Packets.
+  . 
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+  demo/Demo101.hs
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      binary            >= 0.5      && < 0.6,
+                      bytestring        >= 0.9      && < 1.0,
+                      data-binary-ieee754 >= 0.4    && < 0.6
+
+  exposed-modules:
+    Sound.Jerry.Osc.Datatypes,
+    Sound.Jerry.Osc.ReadOSC,
+    Sound.Jerry.Osc.WriteOSC
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
