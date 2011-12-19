@@ -243,20 +243,20 @@ ffloat mb d =
 
 strikethrough :: (Fractional u, InterpretUnit u) 
               => GenDoc st u a -> GenDoc st u a
-strikethrough = decorateDoc SUPERIOR drawStrikethrough 
+strikethrough = decorateDoc ZABOVE drawStrikethrough 
 
 underline :: (Fractional u, InterpretUnit u) 
           => GenDoc st u a -> GenDoc st u a
-underline = decorateDoc SUPERIOR drawUnderline
+underline = decorateDoc ZABOVE drawUnderline
 
 highlight :: (Fractional u, InterpretUnit u) 
           => RGBi -> GenDoc st u a -> GenDoc st u a
-highlight rgb = decorateDoc ANTERIOR (drawBackfill rgb) 
+highlight rgb = decorateDoc ZBELOW (drawBackfill rgb) 
  
 
 
 decorateDoc :: InterpretUnit u 
-            => ZDeco -> (Orientation u -> LocGraphic u) -> GenDoc st u a 
+            => ZOrder -> (Orientation u -> LocGraphic u) -> GenDoc st u a 
             -> GenDoc st u a
 decorateDoc zdec fn ma = GenDoc $ \env -> 
     decoratePosObject zdec fn $ getGenDoc ma env

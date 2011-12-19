@@ -133,7 +133,7 @@ strokedShape = shapeToLoc (dcClosedPath DRAW_STROKE)
 -- Probably Wumpus should calculate two paths instead.
 --
 dblStrokedShape :: InterpretUnit u => Shape t u -> LocImage u (t u)
-dblStrokedShape sh = sdecorate back fore 
+dblStrokedShape sh = decorateAbove back fore 
   where
     img  = shapeToLoc (dcClosedPath DRAW_STROKE) sh
     back = getLineWidth >>= \lw ->
@@ -156,7 +156,7 @@ shapeToLoc drawF sh = promoteLoc $ \pt ->
     applyLocTheta (liftLocThetaQuery $ shape_ans_fun sh)  pt 0 >>= \a -> 
     applyLocTheta (liftLocThetaQuery $ shape_path_fun sh) pt 0 >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt 0 
-    in replaceAns a (sdecorate g2 $ liftQuery (toPrimPath spath) >>= drawF)
+    in replaceAns a (decorateAbove g2 $ liftQuery (toPrimPath spath) >>= drawF)
 
 
 
@@ -178,7 +178,7 @@ shapeToLocTheta drawF sh = promoteLocTheta $ \pt theta ->
     applyLocTheta (liftLocThetaQuery $ shape_ans_fun sh) pt theta >>= \a -> 
     applyLocTheta (liftLocThetaQuery $ shape_path_fun sh) pt theta >>= \spath -> 
     let g2 = atIncline (shape_decoration sh) pt theta
-    in replaceAns a $ sdecorate g2 (liftQuery (toPrimPath spath) >>= drawF)
+    in replaceAns a $ decorateAbove g2 (liftQuery (toPrimPath spath) >>= drawF)
 
 
 

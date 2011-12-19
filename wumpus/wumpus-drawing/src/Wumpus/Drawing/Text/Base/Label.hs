@@ -59,7 +59,7 @@ locImageLabel :: InterpretUnit u
               -> LocImage u a 
               -> LocImage u a
 locImageLabel fn rpos mklabel obj = promoteLoc $ \pt -> 
-    selaborate (obj `at` pt)  (\a -> ignoreAns $ mklabel rpos `at` fn a)
+    elaborateAbove (obj `at` pt)  (\a -> ignoreAns $ mklabel rpos `at` fn a)
 
 
 
@@ -96,7 +96,7 @@ connectorPathLabel :: InterpretUnit u
                    -> Image u (AbsPath u) 
                    -> Image u (AbsPath u)
 connectorPathLabel fn rpos lbl img =  
-    selaborate img  (\a -> ignoreAns $ lbl rpos `at` (fn a))
+    elaborateAbove img  (\a -> ignoreAns $ lbl rpos `at` (fn a))
 
 
 label_midway_of :: (Real u, Floating u, InterpretUnit u) 
