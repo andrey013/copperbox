@@ -40,9 +40,9 @@ pic01 = udrawTracing (0::Double) $ do
 thing :: LocGraphic Em
 thing = a `mappend` b
   where
-    a = dcRectangle STROKE 2 (2::Em)
+    a = dcRectangle DRAW_STROKE 2 (2::Em)
     b = moveStart (go_right (2::Em)) $ localize (scale_point_size 0.5) $
-          dcRectangle FILL_STROKE 4 4
+          dcRectangle DRAW_FILL_STROKE 4 4
 
 
 -- Pica is not contextual, so the localize should not matter...
@@ -50,6 +50,6 @@ thing = a `mappend` b
 thing2 :: LocGraphic Pica
 thing2 = a `mappend` b
   where
-    a = dcRectangle STROKE 2 2
+    a = dcRectangle DRAW_STROKE 2 2
     b = moveStart (go_right 2) $ localize (scale_point_size 0.5) $
-          dcRectangle FILL_STROKE 4 4
+          dcRectangle DRAW_FILL_STROKE 4 4

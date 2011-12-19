@@ -212,23 +212,23 @@ instance Decorate Image where
 
 -- | Decorate Image.
 --
-decorateImage :: ZDeco -> Image u a -> Image u z -> Image u a
+decorateImage :: ZOrder -> Image u a -> Image u z -> Image u a
 decorateImage zo ma mb = Image $ \ctx -> 
     step zo (getImage ma ctx) (getImage mb ctx)
   where
-    step SUPERIOR (a,w1) (_,w2) = (a, w1 `mappend` w2)
-    step ANTERIOR (a,w1) (_,w2) = (a, w2 `mappend` w1)
+    step ZABOVE (a,w1) (_,w2) = (a, w1 `mappend` w2)
+    step ZBELOW (a,w1) (_,w2) = (a, w2 `mappend` w1)
 
 
 -- | Elaborate Image.
 --
-elaborateImage :: ZDeco -> Image u a -> (a -> Image u z) -> Image u a
+elaborateImage :: ZOrder -> Image u a -> (a -> Image u z) -> Image u a
 elaborateImage zo ma k = Image $ \ ctx ->
     let (a,w1) = getImage ma ctx
         (_,w2) = getImage (k a) ctx 
     in case zo of
-      SUPERIOR -> (a, w1 `mappend` w2)
-      ANTERIOR -> (a, w2 `mappend` w1)
+      ZABOVE -> (a, w1 `mappend` w2)
+      ZBELOW -> (a, w2 `mappend` w1)
 
 
 obliterateImage :: Image u a -> Image u a

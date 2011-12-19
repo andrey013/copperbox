@@ -29,11 +29,11 @@ module Wumpus.Basic.Kernel.Objects.Basis
   , replaceAns
 
   , Decorate(..)
-  , sdecorate
-  , adecorate
+  , decorateAbove
+  , decorateBelow
 
-  , selaborate
-  , aelaborate
+  , elaborateAbove
+  , elaborateBelow
 
   ) where
 
@@ -81,25 +81,35 @@ replaceAns a = fmap (const a)
 -- it with the graphic from the second.
 --
 class Decorate (f :: * -> * -> *) where
-  decorate    :: ZDeco -> f u a -> f u z -> f u a
-  elaborate   :: ZDeco -> f u a -> (a -> f u z) -> f u a
+  -- | Should be read as @ decorate (above|below) A with B @
+  decorate    :: ZOrder -> f u a -> f u z -> f u a
+  elaborate   :: ZOrder -> f u a -> (a -> f u z) -> f u a
   obliterate  :: f u a -> f u a
   hyperlink   :: XLink -> f u a -> f u a
   svgId       :: String -> f u a -> f u a
   svgAnnotate :: [SvgAttr] -> f u a -> f u a
 
-sdecorate :: Decorate f => f u a -> f u z -> f u a
-sdecorate = decorate SUPERIOR
-
-adecorate :: Decorate f => f u a -> f u z -> f u a
-adecorate = decorate ANTERIOR
 
 
-selaborate :: Decorate f => f u a -> (a -> f u z) -> f u a
-selaborate = elaborate SUPERIOR
+-- | Decorate (ABOVE) a with b.
+--
+decorateAbove :: Decorate f => f u a -> f u z -> f u a
+decorateAbove = decorate ZABOVE
 
-aelaborate :: Decorate f => f u a -> (a -> f u z) -> f u a
-aelaborate = elaborate ANTERIOR
+-- | Decorate (BELOW) a with b.
+--
+decorateBelow :: Decorate f => f u a -> f u z -> f u a
+decorateBelow = decorate ZBELOW
+
+-- | Elaborate (ABOVE) a with b.
+--
+elaborateAbove :: Decorate f => f u a -> (a -> f u z) -> f u a
+elaborateAbove = elaborate ZABOVE
+
+-- | Elaborate (BELOW) a with b.
+--
+elaborateBelow :: Decorate f => f u a -> (a -> f u z) -> f u a
+elaborateBelow = elaborate ZBELOW
 
 
 

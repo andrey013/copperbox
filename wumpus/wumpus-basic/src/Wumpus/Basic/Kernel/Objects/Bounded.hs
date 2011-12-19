@@ -132,7 +132,7 @@ emptyBoundedLocThetaGraphic = promoteLocTheta $ \pt _ ->
 --
 illustrateBoundedGraphic :: InterpretUnit u
                          => Image u (BoundingBox u) -> Image u (BoundingBox u)
-illustrateBoundedGraphic gf = aelaborate gf bbrectangle
+illustrateBoundedGraphic gf = elaborateBelow gf bbrectangle
 
 
 
@@ -141,7 +141,7 @@ illustrateBoundedGraphic gf = aelaborate gf bbrectangle
 illustrateBoundedLocGraphic :: InterpretUnit u
                             => LocImage u (BoundingBox u) 
                             -> LocImage u (BoundingBox u)
-illustrateBoundedLocGraphic gf = aelaborate gf fn
+illustrateBoundedLocGraphic gf = elaborateBelow gf fn
   where
     fn bb = promoteLoc $ \_ -> bbrectangle bb
 
@@ -153,7 +153,7 @@ illustrateBoundedLocGraphic gf = aelaborate gf fn
 illustrateBoundedLocThetaGraphic :: InterpretUnit u
                                  => LocThetaImage u (BoundingBox u)
                                  -> LocThetaImage u (BoundingBox u)
-illustrateBoundedLocThetaGraphic gf = aelaborate gf fn
+illustrateBoundedLocThetaGraphic gf = elaborateBelow gf fn
   where
     fn bb = promoteLocTheta $ \_ _ -> bbrectangle bb
 

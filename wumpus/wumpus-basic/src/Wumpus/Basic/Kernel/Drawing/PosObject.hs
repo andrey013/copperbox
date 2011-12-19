@@ -109,6 +109,11 @@ import Data.VectorSpace
 import Control.Applicative
 import Data.Monoid
 
+--
+-- Note - PosObject could be in the @Object@ rather than @Drawing@
+-- namespace.
+--
+
 type DOrt = Orientation Double
 
 -- | A positionable \"Object\".
@@ -272,25 +277,27 @@ emptyPosObject = mempty
 
 
 elaboratePosObject :: (Fractional u, Ord u, InterpretUnit u)
-                   => ZDeco -> RectAddress -> LocGraphic u -> GenPosObject st u a
+                   => ZOrder -> RectAddress -> LocGraphic u 
                    -> GenPosObject st u a
-elaboratePosObject zdec raddr gf ma = decoratePosObject zdec fn ma
+                   -> GenPosObject st u a
+elaboratePosObject zo raddr gf ma = decoratePosObject zo fn ma
   where
     fn ortt = moveStart (vtoRectAddress ortt raddr) gf
 
 
 
 decoratePosObject :: InterpretUnit u 
-                  => ZDeco -> (Orientation u -> LocGraphic u) -> GenPosObject st u a
+                  => ZOrder -> (Orientation u -> LocGraphic u) 
                   -> GenPosObject st u a
-decoratePosObject zdec fn ma = GenPosObject $ \ctx pt s -> 
+                  -> GenPosObject st u a
+decoratePosObject zo fn ma = GenPosObject $ \ctx pt s -> 
     let (a,s1,o1,w1) = getGenPosObject ma ctx pt s
         uortt        = dinterpF (dc_font_size ctx) o1
         upt          = dinterpF (dc_font_size ctx) pt
         (_,w2)       = runLocImage ctx upt $ fn uortt
-        wout         = case zdec of
-                         ANTERIOR -> w2 `mappend` w1
-                         SUPERIOR -> w1  `mappend` w2
+        wout         = case zo of
+                         ZABOVE -> w1 `mappend` w2
+                         ZBELOW -> w2 `mappend` w1
     in (a,s1,o1,wout)
 
 
@@ -340,7 +347,7 @@ illustratePosObject mf  = promoteLoc $ \pt ->
     let dpt         = normalizeF (dc_font_size ctx) pt 
         (_,_,o1,w1) = getGenPosObject mf ctx dpt ()
         uort        = dinterpF (dc_font_size ctx) o1
-    in adecorate (primGraphic w1) (illustrateOrientation uort `at` pt)
+    in decorateBelow (primGraphic w1) (illustrateOrientation uort `at` pt)
 
 
 illustrateOrientation :: InterpretUnit u 

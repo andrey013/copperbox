@@ -3,7 +3,6 @@
 
 module PathPlan where
 
-import Wumpus.Basic.Geometry
 import Wumpus.Basic.Kernel
 
 import Wumpus.Core                              -- package: wumpus-core
@@ -77,19 +76,6 @@ stick6 :: CatTrail Double
 stick6 =      trail_up_right 10 
     `mappend` circularArc CCW half_pi 20 quarter_pi 
     `mappend` trail_up_right 10
-
-
-
-test1 :: Maybe DPoint2
-test1 = interLinesegLine line_seg1 line1
-
-
-
-line_seg1 :: LineSegment Double
-line_seg1 = LineSegment (P2 (-150) (-63)) (P2 150 (-63))
-
-line1 :: Line Double
-line1 = Line zeroPt (P2 34 (-93))
 
 
 black                   :: RGBi

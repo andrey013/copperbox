@@ -61,7 +61,7 @@ module Wumpus.Basic.Kernel.Base.BaseDefs
   , closedMode
 
   -- * Drawing layers
-  , ZDeco(..)  
+  , ZOrder(..)  
 
   -- * Alignment
   , HAlign(..)
@@ -347,13 +347,9 @@ closedMode DRAW_FILL_STROKE = CFILL_STROKE
 
 
 
--- | Decorating with resepct to the Z-order 
--- 
--- > SUPERIOR - in front. 
+-- | Enumerated type for drawing with respect to the z-order.
 --
--- > ANTERIOR - behind.
---
-data ZDeco = SUPERIOR | ANTERIOR
+data ZOrder = ZBELOW | ZABOVE
   deriving (Bounded,Enum,Eq,Ord,Show)
 
 

@@ -32,6 +32,8 @@ description:
   .
   v0.22.0 to v0.23.0:
   .
+  * Replaced @ZDeco@ enumeration with @ZOrder@.
+  .
   * Removed the @Basic.Geometry@ modules, they are superseded in 
     Wumpus-Drawing. Some of the equivalent functionality is now
     internal to the respective modules in Wumpus-Drawing - Wumpus
