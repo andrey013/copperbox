@@ -66,6 +66,7 @@ description:
   .
   * Changed Chain so that first item in the chain is the start 
     point (previously the start point was iterated by the chain).
+    Expanded Chain module, some API name changes.
   .
   * Removed @ConnectorProps@ from the @DrawingContext@ , they are 
     now used \"locally\" in Wumpus-Drawing.

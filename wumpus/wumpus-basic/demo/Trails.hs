@@ -1,7 +1,7 @@
 {-# OPTIONS -Wall #-}
 
 
-module PathPlan where
+module Trails where
 
 import Wumpus.Basic.Kernel
 
@@ -17,8 +17,8 @@ main :: IO ()
 main = do 
     createDirectoryIfMissing True "./out/"
     let ans = runCtxPictureU std_attr pic01
-    writeEPS "./out/path_plan.eps" ans
-    writeSVG "./out/path_plan.svg" ans
+    writeEPS "./out/trails.eps" ans
+    writeSVG "./out/trails.svg" ans
 
 
 std_attr :: DrawingContext

@@ -35,15 +35,18 @@ module Wumpus.Basic.Kernel.Drawing.Chain
 
   , chain1
   , sequenceChain
+  , replicateChain
 
-  , setChainScheme
 
-  , chainPrefix
+  , iterationScheme
+  , sequenceScheme
+  , catTrailScheme
+  , countingScheme
 
-  , chainIterate
 
-  , horizontalChainScm
-  , verticalChainScm
+  , horizontalScheme
+  , verticalScheme
+
   , runChainH
   , runChainV
 
@@ -53,7 +56,7 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , runTableRowwise
   , runTableColumnwise
 
-  , radialChain
+  , radialChainScm
 
   ) where
 
@@ -66,6 +69,7 @@ import Wumpus.Basic.Kernel.Objects.Basis
 import Wumpus.Basic.Kernel.Objects.Displacement
 import Wumpus.Basic.Kernel.Objects.Image
 import Wumpus.Basic.Kernel.Objects.LocImage
+import Wumpus.Basic.Kernel.Objects.Trail
 
 import Wumpus.Core                              -- package: wumpus-core
 
@@ -100,7 +104,8 @@ type instance DUnit (ChainScheme u) = u
 
 
 data ChainSt st u = forall cst. ChainSt 
-       { chain_st         :: cst
+       { chain_count      :: Int
+       , chain_st         :: cst
        , chain_next       :: Point2 u -> cst -> (Point2 u,cst) 
        , chain_user_state :: st
        }
@@ -150,12 +155,12 @@ instance DrawingCtxM (GenChain st u) where
 -- UserStateM 
 
 instance UserStateM (GenChain st u) where
-  getState        = GenChain $ \_ pt s@(ChainSt _ _ ust) -> 
+  getState        = GenChain $ \_ pt s@(ChainSt _ _ _ ust) -> 
                       (ust, pt, s, mempty)
-  setState ust    = GenChain $ \_ pt (ChainSt a b _) -> 
-                      ((), pt, ChainSt a b ust, mempty)
-  updateState upd = GenChain $ \_ pt (ChainSt a b ust) -> 
-                      ((), pt, ChainSt a b (upd ust), mempty)
+  setState ust    = GenChain $ \_ pt (ChainSt i a b _) -> 
+                      ((), pt, ChainSt i a b ust, mempty)
+  updateState upd = GenChain $ \_ pt (ChainSt i a b ust) -> 
+                      ((), pt, ChainSt i a b (upd ust), mempty)
 
 
 -- LocationM
@@ -182,7 +187,8 @@ runGenChain :: InterpretUnit u
             => ChainScheme u -> st -> GenChain st u a -> LocImage u (a,st)
 runGenChain (ChainScheme start step) ust ma = promoteLoc $ \pt -> 
     askDC >>= \ctx ->
-    let st_zero     = ChainSt { chain_st         = start pt
+    let st_zero     = ChainSt { chain_count      = 0
+                              , chain_st         = start pt
                               , chain_next       = step
                               , chain_user_state = ust }
         dpt         = normalizeF (dc_font_size ctx) pt
@@ -225,43 +231,103 @@ runChain_ cscm ma = ignoreAns $ runChain cscm ma
 --------------------------------------------------------------------------------
 -- Operations
 
+
+-- | Demand a point on the Chain and draw the LocImage
+-- at it.
+--
 chain1 :: InterpretUnit u 
-        => LocImage u a -> GenChain st u a
-chain1 gf  = GenChain $ \ctx pt (ChainSt s0 sf ust) -> 
+       => LocImage u a -> GenChain st u a
+chain1 gf  = GenChain $ \ctx pt (ChainSt i0 s0 sf ust) -> 
     let upt       = dinterpF (dc_font_size ctx) pt
         (a,w1)    = runImage ctx $ applyLoc gf upt
         (pt1,st1) = sf upt s0
         dpt1      = normalizeF (dc_font_size ctx) pt1
-        new_st    = ChainSt { chain_st         = st1
+        new_st    = ChainSt { chain_count      = i0 + 1
+                            , chain_st         = st1
                             , chain_next       = sf
                             , chain_user_state = ust }
     in (a, dpt1, new_st, w1)
 
+
+-- Should this also run the chain?
+--
 sequenceChain :: InterpretUnit u 
               => [LocImage u a] -> GenChain st u (UNil u)
 sequenceChain = ignoreAns . mapM_ chain1
+
+-- Should this also run the chain?
+--
+replicateChain :: InterpretUnit u 
+               => Int -> LocImage u a -> GenChain st u (UNil u)
+replicateChain n = sequenceChain . replicate n 
+
+
 
 --
 -- Note - onChain draws at the initial position, then increments 
 -- the next position.
 --
 
-
+{-
 setChainScheme :: InterpretUnit u 
                => ChainScheme u -> GenChain st u ()
 setChainScheme (ChainScheme start step) = 
-    GenChain $ \ctx pt (ChainSt _ _ ust) -> 
+    GenChain $ \ctx pt (ChainSt i _ _ ust) -> 
       let upt     = dinterpF (dc_font_size ctx) pt
-          new_st  = ChainSt { chain_st         = start upt
+          new_st  = ChainSt { chain_count      = i
+                            , chain_st         = start upt
                             , chain_next       = step
                             , chain_user_state = ust }
       in ((), pt, new_st, mempty) 
 
+-}
 
 
-chainPrefix :: ChainScheme u -> Int -> ChainScheme u -> ChainScheme u
-chainPrefix (ChainScheme astart astep) ntimes chb@(ChainScheme bstart bstep)
-    | ntimes < 1 = chb
+
+
+--------------------------------------------------------------------------------
+-- Schemes
+
+iterationScheme :: (Point2 u -> Point2 u) -> ChainScheme u
+iterationScheme fn = ChainScheme { chain_init = const ()
+                                 , chain_step = \pt _ -> (fn pt, ())
+                                 }
+
+-- | Meta-scheme - displace successively by the elements of the
+-- list of vectors. 
+-- 
+-- Note - the list is cycled to make the chain infinite.
+--
+sequenceScheme :: Num u => [Vec2 u] -> ChainScheme u
+sequenceScheme [] = error "sequenceScheme - empty list."
+sequenceScheme vs = ChainScheme { chain_init = const $ cycle vs
+                                , chain_step = step
+                                }
+  where
+    step _  []     = error "sequenceScheme - unreachable, cycled."
+    step pt (w:ws) = (displace w pt, ws) 
+
+
+-- | Derive a ChainScheme from a CatTrail.
+--
+catTrailScheme :: Num u => CatTrail u -> ChainScheme u
+catTrailScheme = sequenceScheme . linear . destrCatTrail
+  where
+    linear (TLine v0 :xs)        = v0 : linear xs
+    linear (TCurve v0 v1 v2 :xs) = v0 : v1 : v2 : linear xs
+    linear []                    = []
+
+
+
+countingScheme :: [(Int, ChainScheme u)] -> ChainScheme u -> ChainScheme u
+countingScheme []     rest = rest
+countingScheme (x:xs) rest = chainPrefix  x (countingScheme xs rest)
+
+
+
+chainPrefix :: (Int, ChainScheme u) -> ChainScheme u -> ChainScheme u
+chainPrefix (ntimes, ChainScheme astart astep) rest@(ChainScheme bstart bstep)
+    | ntimes < 1 = rest
     | otherwise  = ChainScheme { chain_init = start, chain_step = next }
   where
     start pt = (astart pt,ntimes, bstart pt)
@@ -276,38 +342,26 @@ chainPrefix (ChainScheme astart astep) ntimes chb@(ChainScheme bstart bstep)
 
 
 
-
---------------------------------------------------------------------------------
--- Schemes
-
-chainIterate :: (Point2 u -> Point2 u) -> ChainScheme u
-chainIterate fn = ChainScheme { chain_init = const ()
-                              , chain_step = \pt _ -> (fn pt, ())
-                              }
-
-
-horizontalChainScm :: Num u => u -> ChainScheme u
-horizontalChainScm dx = 
-    ChainScheme { chain_init = const ()
-                , chain_step = \pt _ -> (displace (hvec dx) pt, ())
-                }
+horizontalScheme :: Num u => u -> ChainScheme u
+horizontalScheme dx = iterationScheme (displace (hvec dx))
+                
    
-verticalChainScm :: Num u => u -> ChainScheme u
-verticalChainScm dy = 
-    ChainScheme { chain_init = const ()
-                , chain_step = \pt _ -> (displace (vvec dy) pt, ())
-                }
+verticalScheme :: Num u => u -> ChainScheme u
+verticalScheme dy = iterationScheme (displace (vvec dy))
+               
+
+
 
 
 -- Horizontal and vertical chains are common enough to merit 
 -- dedicated run functions.
 
 runChainH :: InterpretUnit u => u -> Chain u a -> LocImage u a
-runChainH dx ma = runChain (horizontalChainScm dx) ma
+runChainH dx ma = runChain (horizontalScheme dx) ma
 
 
 runChainV :: InterpretUnit u => u -> Chain u a -> LocImage u a
-runChainV dy ma = runChain (verticalChainScm dy) ma
+runChainV dy ma = runChain (verticalScheme dy) ma
 
 
 -- | Outer and inner steppers.
@@ -351,9 +405,9 @@ runTableColumnwise num_rows dims ma =
 
 
 
-radialChain :: Floating u 
-            => u -> Radian -> Radian -> ChainScheme u
-radialChain radius angstart angi = 
+radialChainScm :: Floating u 
+               => u -> Radian -> Radian -> ChainScheme u
+radialChainScm radius angstart angi = 
     ChainScheme { chain_init = start, chain_step = step }
   where
     start pt           = let ogin = displace (avec angstart (-radius)) pt
@@ -372,4 +426,8 @@ radialChain radius angstart angi =
 
 -- Note - radialChains stepper is oblivious to the previous point...
 
+
+
+    
+    
 
