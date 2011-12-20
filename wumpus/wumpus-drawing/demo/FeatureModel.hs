@@ -87,35 +87,35 @@ widebox :: (Real u, Floating u, InterpretUnit u, Tolerance u)
 widebox = makeBox 60
 
 
-connWith :: ( Real u, Floating u, InterpretUnit u ) 
+connWith :: ( Real u, Floating u, InterpretUnit u, Tolerance u) 
          => ArrowTip -> Box u -> Box u -> TraceDrawing u (AbsPath u)
 connWith arrh b0 b1 = do
    lw <- getLineWidth
    let p0 = south b0
    let p1 = projectAnchor north (realToFrac lw) b1
-   drawi $ connect (rightArrow arrh connline) p0 p1
+   drawi $ connect (mkConn_line arrh) p0 p1
 
 infixr 4 `cmandatory`, `coptional`, `cmandatory_`, `coptional_`
 
-cmandatory :: ( Real u, Floating u, InterpretUnit u ) 
+cmandatory :: ( Real u, Floating u, InterpretUnit u, Tolerance u) 
            => Box u -> Box u -> TraceDrawing u (AbsPath u)
 cmandatory = connWith diskTip
 
-coptional :: ( Real u, Floating u, InterpretUnit u ) 
+coptional :: ( Real u, Floating u, InterpretUnit u, Tolerance u) 
           => Box u -> Box u -> TraceDrawing u (AbsPath u)
 coptional = connWith odiskTip
 
 
-cmandatory_ :: ( Real u, Floating u, InterpretUnit u ) 
+cmandatory_ :: ( Real u, Floating u, InterpretUnit u, Tolerance u) 
             => Box u -> Box u -> TraceDrawing u ()
 cmandatory_ p0 p1 = connWith diskTip p0 p1 >> return ()
 
-coptional_ :: ( Real u, Floating u, InterpretUnit u ) 
+coptional_ :: ( Real u, Floating u, InterpretUnit u, Tolerance u) 
            => Box u -> Box u -> TraceDrawing u ()
 coptional_ p0 p1 = connWith odiskTip p0 p1 >> return ()
 
 
--- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
-connline = C.connline default_connector_props
+mkConn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+            => ArrowTip -> ArrowConnector u
+mkConn_line = rightArrowConnector default_connector_props C.conn_line 

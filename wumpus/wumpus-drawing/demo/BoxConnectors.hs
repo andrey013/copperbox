@@ -50,7 +50,7 @@ conntable =
 
 tableGraphic :: [(String, C.ConnectorBoxSpec Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    drawl (P2 0 520) $ runTableColumnwise 6 (180,80) $ mapM makeConnDrawing conns
+    drawl (P2 0 520) $ distribColumnwiseTable 6 (180,80) $ map makeConnDrawing conns
 
 
  
@@ -60,9 +60,9 @@ std_ctx = fill_colour peru $ standardContext 18
 
 
 makeConnDrawing :: (String, C.ConnectorBoxSpec Double) 
-                -> Chain Double (UNil Double) 
-makeConnDrawing (ss,conn) = 
-    chain1 $ promoteLoc $ \p0 -> fn p0 (displace (vec 60 40) p0) 
+                -> LocImage Double (UNil Double) 
+makeConnDrawing (ss,conn) = promoteLoc $ \p0 -> 
+    fn p0 (displace (vec 60 40) p0) 
   where
     fn p0 p1   = mconcat [ disk p0, disk p1, dcon p0 p1, lbl p1 ]
 

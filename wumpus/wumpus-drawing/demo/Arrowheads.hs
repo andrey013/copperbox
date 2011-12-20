@@ -77,8 +77,7 @@ arrtable =
 
 tableGraphic :: [(String, ArrowTip)] -> TraceDrawing Double ()
 tableGraphic tips = 
-    drawl start $ runTableColumnwise 18 (180,24) 
-                $ sequenceChain $ map arrowGraphic tips
+    drawl start $ distribColumnwiseTable 18 (180,24) $ map arrowGraphic tips
   where
     start   = P2 0 480
 
@@ -94,13 +93,15 @@ arrowGraphic :: (String, ArrowTip) -> LocGraphic Double
 arrowGraphic (name, utip) = aconn `mappend` lbl
   where
     aconn = ignoreAns $ promoteLoc $ \pt ->
-              connect (uniformArrow utip connline) pt (displace (hvec 60) pt)
+              connect (mkConn_line utip) pt (displace (hvec 60) pt)
 
     lbl   = ignoreAns $ promoteLoc $ \pt -> 
               textline WW name `at` (displace (hvec 66) pt)
 
 
--- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u) => ConnectorPathQuery u
-connline = C.connline default_connector_props
+mkConn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+            => ArrowTip -> ArrowConnector u
+mkConn_line = rightArrowConnector default_connector_props C.conn_line
+
+

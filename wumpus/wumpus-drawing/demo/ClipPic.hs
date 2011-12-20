@@ -68,7 +68,7 @@ background :: RGBi -> LocGraphic Double
 background rgb = promoteLoc $ \_ -> 
     ignoreAns $ localize (text_colour rgb) $ ihh `at` P2 0 288
   where
-    ihh = runTableColumnwise 18 (86,16) $ mapM chain1 $ replicate 112 iheartHaskell
+    ihh = distribColumnwiseTable 18 (86,16) $ replicate 112 iheartHaskell
                    
 
 -- | This is one for Wumpus-Basic - the set of combinators to 

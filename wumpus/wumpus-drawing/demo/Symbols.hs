@@ -58,8 +58,8 @@ symbtable =
 
 tableGraphic :: [(String, LocGraphic Double)] -> TraceDrawing Double ()
 tableGraphic symbs = 
-    drawl start $ ignoreAns $ runTableColumnwise 8 (180,24)
-                $ mapM (chain1 .  makeSymbDrawing) symbs
+    drawl start $ ignoreAns $ distribColumnwiseTable 8 (180,24)
+                $ map makeSymbDrawing symbs
   where
     start = P2 0 520 
 

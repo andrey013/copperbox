@@ -68,18 +68,8 @@ verticalLabels addr ns =
 
 
 
--- Cf. Parsec\'s Token module...
+-- Cf. Parsec\'s Token module - remake with same name...
 --
 conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ArrowConnector u
-conn_line =
-    renderConnectorConfig default_connector_props $ makeSglArrConn C.conn_line
-
-makeSglArrConn :: ConnectorPathSpec u -> ConnectorConfig u
-makeSglArrConn cspec = 
-    ConnectorConfig
-      { conn_arrowl     = Nothing
-      , conn_arrowr     = Just barb45
-      , conn_path_spec  = cspec
-      }
-
+          => ArrowConnector u
+conn_line = rightArrowConnector default_connector_props C.conn_line barb45

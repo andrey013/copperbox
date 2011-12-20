@@ -82,7 +82,7 @@ fontDrawing :: [(RGBi,FontDef)] -> CtxPicture
 fontDrawing xs = drawTracing $  
     drawl start $ runChain_ chn_alg $ mapM (chain1 . uncurry fontGraphic) xs
   where
-    chn_alg   = tableColumnwiseScm 4 (2,180)
+    chn_alg   = columnwiseTableScheme 4 (2,180)
     start     = P2 0 (4*180)
 
 

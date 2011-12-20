@@ -78,8 +78,7 @@ props = default_connector_props { conn_src_arm   = 1
 
 tableGraphic :: [(String, ConnectorPathSpec Double)] -> TraceDrawing Double ()
 tableGraphic conns = 
-    drawl start $ ignoreAns $ runTableColumnwise 6 (200,80)
-                $ mapM (chain1 .  makeConnDrawing) conns
+    drawl start $ distribColumnwiseTable 6 (200,80) $ map makeConnDrawing conns
   where
     start = P2 0 520 
 

@@ -28,6 +28,12 @@ module Wumpus.Drawing.Connectors.Base
   , ConnectorPathSpec(..)
   , renderConnectorConfig
 
+  , arrowDecoratePath
+
+  , leftArrowConnector
+  , rightArrowConnector
+  , uniformArrowConnector
+
   ) where
 
 import Wumpus.Drawing.Connectors.ConnectorProps
@@ -107,16 +113,56 @@ renderConnectorConfig props (ConnectorConfig mbl mbr pspec) =
       liftQuery (qapplyConn path_spec src dst) >>= \tot_path -> 
       connectorSrcSpace props >>= \sepl -> 
       connectorDstSpace props >>= \sepr ->
+      arrowDecoratePath mbl mbr $ shortenL sepl $ shortenR sepr tot_path
+  where
+    path_spec = getConnectorPathSpec pspec props
+
+
+
+arrowDecoratePath :: (Real u, Floating u, InterpretUnit u) 
+                  => Maybe ArrowTip -> Maybe ArrowTip -> (AbsPath u) 
+                  -> Image u (AbsPath u)
+arrowDecoratePath mbl mbr initial_path = 
       uconvertCtx1 (maybe 0 retract_distance mbl) >>= \retl -> 
       uconvertCtx1 (maybe 0 retract_distance mbr) >>= \retr -> 
-      let interim_path = shortenL sepl $ shortenR sepr tot_path
-          (p1,theta1)  = atstart interim_path
-          (p2,theta2)  = atend   interim_path
-          new_path     = shortenL retl $ shortenR retr interim_path
+      let (p1,theta1)  = atstart initial_path
+          (p2,theta2)  = atend   initial_path
+          new_path     = shortenL retl $ shortenR retr initial_path
           arrl         = mbTip p1 (pi + theta1) mbl
           arrr         = mbTip p2 theta2 mbr
-      in replaceAns interim_path $ 
+      in replaceAns initial_path $ 
            decorate ZABOVE (renderPath OSTROKE new_path) (arrl `mappend` arrr)
   where
     mbTip pt ang = maybe emptyImage (supplyLocTheta pt ang . uconvF . tip_deco)
-    path_spec    = getConnectorPathSpec pspec props
+
+
+-- | Shorthand...
+--
+leftArrowConnector :: (Real u, Floating u, InterpretUnit u)
+                    => ConnectorProps -> ConnectorPathSpec u -> ArrowTip
+                    -> ConnectorImage u (AbsPath u)
+leftArrowConnector props cpath tip = renderConnectorConfig props cfg 
+  where
+    cfg = ConnectorConfig { conn_arrowl    = Just tip 
+                          , conn_arrowr    = Nothing
+                          , conn_path_spec = cpath }
+
+rightArrowConnector :: (Real u, Floating u, InterpretUnit u)
+                    => ConnectorProps -> ConnectorPathSpec u -> ArrowTip
+                    -> ConnectorImage u (AbsPath u)
+rightArrowConnector props cpath tip = renderConnectorConfig props cfg 
+  where
+    cfg = ConnectorConfig { conn_arrowl    = Nothing
+                          , conn_arrowr    = Just tip
+                          , conn_path_spec = cpath }
+    
+uniformArrowConnector :: (Real u, Floating u, InterpretUnit u)
+                    => ConnectorProps -> ConnectorPathSpec u -> ArrowTip
+                    -> ConnectorImage u (AbsPath u)
+uniformArrowConnector props cpath tip = renderConnectorConfig props cfg 
+  where
+    cfg = ConnectorConfig { conn_arrowl    = Just tip
+                          , conn_arrowr    = Just tip
+                          , conn_path_spec = cpath }
+    
+

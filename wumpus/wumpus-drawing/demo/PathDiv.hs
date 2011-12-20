@@ -32,7 +32,7 @@ path_pic = drawTracing $ do
 
 
 path1 :: DLocGraphic
-path1 = promoteLoc $ \(P2 x y) -> translate x y (drawPath_ OSTROKE abspath1) 
+path1 = promoteLoc $ \(P2 x y) -> translate x y (renderPath_ OSTROKE abspath1) 
 
 
 dots1 :: DLocGraphic 

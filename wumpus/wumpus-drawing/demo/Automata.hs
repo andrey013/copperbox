@@ -86,13 +86,12 @@ straightconn :: ( Real u, Floating u, InterpretUnit u, Tolerance u
                 )
              => a -> b -> Image u (AbsPath u)
 straightconn a b =
-    let (p0,p1) = radialConnectorPoints a b
-    in connect (rightArrow tri45 connline) p0 p1
+    let (p0,p1) = radialConnectorPoints a b in connect conn_line p0 p1
 
 
 astraightconn :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
               => Anchor u -> Anchor u -> Image u (AbsPath u)
-astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
+astraightconn p0 p1 = connect conn_line p0 p1
 
 
 -- Note - there is a problem with @rightArrow@ as @loop@
@@ -101,7 +100,7 @@ astraightconn p0 p1 = connect (rightArrow tri45 connline) p0 p1
 arrloop :: ( Real u, Floating u, InterpretUnit u, Tolerance u)
         => Anchor u -> Anchor u -> Image u (AbsPath u)
 arrloop ctr p1 = 
-    rightArrowPath tri45 $ loopPath zradius ctr zincl
+    rightArrowPath $ loopPath zradius ctr zincl
   where
     v1      = pvec ctr p1
     zradius = vlength v1
@@ -110,10 +109,13 @@ arrloop ctr p1 =
 
 -- Cf. Parsec\'s Token module...
 
-connline :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
-         => ConnectorPathQuery u
-connline = C.connline default_connector_props
+conn_line :: (Real u, Floating u, InterpretUnit u, Tolerance u) 
+         => ArrowConnector u
+conn_line = rightArrowConnector default_connector_props C.conn_line tri45
 
 
 
 
+rightArrowPath :: (Real u, Floating u, InterpretUnit u)
+               => AbsPath u -> Image u (AbsPath u)
+rightArrowPath = arrowDecoratePath Nothing (Just tri45) 

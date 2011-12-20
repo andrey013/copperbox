@@ -72,8 +72,8 @@ dottable =
 
 tableGraphic :: [(String, DotLocImage Double)] -> TraceDrawing Double ()
 tableGraphic imgs = 
-    drawl pt $ runTableColumnwise row_count (180,36) 
-             $ mapM (chain1 . makeDotDrawing) imgs
+    drawl pt $ distribColumnwiseTable row_count (180,36) 
+             $ map makeDotDrawing imgs
   where
     row_count   = 18
     pt          = displace (vvec $ fromIntegral $ 36 * row_count) zeroPt 

@@ -27,8 +27,8 @@ path_pic :: CtxPicture
 path_pic = drawTracing $ do
     drawl (P2  50 0) $ circle1
     drawl (P2 150 0) $ triangles
-    draw $ drawPath_ CSTROKE $ roundExterior 10 $ 
-            placedTrailPath (P2 0 200) (rectangleTrail 50 40)
+    draw $ renderPath_ CSTROKE $ roundExterior 10 $ 
+            anaTrailPath (P2 0 200) (rectangleTrail 50 40)
 --    draw curve02
 --    draw curve03
     
