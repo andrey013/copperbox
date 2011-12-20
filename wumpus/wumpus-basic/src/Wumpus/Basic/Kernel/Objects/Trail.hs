@@ -16,7 +16,7 @@
 -- 
 -- @CatTrail@ supports concatenation. @AnaTrail@ supports 
 -- /initial displacement/ - this can account for drawing 
--- rectangles from their center, for eaxample.
+-- rectangles from their center, for example.
 --
 --------------------------------------------------------------------------------
 

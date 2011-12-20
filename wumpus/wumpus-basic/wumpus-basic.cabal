@@ -32,6 +32,8 @@ description:
   .
   v0.22.0 to v0.23.0:
   .
+  * Re-worked the Chain module and API.
+  .
   * Replaced @ZDeco@ enumeration with @ZOrder@.
   .
   * Removed the @Basic.Geometry@ modules, they are superseded in 
@@ -66,7 +68,6 @@ description:
   .
   * Changed Chain so that first item in the chain is the start 
     point (previously the start point was iterated by the chain).
-    Expanded Chain module, some API name changes.
   .
   * Removed @ConnectorProps@ from the @DrawingContext@ , they are 
     now used \"locally\" in Wumpus-Drawing.

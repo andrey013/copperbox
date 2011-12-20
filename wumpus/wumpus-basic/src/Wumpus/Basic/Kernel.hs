@@ -12,6 +12,21 @@
 --
 -- Import shim for @Wumpus.Basic.Kernel@ modules.
 --
+-- @Kernel.Base@ - low-level objects, general enumerations, unit 
+-- and @DrawingContext@ support. @DrawingContext@ is comparative 
+-- to the /graphics state/ in PostScript, but it is a read-only
+-- environment (cf. the Reader monad). Like the Reader monad it 
+-- supports branching update through @local@ - here called 
+-- @localize@.
+-- 
+-- @Kernel.Objects@ - \"elementary\" drawing objects, plus some 
+-- catalogues of named, predefined drawing objects 
+-- (DrawingPrimitives) and useful operations (named vectors - 
+-- Displacement).
+--
+-- @Kernel.Drawing@ - \"collective\" drawing objects. @Drawing@ is 
+-- considered a higher layer than @Objects@, so there should be 
+-- dependencies only from @Drawing@ to @Objects@.
 --
 --------------------------------------------------------------------------------
 

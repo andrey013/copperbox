@@ -54,17 +54,17 @@ orthontAxes (xl,xr) (yl,yr) = promoteLoc $ \(P2 x y) ->
 horizontalLabels :: (Num a, Fractional u, InterpretUnit u) 
                  => RectAddress -> [a] -> LocGraphic u 
 horizontalLabels addr ns = 
-    snapmove (1,1) >>= \(V2 uw _) -> ignoreAns (runChainH uw $ mapM mf ns)
+    snapmove (1,1) >>= \(V2 uw _) -> ignoreAns (distribH uw $ map mf ns)
   where
-    mf n = chain1 $ runPosObject addr $ posTextUpright $ show n
+    mf n = runPosObject addr $ posTextUpright $ show n
 
 
 verticalLabels :: (Num a, Fractional u, InterpretUnit u) 
                => RectAddress -> [a] -> LocGraphic u 
 verticalLabels addr ns = 
-    snapmove (1,1) >>= \(V2 _ uh) -> ignoreAns (runChainV uh $ mapM mf ns)
+    snapmove (1,1) >>= \(V2 _ uh) -> ignoreAns (distribV uh $ map mf ns)
   where
-    mf n = chain1 $ runPosObject addr $ posTextUpright $ show n
+    mf n = runPosObject addr $ posTextUpright $ show n
 
 
 

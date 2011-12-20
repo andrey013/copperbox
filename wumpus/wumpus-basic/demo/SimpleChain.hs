@@ -35,28 +35,28 @@ drawing01 = drawTracing mf
 
 mf :: TraceDrawing Double ()
 mf = do
-    drawl (P2 0 0) $ runChainH 70 $ 
-                       mapM chain1 [text01, minidisk, text02, minidisk]
+    drawl (P2 0 0) $ runChain (horizontalScheme 70) $ 
+                       chainMany [text01, minidisk, text02, minidisk]
                                
                                
 
     drawl (P2 0 0) $ localize (fill_colour sienna) $ dcRectangle DRAW_FILL 4 4
 
-    drawl (P2 0 200) $ runTableRowwise 6 (30,18) $ mapM chain1 $ diskList 32
+    drawl (P2 0 200) $ distribRowwiseTable 6 (30,18) $ diskList 32
                                 
                                 
 
     drawl (P2 300 100) $ dcDisk DRAW_FILL 6
-    drawl (P2 300 100) $ runChain counting $ sequenceChain $ intList 30
+    drawl (P2 300 100) $ runChain counting_scm $ chainMany (intList 30)
     drawl (P2 400 100) $ runChain (catTrailScheme $ sawtoothWave 20 30 0)
-                          $ replicateChain 20 minidisk
+                                  (chainReplicate 20 minidisk)
 
 
-counting :: (InterpretUnit u, Floating u) => ChainScheme u
-counting = countingScheme [ (12, radialChainScm 50 half_pi (pi/8))
-                          , (15, horizontalScheme 20)
-                          ]
-                          (verticalScheme 20)
+counting_scm :: (InterpretUnit u, Floating u) => ChainScheme u
+counting_scm = countingScheme [ (12, radialChainScm 50 half_pi (pi/8))
+                              , (15, horizontalScheme 20)
+                              ]
+                              (verticalScheme 20)
 
 
 

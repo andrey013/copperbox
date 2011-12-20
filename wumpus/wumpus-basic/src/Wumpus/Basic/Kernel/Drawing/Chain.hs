@@ -13,7 +13,7 @@
 -- Stability   :  highly unstable
 -- Portability :  GHC 
 --
--- Chaining moveable LocGraphics.
+-- Chaining LocGraphics.
 --
 --------------------------------------------------------------------------------
 
@@ -34,9 +34,10 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , runChain_
 
   , chain1
-  , sequenceChain
-  , replicateChain
-
+  , chainSkip_
+  , chainMany
+  , chainReplicate
+  , chainCount
 
   , iterationScheme
   , sequenceScheme
@@ -47,14 +48,15 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , horizontalScheme
   , verticalScheme
 
-  , runChainH
-  , runChainV
 
-  , tableRowwiseScm
-  , tableColumnwiseScm
+  , rowwiseTableScheme
+  , columnwiseTableScheme
   
-  , runTableRowwise
-  , runTableColumnwise
+
+  , distribRowwiseTable
+  , duplicateRowwiseTable
+  , distribColumnwiseTable
+  , duplicateColumnwiseTable
 
   , radialChainScm
 
@@ -249,38 +251,41 @@ chain1 gf  = GenChain $ \ctx pt (ChainSt i0 s0 sf ust) ->
     in (a, dpt1, new_st, w1)
 
 
--- Should this also run the chain?
+-- | Demand the next position, but draw nothing.
 --
-sequenceChain :: InterpretUnit u 
-              => [LocImage u a] -> GenChain st u (UNil u)
-sequenceChain = ignoreAns . mapM_ chain1
-
--- Should this also run the chain?
---
-replicateChain :: InterpretUnit u 
-               => Int -> LocImage u a -> GenChain st u (UNil u)
-replicateChain n = sequenceChain . replicate n 
-
-
-
---
--- Note - onChain draws at the initial position, then increments 
--- the next position.
---
-
-{-
-setChainScheme :: InterpretUnit u 
-               => ChainScheme u -> GenChain st u ()
-setChainScheme (ChainScheme start step) = 
-    GenChain $ \ctx pt (ChainSt i _ _ ust) -> 
-      let upt     = dinterpF (dc_font_size ctx) pt
-          new_st  = ChainSt { chain_count      = i
-                            , chain_st         = start upt
-                            , chain_next       = step
+chainSkip_ :: InterpretUnit u => GenChain st u ()
+chainSkip_ = GenChain $ \ctx pt (ChainSt i0 s0 sf ust) -> 
+    let upt       = dinterpF (dc_font_size ctx) pt
+        (pt1,st1) = sf upt s0
+        dpt1      = normalizeF (dc_font_size ctx) pt1
+        new_st    = ChainSt { chain_count      = i0 + 1
+                            , chain_st         = st1
+                            , chain_next       = sf
                             , chain_user_state = ust }
-      in ((), pt, new_st, mempty) 
+    in ((), dpt1, new_st, mempty)
 
--}
+
+
+-- | Chain a list of images, each demanding a succesive start 
+-- point.
+--
+chainMany :: InterpretUnit u 
+          => [LocImage u a] -> GenChain st u (UNil u)
+chainMany = ignoreAns . mapM_ chain1
+
+
+-- | Replicate a LocImage @n@ times along a Chain.
+--
+chainReplicate :: InterpretUnit u 
+               => Int -> LocImage u a -> GenChain st u (UNil u)
+chainReplicate n = chainMany . replicate n 
+
+
+-- | Return the count of chain steps.
+--
+chainCount :: GenChain st u Int
+chainCount = GenChain $ \_ dpt st@(ChainSt i _ _ _) -> (i, dpt, st, mempty)
+             
 
 
 
@@ -288,12 +293,16 @@ setChainScheme (ChainScheme start step) =
 --------------------------------------------------------------------------------
 -- Schemes
 
+
+-- | General scheme - iterate the next point with the supplied
+-- function.
+--
 iterationScheme :: (Point2 u -> Point2 u) -> ChainScheme u
 iterationScheme fn = ChainScheme { chain_init = const ()
                                  , chain_step = \pt _ -> (fn pt, ())
                                  }
 
--- | Meta-scheme - displace successively by the elements of the
+-- | General scheme - displace successively by the elements of the
 -- list of vectors. 
 -- 
 -- Note - the list is cycled to make the chain infinite.
@@ -310,6 +319,9 @@ sequenceScheme vs = ChainScheme { chain_init = const $ cycle vs
 
 -- | Derive a ChainScheme from a CatTrail.
 --
+-- Note - this iterates the control points of curves, it does not
+-- iterate points on the curve.
+--
 catTrailScheme :: Num u => CatTrail u -> ChainScheme u
 catTrailScheme = sequenceScheme . linear . destrCatTrail
   where
@@ -318,13 +330,16 @@ catTrailScheme = sequenceScheme . linear . destrCatTrail
     linear []                    = []
 
 
-
+-- | Build an (infinite) ChainScheme for a prefix list of counted 
+-- schemes and a final scheme that runs out to infinity.
+--
 countingScheme :: [(Int, ChainScheme u)] -> ChainScheme u -> ChainScheme u
 countingScheme []     rest = rest
 countingScheme (x:xs) rest = chainPrefix  x (countingScheme xs rest)
 
 
-
+-- | Helper - complicated...
+--
 chainPrefix :: (Int, ChainScheme u) -> ChainScheme u -> ChainScheme u
 chainPrefix (ntimes, ChainScheme astart astep) rest@(ChainScheme bstart bstep)
     | ntimes < 1 = rest
@@ -353,17 +368,6 @@ verticalScheme dy = iterationScheme (displace (vvec dy))
 
 
 
--- Horizontal and vertical chains are common enough to merit 
--- dedicated run functions.
-
-runChainH :: InterpretUnit u => u -> Chain u a -> LocImage u a
-runChainH dx ma = runChain (horizontalScheme dx) ma
-
-
-runChainV :: InterpretUnit u => u -> Chain u a -> LocImage u a
-runChainV dy ma = runChain (verticalScheme dy) ma
-
-
 -- | Outer and inner steppers.
 --
 scStepper :: PointDisplace u -> Int -> PointDisplace u 
@@ -377,34 +381,62 @@ scStepper outF n innF =
                                     in (o1, (o1,1)) 
 
 
-tableRowwiseScm :: Num u => Int -> (u,u) -> ChainScheme u
-tableRowwiseScm num_cols (col_width,row_height) = 
+
+-- | Generate a tabular scheme going rowwise (left-to-right) and
+-- downwards.
+--
+-- TODO - should probably account for the initial position... 
+--
+rowwiseTableScheme :: Num u => Int -> (u,u) -> ChainScheme u
+rowwiseTableScheme num_cols (col_width,row_height) = 
     scStepper downF num_cols rightF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
-tableColumnwiseScm :: Num u => Int -> (u,u) -> ChainScheme u
-tableColumnwiseScm num_rows (col_width,row_height) = 
+-- | Generate a tabular scheme going columwise (top-to-bottom) 
+-- and rightwards.
+--
+-- TODO - should probably account for the initial position... 
+--
+columnwiseTableScheme :: Num u => Int -> (u,u) -> ChainScheme u
+columnwiseTableScheme num_rows (col_width,row_height) = 
     scStepper rightF num_rows downF
   where
     downF   = displace $ vvec $ negate row_height
     rightF  = displace $ hvec col_width
 
 
-runTableRowwise :: InterpretUnit u 
-             => Int -> (u,u) -> Chain u a -> LocImage u a
-runTableRowwise num_cols dims ma = 
-    runChain (tableRowwiseScm num_cols dims) ma
 
 
-runTableColumnwise :: InterpretUnit u 
-             => Int -> (u,u) -> Chain u a -> LocImage u a
-runTableColumnwise num_rows dims ma = 
-    runChain (tableColumnwiseScm num_rows dims) ma
+distribRowwiseTable :: (Monoid a, InterpretUnit u)
+                    => Int -> (u,u) -> [LocImage u a] -> LocImage u a
+distribRowwiseTable num_cols dims gs = fmap mconcat $ 
+    runChain (rowwiseTableScheme num_cols dims) $ mapM chain1 gs
+  
+
+duplicateRowwiseTable :: (Monoid a, InterpretUnit u)
+                      => Int -> Int -> (u,u) -> LocImage u a -> LocImage u a
+duplicateRowwiseTable i num_cols dims gf =
+    distribRowwiseTable num_cols dims (replicate i gf) 
 
 
 
+distribColumnwiseTable :: (Monoid a, InterpretUnit u)
+                       => Int -> (u,u) -> [LocImage u a] -> LocImage u a
+distribColumnwiseTable num_rows dims gs = fmap mconcat $ 
+    runChain (columnwiseTableScheme num_rows dims) $ mapM chain1 gs
+  
+
+duplicateColumnwiseTable :: (Monoid a, InterpretUnit u)
+                         => Int -> Int -> (u,u) -> LocImage u a -> LocImage u a
+duplicateColumnwiseTable i num_rows dims gf = 
+    distribColumnwiseTable num_rows dims (replicate i gf) 
+
+
+
+-- | TODO - account for CW CCW...
+--
 radialChainScm :: Floating u 
                => u -> Radian -> Radian -> ChainScheme u
 radialChainScm radius angstart angi = 
@@ -423,8 +455,6 @@ radialChainScm radius angstart angi =
 -- step iterates the (constant) origin rather than the previous 
 -- point.
 
-
--- Note - radialChains stepper is oblivious to the previous point...
 
 
 
