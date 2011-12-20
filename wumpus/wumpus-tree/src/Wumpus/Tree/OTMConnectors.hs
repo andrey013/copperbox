@@ -117,11 +117,11 @@ familyOTM dir h a xs =
         ptick     = outtick hh (center a) (paF a)
         cticks    = map (\o -> outtick hh (center o) (caF o)) xs
         kids      = sequence cticks
-    in ignoreAns ptick `mappend` (ignoreAns $ selaborate kids fn)
+    in ignoreAns ptick `mappend` (ignoreAns $ elaborateAbove kids fn)
   where
     fn ps = case linkAll ps of
               Nothing -> emptyLocImage `at` (center a)
-              Just path -> drawPath_ OSTROKE path
+              Just path -> renderPath_ OSTROKE path
 
 
 

@@ -30,7 +30,6 @@ main1 loader = do
     let pic1 = runCtxPictureU (makeCtx base_metrics) grid_pic
     writeEPS "./out/wedge.eps" pic1
     writeSVG "./out/wedge.svg" pic1
-    putStrLn $ "arc - ??"
 
 
 makeCtx :: FontLoadResult -> DrawingContext
@@ -41,7 +40,7 @@ grid_pic :: CtxPicture
 grid_pic = udrawTracing (0::Double) $ do 
     radius <- fmap ((3*) . vector_x) $ snapmove (1,0)
     node (0,0) $ grid (dotted_major_grid) 4 3
---    node (0,0) $ arc radius (0.25*pi) `incline` 0
+    node (0,0) $ dcArc radius (0.25*pi) `incline` 0
 
     node (5,0) $ grid (dotted_major_grid) 4 3
     node (5,0) $ wedge DRAW_FILL_STROKE radius (0.25*pi) `incline` (0.125 * pi)

@@ -40,9 +40,9 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5, 
                       vector-space      >= 0.6          && < 1.0,
-                      wumpus-core       >= 0.51.0       && < 0.52.0,
-                      wumpus-basic      == 0.22.0,
-                      wumpus-drawing    == 0.7.0
+                      wumpus-core       >= 0.52.0       && < 0.53.0,
+                      wumpus-basic      == 0.23.0,
+                      wumpus-drawing    == 0.8.0
 
   
   exposed-modules:

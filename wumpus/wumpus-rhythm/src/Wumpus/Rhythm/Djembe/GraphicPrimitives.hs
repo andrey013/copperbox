@@ -275,7 +275,7 @@ noNote = nhd_note_head noNoteDesc
 
 strikeNoteHead :: NoteHeadDesc -> PosNoteHead
 strikeNoteHead desc = 
-    decoratePosObject SUPERIOR body $ nhd_note_head desc
+    decoratePosObject ZABOVE body $ nhd_note_head desc
   where
     body ortt  = let xmin = 1.5 * (or_x_minor ortt)
                      xmaj = 1.5 * (or_x_major ortt)
@@ -286,7 +286,7 @@ strikeNoteHead desc =
 
 underscoreNoteHead :: NoteHeadDesc -> PosNoteHead
 underscoreNoteHead desc = 
-    decoratePosObject SUPERIOR body $ nhd_note_head desc
+    decoratePosObject ZABOVE body $ nhd_note_head desc
   where
     body ortt  = let xmin = or_x_minor ortt
                      xmaj = or_x_major ortt
@@ -305,7 +305,7 @@ highNoteHead desc = highBiNoteHead desc noNote
 
 highBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
 highBiNoteHead high note = 
-    elaboratePosObject SUPERIOR BLC gf note
+    elaboratePosObject ZABOVE BLC gf note
   where
     dy  = nhd_high_ydist high
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph high
@@ -314,7 +314,7 @@ highBiNoteHead high note =
 
 lowBiNoteHead :: NoteHeadDesc -> PosNoteHead -> PosNoteHead
 lowBiNoteHead low note = 
-    elaboratePosObject SUPERIOR BLC gf note 
+    elaboratePosObject ZABOVE BLC gf note 
   where
     dy  = nhd_low_ydist low
     gf  = moveStart (go_up dy) $ nhd_high_low_glyph low
