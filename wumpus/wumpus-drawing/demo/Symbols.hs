@@ -30,7 +30,7 @@ main1 loader = do
           
 
 makeCtx :: FontLoadResult -> DrawingContext
-makeCtx = set_font times_roman . metricsContext 14
+makeCtx = fill_colour khaki . set_font times_roman . metricsContext 14
 
 symb_pic :: CtxPicture 
 symb_pic = drawTracing $ tableGraphic symbtable
@@ -38,17 +38,30 @@ symb_pic = drawTracing $ tableGraphic symbtable
 
 symbtable :: [(String, LocGraphic Double)]
 symbtable = 
-    [ ("ocircle",               ocircle 8) 
+    [ ("scircle",               scircle 8) 
+    , ("fcircle",               fcircle 8) 
+    , ("fscircle",              fscircle 8) 
+    , ("ssquare",               ssquare 8) 
+    , ("fsquare",               fsquare 8) 
+    , ("fssquare",              fssquare 8) 
+    , ("sleft_slice",           sleft_slice 14)
+    , ("fleft_slice",           fleft_slice 14)
+    , ("fsleft_slice",          fsleft_slice 14)
+    , ("sright_slice",          sright_slice 14)
+    , ("fright_slice",          fright_slice 14)
+    , ("fsright_slice",         fsright_slice 14)
+    , ("sleft_triangle",        sleft_triangle 14)
+    , ("fleft_triangle",        fleft_triangle 14)
+    , ("fsleft_triangle",       fsleft_triangle 14)
+    , ("sright_triangle",       sright_triangle 14)
+    , ("fright_triangle",       fright_triangle 14)
+    , ("fsright_triangle",      fsright_triangle 14)
     , ("ochar",                 ochar $ CharLiteral 'a')
     , ("ochar - bad",           ochar $ CharLiteral 'g')
     , ("ocharDescender",        ocharDescender $ CharLiteral 'g')
     , ("ocharUpright",          ocharUpright $ CharLiteral '8')
     , ("ocharUpright - bad",    ocharUpright $ CharLiteral 'a')
     , ("ocurrency",             ocurrency 8)
-    , ("left_slice",            left_slice 14)
-    , ("right_slice",           right_slice 14)
-    , ("left_triangle",         left_triangle 14)
-    , ("right_triangle",        right_triangle 14)
     , ("hbar",                  hbar 14)
     , ("vbar",                  vbar 14)
     , ("dbl_hbar",              dbl_hbar 14)
@@ -58,7 +71,7 @@ symbtable =
 
 tableGraphic :: [(String, LocGraphic Double)] -> TraceDrawing Double ()
 tableGraphic symbs = 
-    drawl start $ ignoreAns $ distribColumnwiseTable 8 (180,24)
+    drawl start $ ignoreAns $ distribColumnwiseTable 14 (180,24)
                 $ map makeSymbDrawing symbs
   where
     start = P2 0 520 

@@ -21,16 +21,34 @@
 module Wumpus.Drawing.Basis.Symbols
   (
 
-    ocircle
+    scircle
+  , fcircle
+  , fscircle
+    
+  , ssquare
+  , fsquare
+  , fssquare
+
+  , sleft_slice
+  , fleft_slice
+  , fsleft_slice
+
+  , sright_slice
+  , fright_slice
+  , fsright_slice
+
+  , sleft_triangle
+  , fleft_triangle
+  , fsleft_triangle
+
+  , sright_triangle
+  , fright_triangle
+  , fsright_triangle
+
   , ochar
   , ocharUpright
   , ocharDescender
   , ocurrency
-  , left_slice
-  , right_slice
-
-  , left_triangle
-  , right_triangle
 
   , empty_box
 
@@ -57,70 +75,159 @@ import Wumpus.Core                              -- package: wumpus-core
 -- /data scheme/ (underscore_separators).
 --
 -- Objects here are functions as they take size param, but they
--- expected to be redefined elsewhere at fixed size and not used 
--- in /user code/. 
+-- expected to be redefined elsewhere (possibly at fixed size) 
+-- with the re-definitions used in /user code/ rather than these 
+-- primitives. 
 -- 
 -- Using camelCase here, then under_score in the DocText versions
 -- adds double the function signatures to the Haddock docs.
 --
-
-
-
-ocircle :: InterpretUnit u => u -> LocGraphic u
-ocircle radius = dcDisk DRAW_STROKE radius
-
--- | Note this looks horrible for chars with descenders.
+-- Also - should the names encode start pos, or can all start 
+-- positions be center?
 --
-ochar :: (Fractional u, InterpretUnit u) 
-             => EscapedChar -> LocGraphic u
-ochar esc = char1 <> circ1
+
+--
+-- TikZ uses o to indicated /circled/.
+--
+-- Using o as a prefix for /open/ i.e. stroked has the problem 
+-- that there aren\'t any other characters ideographic for filled
+-- or filled stroked.
+--
+
+-- scircle
+-- fcircle
+-- fscircle
+
+
+
+-- | Stroked circle.
+-- 
+-- Start pos - center.
+--
+scircle :: InterpretUnit u => u -> LocGraphic u
+scircle radius = dcDisk DRAW_STROKE radius
+
+-- | Filled circle.
+-- 
+-- Start pos - center.
+--
+fcircle :: InterpretUnit u => u -> LocGraphic u
+fcircle radius = dcDisk DRAW_FILL radius
+
+-- | Filled-stroked circle.
+-- 
+-- Start pos - center.
+--
+fscircle :: InterpretUnit u => u -> LocGraphic u
+fscircle radius = dcDisk DRAW_FILL_STROKE radius
+
+
+
+
+-- | Stroked square.
+-- 
+-- Start pos - center.
+--
+ssquare :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+ssquare w = renderAnaTrail CSTROKE $ rectangleTrail w w 
+
+
+-- | Filled square.
+-- 
+-- Start pos - center.
+--
+fsquare :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+fsquare w = renderAnaTrail CFILL $ rectangleTrail w w 
+
+
+-- | Filled-stroked square.
+-- 
+-- Start pos - center.
+--
+fssquare :: (Fractional u, InterpretUnit u) => u -> LocGraphic u
+fssquare w = renderAnaTrail CFILL_STROKE $ rectangleTrail w w 
+
+
+
+-- | Implementation.
+--
+lslice :: (Real u, Floating u, InterpretUnit u) 
+       => DrawMode -> u -> LocGraphic u
+lslice mode radius = moveStart (go_left $ 0.5 * radius) lwedge
   where
-    char1 = runPosObject CENTER $ posEscChar esc
-    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> ocircle (0.85 * h)
+    lwedge = supplyIncline 0 $ wedge mode radius quarter_pi
 
-ocharUpright :: (Fractional u, InterpretUnit u) 
-             => EscapedChar -> LocGraphic u
-ocharUpright esc = char1 <> circ1
+-- | Stroked left slice (wedge).
+-- 
+-- Start pos - ....
+--
+sleft_slice :: (Real u, Floating u, InterpretUnit u) 
+            => u -> LocGraphic u
+sleft_slice = lslice DRAW_STROKE
+
+
+-- | Filled left slice (wedge).
+-- 
+-- Start pos - ....
+--
+fleft_slice :: (Real u, Floating u, InterpretUnit u) 
+            => u -> LocGraphic u
+fleft_slice = lslice DRAW_FILL
+
+
+-- | Filled-stroked left slice (wedge).
+-- 
+-- Start pos - ....
+--
+fsleft_slice :: (Real u, Floating u, InterpretUnit u) 
+             => u -> LocGraphic u
+fsleft_slice = lslice DRAW_FILL_STROKE
+
+
+
+-- | Implementation.
+--
+rslice :: (Real u, Floating u, InterpretUnit u) 
+       => DrawMode -> u -> LocGraphic u
+rslice mode radius = moveStart (go_right $ 0.5 * radius) rwedge
   where
-    char1 = runPosObject CENTER $ posEscCharUpright esc
-    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> ocircle (0.85 * h)
-
-ocharDescender :: (Fractional u, InterpretUnit u) 
-             => EscapedChar -> LocGraphic u
-ocharDescender esc = char1 <> circ1
-  where
-    char1 = fmap abs descender >>= \dy -> 
-            moveStart (go_up dy) $ runPosObject CENTER $ posEscCharUpright esc
-    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> ocircle (0.85 * h)
+    rwedge = supplyIncline pi $ wedge mode radius quarter_pi
 
 
-ocurrency :: (Floating u, InterpretUnit u) 
-          => u -> LocGraphic u 
-ocurrency ra = ocircle ra <> lne <> lnw <> lsw <> lse
-  where
-    ra3 = 0.33 * ra
-    lne = moveStart (go_north_east ra) $ locStraightLine $ go_north_east ra3
-    lnw = moveStart (go_north_west ra) $ locStraightLine $ go_north_west ra3
-    lsw = moveStart (go_south_west ra) $ locStraightLine $ go_south_west ra3
-    lse = moveStart (go_south_east ra) $ locStraightLine $ go_south_east ra3
-
-left_slice :: (Real u, Floating u, InterpretUnit u) 
-          => u -> LocGraphic u
-left_slice radius = moveStart (go_left $ 0.5 * radius) lwedge
-  where
-    lwedge = supplyIncline 0 $ wedge DRAW_STROKE radius quarter_pi
+-- | Stroked right slice (wedge).
+-- 
+-- Start pos - ....
+--
+sright_slice :: (Real u, Floating u, InterpretUnit u) 
+             => u -> LocGraphic u
+sright_slice = rslice DRAW_STROKE
 
 
-right_slice :: (Real u, Floating u, InterpretUnit u) 
-          => u -> LocGraphic u
-right_slice radius = moveStart (go_right $ 0.5 * radius) rwedge
-  where
-    rwedge = supplyIncline pi $ wedge DRAW_STROKE radius quarter_pi
+-- | Filled right slice (wedge).
+-- 
+-- Start pos - ....
+--
+fright_slice :: (Real u, Floating u, InterpretUnit u) 
+             => u -> LocGraphic u
+fright_slice = rslice DRAW_FILL
 
-left_triangle :: (Fractional u, InterpretUnit u) 
+
+-- | Filled-stroked right slice (wedge).
+-- 
+-- Start pos - ....
+--
+fsright_slice :: (Real u, Floating u, InterpretUnit u) 
               => u -> LocGraphic u
-left_triangle w = 
-    renderAnaTrail CSTROKE $ anaCatTrail (go_left $ 0.5 * w)
+fsright_slice = rslice DRAW_FILL_STROKE
+
+
+
+-- | Implementation.
+--
+left_tri :: (Fractional u, InterpretUnit u) 
+         => PathMode -> u -> LocGraphic u
+left_tri mode w = 
+    renderAnaTrail mode $ anaCatTrail (go_left $ 0.5 * w)
                             $ line_r <> vbase <> line_l
   where
     hh     = 0.40 * w
@@ -128,16 +235,111 @@ left_triangle w =
     vbase  = catline $ go_down $ 2*hh
     line_l = catline $ vec (-w) hh
 
-right_triangle :: (Fractional u, InterpretUnit u) 
-               => u -> LocGraphic u
-right_triangle w = 
-    renderAnaTrail CSTROKE $ anaCatTrail (go_right $ 0.5 * w)
+
+-- | Stroked left triangle.
+-- 
+-- Start pos - ....
+--
+sleft_triangle :: (Real u, Floating u, InterpretUnit u) 
+                => u -> LocGraphic u
+sleft_triangle = left_tri CSTROKE
+
+
+-- | Filled left triangle.
+-- 
+-- Start pos - ....
+--
+fleft_triangle :: (Real u, Floating u, InterpretUnit u) 
+                => u -> LocGraphic u
+fleft_triangle = left_tri CFILL
+
+
+-- | Filled-stroked left triangle.
+-- 
+-- Start pos - ....
+--
+fsleft_triangle :: (Real u, Floating u, InterpretUnit u) 
+                 => u -> LocGraphic u
+fsleft_triangle = left_tri CFILL_STROKE
+
+
+-- | Implementation
+--
+right_tri :: (Fractional u, InterpretUnit u) 
+          => PathMode -> u -> LocGraphic u
+right_tri mode w = 
+    renderAnaTrail mode $ anaCatTrail (go_right $ 0.5 * w)
                             $ line_l <> vbase <> line_r
   where
     hh     = 0.40 * w
     line_l = catline $ vec (-w) hh
     vbase  = catline $ go_down $ 2*hh
     line_r = catline $ vec w hh
+
+
+-- | Stroked right triangle.
+-- 
+-- Start pos - ....
+--
+sright_triangle :: (Real u, Floating u, InterpretUnit u) 
+                => u -> LocGraphic u
+sright_triangle = right_tri CSTROKE
+
+
+-- | Filled right triangle.
+-- 
+-- Start pos - ....
+--
+fright_triangle :: (Real u, Floating u, InterpretUnit u) 
+                => u -> LocGraphic u
+fright_triangle = right_tri CFILL
+
+
+-- | Filled-stroked right triangle.
+-- 
+-- Start pos - ....
+--
+fsright_triangle :: (Real u, Floating u, InterpretUnit u) 
+                 => u -> LocGraphic u
+fsright_triangle = right_tri CFILL_STROKE
+
+
+
+-- | Note this looks horrible for chars with descenders.
+--
+ochar :: (Fractional u, InterpretUnit u) 
+      => EscapedChar -> LocGraphic u
+ochar esc = char1 <> circ1
+  where
+    char1 = runPosObject CENTER $ posEscChar esc
+    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> scircle (0.85 * h)
+
+ocharUpright :: (Fractional u, InterpretUnit u) 
+             => EscapedChar -> LocGraphic u
+ocharUpright esc = char1 <> circ1
+  where
+    char1 = runPosObject CENTER $ posEscCharUpright esc
+    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> scircle (0.85 * h)
+
+ocharDescender :: (Fractional u, InterpretUnit u) 
+             => EscapedChar -> LocGraphic u
+ocharDescender esc = char1 <> circ1
+  where
+    char1 = fmap abs descender >>= \dy -> 
+            moveStart (go_up dy) $ runPosObject CENTER $ posEscCharUpright esc
+    circ1 = localize (set_line_width 0.75) $ capHeight >>= \h -> scircle (0.85 * h)
+
+
+ocurrency :: (Floating u, InterpretUnit u) 
+          => u -> LocGraphic u 
+ocurrency ra = scircle ra <> lne <> lnw <> lsw <> lse
+  where
+    ra3 = 0.33 * ra
+    lne = moveStart (go_north_east ra) $ locStraightLine $ go_north_east ra3
+    lnw = moveStart (go_north_west ra) $ locStraightLine $ go_north_west ra3
+    lsw = moveStart (go_south_west ra) $ locStraightLine $ go_south_west ra3
+    lse = moveStart (go_south_east ra) $ locStraightLine $ go_south_east ra3
+
 
 
 empty_box :: (Fractional u, InterpretUnit u) => u -> LocGraphic u

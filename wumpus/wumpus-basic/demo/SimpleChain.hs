@@ -53,7 +53,7 @@ mf = do
 
 
 counting_scm :: (InterpretUnit u, Floating u) => ChainScheme u
-counting_scm = countingScheme [ (12, radialChainScm 50 half_pi (pi/8))
+counting_scm = countingScheme [ (12, radialChainScheme 50 half_pi (pi/8))
                               , (15, horizontalScheme 20)
                               ]
                               (verticalScheme 20)

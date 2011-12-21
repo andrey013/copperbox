@@ -58,7 +58,7 @@ module Wumpus.Basic.Kernel.Drawing.Chain
   , distribColumnwiseTable
   , duplicateColumnwiseTable
 
-  , radialChainScm
+  , radialChainScheme
 
   ) where
 
@@ -435,11 +435,11 @@ duplicateColumnwiseTable i num_rows dims gf =
 
 
 
--- | TODO - account for CW CCW...
+-- | TODO - account for CW CCW or just rely on +ve -ve angles?...
 --
-radialChainScm :: Floating u 
-               => u -> Radian -> Radian -> ChainScheme u
-radialChainScm radius angstart angi = 
+radialChainScheme :: Floating u 
+                  => u -> Radian -> Radian -> ChainScheme u
+radialChainScheme radius angstart angi = 
     ChainScheme { chain_init = start, chain_step = step }
   where
     start pt           = let ogin = displace (avec angstart (-radius)) pt

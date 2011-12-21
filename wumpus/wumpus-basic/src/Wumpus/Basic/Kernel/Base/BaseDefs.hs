@@ -330,7 +330,7 @@ data PathMode = OSTROKE | CSTROKE | CFILL | CFILL_STROKE
 --
 -- > DRAW_FILL - closed and filled
 --
--- > CLOSED_FILL_STROKE - the path is filled, its edge is stroked.
+-- > DRAW_FILL_STROKE - the path is filled, its edge is stroked.
 --
 data DrawMode = DRAW_STROKE | DRAW_FILL | DRAW_FILL_STROKE
   deriving (Bounded,Enum,Eq,Ord,Show)
