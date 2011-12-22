@@ -18,8 +18,22 @@
 module Neume.Core.LilyPondPretty
   (
 
+    SDoc
+  , syntax
+  , element
+  , parenthesize
+  , unSDoc
+  , (><)
+
+
+  , LDoc
+  , newline
+  , spaced
+  , unLDoc
+  , mapLDoc
+
     -- * Printing glyphs
-    note
+  , note
   , pitch
   , pitchTreble
   , pitchLabel
@@ -41,19 +55,123 @@ import Neume.Core.Duration
 import Neume.Core.Pitch
 import Neume.Core.Utils.Pretty
 
+import qualified Data.Foldable as F
+import Data.Monoid
+import Data.Sequence ( Seq, ViewL(..), ViewR(..), (<|), (|>) )
+import qualified Data.Sequence as S
 import Text.PrettyPrint.HughesPJ
 
 
+-- | Structured (introspective) Doc
+--
+newtype SDoc = SDoc { getSDoc :: Seq Doc1 }
 
+
+instance Monoid SDoc where
+  mempty  = SDoc mempty
+  mappend = (><)
+
+-- | Account for nesting information as labels on notes (or rests).
+--
+-- > Chords nest /prefix-suffix/ @<c e>@
+--
+-- > Beamed notes nest /suffix suffix/ @e[ f g a]@
+--
+data Doc1 = Syntax { _syntax :: Doc }
+          | Elem   { _nest_prefix   :: Doc 
+                   , _note_symbol   :: Doc
+                   , _nest_suffix   :: Doc 
+                   }
+
+
+syntax :: Doc -> SDoc 
+syntax = SDoc . S.singleton . Syntax
+
+element :: Doc -> SDoc
+element d = SDoc $ S.singleton $ Elem empty d empty
+
+
+prefixed :: Doc -> Doc -> SDoc
+prefixed pre d = SDoc $ S.singleton $ Elem pre d empty
+
+suffixed :: Doc -> Doc -> SDoc
+suffixed suf d = SDoc $ S.singleton $ Elem empty d suf
+
+
+parenthesize :: Doc -> Doc -> SDoc -> SDoc
+parenthesize hd tl se = updLastElem tl $ updFirstElem hd se
+   
+   
+-- | Update the suffix nesting of the first note in a sequence.
+--
+updFirstElem :: Doc -> SDoc -> SDoc
+updFirstElem d0 (SDoc ss) = SDoc $ go $ S.viewl ss
+  where
+    go EmptyL                = S.empty
+    go (Elem nl d1 nr :< se) = Elem nl d1 (nr <> d0) <| se
+    go (a :< se)             = a <| go (S.viewl se)
+
+
+-- | Update the suffix nesting of the last note in a sequence.
+--
+updLastElem :: Doc -> SDoc -> SDoc
+updLastElem d0 (SDoc ss) = SDoc $ go $ S.viewr ss
+  where
+    go EmptyR                = S.empty
+    go (se :> Elem nl d1 nr) = se |> Elem nl d1 (nr <> d0)
+    go (se :> a)             = (go $ S.viewr se) |> a
+
+
+unSDoc :: SDoc -> Doc
+unSDoc = hsep . map pp . F.toList . getSDoc
+  where
+    pp (Syntax d)      = d
+    pp (Elem nl d0 nr) = nl <> d0 <> nr
+
+infixr 5 ><
+
+(><) :: SDoc -> SDoc -> SDoc
+SDoc s1 >< SDoc s2 = SDoc (s1 S.>< s2)
+
+--------------------------------------------------------------------------------
+
+-- | /Left-biased/ Doc.
+-- 
+
+data LDoc = LDoc { _ldoc :: Doc, _lcat :: Doc -> Doc -> Doc }
+
+instance Monoid LDoc where
+  mempty = LDoc empty (<>)
+  LDoc ld lcat `mappend` LDoc rd rcat = LDoc (ld `lcat` rd) rcat
+
+
+newline :: Doc -> LDoc
+newline d = LDoc d ($+$)
+
+spaced :: Doc -> LDoc
+spaced d = LDoc d (<+>)
+
+unLDoc :: LDoc -> Doc
+unLDoc (LDoc d _) = d
+
+mapLDoc :: (Doc -> Doc) -> LDoc -> LDoc 
+mapLDoc f (LDoc d lcat) = LDoc (f d) lcat
 
 --------------------------------------------------------------------------------
 -- Printing glyphs
 
+
+-- | Helper for @note@ build Doc rather than SDoc
+--
+note_ :: Pitch -> Maybe Duration -> Doc
+note_ p md =  pitch p <> maybe empty duration md 
+
+
 -- | Print a note, the duration is a Maybe value. Nothing indicates
 -- that the note has the same duration as the previous glyph.
 --
-note :: Pitch -> Maybe Duration -> Doc
-note p md = pitch p <> maybe empty duration md
+note :: Pitch -> Maybe Duration -> SDoc
+note p md = element $ note_ p md
 
 -- | Print a Pitch - middle c is @c'@.
 --
@@ -92,21 +210,23 @@ duration = maybe empty df . lyRepresentation
 
 
 
+
+
 -- | Print a rest, duration is a Maybe value - Nothing indicates
 -- that the rest has the same duration as the previous glyph.  
-rest :: Maybe Duration -> Doc
-rest md = char 'r' <> maybe empty duration md
+rest :: Maybe Duration -> SDoc
+rest md = element $ char 'r' <> maybe empty duration md
 
 
 -- | Print an invisible rest, commonly used to align overlayed 
 -- bars. Duration is a Maybe value - Nothing indicates
 -- that the spacer has the same duration as the previous glyph.  
-spacer :: Maybe Duration -> Doc
-spacer md = char 's' <> maybe empty duration md
+spacer :: Maybe Duration -> SDoc
+spacer md = element $ char 's' <> maybe empty duration md
 
 -- | Print a tie.
-tie :: Doc
-tie = char '~'
+tie :: SDoc
+tie = syntax $ char '~'
 
 
 -- | Chords - notes printed inside angle brackets, followed by 
@@ -115,8 +235,13 @@ tie = char '~'
 -- @ 
 --  \<c e g\>4
 -- @ 
-chordForm :: [Doc] -> Maybe Duration -> Doc
-chordForm xs md = angles (hsep xs) <> maybe empty duration md
+chordForm :: [Pitch] -> Maybe Duration -> SDoc
+chordForm []     _  = error "chordForm - empty list"    
+chordForm (p:ps) md = prefixed (char '<') (note_ p Nothing) >< go ps
+  where
+    go [t]    = suffixed (note_ t Nothing) (char '>' <> maybe empty duration md)
+    go (t:ts) = note t Nothing >< go ts
+    go []     = syntax empty   -- 
 
 
 -- | Grace notes - @\\grace@ command then expression inside braces,
@@ -125,19 +250,19 @@ chordForm xs md = angles (hsep xs) <> maybe empty duration md
 -- @ 
 --  \\grace { f32[ e] }
 -- @ 
-graceForm :: [Doc] -> Doc
-graceForm [x] = command "grace" <+> braces x where
-graceForm xs  = command "grace" <+> braces (beamForm xs)
+graceForm :: SDoc -> SDoc
+graceForm x = syntax (command "grace") >< syntax lbrace >< x >< syntax rbrace
 
   
 -- | Beams - first element printed outside the square brackets, e.g.:
 -- @ 
 --  c16 [e g c]
 -- @ 
-beamForm :: [Doc] -> Doc
-beamForm (x:xs) = x <> char '[' <+> hsep xs <> char ']'
-beamForm []     = emptyDoc
+beamForm :: SDoc -> SDoc
+beamForm = parenthesize (char '[') (char ']')
 
+
+-- slurs are printed like beams ( ) with parens.
 
 {-
 

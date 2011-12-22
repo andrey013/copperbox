@@ -121,67 +121,67 @@ bs_       = Pitch B (Just Sharp)
 
 
 
-wn        :: Pitch -> LyNoteListM ()
+wn        :: Pitch -> NoteList ()
 wn        = note `flip` dWhole
 
-hn        :: Pitch -> LyNoteListM ()
+hn        :: Pitch -> NoteList ()
 hn        = note `flip` dHalf
 
-qn        :: Pitch -> LyNoteListM ()
+qn        :: Pitch -> NoteList ()
 qn        = note `flip` dQuarter
 
-en        :: Pitch -> LyNoteListM ()
+en        :: Pitch -> NoteList ()
 en        = note `flip` dEighth
 
-sn        :: Pitch -> LyNoteListM ()
+sn        :: Pitch -> NoteList ()
 sn        = note `flip` dSixteenth
 
-tn        :: Pitch -> LyNoteListM ()
+tn        :: Pitch -> NoteList ()
 tn        = note `flip` dThirtySecondth
 
-dhn       :: Pitch -> LyNoteListM ()
+dhn       :: Pitch -> NoteList ()
 dhn       = note `flip` (dot dHalf)
 
-dqn       :: Pitch -> LyNoteListM ()
+dqn       :: Pitch -> NoteList ()
 dqn       = note `flip` (dot dQuarter)
 
-den       :: Pitch -> LyNoteListM ()
+den       :: Pitch -> NoteList ()
 den       = note `flip` (dot dEighth)
 
-dsn       :: Pitch -> LyNoteListM ()
+dsn       :: Pitch -> NoteList ()
 dsn       = note `flip` (dot dSixteenth)
 
 
 -- rests
 
-wnr     :: LyNoteListM ()
+wnr     :: NoteList ()
 wnr     = rest dWhole
 
-hnr     :: LyNoteListM ()
+hnr     :: NoteList ()
 hnr     = rest dHalf
 
-qnr     :: LyNoteListM ()
+qnr     :: NoteList ()
 qnr     = rest dQuarter
 
-enr     :: LyNoteListM ()
+enr     :: NoteList ()
 enr     = rest dEighth
 
-snr     :: LyNoteListM ()
+snr     :: NoteList ()
 snr     = rest dSixteenth
 
-tnr     :: LyNoteListM ()
+tnr     :: NoteList ()
 tnr     = rest dThirtySecondth
 
-dhnr    :: LyNoteListM ()
+dhnr    :: NoteList ()
 dhnr    = rest $ dot dHalf
 
-dqnr    :: LyNoteListM ()
+dqnr    :: NoteList ()
 dqnr    = rest $ dot dQuarter
 
-denr    :: LyNoteListM ()
+denr    :: NoteList ()
 denr    = rest $ dot dEighth
 
-dsnr    :: LyNoteListM ()
+dsnr    :: NoteList ()
 dsnr    = rest $ dot dSixteenth
 
 --------------------------------------------------------------------------------
