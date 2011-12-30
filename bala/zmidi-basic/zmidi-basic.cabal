@@ -49,13 +49,15 @@ library
   
   exposed-modules:
     ZMidi.Basic.Kernel,
+    ZMidi.Basic.Kernel.Base.BaseDefs,
     ZMidi.Basic.Kernel.Base.OutputMidi,
     ZMidi.Basic.Kernel.Base.RenderContext,
     ZMidi.Basic.Kernel.Base.Syntax,
     ZMidi.Basic.Kernel.Base.WrappedPrimitive,
+    ZMidi.Basic.Kernel.Objects.Basis,
     ZMidi.Basic.Kernel.Objects.GMDrums,
     ZMidi.Basic.Kernel.Objects.GMInstruments,
-    ZMidi.Basic.Kernel.Objects.InstrumentName,
+    ZMidi.Basic.Kernel.Objects.Symbolic,
     ZMidi.Basic.VersionNumber
     ZMidi.Basic.Utils.HList,
     ZMidi.Basic.Utils.JoinList

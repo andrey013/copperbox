@@ -18,16 +18,25 @@
 
 module ZMidi.Basic.Kernel.Objects.TraceOutput
   ( 
-    TraceM(..)
+    trace
   
   ) where
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
+import ZMidi.Basic.Kernel.Base.OutputMidi
+import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
+import ZMidi.Basic.Kernel.Objects.Event
 
--- | Collect elementary events as part of a larger composition.
---
--- TraceM works much like a writer monad.
---
-class TraceM (m :: * -> *) where
-  trace     :: Durational (m ()) ~ u => HPrim u -> m ()
+import ZMidi.Core                               -- package: zmidi-core
+
+import Data.Monoid
+
+trace :: InterpretUnit u => RenderContext -> [(u,Event u a)] -> MidiFile
+trace ctx = post . step mempty
+  where
+    step ac ((u,f):xs) = let (_,_,w1) = runEvent u ctx f
+                         in step (ac `mappend` w1) xs
+    step ac []         = ac
+                          
+    post               = genFormat1 . catToList

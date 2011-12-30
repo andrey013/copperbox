@@ -22,6 +22,7 @@ module ZMidi.Basic.Kernel.Base.Syntax
   -- * Type synonyms
     MidiPitch
   , MidiDuration
+
   , GMInst
   , GMDrum
   , ChannelNumber
@@ -66,7 +67,7 @@ import Data.Word
 type MidiPitch    = Word8
 
 -- | 'MidiDuration' is a Double, directly corresponding to the
--- dureation value:
+-- duration value:
 --
 -- @1.0@ represents a whole note.
 --
@@ -78,10 +79,11 @@ type MidiPitch    = Word8
 -- durations, e.g. grace notes can be some small duration
 -- subtracted from the note next to the grace.
 --
--- Internally @ZMidi.Emit@ translates the Double value into and
+-- Internally @ZMidi.Emit@ translates the Double value into an
 -- integer number of ticks.
 --
 type MidiDuration = Double
+
 
 -- | Enumeration of the General MIDI instruments.
 --

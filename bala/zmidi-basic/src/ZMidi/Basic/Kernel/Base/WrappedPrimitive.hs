@@ -16,8 +16,11 @@
 
 module ZMidi.Basic.Kernel.Base.WrappedPrimitive
   ( 
-    CatPrim
+
+    Primitive
+  , CatPrim
   , prim1
+  , catToList
   , cpmap
 
   , HPrim
@@ -26,13 +29,17 @@ module ZMidi.Basic.Kernel.Base.WrappedPrimitive
 
   ) where
 
-import ZMidi.Basic.Kernel.Base.Syntax
+import ZMidi.Basic.Kernel.Base.BaseDefs
+
 import ZMidi.Basic.Utils.HList
 import ZMidi.Basic.Utils.JoinList ( JoinList, ViewR(..), viewr )
 import qualified ZMidi.Basic.Utils.JoinList as JL
 
+import ZMidi.Core                               -- package: zmidi-core
 
 import Data.Monoid
+
+type Primitive = (OnsetTime, MidiEvent)
 
 data CatPrim = CZero
              | Cat1 (JoinList Primitive)
@@ -48,26 +55,15 @@ instance Monoid CatPrim where
   mempty                  = CZero
   CZero  `mappend` b      = b
   a      `mappend` CZero  = a
-  Cat1 a `mappend` Cat1 b = let dx = durationLast a
-                            in Cat1 $ a `mappend` delayFirst dx b 
+  Cat1 a `mappend` Cat1 b = Cat1 $ a `mappend` b 
+
+catToList :: CatPrim -> [Primitive]
+catToList CZero    = []
+catToList (Cat1 a) = JL.toList a
 
 
-durationLast :: JoinList Primitive -> Double
-durationLast = step . viewr
-  where
-    step EmptyR                 = 0
-    step (_ :> (PNote d _ _))   = d
-    step (_ :> (PChord d _ _))  = d
-    step (_ :> (PRest d))       = d
-
-
-delayFirst :: Double -> JoinList Primitive -> JoinList Primitive
-delayFirst dx = JL.cons (PRest dx) 
-
-
-
-prim1 :: Primitive -> CatPrim
-prim1 = Cat1 . JL.one
+prim1 :: (OnsetTime,MidiVoiceEvent) -> CatPrim
+prim1 (ot,e) = Cat1 $ JL.one (ot, VoiceEvent e)
 
 
 -- | Map 
