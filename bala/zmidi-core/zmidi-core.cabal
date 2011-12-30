@@ -22,8 +22,10 @@ description:
   higher-level representation, is then free to use the more 
   generic names Track, Message, etc.
   .
+  * @DeltaTime@ made a newtype wrapper rather than a type synonym.
+  .
   * Renamed the pretty print functions @track@ to @printMidiTrack@ 
-    and @header@ to @printMidiTrack@
+    and @header@ to @printMidiHeader@.
   .
   * Moved internal dataypes (SplitByte, Varlen) into a private 
     module.
@@ -40,8 +42,9 @@ cabal-version:      >= 1.2
 
 extra-source-files:
   CHANGES,
+  demo/MidiCopy.hs,
   demo/MidiPrint.hs,
-  demo/MidiCopy.hs
+  demo/MidiTune.hs
 
 
 library

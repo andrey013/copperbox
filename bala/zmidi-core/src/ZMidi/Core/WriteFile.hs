@@ -72,7 +72,7 @@ putTimeDivision (TPB n) = putWord16be (n `clearBit` 15)
 
 
 putMessage :: MidiMessage -> PutM () 
-putMessage (dt,evt) = putVarlen dt *> putEvent evt
+putMessage (dt,evt) = putVarlen (fromIntegral dt) *> putEvent evt
 
 putEvent :: MidiEvent -> PutM ()
 putEvent (DataEvent e)        = putDataEvent  e

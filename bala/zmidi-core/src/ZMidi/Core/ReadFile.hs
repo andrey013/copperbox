@@ -78,8 +78,8 @@ messages i = boundRepeat (fromIntegral i) message
 message :: ParserM MidiMessage
 message = (,) <$>  deltaTime <*> event
 
-deltaTime :: ParserM Word32
-deltaTime = "delta time" <??> getVarlen
+deltaTime :: ParserM DeltaTime
+deltaTime = "delta time" <??> fmap fromIntegral getVarlen
 
 event :: ParserM MidiEvent
 event = word8 >>= step

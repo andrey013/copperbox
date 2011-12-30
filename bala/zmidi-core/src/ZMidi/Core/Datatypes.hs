@@ -1,3 +1,4 @@
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -8,7 +9,7 @@
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
 -- Stability   :  unstable
--- Portability :  As per dependencies.
+-- Portability :  GHC (at least generalized newtype deriving)
 --
 -- Concrete syntax tree for MIDI files.
 --
@@ -26,12 +27,14 @@
 
 module ZMidi.Core.Datatypes 
   (
-  -- * MidiFile representation.
-    MidiFile(..)
+  -- * MidiFile syntax.
+    DeltaTime
+  , TagByte
+
+  , MidiFile(..)
   , MidiHeader(..)  
   , MidiTrack(..)
   , MidiFormat(..)
-  , DeltaTime
   , MidiMessage
   , MidiEvent(..)
 
@@ -50,6 +53,20 @@ module ZMidi.Core.Datatypes
 import Data.Int
 import Data.Word
 
+
+
+-- | All time values in a MIDI track are represented as a \delta\ 
+-- from the previous event rather than an absolute time. 
+--
+-- DeltaTime is a newtype wrapper over Word32, note that in MIDI 
+-- files it is represented as a @varlen@ to save space rather than 
+-- a four byte number. 
+--
+newtype DeltaTime = DeltaTime { getDeltaTime :: Word32 }
+  deriving (Enum,Eq,Ord,Num,Integral,Real)
+
+instance Show DeltaTime where
+  showsPrec p = showsPrec p . getDeltaTime
 
 -- | TagByte is an alias to 'Word8'.
 --
@@ -105,7 +122,7 @@ data MidiTimeDivision
     --
     = FPS Word16
     
-    -- | Ticks-per-beat, i.e. the number of units for a quater 
+    -- | Ticks-per-beat, i.e. the number of units for a quarter 
     -- note.
     --
     | TPB Word16    
@@ -123,13 +140,6 @@ data MidiTextType
     | CUE_POINT 
   deriving (Eq,Enum,Ord,Show) 
 
--- | All time values in a MIDI track are represented as a \delta\ 
--- from the previous event rather than an absolute time. 
---
--- Although DeltaTime is a type synonym for Word32, in MIDI 
--- files it is represented as a @varlen@ to save space. 
---
-type DeltaTime = Word32
 
 -- | MIDI messages are pairs of 'DeltaTime' and 'Event' wrapped in 
 -- a newtype. 

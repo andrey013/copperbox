@@ -97,7 +97,7 @@ message :: Word32 -> MidiMessage -> (Word32,Doc)
 message acc (delta,evt) = 
     (n, acctime `dashsep` dtime `dashsep` ppEvent evt)
   where
-    n             = acc + delta 
+    n             = acc + fromIntegral delta 
     acctime = padl 12 (integral n)
     dtime   = padl 6  (integral delta)
 
