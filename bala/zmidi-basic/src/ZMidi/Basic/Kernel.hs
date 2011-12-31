@@ -23,7 +23,6 @@ module ZMidi.Basic.Kernel
   , module ZMidi.Basic.Kernel.Base.OutputMidi
   , module ZMidi.Basic.Kernel.Base.RenderContext
   , module ZMidi.Basic.Kernel.Base.WrappedPrimitive
-  , module ZMidi.Basic.Kernel.Objects.Basis
   , module ZMidi.Basic.Kernel.Objects.Event
   , module ZMidi.Basic.Kernel.Objects.GMDrums
   , module ZMidi.Basic.Kernel.Objects.GMInstruments
@@ -37,7 +36,6 @@ import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.OutputMidi
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
-import ZMidi.Basic.Kernel.Objects.Basis
 import ZMidi.Basic.Kernel.Objects.Event
 import ZMidi.Basic.Kernel.Objects.GMDrums
 import ZMidi.Basic.Kernel.Objects.GMInstruments

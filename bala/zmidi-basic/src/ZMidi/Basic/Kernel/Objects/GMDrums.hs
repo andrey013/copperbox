@@ -69,7 +69,7 @@ module ZMidi.Basic.Kernel.Objects.GMDrums
   ) where
 
 
-import ZMidi.Basic.Kernel.Base.Syntax
+import ZMidi.Basic.Kernel.Base.BaseDefs
 
 
 -------------------------------------------------------------------------------
