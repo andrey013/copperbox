@@ -18,36 +18,22 @@
 module ZMidi.Basic.Kernel.Base.BaseDefs
   ( 
     
-    DUnit
-
-  , OnsetTime
+    OnsetTime
   , BPM
   , GMInst
   , GMDrum
 
-  , MidiPitch
-  , MidiDuration
-
   , InterpretUnit(..)
   , uconvert
+
+  , UState
+  , UserStateM(..)
 
   ) where
 
 
+import Control.Applicative
 import Data.Word
-
--- | Some unit of duration usually Double for MIDI (rendered to 
--- Word32).
---
--- This very useful for reducing the kind of type classes to *.
--- 
--- Then constraints on the Unit type can be declared on the 
--- instances rather than in the class declaration.
---
--- (Cf. @DUnit@ in Wumpus)
--- 
-type family DUnit a :: *
-
 
 
 -- | Internally represent Onset times (and durations) as Double.
@@ -73,37 +59,6 @@ type GMInst = Word8
 --
 type GMDrum = Word8
 
--- | 'MidiPitch' is a Word8, corresponding directly to the MIDI
--- representation, only values in the range @[0..127]@ are
--- allowed.
---
--- Middle c is 60. Each increment is a semitone step. With careful
--- use of the pitch-bend control signal MIDI can simulate
--- microtonal intervals though this is not attempted by
--- @ZMidi.Emit@.
---
-type MidiPitch    = Word8
-
-
--- | 'MidiDuration' is a Double, directly corresponding to the
--- duration value:
---
--- @1.0@ represents a whole note.
---
--- @0.5@ represents a half note.
---
--- @0.25@ represents a half note. Etc.
---
--- Using Double allows some cleverness for representing special
--- durations, e.g. grace notes can be some small duration
--- subtracted from the note next to the grace.
---
--- Internally @ZMidi.Emit@ translates the Double value into an
--- integer number of ticks.
---
-type MidiDuration = Double
-
--- TODO - newtype wrap...
 
 
 class Num u => InterpretUnit u where
@@ -119,13 +74,24 @@ instance InterpretUnit Double where
 
 -- | Convert a scalar value from one unit to another.
 --
-uconvert :: (InterpretUnit u, InterpretUnit u1) => TicksSize -> u -> u1
-uconvert sz = dinterp sz . normalize sz
+uconvert :: (InterpretUnit u, InterpretUnit u1) => BPM -> u -> u1
+uconvert bpm = dinterp bpm . normalize bpm
 
+
+-- | Some type of User State.
+-- 
+-- This very useful for reducing the kind of the UserState class 
+-- to @(* -> *)@.
+--  
+type family UState m :: *
+
+
+class (Applicative m, Monad m) => UserStateM (m :: * -> *) where
+  getState    :: st ~ UState m  => m st
+  setState    :: st ~ UState m  => st -> m ()
+  updateState :: st ~ UState m  => (st -> st) -> m ()
 
 --------------------------------------------------------------------------------
-
-type TicksSize = Double
 
 
 

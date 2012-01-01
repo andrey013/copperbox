@@ -35,7 +35,7 @@ import Data.Monoid
 trace :: InterpretUnit u => RenderContext -> [(u,Event u a)] -> MidiFile
 trace ctx = post . step mempty
   where
-    step ac ((u,f):xs) = let (_,_,w1) = runEvent u ctx f
+    step ac ((u,f):xs) = let (_,_,w1) = runEvent ctx u f
                          in step (ac `mappend` w1) xs
     step ac []         = ac
                           

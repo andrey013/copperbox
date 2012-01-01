@@ -53,6 +53,7 @@ library
     ZMidi.Basic.Kernel.Base.OutputMidi,
     ZMidi.Basic.Kernel.Base.RenderContext,
     ZMidi.Basic.Kernel.Base.WrappedPrimitive,
+    ZMidi.Basic.Kernel.Objects.Chain,
     ZMidi.Basic.Kernel.Objects.Event,
     ZMidi.Basic.Kernel.Objects.GMDrums,
     ZMidi.Basic.Kernel.Objects.GMInstruments,

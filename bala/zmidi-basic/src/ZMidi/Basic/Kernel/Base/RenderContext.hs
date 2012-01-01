@@ -26,8 +26,8 @@ module ZMidi.Basic.Kernel.Base.RenderContext
   , default_volume
   , default_pan
 
-  -- * RenderCtxM (reader) monad class
-  , RenderCtxM(..)
+  -- * RenderContextM (reader) monad class
+  , RenderContextM(..)
 
 
   -- * Queries
@@ -89,7 +89,7 @@ default_pan             = 0x7F7F `div` 2
 -- expected to be used more often than queryCtx (aka @ask@) it 
 -- gets the more convenient name.
 --
-class (Applicative m, Monad m) => RenderCtxM (m :: * -> *) where
+class (Applicative m, Monad m) => RenderContextM (m :: * -> *) where
   askCtx    :: m RenderContext
   asksCtx   :: (RenderContext -> a) -> m a
   localize  :: (RenderContext -> RenderContext) -> m a -> m a
@@ -101,7 +101,7 @@ class (Applicative m, Monad m) => RenderCtxM (m :: * -> *) where
 --------------------------------------------------------------------------------
 -- Queries
 
-getVolume :: RenderCtxM m => m Word16
+getVolume :: RenderContextM m => m Word16
 getVolume = asksCtx rc_volume
 
 
