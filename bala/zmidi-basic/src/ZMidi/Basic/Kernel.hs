@@ -20,7 +20,7 @@ module ZMidi.Basic.Kernel
   ( 
 
     module ZMidi.Basic.Kernel.Base.BaseDefs
-  , module ZMidi.Basic.Kernel.Base.OutputMidi
+  , module ZMidi.Basic.Kernel.Base.Primitive
   , module ZMidi.Basic.Kernel.Base.RenderContext
   , module ZMidi.Basic.Kernel.Base.WrappedPrimitive
   , module ZMidi.Basic.Kernel.Objects.Chain
@@ -34,7 +34,7 @@ module ZMidi.Basic.Kernel
   ) where
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
-import ZMidi.Basic.Kernel.Base.OutputMidi
+import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Chain

@@ -2,37 +2,37 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.Basic.Kernel.Base.OutputMidi
--- Copyright   :  (c) Stephen Tetley 2011
+-- Module      :  ZMidi.Basic.Primitive.RenderMidi
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Translate MIDI data with @Double@ onset times to Format 1 MIDI
--- files with delta-time onsets.
+-- 
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Basic.Kernel.Base.OutputMidi
-  (
-
+module ZMidi.Basic.Primitive.RenderMidi
+  ( 
+   
     genFormat1
   , genFormat1_IO
 
   ) where
 
 
+import ZMidi.Basic.Primitive.Syntax
 
 import ZMidi.Core                               -- package: zmidi-core
 
-import Control.Applicative
-import Data.List ( sort )
-import Data.Time
-import Data.Word
 
-genFormat1 :: [(Double,MidiEvent)] -> MidiFile
+import Control.Applicative
+import Data.Time
+
+
+genFormat1 :: EventList -> MidiFile
 genFormat1 evs = MidiFile { mf_header = midi_header
                           , mf_tracks = [ hdr, eventTrack evs ]}
   where
@@ -41,20 +41,19 @@ genFormat1 evs = MidiFile { mf_header = midi_header
 -- | As per 'genFormat1' but adds a timestamp to the info track 
 -- (track 0).
 --
-genFormat1_IO :: [(Double,MidiEvent)] -> IO MidiFile
+genFormat1_IO :: EventList -> IO MidiFile
 genFormat1_IO evs =
    (\hdr -> MidiFile { mf_header = midi_header
                      , mf_tracks = [ hdr, eventTrack evs ]} )
     <$> io_infoTrack
    
 
-
-
 midi_header :: MidiHeader
 midi_header = MidiHeader { hdr_format    = MF1
                          , num_tracks    = 2
                          , time_division = TPB 480
                          }
+
 
 io_infoTrack :: IO MidiTrack
 io_infoTrack = mk <$> getZonedTime
@@ -82,28 +81,12 @@ set_tempo = (0, MetaEvent $ SetTempo 500000)
 
 
 
-eventTrack :: [(Double,MidiEvent)] -> MidiTrack
-eventTrack evts = MidiTrack $ evt0 : evt1 : deltaTrafo evts
+eventTrack :: EventList -> MidiTrack
+eventTrack evts = MidiTrack $ evt0 : evt1 : extractMessages evts
   where
     evt0 = sequence_name "Track 1"
     evt1 = set_tempo
 
-    deltaTrafo = step 0 . sort 
-    
-    step ot ((t,e):xs) = let ut = durationr t 
-                         in (fromIntegral $ ut-ot,e) : step ut xs
-    step _  []         = [delta_end_of_track]
-
-
--- Note - this is a Double so it is the right type for calculating
--- durations, in MIDI files the size of the ticks-per-beat 
--- designator is actually a Word16.
---
-ticks_per_quarternote :: Double
-ticks_per_quarternote = 480
-
-durationr :: Double -> Word32
-durationr r = floor $ (4 * ticks_per_quarternote) * r
 
 
 

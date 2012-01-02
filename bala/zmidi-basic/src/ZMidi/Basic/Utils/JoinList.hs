@@ -41,7 +41,7 @@ module ZMidi.Basic.Utils.JoinList
   , two
   , cons
   , snoc
-  , join
+  , append
 
   -- * Basic functions  
   , head
@@ -91,7 +91,7 @@ instance Show a => Show (JoinList a) where
 
 instance Monoid (JoinList a) where
   mempty        = Empty
-  mappend       = join
+  mappend       = append
 
 instance Functor JoinList where
   fmap _ Empty      = Empty
@@ -218,13 +218,13 @@ snoc xs a = Join xs (One a)
 
 
 
-infixr 5 `join`
+infixr 5 `append`
 
 --
-join :: JoinList a -> JoinList a -> JoinList a
-join Empty b     = b
-join a     Empty = a 
-join a     b     = Join a b
+append :: JoinList a -> JoinList a -> JoinList a
+append Empty b     = b
+append a     Empty = a 
+append a     b     = Join a b
 
 
 --------------------------------------------------------------------------------

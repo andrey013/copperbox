@@ -17,7 +17,7 @@
 
 module ZMidi.Basic.Kernel.Base.BaseDefs
   ( 
-    
+ 
     OnsetTime
   , BPM
   , GMInst

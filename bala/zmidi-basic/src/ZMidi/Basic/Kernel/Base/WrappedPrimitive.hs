@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,31 +20,46 @@ module ZMidi.Basic.Kernel.Base.WrappedPrimitive
 
     Primitive
   , CatPrim
-  , prim1
-  , catToList
+  , primI
+  , primOO
+  , catToEventList
   , cpmap
 
-  , HPrim
-  , hprimToList
-  , singleH
 
   ) where
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
+import ZMidi.Basic.Primitive.Syntax
+import ZMidi.Basic.Primitive.Transform
 
-import ZMidi.Basic.Utils.HList
-import ZMidi.Basic.Utils.JoinList ( JoinList, ViewR(..), viewr )
+import ZMidi.Basic.Utils.JoinList ( JoinList )
 import qualified ZMidi.Basic.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
 import Data.Monoid
 
-type Primitive = (OnsetTime, MidiEvent)
 
+
+-- | @Primitive@ doesn\'t support cheap concat.
+-- 
 data CatPrim = CZero
              | Cat1 (JoinList Primitive)
 
+type instance DUnit CatPrim = Double
+
+
+instance Translate CatPrim where
+  translate dt = cpmap (translate dt)
+
+instance SReverse CatPrim where
+  sreverse = cpmap sreverse
+
+instance Scale CatPrim where
+  scale sx = cpmap (scale sx)
+
+instance Reposition CatPrim where
+  reposition ot = cpmap (reposition ot)
 
 --
 -- Note - the concatenation is sequential. 
@@ -57,13 +73,28 @@ instance Monoid CatPrim where
   a      `mappend` CZero  = a
   Cat1 a `mappend` Cat1 b = Cat1 $ a `mappend` b 
 
-catToList :: CatPrim -> [Primitive]
-catToList CZero    = []
-catToList (Cat1 a) = JL.toList a
+catToEventList :: CatPrim -> EventList
+catToEventList (Cat1 se) = frame se
+catToEventList _         = frame mempty
 
 
-prim1 :: (OnsetTime,MidiVoiceEvent) -> CatPrim
-prim1 (ot,e) = Cat1 $ JL.one (ot, VoiceEvent e)
+--
+-- Actually this is a bit crummy, we are only supporting 1 event 
+-- long primitives when primitive can support many events.
+-- 
+-- Thus we are losing the cheap transformation that Primitive is 
+-- designed for.
+--
+
+
+primI :: OnsetTime -> MidiVoiceEvent -> CatPrim
+primI ot e = Cat1 $ JL.one $ eventGroup ot [(0, instant $ VoiceEvent e)]
+
+primOO :: OnsetTime -> MidiVoiceEvent -> Double -> MidiVoiceEvent -> CatPrim
+primOO ot e0 drn e1 = Cat1 $ JL.one $ eventGroup ot [(0, prim)]
+  where
+    prim = onoff (VoiceEvent e0) drn (VoiceEvent e1)
+
 
 
 -- | Map 
@@ -71,46 +102,4 @@ prim1 (ot,e) = Cat1 $ JL.one (ot, VoiceEvent e)
 cpmap :: (Primitive -> Primitive) -> CatPrim -> CatPrim
 cpmap _ CZero    = CZero
 cpmap f (Cat1 a) = Cat1 $ fmap f a
-
---------------------------------------------------------------------------------
--- Lists of Primitives
-
--- | Musical objects, such as arpegios need more than one 
--- primitive (note) for their construction. Hence, the primary 
--- representation to build musical objects upon must support 
--- /concatenation/ of primitives. 
--- 
-newtype HPrim u = HPrim { getHPrim :: H Primitive }
-
--- Note - only a Monoid instance for HPrim - they cannot be 
--- shown, fmapped etc.
-
-instance Monoid (HPrim u) where
-  mempty          = HPrim emptyH
-  ha `mappend` hb = HPrim $ getHPrim ha `appendH` getHPrim hb
-
-  mconcat []      = mempty
-  mconcat (a:as)  = step a as
-    where
-      step ac []     = ac
-      step ac (x:xs) = step (ac `mappend` x) xs
-
-
--- | Extract the internal list of 'Primitive' from a 'HPrim'.
---
-hprimToList :: HPrim u -> [Primitive]
-hprimToList = toListH . getHPrim
-
-
--- | Form a 'HPrim' from a 'CatPrim'.
---
-singleH :: CatPrim -> HPrim u
-singleH CZero    = HPrim emptyH
-singleH (Cat1 a) = HPrim $ step emptyH (viewr a) 
-  where
-    step ac EmptyR    = ac
-    step ac (se :> e) = step (e `consH` ac) (viewr se)
-
-
-
 

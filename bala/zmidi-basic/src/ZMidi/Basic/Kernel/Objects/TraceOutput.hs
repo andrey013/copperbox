@@ -23,10 +23,11 @@ module ZMidi.Basic.Kernel.Objects.TraceOutput
   ) where
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
-import ZMidi.Basic.Kernel.Base.OutputMidi
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Event
+
+import ZMidi.Basic.Primitive.RenderMidi
 
 import ZMidi.Core                               -- package: zmidi-core
 
@@ -39,4 +40,4 @@ trace ctx = post . step mempty
                          in step (ac `mappend` w1) xs
     step ac []         = ac
                           
-    post               = genFormat1 . catToList
+    post               = genFormat1 . catToEventList

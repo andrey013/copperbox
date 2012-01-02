@@ -1,3 +1,5 @@
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -16,14 +18,8 @@
 
 module ZMidi.Basic.Kernel.Objects.Event
   ( 
-   
-    TimeSpan(..)
-  , DTimeSpan
-  , instantTimeSpan
-  , unionTimeSpan
-  , durationTimeSpan
 
-  , normalizeTimeSpan
+    normalizeTimeSpan
   , dinterpTimeSpan
 
   , Event
@@ -52,8 +48,10 @@ module ZMidi.Basic.Kernel.Objects.Event
 
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
+import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
+import ZMidi.Basic.Primitive.TimeSpan
 
 import ZMidi.Core                               -- package: zmidi-core
 
@@ -61,24 +59,6 @@ import Control.Applicative
 import Data.Monoid
 import Data.Word
 
--- | TimeSpan cf. a bounding box.
---
-data TimeSpan u = TimeSpan { start_pos :: u, end_pos :: u }
-
-type DTimeSpan = TimeSpan Double
-
-instantTimeSpan :: u -> TimeSpan u
-instantTimeSpan t0 = TimeSpan { start_pos = t0, end_pos = t0 }
-
-unionTimeSpan :: Ord u => TimeSpan u -> TimeSpan u -> TimeSpan u
-unionTimeSpan (TimeSpan s0 e0) (TimeSpan s1 e1) = 
-    TimeSpan { start_pos = min s0 s1, end_pos = max e0 e1 }
-
--- Can events always be /from Time to/ - do we need a saturated
--- event (already applied to time)?
-
-durationTimeSpan :: Num u => TimeSpan u -> u
-durationTimeSpan (TimeSpan s e) = e - s
 
 normalizeTimeSpan :: InterpretUnit u => BPM -> TimeSpan u -> DTimeSpan
 normalizeTimeSpan bpm (TimeSpan s e) = 
@@ -97,6 +77,8 @@ newtype Event u a = Event {
           getEvent :: RenderContext -> OnsetTime -> (a, TimeSpan u, CatPrim) }
 
 
+type instance DUnit (Event u a) = u
+
 -- Functor
 
 instance Functor (Event u) where
@@ -109,11 +91,11 @@ instance Functor (Event u) where
 instance (Ord u, InterpretUnit u) => Applicative (Event u) where
   pure a    = Event $ \ctx loc -> let bpm  = interp_bpm ctx
                                       uloc = dinterp bpm loc
-                                  in (a , instantTimeSpan uloc, mempty)
+                                  in (a , spanInstant uloc, mempty)
 
   mf <*> ma = Event $ \ctx loc -> let (f,s1,w1) = getEvent mf ctx loc
                                       (a,s2,w2) = getEvent ma ctx loc
-                                  in (f a, unionTimeSpan s1 s2, w1 `mappend` w2)
+                                  in (f a, spanUnion s1 s2, w1 `mappend` w2)
 
 
 -- Monad
@@ -122,7 +104,7 @@ instance (Ord u, InterpretUnit u) => Monad (Event u) where
   return  = pure
   m >>= k = Event $ \ctx loc -> let (a,s1,w1) = getEvent m ctx loc
                                     (b,s2,w2) = getEvent (k a) ctx loc
-                                in (b, unionTimeSpan s1 s2, w1 `mappend` w2)
+                                in (b, spanUnion s1 s2, w1 `mappend` w2)
 
 
 -- Monoid
@@ -132,16 +114,48 @@ instance (Monoid a, Ord u, InterpretUnit u) => Monoid (Event u a) where
   ma `mappend` mb = Event $ \ctx loc -> 
                         let (a,s1,w1) = getEvent ma ctx loc
                             (b,s2,w2) = getEvent mb ctx loc
-                        in (a `mappend` b, unionTimeSpan s1 s2, w1 `mappend` w2)
+                        in (a `mappend` b, spanUnion s1 s2, w1 `mappend` w2)
                      
 
 instance (Ord u, InterpretUnit u) => RenderContextM (Event u) where
   askCtx = Event $ \ctx loc -> let bpm  = interp_bpm ctx
                                    uloc = dinterp bpm loc
-                               in (ctx , instantTimeSpan uloc, mempty)
+                               in (ctx , spanInstant uloc, mempty)
 
   localize f ma = Event $ \ctx loc -> getEvent ma (f ctx) loc
 
+
+--------------------------------------------------------------------------------
+-- Transform
+
+eventTrafo :: InterpretUnit u 
+           => (u -> TimeSpan u -> TimeSpan u) 
+           -> (Double -> CatPrim -> CatPrim) 
+           -> u
+           -> Event u () -> Event u ()
+eventTrafo fft ffc u ma = Event $ \ctx loc -> 
+    let bpm       = interp_bpm ctx
+        du        = normalize bpm u
+        (a,s1,w1) = getEvent ma ctx loc
+    in (a, fft u s1, ffc du w1)
+
+
+--
+-- NOTE - transforming the answer introduces the need for UNil as
+-- per Wumpus.
+--
+-- For now just have these limited vesions
+--
+
+instance InterpretUnit u => Translate (Event u ()) where
+  translate dx = eventTrafo translate translate dx
+
+instance InterpretUnit u => SReverse (Event u ()) where
+  sreverse = eventTrafo (const sreverse) (const sreverse) 0 
+
+
+
+--------------------------------------------------------------------------------
 
 --
 -- NOTE - having a modulating BPM in the RenderContext makes for 
@@ -162,7 +176,7 @@ instant :: InterpretUnit u => (Word8 -> MidiVoiceEvent) -> Event u ()
 instant fn = Event $ \ctx loc -> let chan = rc_channel_num ctx
                                      bpm  = interp_bpm ctx
                                      uloc = dinterp bpm loc
-                                 in ((), instantTimeSpan uloc, prim1 (loc, fn chan))
+                                 in ((), spanInstant uloc, primI loc (fn chan))
 
 onoff :: InterpretUnit u 
       => (Word8 -> MidiVoiceEvent) -> (Word8 -> MidiVoiceEvent) -> u 
@@ -172,9 +186,7 @@ onoff onf offf drn = Event $ \ctx loc ->
         bpm  = interp_bpm ctx
         ddrn = normalize bpm drn
         uloc = dinterp bpm loc
-        w1   = prim1 (loc, onf chan)
-        w2   = prim1 (loc + ddrn, offf chan)
-    in ((), TimeSpan uloc (uloc+drn), w1 `mappend` w2)
+    in ((), TimeSpan uloc (uloc+drn), primOO loc (onf chan) ddrn (offf chan))
 
 
 
@@ -218,14 +230,14 @@ elaborate :: (Ord u)
 elaborate ma f = Event $ \ctx loc -> 
     let (a,s1,w1) = getEvent ma ctx loc
         (_,s2,w2) = getEvent (f a s1) ctx loc
-    in (a, unionTimeSpan s1 s2, w1 `mappend` w2)
+    in (a, spanUnion s1 s2, w1 `mappend` w2)
   
 
 obliterate :: Ord u => Event u a -> Event u z -> Event u a
 obliterate ma mz = Event $ \ctx loc -> 
     let (a,s1,_)  = getEvent ma ctx loc
         (_,s2,w2) = getEvent mz ctx loc
-    in (a, unionTimeSpan s1 s2, w2)
+    in (a, spanUnion s1 s2, w2)
 
 moveStart :: InterpretUnit u => (u -> u) -> Event u a -> Event u a
 moveStart f ma = Event $ \ctx loc -> 
@@ -239,9 +251,9 @@ concatE :: (Monoid a, Ord u, InterpretUnit u)
 concatE ma mb = Event $ \ctx loc -> 
     let bpm       = interp_bpm ctx
         (a,s1,w1) = getEvent ma ctx loc
-        len1      = normalize bpm $ durationTimeSpan s1
+        len1      = normalize bpm $ spanDuration s1
         (b,s2,w2) = getEvent mb ctx (loc + len1)
-    in (a `mappend` b, unionTimeSpan s1 s2, w1 `mappend` w2)
+    in (a `mappend` b, spanUnion s1 s2, w1 `mappend` w2)
   
 infixr 5 ><
 
@@ -259,7 +271,7 @@ space :: (Monoid a, Ord u, InterpretUnit u)
       => u -> Event u a -> Event u a -> Event u a
 space d ma mb = elaborate ma fn >< mb
   where
-    fn _ spn = moveStart ((+) $ durationTimeSpan spn) $ blank d
+    fn _ tspan = moveStart ((+) $ spanDuration tspan) $ blank d
 
 sep :: (Monoid a, Ord u, InterpretUnit u) 
       => u -> [Event u a] -> Event u a

@@ -47,6 +47,9 @@ emptyH = H $ id
 wrapH :: a -> H a
 wrapH a = consH a emptyH  
 
+
+infixr 5 `consH` 
+
 consH :: a -> H a -> H a
 consH a f = H $ (a:) . getH f
 

@@ -44,6 +44,7 @@ module ZMidi.Basic.Kernel.Objects.Chain
 
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
+import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Event
@@ -154,7 +155,7 @@ runGenChain (ChainScheme start step) ust ma = promoteLoc $ \ctx loc ->
                                   , chain_user_state = ust }
         bpm             = interp_bpm ctx
         dloc            = normalize bpm loc
-        ts0             = instantTimeSpan dloc
+        ts0             = spanInstant dloc
         (a,_,ts,s1,w1)  = getGenChain ma ctx dloc ts0 st_zero
         uts             = dinterpTimeSpan bpm ts
     in ((a, chain_user_state s1),uts,w1)
@@ -197,7 +198,7 @@ chain1 gf  = GenChain $ \ctx loc ts (ChainSt i0 s0 sf ust) ->
                               , chain_st         = st1
                               , chain_next       = sf
                               , chain_user_state = ust }
-    in (a, dloc1, unionTimeSpan ts dts1, new_st, w1)
+    in (a, dloc1, spanUnion ts dts1, new_st, w1)
 
 
 
