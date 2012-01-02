@@ -51,6 +51,7 @@ import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
+import ZMidi.Basic.Primitive.Syntax ( EventList, consec )
 import ZMidi.Basic.Primitive.TimeSpan
 
 import ZMidi.Core                               -- package: zmidi-core
@@ -74,7 +75,7 @@ dinterpTimeSpan bpm (TimeSpan s e) = TimeSpan (dinterp bpm s) (dinterp bpm e)
 -- | Should the returned TimeSpan be in user units?
 --
 newtype Event u a = Event { 
-          getEvent :: RenderContext -> OnsetTime -> (a, TimeSpan u, CatPrim) }
+          getEvent :: RenderContext -> OnsetTime -> (a, TimeSpan u, EventList) }
 
 
 type instance DUnit (Event u a) = u
@@ -130,7 +131,7 @@ instance (Ord u, InterpretUnit u) => RenderContextM (Event u) where
 
 eventTrafo :: InterpretUnit u 
            => (u -> TimeSpan u -> TimeSpan u) 
-           -> (Double -> CatPrim -> CatPrim) 
+           -> (Double -> EventList -> EventList) 
            -> u
            -> Event u () -> Event u ()
 eventTrafo fft ffc u ma = Event $ \ctx loc -> 
@@ -167,7 +168,7 @@ instance InterpretUnit u => SReverse (Event u ()) where
 
 
 runEvent :: InterpretUnit u 
-         => RenderContext -> u -> Event u a -> (a, TimeSpan u, CatPrim)
+         => RenderContext -> u -> Event u a -> (a, TimeSpan u, EventList)
 runEvent ctx loc ma = let bpm = interp_bpm ctx
                           dloc = normalize bpm loc
                       in getEvent ma ctx dloc
@@ -202,7 +203,7 @@ blank drn = Event $ \ctx loc ->
 
 
 promoteLoc ::  InterpretUnit u 
-           => (RenderContext -> u -> (a, TimeSpan u, CatPrim)) -> Event u a
+           => (RenderContext -> u -> (a, TimeSpan u, EventList)) -> Event u a
 promoteLoc k = Event $ \ctx loc -> let bpm = interp_bpm ctx
                                        uloc = dinterp bpm loc
                                    in k ctx uloc
@@ -251,9 +252,8 @@ concatE :: (Monoid a, Ord u, InterpretUnit u)
 concatE ma mb = Event $ \ctx loc -> 
     let bpm       = interp_bpm ctx
         (a,s1,w1) = getEvent ma ctx loc
-        len1      = normalize bpm $ spanDuration s1
-        (b,s2,w2) = getEvent mb ctx (loc + len1)
-    in (a `mappend` b, spanUnion s1 s2, w1 `mappend` w2)
+        (b,s2,w2) = getEvent mb ctx loc
+    in (a `mappend` b, spanUnion s1 s2, w1 `consec` w2)
   
 infixr 5 ><
 

@@ -37,6 +37,7 @@ module ZMidi.Basic.Utils.JoinList
   , zipWithIntoList
 
   -- * Construction
+  , empty
   , one
   , two
   , cons
@@ -190,6 +191,9 @@ null :: JoinList a -> Bool
 null Empty       = True
 null _           = False
 
+
+empty :: JoinList a
+empty = Empty
 
 -- | Create a singleton join list.
 --

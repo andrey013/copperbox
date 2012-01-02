@@ -48,6 +48,7 @@ import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Event
+import ZMidi.Basic.Primitive.Syntax ( EventList )
 
 import Control.Applicative
 import Data.Monoid
@@ -66,7 +67,7 @@ data ChainScheme u = forall cst. ChainScheme
 newtype GenChain st u a = GenChain
           { getGenChain :: RenderContext -> OnsetTime 
                         -> DTimeSpan -> ChainSt st u 
-                        -> (a, OnsetTime, DTimeSpan, ChainSt st u, CatPrim) }
+                        -> (a, OnsetTime, DTimeSpan, ChainSt st u, EventList) }
 
 
 type Chain u a = GenChain () u a

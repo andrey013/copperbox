@@ -1,5 +1,4 @@
 {-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE ViewPatterns               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,15 +19,14 @@ module ZMidi.Basic.Primitive.Syntax
   ( 
    
     EventList
-  , Locale
-  , Primitive
   , Event1
 
-  , frame
-  , eventGroup
+  , eventList
+  , eventList1
   , instant
   , onoff
-
+  , consec
+  
   -- * Extract delta time MIDI messages
   , extractMessages
 
@@ -49,19 +47,31 @@ import Data.List ( sort )
 import Data.Monoid
 import Data.Word
 
--- | Unlike Wumpus, there is no need to support nesting, so we 
--- can use a tree rather than a list.
---
-data EventList = EventList Locale (JoinList Primitive)
-   deriving (Show)
 
-type instance DUnit EventList = Double
 
-type Locale = DTimeSpan
 
 type StartDelta = Double
 
--- | The event_seq is not necessarily ordered and the deltas
+
+-- sreverse 
+-- sreverse [(10,A), (12,B)] == [(0,B), (2,A)]
+
+-- scale 
+-- scale 0.5 [(10,A), (12,B)] == [(5,A), (6,B)]
+
+-- translate 
+-- translate 5 [(10,A), (12,B)] == [(15,A), (17,B)]
+
+-- No reposition
+
+-- mappend 
+-- [(10,A), (12,B)] `mappend`  [(5,C)] == [(5,C), (10,A), (12,B)]
+
+-- consecutive
+-- [(10,A), (12,B)] `consec`  [(5,C)] == [(10,A), (12,B), (17,C)]
+
+
+-- | The @list_events@ is not necessarily ordered and the deltas
 -- are distance from the event start to the event, 
 -- \*\* they are not \*\* deltas between consecutive event.
 -- 
@@ -70,12 +80,46 @@ type StartDelta = Double
 -- a simple implementation of scaling - map through the 
 -- start-deltas.
 --
-data Primitive = EventSequence { _event_start :: Double
-                               , _event_seq   :: [(StartDelta, Event1)]
-                               }
-  deriving (Eq,Ord,Show)
+data EventList = EventList { list_len    :: Double
+                           , list_events :: JoinList (StartDelta, Event1)
+                           }
+  deriving (Eq,Show)
 
-type instance DUnit Primitive = Double
+type instance DUnit EventList = Double
+
+instance Monoid EventList where
+  mempty = EventList { list_len = 0, list_events = mempty }
+  EventList len0 se0 `mappend` EventList len1 se1 = 
+      EventList (max len0 len1) (se0 `mappend` se1)
+
+instance SReverse EventList where
+  sreverse (EventList len se) = EventList len $ fmap fn se
+    where
+      fn (dt,e) = (len - dt,e)
+
+instance Scale EventList where
+  scale sx (EventList len se) = EventList (len * sx) $ fmap fn se
+    where
+      fn (dt,e) = (dt * sx, scaleEvent1 sx e)
+
+instance Translate EventList where
+  translate dx (EventList len se) = EventList (len + dx) $ fmap fn se
+    where
+      fn (dt,e) = (dt + dx, e)
+
+
+
+-- | Note @consec@ is not particularly efficient.
+-- 
+-- The right-hand list is iterated re-positioning each event.
+--
+consec :: EventList -> EventList -> EventList
+consec (EventList len0 se0) (EventList len1 se1) = 
+    EventList (len0 + len1) (se0 `mappend` fmap fn se1)
+  where
+    fn (dt,e) = (len0 + dt, e)
+
+
 
 
 data Event1 = Instant MidiEvent
@@ -90,26 +134,20 @@ type instance DUnit Event1 = Double
 
 
 
-instance Monoid EventList where
-  mempty = EventList (spanInstant 0) mempty
-  EventList tspan0 se0 `mappend` EventList tspan1 se1 = 
-      EventList (tspan0 `spanUnion` tspan1) (se0 `JL.append` se1)
-
-
 --------------------------------------------------------------------------------
 -- Build
 
-frame :: JoinList Primitive -> EventList
-frame (viewl -> p0 :< ps) = EventList tspan se
+
+eventList :: [(StartDelta,Event1)] -> EventList
+eventList ss = let (len,se) = foldr fn (0, JL.empty) ss in EventList len se
   where
-    (tspan,se)   = F.foldl' fn (timeBounds p0, JL.one p0) ps 
-    fn (ts,jl) p = let tsp = timeBounds p in (spanUnion ts tsp, JL.snoc jl p)
+    fn e@(dt,Instant {})    (len,ac) = (max dt len, JL.cons e ac) 
+    fn e@(dt,OnOff _ drn _) (len,ac) = (max (dt+drn) len, JL.cons e ac)
 
-frame (viewl -> _)        = EventList (spanInstant 0) mempty
+eventList1 :: (StartDelta,Event1) -> EventList
+eventList1 e@(dt,Instant {})    = EventList dt (JL.one e)
+eventList1 e@(dt,OnOff _ drn _) = EventList (dt+drn) (JL.one e)
 
-
-eventGroup :: Double -> [(StartDelta,Event1)] -> Primitive
-eventGroup = EventSequence
 
 instant :: MidiEvent -> Event1
 instant = Instant
@@ -117,12 +155,6 @@ instant = Instant
 onoff :: MidiEvent -> Double -> MidiEvent -> Event1
 onoff = OnOff
 
-{-
-mergePrims :: JoinList Primitive -> EventList
-mergePrims se = EventList min_onset $ map 
-  where
-    (min_onset
--}
 
 --------------------------------------------------------------------------------
 -- Extract 
@@ -131,11 +163,8 @@ mergePrims se = EventList min_onset $ map
 -- | Sorted plus trailing @end-of-track@ message.
 --
 extractMessages :: EventList -> [MidiMessage]
-extractMessages (EventList _ se) = 
-    step 0 $ sort $ toListH $ F.foldr fn emptyH se
+extractMessages = step 0 . sort . toListH . primMessages
   where  
-    fn p ac = appendH ac $ primMessages p
-
     step ot ((t,e):xs) = let ut = durationr t 
                          in (fromIntegral $ ut-ot,e) : step ut xs
     step _  []         = [delta_end_of_track]
@@ -143,11 +172,11 @@ extractMessages (EventList _ se) =
 
 -- | Absolute time not delta time, unsorted...
 --
-primMessages :: Primitive -> H (Double, MidiEvent)
-primMessages (EventSequence ot ss) = foldr fn emptyH ss 
+primMessages :: EventList -> H (Double, MidiEvent)
+primMessages (EventList _ se) = F.foldr fn emptyH se
   where
-    fn (dt, Instant e)     ac = (ot+dt, e) `consH` ac
-    fn (dt, OnOff e0 d e1) ac = (ot+dt, e0) `consH` (ot+dt+d, e1) `consH` ac
+    fn (dt, Instant e)     ac = (dt, e) `consH` ac
+    fn (dt, OnOff e0 d e1) ac = (dt, e0) `consH` (dt+d, e1) `consH` ac
 
 
 
@@ -169,87 +198,15 @@ delta_end_of_track = (0, MetaEvent $ EndOfTrack)
 -- Boundaries
 
 
--- | Boundary is cached.
+-- | Boundary is is always from zero for EventLists - this 
+-- suggests TimeBounds is perhaps less useful than simply 
+-- length...
 --
 instance TimeBounds EventList where
-  timeBounds (EventList tspan _) = tspan
-
-
-instance TimeBounds Primitive where
-  timeBounds = boundaryPrimitive
-
-boundaryPrimitive :: Primitive -> DTimeSpan
-boundaryPrimitive (EventSequence s es) = TimeSpan s (step 0 es)
-  where
-    step d []                        = d
-    step d ((delta, Instant {} ):xs) = step (max d delta) xs
-    step d ((delta, OnOff _ t _):xs) = step (max d (delta+t)) xs 
-
+  timeBounds (EventList tspan _) = TimeSpan 0 tspan
 
 --------------------------------------------------------------------------------
 -- Transform
-
-instance Translate EventList where
-  translate dt (EventList tspan se) = 
-      EventList (translate dt tspan) (fmap (translate dt) se)
-
-instance SReverse EventList where
-  sreverse         = sreverseEventList
-
-
-instance Scale EventList where
-  scale sx (EventList tspan se) = 
-      EventList (scale sx tspan) (fmap (scale sx) se)
-
-
-instance Reposition EventList where
-  reposition ot (EventList tspan se) = 
-      EventList (reposition ot tspan) (fmap (reposition ot) se)
-
-
-instance Translate Primitive where
-  translate         = translatePrim
-
-
-instance SReverse Primitive where
-  sreverse          = sreversePrim
-
-instance Scale Primitive where
-  scale             = scalePrim
-
-instance Reposition Primitive where
-  reposition        = repositionPrim
-
-
-sreverseEventList :: EventList -> EventList
-sreverseEventList a@(EventList tspan se)  = 
-    EventList tspan $ fmap (fn . sreverse) se
-  where
-    dmax = spanDuration $ timeBounds a    
-    fn (EventSequence ot es) = EventSequence (dmax - ot) es
-
- 
-translatePrim :: Double -> Primitive -> Primitive
-translatePrim dt (EventSequence s es) = EventSequence (s + dt) es
-
-
-sreversePrim :: Primitive -> Primitive
-sreversePrim p@(EventSequence s es) = 
-    EventSequence s $ fmap (\(d,e) -> (dmax - d, e)) es
-  where
-    dmax = spanDuration $ timeBounds p
-
-scalePrim :: Double -> Primitive -> Primitive
-scalePrim sx (EventSequence s es) = 
-    EventSequence (s * sx) $ map (\(d,e) -> (d * sx, scale sx e)) es
-
-
-repositionPrim :: Double -> Primitive -> Primitive
-repositionPrim ot (EventSequence _ se) = EventSequence ot se
-
-
-instance Scale Event1 where 
-  scale             = scaleEvent1
 
 scaleEvent1 :: Double -> Event1 -> Event1
 scaleEvent1 _  (Instant e)     = Instant e

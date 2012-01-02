@@ -19,12 +19,8 @@ module ZMidi.Basic.Primitive.Transform
   ( 
     DUnit
   , Translate(..)
-  
   , SReverse(..)
-
   , Scale(..)
-
-  , Reposition(..)
 
   ) where
 
@@ -68,11 +64,3 @@ class SReverse t where
 -- 
 class Scale t where
   scale :: Double -> t -> t
-
---------------------------------------------------------------------------------
--- Reposition
-
--- | Change the onset time of an /event/.
--- 
-class Reposition t where
-  reposition :: u ~ DUnit t => u -> t -> t

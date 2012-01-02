@@ -34,10 +34,9 @@ import ZMidi.Core                               -- package: zmidi-core
 import Data.Monoid
 
 trace :: InterpretUnit u => RenderContext -> [(u,Event u a)] -> MidiFile
-trace ctx = post . step mempty
+trace ctx = genFormat1 . step mempty
   where
     step ac ((u,f):xs) = let (_,_,w1) = runEvent ctx u f
                          in step (ac `mappend` w1) xs
     step ac []         = ac
                           
-    post               = genFormat1 . catToEventList

@@ -61,9 +61,6 @@ instance Fractional u => Scale (TimeSpan u) where
                             in TimeSpan (s * sx') (e * sx')
 
 
-instance Num u => Reposition (TimeSpan u) where
-  reposition ot (TimeSpan s e) = let len = e - s in TimeSpan ot (ot + len)
-
 
 --------------------------------------------------------------------------------
 
