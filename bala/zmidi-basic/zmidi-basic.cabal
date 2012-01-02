@@ -50,9 +50,7 @@ library
   exposed-modules:
     ZMidi.Basic.Kernel,
     ZMidi.Basic.Kernel.Base.BaseDefs,
-    ZMidi.Basic.Kernel.Base.Primitive,
     ZMidi.Basic.Kernel.Base.RenderContext,
-    ZMidi.Basic.Kernel.Base.WrappedPrimitive,
     ZMidi.Basic.Kernel.Objects.Chain,
     ZMidi.Basic.Kernel.Objects.Event,
     ZMidi.Basic.Kernel.Objects.GMDrums,
@@ -61,7 +59,6 @@ library
     ZMidi.Basic.Kernel.Objects.TraceOutput,
     ZMidi.Basic.Primitive.RenderMidi,
     ZMidi.Basic.Primitive.Syntax,
-    ZMidi.Basic.Primitive.TimeSpan,
     ZMidi.Basic.Primitive.Transform,
     ZMidi.Basic.VersionNumber
     ZMidi.Basic.Utils.HList,

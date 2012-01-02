@@ -18,7 +18,14 @@
 module ZMidi.Basic.Kernel.Base.BaseDefs
   ( 
  
-    OnsetTime
+    -- Re-exports
+    DUnit
+  , Scale(..)
+  , Translate(..)
+  , SReverse(..)
+
+  -- * Types and aliases
+  , OnsetTime
   , BPM
   , GMInst
   , GMDrum
@@ -30,6 +37,9 @@ module ZMidi.Basic.Kernel.Base.BaseDefs
   , UserStateM(..)
 
   ) where
+
+
+import ZMidi.Basic.Primitive.Transform
 
 
 import Control.Applicative

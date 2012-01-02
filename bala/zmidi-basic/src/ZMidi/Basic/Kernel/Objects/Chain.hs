@@ -44,11 +44,9 @@ module ZMidi.Basic.Kernel.Objects.Chain
 
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
-import ZMidi.Basic.Kernel.Base.Primitive
 import ZMidi.Basic.Kernel.Base.RenderContext
-import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Event
-import ZMidi.Basic.Primitive.Syntax ( EventList )
+import ZMidi.Basic.Primitive.Syntax ( EventList, durationEL )
 
 import Control.Applicative
 import Data.Monoid
@@ -63,11 +61,10 @@ data ChainScheme u = forall cst. ChainScheme
       , chain_step      :: u -> cst -> (u,cst)
       }
 
-
 newtype GenChain st u a = GenChain
           { getGenChain :: RenderContext -> OnsetTime 
-                        -> DTimeSpan -> ChainSt st u 
-                        -> (a, OnsetTime, DTimeSpan, ChainSt st u, EventList) }
+                        -> ChainSt st u 
+                        -> (a, OnsetTime, ChainSt st u, EventList) }
 
 
 type Chain u a = GenChain () u a
@@ -83,48 +80,48 @@ data ChainSt st u = forall cst. ChainSt
 -- Functor 
 
 instance Functor (GenChain st u) where
-  fmap f ma = GenChain $ \ctx loc ts s -> 
-                let (a,loc1,ts1,s1,w1) = getGenChain ma ctx loc ts s 
-                in (f a, loc1, ts1, s1, w1)
+  fmap f ma = GenChain $ \ctx loc s -> 
+                let (a,loc1,s1,w1) = getGenChain ma ctx loc s 
+                in (f a, loc1, s1, w1)
 
 
 -- Applicative
 
 instance Applicative (GenChain st u) where
-  pure a    = GenChain $ \_   loc ts s -> (a, loc, ts, s, mempty)
-  mf <*> ma = GenChain $ \ctx loc ts s -> 
-                let (f,loc1,ts1,s1,w1) = getGenChain mf ctx loc ts s
-                    (a,loc2,ts2,s2,w2) = getGenChain ma ctx loc1 ts1 s1
-                in (f a, loc2, ts2, s2, w1 `mappend` w2)
+  pure a    = GenChain $ \_   loc s -> (a, loc, s, mempty)
+  mf <*> ma = GenChain $ \ctx loc s -> 
+                let (f,loc1,s1,w1) = getGenChain mf ctx loc s
+                    (a,loc2,s2,w2) = getGenChain ma ctx loc1 s1
+                in (f a, loc2, s2, w1 `mappend` w2)
 
 
 
 -- Monad
 
 instance Monad (GenChain st u) where
-  return a  = GenChain $ \_   loc ts s -> (a, loc, ts, s, mempty)
-  ma >>= k  = GenChain $ \ctx loc ts s -> 
-                let (a,loc1,ts1,s1,w1) = getGenChain ma ctx loc ts s
-                    (b,loc2,ts2,s2,w2) = (getGenChain . k) a ctx loc1 ts1 s1
-                in (b, loc2, ts2, s2, w1 `mappend` w2)
+  return a  = GenChain $ \_   loc s -> (a, loc, s, mempty)
+  ma >>= k  = GenChain $ \ctx loc s -> 
+                let (a,loc1,s1,w1) = getGenChain ma ctx loc s
+                    (b,loc2,s2,w2) = (getGenChain . k) a ctx loc1 s1
+                in (b, loc2, s2, w1 `mappend` w2)
 
 
 -- Monoid
 
 instance Monoid a => Monoid (GenChain st u a) where
-  mempty           = GenChain $ \_   loc ts s -> (mempty, loc, ts, s, mempty)
-  ma `mappend` mb  = GenChain $ \ctx loc ts s -> 
-                       let (a,loc1,ts1,s1,w1) = getGenChain ma ctx loc ts s
-                           (b,loc2,ts2,s2,w2) = getGenChain mb ctx loc1 ts1 s1
-                       in (a `mappend` b, loc2, ts2, s2, w1 `mappend` w2)
+  mempty           = GenChain $ \_   loc s -> (mempty, loc, s, mempty)
+  ma `mappend` mb  = GenChain $ \ctx loc s -> 
+                       let (a,loc1,s1,w1) = getGenChain ma ctx loc s
+                           (b,loc2,s2,w2) = getGenChain mb ctx loc1 s1
+                       in (a `mappend` b, loc2, s2, w1 `mappend` w2)
 
 
 -- RenderContextM
 
 instance RenderContextM (GenChain st u) where
-  askCtx          = GenChain $ \ctx loc ts s -> (ctx, loc, ts, s, mempty)
-  asksCtx fn      = GenChain $ \ctx loc ts s -> (fn ctx, loc, ts, s, mempty)
-  localize upd ma = GenChain $ \ctx loc ts s -> getGenChain ma (upd ctx) loc ts s
+  askCtx          = GenChain $ \ctx loc s -> (ctx, loc, s, mempty)
+  asksCtx fn      = GenChain $ \ctx loc s -> (fn ctx, loc, s, mempty)
+  localize upd ma = GenChain $ \ctx loc s -> getGenChain ma (upd ctx) loc s
 
 
 type instance UState (GenChain st u) = st
@@ -132,14 +129,14 @@ type instance UState (GenChain st u) = st
 -- UserStateM 
 
 instance UserStateM (GenChain st u) where
-  getState        = GenChain $ \_ loc ts s@(ChainSt _ _ _ ust) -> 
-                      (ust, loc, ts, s, mempty)
+  getState        = GenChain $ \_ loc s@(ChainSt _ _ _ ust) -> 
+                      (ust, loc, s, mempty)
 
-  setState ust    = GenChain $ \_ loc ts (ChainSt i a b _) -> 
-                      ((), loc, ts, ChainSt i a b ust, mempty)
+  setState ust    = GenChain $ \_ loc (ChainSt i a b _) -> 
+                      ((), loc, ChainSt i a b ust, mempty)
 
-  updateState upd = GenChain $ \_ loc ts (ChainSt i a b ust) -> 
-                      ((), loc, ts, ChainSt i a b (upd ust), mempty)
+  updateState upd = GenChain $ \_ loc (ChainSt i a b ust) -> 
+                      ((), loc, ChainSt i a b (upd ust), mempty)
 
 
 --------------------------------------------------------------------------------
@@ -156,10 +153,9 @@ runGenChain (ChainScheme start step) ust ma = promoteLoc $ \ctx loc ->
                                   , chain_user_state = ust }
         bpm             = interp_bpm ctx
         dloc            = normalize bpm loc
-        ts0             = spanInstant dloc
-        (a,_,ts,s1,w1)  = getGenChain ma ctx dloc ts0 st_zero
-        uts             = dinterpTimeSpan bpm ts
-    in ((a, chain_user_state s1),uts,w1)
+        (a,_,s1,w1)     = getGenChain ma ctx dloc st_zero
+        ud1             = dinterp bpm $ durationEL w1 
+    in ((a, chain_user_state s1),ud1,w1)
 
 -- | Forget the user state LocImage, just return the /answer/.
 --
@@ -188,18 +184,17 @@ runChain_ cscm ma = ignoreAns $ runChain cscm ma
 --
 chain1 :: InterpretUnit u 
        => Event u a -> GenChain st u a
-chain1 gf  = GenChain $ \ctx loc ts (ChainSt i0 s0 sf ust) -> 
+chain1 gf  = GenChain $ \ctx loc (ChainSt i0 s0 sf ust) -> 
     let bpm         = interp_bpm ctx
         uloc        = dinterp bpm loc
-        (a,ts1,w1)  = runEvent ctx uloc gf
-        dts1        = normalizeTimeSpan bpm ts1
+        (a,_,w1)    = runEvent ctx uloc gf
         (loc1,st1)  = sf uloc s0
         dloc1       = normalize bpm loc1
         new_st      = ChainSt { chain_count      = i0 + 1
                               , chain_st         = st1
                               , chain_next       = sf
                               , chain_user_state = ust }
-    in (a, dloc1, spanUnion ts dts1, new_st, w1)
+    in (a, dloc1, new_st, w1)
 
 
 
@@ -230,7 +225,7 @@ chainReplicate n = chainMany . replicate n
 -- | Return the count of chain steps.
 --
 chainCount :: GenChain st u Int
-chainCount = GenChain $ \_ dloc ts st@(ChainSt i _ _ _) -> (i, dloc, ts, st, mempty)
+chainCount = GenChain $ \_ dloc st@(ChainSt i _ _ _) -> (i, dloc, st, mempty)
 
 
 

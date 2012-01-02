@@ -25,15 +25,19 @@ module ZMidi.Basic.Primitive.Syntax
   , eventList1
   , instant
   , onoff
-  , consec
   
+  , consec
+  , instantEL
+  , onoffEL
+  
+  , durationEL
   -- * Extract delta time MIDI messages
   , extractMessages
+  
 
   ) where
 
 
-import ZMidi.Basic.Primitive.TimeSpan
 import ZMidi.Basic.Primitive.Transform
 import ZMidi.Basic.Utils.HList
 import ZMidi.Basic.Utils.JoinList
@@ -61,8 +65,6 @@ type StartDelta = Double
 
 -- translate 
 -- translate 5 [(10,A), (12,B)] == [(15,A), (17,B)]
-
--- No reposition
 
 -- mappend 
 -- [(10,A), (12,B)] `mappend`  [(5,C)] == [(5,C), (10,A), (12,B)]
@@ -92,10 +94,13 @@ instance Monoid EventList where
   EventList len0 se0 `mappend` EventList len1 se1 = 
       EventList (max len0 len1) (se0 `mappend` se1)
 
+-- | maybe dtmax should be cached?
+--
 instance SReverse EventList where
   sreverse (EventList len se) = EventList len $ fmap fn se
     where
-      fn (dt,e) = (len - dt,e)
+      dmax = F.foldr (\(dt,_) ac -> max ac dt) 0 se
+      fn (dt,e) = (dmax - dt,e)
 
 instance Scale EventList where
   scale sx (EventList len se) = EventList (len * sx) $ fmap fn se
@@ -156,9 +161,21 @@ onoff :: MidiEvent -> Double -> MidiEvent -> Event1
 onoff = OnOff
 
 
+instantEL :: StartDelta -> MidiVoiceEvent -> EventList
+instantEL ot e = eventList1 (ot, instant $ VoiceEvent e)
+
+onoffEL :: StartDelta -> MidiVoiceEvent -> Double -> MidiVoiceEvent -> EventList
+onoffEL ot e0 drn e1 = 
+    eventList1 (ot, onoff (VoiceEvent e0) drn (VoiceEvent e1))
+
+
+
 --------------------------------------------------------------------------------
 -- Extract 
 
+
+durationEL :: EventList -> Double
+durationEL = list_len
 
 -- | Sorted plus trailing @end-of-track@ message.
 --
@@ -193,17 +210,6 @@ durationr r = floor $ (4 * ticks_per_quarternote) * r
 delta_end_of_track :: MidiMessage
 delta_end_of_track = (0, MetaEvent $ EndOfTrack)
 
-
---------------------------------------------------------------------------------
--- Boundaries
-
-
--- | Boundary is is always from zero for EventLists - this 
--- suggests TimeBounds is perhaps less useful than simply 
--- length...
---
-instance TimeBounds EventList where
-  timeBounds (EventList tspan _) = TimeSpan 0 tspan
 
 --------------------------------------------------------------------------------
 -- Transform

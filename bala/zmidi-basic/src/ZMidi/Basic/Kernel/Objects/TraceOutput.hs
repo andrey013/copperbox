@@ -24,7 +24,6 @@ module ZMidi.Basic.Kernel.Objects.TraceOutput
 
 import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.RenderContext
-import ZMidi.Basic.Kernel.Base.WrappedPrimitive
 import ZMidi.Basic.Kernel.Objects.Event
 
 import ZMidi.Basic.Primitive.RenderMidi
