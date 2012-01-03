@@ -1,4 +1,4 @@
-name:             jerry-osc
+name:             jerry-supercollider
 version:          0.1.0
 license:          BSD3
 license-file:     LICENSE
@@ -6,12 +6,12 @@ copyright:        Stephen Tetley <stephen.tetley@gmail.com>
 maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
 homepage:         http://code.google.com/p/copperbox/
 category:         Music
-synopsis:         Read and write Open Sound Control packets.
+synopsis:         Interface with Supercollider.
 description:
   .
-  Read and write Open Sound Control Packets.
+  Interface with Supercollider via OSC.
   . 
-  (c) Stephen Tetley 2011
+  (c) Stephen Tetley 2012
   .
 
 build-type:         Simple
@@ -32,10 +32,9 @@ library
     time                    >= 1.2      && < 1.6
 
   exposed-modules:
-    Sound.Jerry.OSC,
-    Sound.Jerry.OSC.Datatypes,
-    Sound.Jerry.OSC.ReadOSC,
-    Sound.Jerry.OSC.WriteOSC
+    Sound.Jerry.Osc.Datatypes,
+    Sound.Jerry.Osc.ReadOSC,
+    Sound.Jerry.Osc.WriteOSC
 
   other-modules:
       

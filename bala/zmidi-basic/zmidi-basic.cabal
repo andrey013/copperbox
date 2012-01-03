@@ -9,17 +9,7 @@ category:         Music
 synopsis:         Higher level music representation built on ZMidi-Core.
 description:
   .
-  A high level music representation built on ZMidi-Core and MIDI.
-  .
-  MIDI essentially represents the control of a keyboard 
-  synthesizer - pressing keys and releasing them. In contrast 
-  ZMidi-Basic represents music with notes and chords, although 
-  like MIDI it doesn\'t directly defined rests - there are nice
-  manipulations available if notes are represented with their
-  onset /delta times/. 
-  .
-  Like MIDI, ZMidi-Basic allows multiple tracks, which in turn can 
-  contain multiple channels.
+  An arbitrary time representation built on ZMidi-Core and MIDI.
   .
   Changelog:
   . 

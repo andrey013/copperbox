@@ -1,5 +1,7 @@
 
-module Demo01 where
+module DemoSc where
+
+import Sound.Jerry.SuperCollider.Server
 
 import Sound.Jerry.OSC.Datatypes
 import Sound.Jerry.OSC.ReadOSC
@@ -18,6 +20,9 @@ import Network.Socket hiding ( sendTo )
 import Network.Socket.ByteString
 
 import Data.Char
+
+
+-- Clearly we want to implement a sc client!
 
 test_msg :: [Word8]
 test_msg = [47,116,101,115,116,0,0,0,44,105,105,105,0,0,0,0,0,0,0,1,0,0,0,2,0,0,0,3]
@@ -38,9 +43,8 @@ demo02a = let a = runGet getPacket (L.pack test_msg)
          in print $ S.unpack $ serializePacket a
 
 
-demo03 = main2 "127.0.0.1" 9001 $ 
-    [ Message "/test" [Int32 1, Int32 2, Int32 3] 
-    , Message "/testfloat" [Float32 1.0, Float32 0.5]
+demo03 = main2 "127.0.0.1" 57110 $ 
+    [ Message "/status" [] 
     ]
 
 main2 :: String -> PortNumber -> [Packet] -> IO ()
@@ -53,3 +57,12 @@ main2 hostname portnum pks = withSocketsDo $ do
     sClose sckt
 
 
+scQuit = main2 "127.0.0.1" 57110 $ 
+    [ Message "/quit" [] 
+    ]
+
+
+main3 = withSocketsDo $ do 
+   h <- scOpen default_sc_server
+   scSend h [ Message "/quit" [] ] 
+   scClose h

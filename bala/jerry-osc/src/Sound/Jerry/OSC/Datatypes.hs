@@ -11,16 +11,7 @@
 -- Stability   :  unstable
 -- Portability :  GHC (at least generalized newtype deriving)
 --
--- Concrete syntax tree for MIDI files.
---
--- Values are sometimes not interpreted. This means that the
--- the data types do not fully represent the sematics of the 
--- data, but all the data is either stored in the tree or 
--- synthesizeable.
--- 
--- @ readFile >>= writeFile @ will produce an identical binary \[1\]. 
---
--- \[1\] Or it should, failure indicates a bug...
+-- Datatypes for OSC messages.
 --
 --------------------------------------------------------------------------------
 
@@ -33,13 +24,17 @@ module Sound.Jerry.OSC.Datatypes
   , TimeTag(..)
 
   , typeTag
+
+  , timestamp
     
   ) where
 
 
 import qualified Data.ByteString.Lazy as L
 
-import Data.Word -- temporarily
+import Data.Time
+import Data.Time.Calendar.Julian
+import Data.Word
 
 
 data Packet = Message { msg_address :: String
@@ -58,8 +53,12 @@ data Atom = Int32 Int
           | Blob L.ByteString
   deriving (Eq,Ord,Show)
 
-data TimeTag = TimeTag Word32 Word32
+data TimeTag = TimeTag 
+    { _seconds_since_base :: Word32
+    , _fractional_part    :: Word32
+    }
   deriving (Eq,Ord,Show)
+
 
 
 typeTag :: Atom -> Char
@@ -70,3 +69,23 @@ typeTag (String {})     = 's'
 typeTag (Blob {})       = 'b'
 
 
+timestamp :: IO TimeTag
+timestamp = fmap post getCurrentTime
+  where
+    post now = let (y,m,d) = toGregorian $ utctDay now 
+                   secs    = floor $ toRational $ utctDayTime now                   
+               in TimeTag (secs + (fromIntegral $ secondsSince1900 y m d)) 0
+
+
+
+mjd :: Integer -> Int -> Int -> Integer
+mjd y m d = yy + fromIntegral dd
+  where
+    (yy,dd) = toJulianYearAndDay $ fromGregorian y m d
+          
+
+-- | From the NTP faq:
+--
+secondsSince1900 :: Integer -> Int -> Int -> Integer
+secondsSince1900 y m d = 
+    let days = mjd y m d - mjd 1900 1 1 in 86400 * days

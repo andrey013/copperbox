@@ -20,10 +20,8 @@
 
 module Sound.Jerry.OSC.WriteOSC
   (
-    
-
-    writePacket
-  , serializePacket 
+     
+    serializePacket 
 
   ) where
 
@@ -32,16 +30,14 @@ import Sound.Jerry.OSC.Datatypes
 
 import Data.Binary.IEEE754                      -- package: data-binary-ieee754
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString      as S
 
 
 import Data.Binary.Put
 import Data.Char
 
-writePacket :: Packet -> L.ByteString
-writePacket = runPut . packet
-
-serializePacket :: Packet -> String
-serializePacket = map (chr . fromIntegral) . L.unpack . writePacket
+serializePacket :: Packet -> S.ByteString
+serializePacket = S.concat . L.toChunks . runPut . packet
 
 
 packet :: Packet -> Put
