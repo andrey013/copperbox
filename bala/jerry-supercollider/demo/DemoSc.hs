@@ -16,7 +16,7 @@ import qualified Data.ByteString      as S
 import Data.Word
 import IO
 import Network.BSD
-import Network.Socket hiding ( sendTo )
+import Network.Socket hiding ( sendTo, recvFrom )
 import Network.Socket.ByteString
 
 import Data.Char
@@ -34,6 +34,7 @@ printMsg = putStrLn . map (chr . fromIntegral)
 demo0 :: IO ()
 demo0 = printMsg test_msg
 
+{-
 demo01 = runGet getPacket (L.pack test_msg)
 
 demo02 = let a = runGet getPacket (L.pack test_msg) 
@@ -41,7 +42,7 @@ demo02 = let a = runGet getPacket (L.pack test_msg)
 
 demo02a = let a = runGet getPacket (L.pack test_msg) 
          in print $ S.unpack $ serializePacket a
-
+-}
 
 demo03 = main2 "127.0.0.1" 57110 $ 
     [ Message "/status" [] 
@@ -64,5 +65,14 @@ scQuit = main2 "127.0.0.1" 57110 $
 
 main3 = withSocketsDo $ do 
    h <- scOpen default_sc_server
-   scSend h [ Message "/quit" [] ] 
+   scSendTo h $ Message "/quit" []
    scClose h
+
+
+
+main4 = withSocketsDo $ do 
+   h <- scOpen default_sc_server
+   scSendTo h $ Message "/status" []
+   (a,_) <- scRecvFrom h
+   scClose h
+   print a

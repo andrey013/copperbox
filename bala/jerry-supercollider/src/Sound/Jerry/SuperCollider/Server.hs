@@ -25,16 +25,18 @@ module Sound.Jerry.SuperCollider.Server
 
   , scOpen
   , scClose
-  , scSend
+  , scSendTo
+  , scRecvFrom
         
   ) where
 
 import Sound.Jerry.OSC                          -- package: jerry-osc
 
 import Network.BSD
-import Network.Socket hiding ( sendTo )
+import Network.Socket hiding ( sendTo, recvFrom )
 import Network.Socket.ByteString
 
+import qualified Data.ByteString as S
 
 -- | Connection details of Supercollider server.
 --
@@ -77,14 +79,22 @@ scOpen (ScServerLoc { sc_svr_hostname = hostname
     }
 
 
-scSend :: ScHandle -> [Packet] -> IO ()
-scSend h ps = mapM_ send1 ps
-  where
-    send1 :: Packet -> IO ()
-    send1 p = let addr = sc_sock_addr h 
-              in sendTo (sc_socket h) (serializePacket p) addr >> return ()
+
+-- | Note - this wraps @sendTo@ from Network, thus it inherits 
+-- all @sendTo@\'s problems.
+--
+scSendTo :: ScHandle -> Packet -> IO Int
+scSendTo h p = sendTo (sc_socket h) (serializePacket p) (sc_sock_addr h)
+
+
+scRecvFrom :: ScHandle -> IO (S.ByteString, SockAddr)
+scRecvFrom h = fmap post $ recvFrom (sc_socket h) 4096
+  where 
+    post (p,addr) = (p,addr) -- (deserializePacket p,  addr)
 
 -- | Close the socket to the sc_server.
 --
 scClose :: ScHandle -> IO ()
 scClose = sClose . sc_socket
+
+

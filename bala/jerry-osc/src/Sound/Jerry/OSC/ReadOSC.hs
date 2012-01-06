@@ -21,7 +21,7 @@
 module Sound.Jerry.OSC.ReadOSC
   (
     
-    getPacket
+    deserializePacket
 
   ) where
 
@@ -33,7 +33,13 @@ import Data.Binary.IEEE754                      -- package: data-binary-ieee754
 import Control.Applicative
 import Data.Binary.Get
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString      as S
 import Data.Char
+
+
+deserializePacket :: S.ByteString -> Packet
+deserializePacket a = runGet getPacket $ L.fromChunks [a]
+
 
 -- Bundles require testing for empty.
 
