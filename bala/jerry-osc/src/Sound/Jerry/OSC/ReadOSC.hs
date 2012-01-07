@@ -21,7 +21,7 @@
 module Sound.Jerry.OSC.ReadOSC
   (
     
-    deserializePacket
+    deserializeOSC
 
   ) where
 
@@ -37,8 +37,8 @@ import qualified Data.ByteString      as S
 import Data.Char
 
 
-deserializePacket :: S.ByteString -> Packet
-deserializePacket a = runGet getPacket $ L.fromChunks [a]
+deserializeOSC :: S.ByteString -> Packet
+deserializeOSC a = runGet getPacket $ L.fromChunks [a]
 
 
 -- Bundles require testing for empty.
@@ -90,11 +90,12 @@ typeTags = charLiteral ',' >> oscString
 -- | Parse an atom according to type tag.
 --
 atom :: Char -> Get Atom
-atom 'i' = Int32 <$> getInt32
-atom 'f' = Float32 <$> getFloat32
-atom 's' = String <$> oscString
-atom 'b' = Blob <$> oscBlob
-atom _   = fail "getAtom failed"
+atom 'i' = Int32    <$> getInt32
+atom 'f' = Float32  <$> getFloat32
+atom 's' = String   <$> oscString
+atom 'b' = Blob     <$> oscBlob
+atom 'd' = Double64 <$> getDouble64
+atom zz  = fail $ "atom failed - unrecognized tag " ++ show zz
 
 getChar8 :: Get Char 
 getChar8 = (chr . fromIntegral) <$> getWord8
@@ -105,6 +106,9 @@ getInt32 = fromIntegral <$> getWord32be
 
 getFloat32 :: Get Float
 getFloat32 = getFloat32be
+
+getDouble64 :: Get Double
+getDouble64 = getFloat64be
 
 
 -- | Strings must be a multiple of 4 bytes.

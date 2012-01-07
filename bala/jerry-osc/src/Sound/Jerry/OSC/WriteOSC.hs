@@ -21,7 +21,7 @@
 module Sound.Jerry.OSC.WriteOSC
   (
      
-    serializePacket 
+    serializeOSC
 
   ) where
 
@@ -36,8 +36,8 @@ import qualified Data.ByteString      as S
 import Data.Binary.Put
 import Data.Char
 
-serializePacket :: Packet -> S.ByteString
-serializePacket = S.concat . L.toChunks . runPut . packet
+serializeOSC :: Packet -> S.ByteString
+serializeOSC = S.concat . L.toChunks . runPut . packet
 
 
 packet :: Packet -> Put
@@ -61,6 +61,8 @@ atom (Float32 d)     = putFloat32 d
 atom (String s)      = alignedString s
 atom (Blob b)        = 
     putInt32 (fromIntegral $ L.length b) >> alignedByteString b
+atom (Double64 d)    = putFloat64 d
+
 
 -- | To do
 timeTag :: TimeTag -> Put
@@ -76,6 +78,9 @@ putInt32 = putWord32be . fromIntegral
 
 putFloat32 :: Float -> Put
 putFloat32 = putFloat32be
+
+putFloat64 :: Double -> Put
+putFloat64 = putFloat64be
 
 -- | Strings are terminated with the null char. They may be padded
 -- with extra null chars to align at 4 bytes.

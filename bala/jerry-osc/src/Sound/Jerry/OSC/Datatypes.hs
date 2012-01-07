@@ -47,10 +47,11 @@ data Packet = Message { msg_address :: String
 
 
 data Atom = Int32 Int
-          | AtomTime TimeTag 
-          | Float32 Float
-          | String String
-          | Blob L.ByteString
+          | AtomTime    TimeTag 
+          | Float32     Float
+          | String      String
+          | Blob        L.ByteString
+          | Double64    Double
   deriving (Eq,Ord,Show)
 
 data TimeTag = TimeTag 
@@ -67,7 +68,7 @@ typeTag (AtomTime {})   = 't'
 typeTag (Float32 {})    = 'f'
 typeTag (String {})     = 's'
 typeTag (Blob {})       = 'b'
-
+typeTag (Double64 {})   = 'd'
 
 timestamp :: IO TimeTag
 timestamp = fmap post getCurrentTime
