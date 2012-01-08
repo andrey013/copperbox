@@ -25,6 +25,47 @@ top-level - one for each of the lowercase letters.
 \texttt{g} and \texttt{s} are already defined with \texttt{s} 
 being the server instance and \texttt{g} being the GUI.
 
+%-----------------------------------------------------------------
+\section{Functional programming}
+%-----------------------------------------------------------------
+
+SuperCollider's \texttt{do} is not equivalent to the common 
+\emph{map} operation in functional languages, instead use 
+\texttt{collect}.
+
+\texttt{do} is analogue to Scheme's \texttt{foreach}, it is used 
+to iterate a side-effecting operation over a collection, returning
+the receiver. Iterating a pure function with \texttt{do} leaves 
+the receiver unchanged. 
+
+\texttt{collect} returns the results of evaluating the iteration.
+
+SuperCollider has wildcards that allow a lightweight functional 
+notation. Wildcards can be sent messages just like named objects:
+
+\begin{verbatim}
+(1..5).select(_.even);
+\end{verbatim}
+
+% Note, alltt appears to lack the fontshapes for braces
+As oppposed to
+\begin{verbatim}
+(1..5).select({ arg x; x.even });
+\end{verbatim}
+
+
+\texttt{sort} subsumes Haskell's \texttt{sort} and 
+\texttt{sortBy} - omit a comparison function to sort with the 
+\texttt{<} operator.
+
+Dictionaries are collections of \emph{Associations} - Associations 
+are objects independent of Dictionaries, they are constructed with
+special syntax \texttt{->}:
+
+\begin{verbatim}
+(\monkey -> 99).value.postln;
+\end{verbatim}
+
 
 %-----------------------------------------------------------------
 \section{References}
