@@ -60,7 +60,7 @@ As oppposed to
 
 Dictionaries are collections of \emph{Associations} - Associations 
 are objects independent of Dictionaries, they are constructed with
-special syntax \texttt{->}:
+special arrow syntax \texttt{->}:
 
 \begin{verbatim}
 (\monkey -> 99).value.postln;
@@ -68,7 +68,20 @@ special syntax \texttt{->}:
 
 
 %-----------------------------------------------------------------
-\section{References}
+\section{Classes}
+
+To find where to store classes so they are visible to 
+SuperCollider, evalute this line:
+
+\begin{verbatim}
+Platform.userExtensionDir
+\end{verbatim}
+
+Caret designates a return statement in a method declaration.
+
+Sending objects the \texttt{dump} message will print some 
+\emph{diagnostic} information.
+
 %-----------------------------------------------------------------
 
 \end{document}
