@@ -29,6 +29,40 @@ being the server instance and \texttt{g} being the GUI.
 \section{Functional programming}
 %-----------------------------------------------------------------
 
+SuperCollider has first class functions and a light-weight 
+notation to define them, functions are defined inside braces with
+the argument list delimited by bars:
+
+\begin{verbatim}
+// The id function
+i = {|a| a};
+i.value(4);
+\end{verbatim}
+
+\begin{verbatim}
+// The const function
+c = {|a b| a};
+c.value(4,5);
+\end{verbatim}
+
+Functions can be partially applied to fewer arguments than they 
+accept this produces a new function:
+
+\begin{verbatim}
+// Partial application
+c = max(_,10);
+c.value(5);
+\end{verbatim}
+
+Likewise for operators:
+
+\begin{verbatim}
+c = (_ + 2);
+c.value(2);
+\end{verbatim}
+
+
+
 SuperCollider's \texttt{do} is not equivalent to the common 
 \emph{map} operation in functional languages, instead use 
 \texttt{collect}.
