@@ -67,6 +67,10 @@ SuperCollider's \texttt{do} is not equivalent to the common
 \emph{map} operation in functional languages, instead use 
 \texttt{collect}.
 
+
+Don't gratuitously use functions inside if statements.
+
+
 \texttt{do} is analogue to Scheme's \texttt{foreach}, it is used 
 to iterate a side-effecting operation over a collection, returning
 the receiver. Iterating a pure function with \texttt{do} leaves 
