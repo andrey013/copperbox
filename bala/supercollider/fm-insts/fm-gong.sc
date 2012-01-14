@@ -9,9 +9,9 @@ s.recHeaderFormat_("WAV");
 
 SynthDef("fm-gong", {
 	arg freq, dr = 1.0, amp = 1.0;
-	var mod1sig, mod1f = freq * 1.16;
-	var mod2sig, mod2f = freq * 3.14;
-	var mod3sig, mod3f = freq * 1.005;
+	var mod1f = freq * 1.16;
+	var mod2f = freq * 3.14;
+	var mod3f = freq * 1.005;
 	var idx1a = 0.01 * mod1f;
 	var idx1b = 0.30 * mod1f;
 	var idx1scaler   = idx1b - idx1a;
@@ -25,7 +25,7 @@ SynthDef("fm-gong", {
 	var idx3scaler   = idx3b - idx3a;
 
 	var mod1env, mod2env, mod3env, ampenv;
-	var carsig;
+	var mod1sig, mod2sig, mod3sig, carsig;
 
 	mod1env = EnvGen.kr(
 		Env(levels: [0,1,1,0], times: [0.75*dr, 0.24*dr, 0.01*dr]),
@@ -69,7 +69,7 @@ s.prepareForRecord("d:/coding/supercollider/sc-fm-gong.wav");
 s.bind( Synth("fm-gong", [\freq, 261.61, \dr, 3.0, \amp, 0.75]); s.record; );
 s.stopRecording;
 
-Synth("fm-gong", ["freq", 261.61]);
+Synth("fm-gong", [\freq, 261.61]);
 
 
 Env.linen(attackTime: 0.75, sustainTime: 0.24, releaseTime: 0.01)
@@ -86,4 +86,4 @@ Env.new(levels: [ 0, 0.3, 1, 0.5, 0], times: [0.15, 0.15, 0.45, 0.25]).plot
 Linen.kr(attackTime: 0.02, susLevel: 0, releaseTime: 0.98).plot
                              
 
-Env(levels: [0, 1, 0.001], times: [0.002, 3.0], curve: \exp).plot;    
+Env(levels: [0, 1, 0.001], times: [0.002, 3.0], curve: \exp).plot;      
