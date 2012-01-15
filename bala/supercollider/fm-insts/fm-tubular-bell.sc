@@ -78,7 +78,8 @@ SynthDef("fm-tubular-bell", {
 Synth("fm-tubular-bell", [\freq, 261.61, \dr, 3.0, \amp, 0.7]);
 
 
+
 // pow syntax:
 // 2 ^ 6
 
-(2 pow: 6).value;                        
+(2 pow: 6).value;                         
