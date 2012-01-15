@@ -9,14 +9,15 @@ s.recHeaderFormat_("WAV");
 // Be careful not to use functions inside conditionals
 // on the server...
 
-// The noise signal adds more exictation at the start
-// or a sound...
+// The noise signal adds more excitation at the start
+// of a sound...
 
 SynthDef("fm-drum", { 
-	arg freq, dr = 1.0, amp = 1.0, idx = 5, hi = \hi;
-	var noiseamp = 1000.0;
-	var casrat = if (hi == \hi, 8.525, 3.515);
-	var modrat = if (hi == \hi, 3.414, 1.414);
+	arg freq, dr = 1.0, amp = 1.0, idx = 5, hi = 1.0;
+	// var noiseamp = 1000.0;
+	var noiseamp = 20000.0;
+	var casrat = if (hi > 0, 8.525, 3.515);
+	var modrat = if (hi > 0 , 3.414, 1.414);
 	var amprise = 0.015;
 	var amp1decay = if (dr < 0.18, dr * 0.5, 0.18);
 	var amp2decay = dr - (amprise + amp1decay);
@@ -26,7 +27,7 @@ SynthDef("fm-drum", {
 	var devscaler = 7000;
 	var cascscaler = idx * cascadehz;
 	var modscaler = idx * modhz;
-	var glsscaler = if (hi == \hi, 66.0, 0.0);
+	var glsscaler = if (hi > 0, 66.0, 0.0);
 
 	var idxenv, noiseenv, ampenv, glsenv;
 	var dev1, devsig, modsig, cascsig, carrsig;
@@ -82,10 +83,14 @@ SynthDef("fm-drum", {
 }).store
 
 // Windows paths use backslash:
-s.prepareForRecord("d:/coding/supercollider/sc-fm-drum.wav");
-s.bind( Synth("fm-drum", [\freq, 55, \dr, 1.5, \amp, 0.75]); s.record; );
+// hi
+s.prepareForRecord("d:/coding/supercollider/sc-hi-fm-drum.wav");
+s.bind( Synth("fm-drum", [\freq, 66, \dr, 1.5, \amp, 0.75, \idx, 4, \hi, 1.0]); s.record; );
 s.stopRecording;
 
+s.prepareForRecord("d:/coding/supercollider/sc-lo-fm-drum.wav");
+s.bind( Synth("fm-drum", [\freq, 55, \dr, 1.5, \amp, 0.75, \idx, 5, \hi, 0.0]); s.record; );
+s.stopRecording;
 
 Synth("fm-drum", [\freq, 55, \dr, 1.5]);
 Synth("fm-drum", [\freq, 66, \dr, 1.5, \hi, \no, \idx, 4]);
@@ -122,4 +127,4 @@ LFClipNoise.ar(1000, 0.25)
 )
 }).play;
 )
-                       
+                                 
