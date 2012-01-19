@@ -3,7 +3,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  ZMidi.Basic.Primitive.Syntax
+-- Module      :  ZMidi.Basic.Primitive.EventList
 -- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
@@ -11,60 +11,131 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- 
+-- EventList representation.
 --
 --------------------------------------------------------------------------------
 
-module ZMidi.Basic.Primitive.Syntax
+module ZMidi.Basic.Primitive.EventList
   ( 
    
     EventList
-  , Event1
 
-  , eventList
-  , eventList1
-  , instant
-  , onoff
-  
-  , consec
-  , instantEL
-  , onoffEL
-  
-  , durationEL
-  -- * Extract delta time MIDI messages
-  , extractMessages
-  
+  , toList
+  , delay  
+  , parallel
 
   ) where
 
 
-import ZMidi.Basic.Primitive.Transform
 import ZMidi.Basic.Utils.HList
-import ZMidi.Basic.Utils.JoinList
-import qualified ZMidi.Basic.Utils.JoinList as JL
 
 import ZMidi.Core                               -- package: zmidi-core
 
 
-import qualified Data.Foldable as F
+-- import qualified Data.Foldable as F
 import Data.List ( sort )
 import Data.Monoid
 import Data.Word
 
 
-
-
 type Onset = Double
+
+data EventList = 
+      One { init_delay  :: !Double
+          , list_len    :: !Double
+          , one_body    :: [(Onset, Event1)]
+          }
+    | Cat { init_delay  :: !Double
+          , list_len    :: !Double
+          , list_left   :: EventList
+          , list_right  :: EventList
+          }
+  deriving (Eq,Ord,Show)
+
+
+data Event1 = 
+      Instant MidiEvent
+    | OnOff { on_evt        :: MidiEvent
+            , on_duration   :: Double 
+            , off_event     :: MidiEvent
+            }
+  deriving (Eq,Ord,Show)
+
+
+
+instance Monoid EventList where
+  mempty = One 0 0 []
+  a `mappend` b = let b' = delay (list_len a) b in Cat 0 (list_len b') a b'
+
+
+-- | Needs a better name...
+--
+parallel :: EventList -> EventList -> EventList
+parallel a b = Cat 0 max_len a b
+  where
+    max_len = max (list_len a) (list_len b)
+
+
+-- | Delay time should be positive!
+-- 
+-- Internally @delay@ does not rebuild the list.
+--
+delay :: Double -> EventList -> EventList
+delay dx (One d len xs)  = One (d+dx) (len+dx) xs
+delay dx (Cat d len l r) = Cat (d+dx) (len+dx) l r
+
+
+
+-- | Sorted and delta time transformed.
+--
+toList :: EventList -> [MidiMessage] 
+toList = delta 0 . sort . toListH . outer 0 
+  where
+    outer dt (One d _ xs)   = inner (d+dt) xs
+    outer dt (Cat d _ l r)  = outer (dt+d) l `appendH` outer (dt+d) r
+
+    inner _  []                       = emptyH
+    inner dt ((ot, Instant e):xs)     = (dt+ot,e) `consH` inner dt xs
+    inner dt ((ot, OnOff e0 d e1):xs) = let a = (dt+ot,e0) 
+                                            b = (dt+ot+d,e1)
+                                        in a `consH` b `consH` inner dt xs
+
+    delta ot ((t,e):xs) = let ut = durationr t 
+                          in (fromIntegral $ ut-ot,e) : delta ut xs
+    delta _  []         = [delta_end_of_track]
+
+
+
+-- Note - this is a Double so it is the right type for calculating
+-- durations, in MIDI files the size of the ticks-per-beat 
+-- designator is actually a Word16.
+--
+ticks_per_quarternote :: Double
+ticks_per_quarternote = 480
+
+durationr :: Double -> Word32
+durationr r = floor $ (4 * ticks_per_quarternote) * r
+
+delta_end_of_track :: MidiMessage
+delta_end_of_track = (0, MetaEvent $ EndOfTrack)
+
+
+
+
+{-
+
+
+
 
 
 -- sreverse 
 -- sreverse [(10,A), (12,B)] == [(0,B), (2,A)]
 
--- scale 
--- scale 0.5 [(10,A), (12,B)] == [(5,A), (6,B)]
+-- stretch 
+-- stretch 0.5 [(10,A), (12,B)] == [(5,A), (6,B)]
 
--- translate 
--- translate 5 [(10,A), (12,B)] == [(15,A), (17,B)]
+-- delay 
+-- delay 5 [(10,A), (12,B)] == [(15,A), (17,B)]
 
 -- mappend 
 -- [(10,A), (12,B)] `mappend`  [(5,C)] == [(5,C), (10,A), (12,B)]
@@ -124,13 +195,6 @@ consec (EventList len0 se0) (EventList len1 se1) =
 
 
 
-data Event1 = Instant MidiEvent
-            | OnOff { _on_evt        :: MidiEvent
-                    , _on_duration   :: Double 
-                    , _off_event     :: MidiEvent
-                    }
-  deriving (Eq,Ord,Show)
-
 
 type instance DUnit Event1 = Double
 
@@ -166,51 +230,12 @@ onoffEL ot e0 drn e1 =
     eventList1 (ot, onoff (VoiceEvent e0) drn (VoiceEvent e1))
 
 
-
---------------------------------------------------------------------------------
--- Extract 
-
-
-durationEL :: EventList -> Double
-durationEL = list_len
-
--- | Sorted plus trailing @end-of-track@ message.
---
-extractMessages :: EventList -> [MidiMessage]
-extractMessages = step 0 . sort . toListH . primMessages
-  where  
-    step ot ((t,e):xs) = let ut = durationr t 
-                         in (fromIntegral $ ut-ot,e) : step ut xs
-    step _  []         = [delta_end_of_track]
-
-
--- | Absolute time not delta time, unsorted...
---
-primMessages :: EventList -> H (Double, MidiEvent)
-primMessages (EventList _ se) = F.foldr fn emptyH se
-  where
-    fn (dt, Instant e)     ac = (dt, e) `consH` ac
-    fn (dt, OnOff e0 d e1) ac = (dt, e0) `consH` (dt+d, e1) `consH` ac
-
-
-
--- Note - this is a Double so it is the right type for calculating
--- durations, in MIDI files the size of the ticks-per-beat 
--- designator is actually a Word16.
---
-ticks_per_quarternote :: Double
-ticks_per_quarternote = 480
-
-durationr :: Double -> Word32
-durationr r = floor $ (4 * ticks_per_quarternote) * r
-
-delta_end_of_track :: MidiMessage
-delta_end_of_track = (0, MetaEvent $ EndOfTrack)
-
-
 --------------------------------------------------------------------------------
 -- Transform
 
 scaleEvent1 :: Double -> Event1 -> Event1
 scaleEvent1 _  (Instant e)     = Instant e
-scaleEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e1
+scaleEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e
+
+-}
+
