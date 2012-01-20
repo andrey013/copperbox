@@ -20,9 +20,18 @@ module ZMidi.Basic.Primitive.EventList
    
     EventList
 
+
+  , instant
+  , onoff
+
+  , duration
+
   , toList
+  , overlay
+
+  , stretch
+  , reverse
   , delay  
-  , parallel
 
   ) where
 
@@ -32,30 +41,31 @@ import ZMidi.Basic.Utils.HList
 import ZMidi.Core                               -- package: zmidi-core
 
 
--- import qualified Data.Foldable as F
 import Data.List ( sort )
 import Data.Monoid
 import Data.Word
+import Prelude hiding ( reverse )
+
 
 
 type Onset = Double
 
 data EventList = 
       One { init_delay  :: !Double
-          , list_len    :: !Double
+          , list_dur    :: !Double
           , one_body    :: [(Onset, Event1)]
           }
     | Cat { init_delay  :: !Double
-          , list_len    :: !Double
-          , list_left   :: EventList
-          , list_right  :: EventList
+          , list_dur    :: !Double
+          , _list_left  :: EventList
+          , _list_right :: EventList
           }
   deriving (Eq,Ord,Show)
 
 
 data Event1 = 
       Instant MidiEvent
-    | OnOff { on_evt        :: MidiEvent
+    | OnOff { on_event      :: MidiEvent
             , on_duration   :: Double 
             , off_event     :: MidiEvent
             }
@@ -65,15 +75,38 @@ data Event1 =
 
 instance Monoid EventList where
   mempty = One 0 0 []
-  a `mappend` b = let b' = delay (list_len a) b in Cat 0 (list_len b') a b'
+  a `mappend` b = let b' = delay (list_dur a) b in Cat 0 (list_dur b') a b'
 
+
+
+--------------------------------------------------------------------------------
+-- Build
+
+
+
+instant :: MidiEvent -> Event1
+instant = Instant 
+
+onoff :: MidiEvent -> Double -> MidiEvent -> Event1
+onoff note_on dur note_off = 
+    OnOff { on_event    = note_on
+          , on_duration = dur
+          , off_event   = note_off
+          }
+
+
+--------------------------------------------------------------------------------
+
+
+duration :: EventList -> Double 
+duration = list_dur
 
 -- | Needs a better name...
 --
-parallel :: EventList -> EventList -> EventList
-parallel a b = Cat 0 max_len a b
+overlay :: EventList -> EventList -> EventList
+overlay a b = Cat 0 max_len a b
   where
-    max_len = max (list_len a) (list_len b)
+    max_len = max (list_dur a) (list_dur b)
 
 
 -- | Delay time should be positive!
@@ -122,6 +155,48 @@ delta_end_of_track = (0, MetaEvent $ EndOfTrack)
 
 
 
+
+--------------------------------------------------------------------------------
+-- Transform
+
+
+-- | @stretch@ also stretches the initial onset if there is one.
+--
+stretch :: Double -> EventList -> EventList
+stretch sx es = One { init_delay  = sx * init_delay es
+                    , list_dur    = sx * list_dur es
+                    , one_body    = toListH $ outer 0 es }
+  where
+    outer dt (One _ d1 xs)  = inner (dt+d1) xs
+    outer dt (Cat _ d1 l r) = outer (dt+d1) l `appendH` outer (dt+d1) r
+
+    inner _  []         = emptyH
+    inner dt ((t,e):xs) = consH (sx * (dt+t), stretchEvent1 sx e) $ inner dt xs
+
+
+
+
+stretchEvent1 :: Double -> Event1 -> Event1
+stretchEvent1 _  (Instant e)     = Instant e
+stretchEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e1
+
+-- | We do not explicitly have a trailing delay, however 
+-- preserving the list duration means that any subsequent 
+-- concatenation we be placed at the end of the list 
+-- even if the list ends in silence.
+--
+reverse :: EventList -> EventList
+reverse es = One { init_delay  = 0
+                 , list_dur    = tot
+                 , one_body    = toListH $ outer 0 es }
+  where
+    tot                     = list_dur es
+    outer dt (One _ d1 xs)  = inner (dt+d1) xs
+    outer dt (Cat _ d1 l r) = outer (dt+d1) l `appendH` outer (dt+d1) r
+
+    inner _  []         = emptyH
+    inner dt ((t,e):xs) = consH (tot - (dt+t),e) $ inner dt xs
+
 {-
 
 
@@ -151,7 +226,7 @@ delta_end_of_track = (0, MetaEvent $ EndOfTrack)
 -- This representation is rather naive but it does allow simple
 -- (if inefficient) scaling, reversal and translation.
 -- 
-data EventList = EventList { list_len    :: Double
+data EventList = EventList { list_dur    :: Double
                            , list_events :: JoinList (Onset, Event1)
                            }
   deriving (Eq,Show)
@@ -159,7 +234,7 @@ data EventList = EventList { list_len    :: Double
 type instance DUnit EventList = Double
 
 instance Monoid EventList where
-  mempty = EventList { list_len = 0, list_events = mempty }
+  mempty = EventList { list_dur = 0, list_events = mempty }
   EventList len0 se0 `mappend` EventList len1 se1 = 
       EventList (max len0 len1) (se0 `mappend` se1)
 
