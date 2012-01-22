@@ -17,12 +17,9 @@
 
 module ZMidi.Basic.Kernel.Base.BaseDefs
   ( 
- 
-    -- Re-exports
-    DUnit
-  , Scale(..)
-  , Translate(..)
-  , SReverse(..)
+
+  -- * Alias for mappend
+    (><)
 
   -- * Types and aliases
   , OnsetTime
@@ -39,11 +36,21 @@ module ZMidi.Basic.Kernel.Base.BaseDefs
   ) where
 
 
-import ZMidi.Basic.Primitive.Transform
-
 
 import Control.Applicative
+import Data.Monoid
 import Data.Word
+
+
+infixr 5 ><
+
+-- | @concat@
+--
+-- > infixr 5 ><
+--
+(><) :: Monoid a => a -> a -> a
+(><) = mappend
+
 
 
 -- | Internally represent Onset times (and durations) as Double.

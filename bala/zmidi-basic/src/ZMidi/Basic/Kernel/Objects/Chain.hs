@@ -46,7 +46,7 @@ module ZMidi.Basic.Kernel.Objects.Chain
 import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.RenderContext
 import ZMidi.Basic.Kernel.Objects.Event
-import ZMidi.Basic.Primitive.Syntax ( EventList, durationEL )
+import ZMidi.Basic.Primitive.EventList
 
 import Control.Applicative
 import Data.Monoid
@@ -64,7 +64,7 @@ data ChainScheme u = forall cst. ChainScheme
 newtype GenChain st u a = GenChain
           { getGenChain :: RenderContext -> OnsetTime 
                         -> ChainSt st u 
-                        -> (a, OnsetTime, ChainSt st u, EventList) }
+                        -> (a, OnsetTime, ChainSt st u, CatEvent) }
 
 
 type Chain u a = GenChain () u a
@@ -154,7 +154,7 @@ runGenChain (ChainScheme start step) ust ma = promoteLoc $ \ctx loc ->
         bpm             = interp_bpm ctx
         dloc            = normalize bpm loc
         (a,_,s1,w1)     = getGenChain ma ctx dloc st_zero
-        ud1             = dinterp bpm $ durationEL w1 
+        ud1             = dinterp bpm $ durationCE w1 
     in ((a, chain_user_state s1),ud1,w1)
 
 -- | Forget the user state LocImage, just return the /answer/.

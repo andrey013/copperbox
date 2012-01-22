@@ -23,7 +23,7 @@ module ZMidi.Basic.Primitive.RenderMidi
   ) where
 
 
-import ZMidi.Basic.Primitive.Syntax
+import ZMidi.Basic.Primitive.EventList
 
 import ZMidi.Core                               -- package: zmidi-core
 
@@ -82,7 +82,7 @@ set_tempo = (0, MetaEvent $ SetTempo 500000)
 
 
 eventTrack :: EventList -> MidiTrack
-eventTrack evts = MidiTrack $ evt0 : evt1 : extractMessages evts
+eventTrack evts = MidiTrack $ evt0 : evt1 : toList evts
   where
     evt0 = sequence_name "Track 1"
     evt1 = set_tempo

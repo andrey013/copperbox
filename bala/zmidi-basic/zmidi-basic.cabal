@@ -45,11 +45,12 @@ library
     ZMidi.Basic.Kernel.Objects.Event,
     ZMidi.Basic.Kernel.Objects.GMDrums,
     ZMidi.Basic.Kernel.Objects.GMInstruments,
-    ZMidi.Basic.Kernel.Objects.Symbolic,
+    ZMidi.Basic.Kernel.Objects.SymObject,
     ZMidi.Basic.Kernel.Objects.TraceOutput,
+    ZMidi.Basic.Primitive.EventList,
     ZMidi.Basic.Primitive.RenderMidi,
-    ZMidi.Basic.Primitive.Syntax,
-    ZMidi.Basic.Primitive.Transform,
+    ZMidi.Basic.Symbolic,
+    ZMidi.Basic.Symbolic.Symbolic,
     ZMidi.Basic.VersionNumber
     ZMidi.Basic.Utils.HList,
     ZMidi.Basic.Utils.JoinList

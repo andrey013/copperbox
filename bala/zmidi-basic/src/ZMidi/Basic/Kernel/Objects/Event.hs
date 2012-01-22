@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
@@ -37,7 +36,6 @@ module ZMidi.Basic.Kernel.Objects.Event
   , obliterate
   , moveStart
 
-  , (><)
   , space
   , sep
 
@@ -47,7 +45,8 @@ module ZMidi.Basic.Kernel.Objects.Event
 import ZMidi.Basic.Kernel.Base.BaseDefs
 import ZMidi.Basic.Kernel.Base.RenderContext
 
-import ZMidi.Basic.Primitive.Syntax ( EventList, consec, instantEL, onoffEL )
+import ZMidi.Basic.Primitive.EventList ( CatEvent )
+import qualified ZMidi.Basic.Primitive.EventList as E
 
 import ZMidi.Core                               -- package: zmidi-core
 
@@ -61,10 +60,8 @@ import Data.Word
 -- | Return answer @a@ plus duration and writer trace.
 --
 newtype Event u a = Event { 
-          getEvent :: RenderContext -> OnsetTime -> (a, u, EventList) }
+          getEvent :: RenderContext -> OnsetTime -> (a, u, CatEvent) }
 
-
-type instance DUnit (Event u a) = u
 
 -- Functor
 
@@ -106,34 +103,6 @@ instance (Ord u, InterpretUnit u) => RenderContextM (Event u) where
   localize f ma = Event $ \ctx loc -> getEvent ma (f ctx) loc
 
 
---------------------------------------------------------------------------------
--- Transform
-
-eventTrafo :: InterpretUnit u 
-           => (u -> u) 
-           -> (Double -> EventList -> EventList) 
-           -> u
-           -> Event u () -> Event u ()
-eventTrafo fd fw u ma = Event $ \ctx loc -> 
-    let bpm       = interp_bpm ctx
-        du        = normalize bpm u
-        (a,d1,w1) = getEvent ma ctx loc
-    in (a, fd d1, fw du w1)
-
-
---
--- NOTE - transforming the answer introduces the need for UNil as
--- per Wumpus.
---
--- For now just have these limited vesions
---
-
-instance InterpretUnit u => Translate (Event u ()) where
-  translate dx = eventTrafo (dx+) translate dx
-
-instance InterpretUnit u => SReverse (Event u ()) where
-  sreverse = eventTrafo id (const sreverse) 0 
-
 
 
 --------------------------------------------------------------------------------
@@ -148,16 +117,18 @@ instance InterpretUnit u => SReverse (Event u ()) where
 
 
 runEvent :: InterpretUnit u 
-         => RenderContext -> u -> Event u a -> (a, u, EventList)
+         => RenderContext -> u -> Event u a -> (a, u, CatEvent)
 runEvent ctx loc ma = let bpm = interp_bpm ctx
                           dloc = normalize bpm loc
                       in getEvent ma ctx dloc
+
                           
 instant :: InterpretUnit u => (Word8 -> MidiVoiceEvent) -> Event u ()
 instant fn = Event $ \ctx loc -> let chan = rc_channel_num ctx
                                      bpm  = interp_bpm ctx
                                      uloc = dinterp bpm loc
-                                 in ((), uloc, instantEL loc (fn chan))
+                                     e    = VoiceEvent $ fn chan
+                                 in ((), uloc, E.instant loc e)
 
 onoff :: InterpretUnit u 
       => (Word8 -> MidiVoiceEvent) -> (Word8 -> MidiVoiceEvent) -> u 
@@ -167,7 +138,9 @@ onoff onf offf drn = Event $ \ctx loc ->
         bpm  = interp_bpm ctx
         ddrn = normalize bpm drn
         uloc = dinterp bpm loc
-    in ((), uloc+drn, onoffEL loc (onf chan) ddrn (offf chan))
+        e0   = VoiceEvent $ onf chan
+        e1   = VoiceEvent $ offf chan
+    in ((), uloc+drn, E.onoff loc e0 ddrn e1)
 
 
 
@@ -183,7 +156,7 @@ blank drn = Event $ \ctx loc ->
 
 
 promoteLoc ::  InterpretUnit u 
-           => (RenderContext -> u -> (a, u, EventList)) -> Event u a
+           => (RenderContext -> u -> (a, u, CatEvent)) -> Event u a
 promoteLoc k = Event $ \ctx loc -> let bpm = interp_bpm ctx
                                        uloc = dinterp bpm loc
                                    in k ctx uloc
@@ -227,28 +200,21 @@ moveStart f ma = Event $ \ctx loc ->
        dloc = normalize bpm uloc 
    in getEvent ma ctx dloc
 
+
+{-
 concatE :: (Monoid a, Ord u, InterpretUnit u) 
        => Event u a -> Event u a -> Event u a
 concatE ma mb = Event $ \ctx loc -> 
     let (a,d1,w1) = getEvent ma ctx loc
         (b,d2,w2) = getEvent mb ctx loc
-    in (a `mappend` b, max d1 d2, w1 `consec` w2)
-  
-infixr 5 ><
-
--- | @concat@
---
--- > infixr 5 ><
---
-(><) :: (Monoid a, Ord u, InterpretUnit u) 
-     => Event u a -> Event u a -> Event u a
-(><) = concatE
+    in (a `mappend` b, max d1 d2, w1 `mappend` w2)
+-}  
 
 
 
 space :: (Monoid a, Ord u, InterpretUnit u) 
       => u -> Event u a -> Event u a -> Event u a
-space d ma mb = elaborate ma fn >< mb
+space d ma mb = elaborate ma fn `mappend` mb
   where
     fn _ drn = moveStart (drn+) $ blank d
 

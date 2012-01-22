@@ -1,4 +1,3 @@
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -19,12 +18,14 @@ module ZMidi.Basic.Primitive.EventList
   ( 
    
     EventList
-
+  , CatEvent
 
   , instant
   , onoff
+  , eventList
 
   , duration
+  , durationCE 
 
   , toList
   , overlay
@@ -50,10 +51,15 @@ import Prelude hiding ( reverse )
 
 type Onset = Double
 
+
+-- | EventList datatype - internally this is a binary tree of
+-- lists. The binary tree enables efficient concatenation during
+-- building. Duration of the @EventList@ is cached.
+--
 data EventList = 
       One { init_delay  :: !Double
           , list_dur    :: !Double
-          , one_body    :: [(Onset, Event1)]
+          , leaf_list   :: [(Onset, Event1)]
           }
     | Cat { init_delay  :: !Double
           , list_dur    :: !Double
@@ -79,20 +85,55 @@ instance Monoid EventList where
 
 
 
+-- | Although concat on EventLists is operationally efficient
+-- (just a constructor call, no traversing until a transform or 
+-- the final rendering), it would produce an 
+-- /inefficiently shaped/ tree if it were used for all 
+-- intermediate events - we really need to be able to build good 
+-- lists for the @leaf_list@ of the One constructor. 
+-- 
+-- We have a second data type to support building leaf lists 
+-- efficiently. 
+--
+data CatEvent = CatEvent 
+      { cat_dur :: !Double
+      , cat_events :: H (Onset,Event1)
+      }
+                       
+instance Show CatEvent where
+  show _ = "<< CatEvent >>"
+
+
+instance Monoid CatEvent where
+  mempty = CatEvent { cat_dur = 0, cat_events = emptyH }
+
+  CatEvent d0 hs0 `mappend` CatEvent d1 hs1 = 
+    CatEvent (max d0 d1) (appendH hs0 hs1) 
+
+durationCE :: CatEvent -> Double
+durationCE = cat_dur
+
 --------------------------------------------------------------------------------
 -- Build
 
 
 
-instant :: MidiEvent -> Event1
-instant = Instant 
+instant :: Onset -> MidiEvent -> CatEvent
+instant ot e = CatEvent ot $ wrapH (ot,Instant e)
 
-onoff :: MidiEvent -> Double -> MidiEvent -> Event1
-onoff note_on dur note_off = 
-    OnOff { on_event    = note_on
-          , on_duration = dur
-          , off_event   = note_off
-          }
+onoff :: Onset -> MidiEvent -> Double -> MidiEvent -> CatEvent
+onoff ot note_on d note_off = CatEvent (ot+d) $ wrapH (ot,evt)
+  where
+    evt = OnOff { on_event    = note_on
+                , on_duration = d
+                , off_event   = note_off
+                }
+
+eventList :: CatEvent -> EventList
+eventList c = One { init_delay  = 0
+                  , list_dur    = cat_dur c
+                  , leaf_list   = toListH $ cat_events c 
+                  }
 
 
 --------------------------------------------------------------------------------
@@ -165,7 +206,7 @@ delta_end_of_track = (0, MetaEvent $ EndOfTrack)
 stretch :: Double -> EventList -> EventList
 stretch sx es = One { init_delay  = sx * init_delay es
                     , list_dur    = sx * list_dur es
-                    , one_body    = toListH $ outer 0 es }
+                    , leaf_list   = toListH $ outer 0 es }
   where
     outer dt (One _ d1 xs)  = inner (dt+d1) xs
     outer dt (Cat _ d1 l r) = outer (dt+d1) l `appendH` outer (dt+d1) r
@@ -180,6 +221,9 @@ stretchEvent1 :: Double -> Event1 -> Event1
 stretchEvent1 _  (Instant e)     = Instant e
 stretchEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e1
 
+
+-- NOT WORKING ....
+
 -- | We do not explicitly have a trailing delay, however 
 -- preserving the list duration means that any subsequent 
 -- concatenation we be placed at the end of the list 
@@ -188,16 +232,20 @@ stretchEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e1
 reverse :: EventList -> EventList
 reverse es = One { init_delay  = 0
                  , list_dur    = tot
-                 , one_body    = toListH $ outer 0 es }
+                 , leaf_list   = toListH $ outer 0 es }
   where
-    tot                     = list_dur es
-    outer dt (One _ d1 xs)  = inner (dt+d1) xs
-    outer dt (Cat _ d1 l r) = outer (dt+d1) l `appendH` outer (dt+d1) r
+    tot                      = list_dur es
+    outer dly (One d1 _ xs)  = inner (dly+d1) xs
+    outer dly (Cat d1 _ l r) = outer (dly+d1) l `appendH` outer (dly+d1) r
 
-    inner _  []         = emptyH
-    inner dt ((t,e):xs) = consH (tot - (dt+t),e) $ inner dt xs
+    inner _   []          = emptyH
+    inner dly ((ot,e):xs) = let d = durationE1 e 
+                            in consH (tot - (dly+ot+d),e) $ inner dly xs
 
-{-
+durationE1 :: Event1 -> Double
+durationE1 (Instant _)   = 0
+durationE1 (OnOff _ d _) = d
+
 
 
 
@@ -212,105 +260,11 @@ reverse es = One { init_delay  = 0
 -- delay 
 -- delay 5 [(10,A), (12,B)] == [(15,A), (17,B)]
 
--- mappend 
+-- ovarlay 
 -- [(10,A), (12,B)] `mappend`  [(5,C)] == [(5,C), (10,A), (12,B)]
 
--- consecutive
+-- mappend
 -- [(10,A), (12,B)] `consec`  [(5,C)] == [(10,A), (12,B), (17,C)]
 
 
--- | The @list_events@ field is not necessarily ordered and the 
--- onsets are distance from the /list/ start to the event, 
--- \*\* they are not \*\* deltas between consecutive events.
---
--- This representation is rather naive but it does allow simple
--- (if inefficient) scaling, reversal and translation.
--- 
-data EventList = EventList { list_dur    :: Double
-                           , list_events :: JoinList (Onset, Event1)
-                           }
-  deriving (Eq,Show)
-
-type instance DUnit EventList = Double
-
-instance Monoid EventList where
-  mempty = EventList { list_dur = 0, list_events = mempty }
-  EventList len0 se0 `mappend` EventList len1 se1 = 
-      EventList (max len0 len1) (se0 `mappend` se1)
-
-
-instance SReverse EventList where
-  sreverse (EventList len se) = EventList len $ fmap fn se
-    where
-      dmax = F.foldr (\(dt,_) ac -> max ac dt) 0 se
-      fn (dt,e) = (dmax - dt,e)
-
-instance Scale EventList where
-  scale sx (EventList len se) = EventList (len * sx) $ fmap fn se
-    where
-      fn (dt,e) = (dt * sx, scaleEvent1 sx e)
-
-instance Translate EventList where
-  translate dx (EventList len se) = EventList (len + dx) $ fmap fn se
-    where
-      fn (dt,e) = (dt + dx, e)
-
-
-
--- | Note @consec@ is not particularly efficient.
--- 
--- The right-hand list is iterated re-positioning each event.
---
-consec :: EventList -> EventList -> EventList
-consec (EventList len0 se0) (EventList len1 se1) = 
-    EventList (len0 + len1) (se0 `mappend` fmap fn se1)
-  where
-    fn (dt,e) = (len0 + dt, e)
-
-
-
-
-
-type instance DUnit Event1 = Double
-
-
-
---------------------------------------------------------------------------------
--- Build
-
-
-eventList :: [(Onset,Event1)] -> EventList
-eventList ss = let (len,se) = foldr fn (0, JL.empty) ss in EventList len se
-  where
-    fn e@(dt,Instant {})    (len,ac) = (max dt len, JL.cons e ac) 
-    fn e@(dt,OnOff _ drn _) (len,ac) = (max (dt+drn) len, JL.cons e ac)
-
-eventList1 :: (Onset,Event1) -> EventList
-eventList1 e@(dt,Instant {})    = EventList dt (JL.one e)
-eventList1 e@(dt,OnOff _ drn _) = EventList (dt+drn) (JL.one e)
-
-
-instant :: MidiEvent -> Event1
-instant = Instant
-
-onoff :: MidiEvent -> Double -> MidiEvent -> Event1
-onoff = OnOff
-
-
-instantEL :: Onset -> MidiVoiceEvent -> EventList
-instantEL ot e = eventList1 (ot, instant $ VoiceEvent e)
-
-onoffEL :: Onset -> MidiVoiceEvent -> Double -> MidiVoiceEvent -> EventList
-onoffEL ot e0 drn e1 = 
-    eventList1 (ot, onoff (VoiceEvent e0) drn (VoiceEvent e1))
-
-
---------------------------------------------------------------------------------
--- Transform
-
-scaleEvent1 :: Double -> Event1 -> Event1
-scaleEvent1 _  (Instant e)     = Instant e
-scaleEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e
-
--}
 

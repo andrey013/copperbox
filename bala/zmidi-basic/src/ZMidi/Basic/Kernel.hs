@@ -25,7 +25,7 @@ module ZMidi.Basic.Kernel
   , module ZMidi.Basic.Kernel.Objects.Event
   , module ZMidi.Basic.Kernel.Objects.GMDrums
   , module ZMidi.Basic.Kernel.Objects.GMInstruments
-  , module ZMidi.Basic.Kernel.Objects.Symbolic
+  , module ZMidi.Basic.Kernel.Objects.SymObject
   , module ZMidi.Basic.Kernel.Objects.TraceOutput
 
  
@@ -37,5 +37,5 @@ import ZMidi.Basic.Kernel.Objects.Chain
 import ZMidi.Basic.Kernel.Objects.Event
 import ZMidi.Basic.Kernel.Objects.GMDrums
 import ZMidi.Basic.Kernel.Objects.GMInstruments
-import ZMidi.Basic.Kernel.Objects.Symbolic
+import ZMidi.Basic.Kernel.Objects.SymObject
 import ZMidi.Basic.Kernel.Objects.TraceOutput
