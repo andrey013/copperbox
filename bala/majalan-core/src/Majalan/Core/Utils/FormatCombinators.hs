@@ -266,7 +266,7 @@ dtrunc = text . truncateDouble
 -- The is prefered to 'showFFloat' from Numeric as it produces
 -- shorter representations where appropriate.
 -- 
--- 0.000000000 becomes 0 rather than however many digs are 
+-- 0.000000000 becomes 0 rather than however many digits are 
 -- specified.
 --  
 truncateDouble :: Double -> String
