@@ -7,6 +7,7 @@ module Demo101 where
 
 
 import Majalan.Core
+import qualified Majalan.Core.NoteList as New
 
 import System.Directory
 import System.Process

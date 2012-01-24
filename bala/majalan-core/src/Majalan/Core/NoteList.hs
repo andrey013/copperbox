@@ -18,16 +18,15 @@
 module Majalan.Core.NoteList
   (
 
-     CsEvent(..)
+    CsEvent(..)
+  , printEvents
  
   ) where
 
-import Majalan.Core.Basis
 import Majalan.Core.Utils.DocExtras
 
-import Control.Applicative
-import qualified Data.Map as Map
-import Numeric
+-- import Control.Applicative hiding ( empty )
+-- import qualified Data.Map as Map
 import Text.PrettyPrint.HughesPJ
 
 
@@ -36,6 +35,65 @@ data CsEvent = CsEvent
       , onset_time  :: Double
       , event_args  :: [Double]
       }
+
+
+
+
+
+-- | For printing we have a tolerance of 0.0001 decimal places 
+-- for equality.
+--
+tEq :: Double -> Double -> Bool
+tEq a b = (abs (a-b)) < 0.0001
+
+decimalZ :: Double -> Doc
+decimalZ = decimal 3 6
+
+printEvents :: [CsEvent] -> [(Int,Int)] -> Doc
+printEvents []     _    = empty
+printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
+  where
+    step []     _   = empty
+    step (a:as) b   = printEvent a b cols $+$ step as a 
+
+
+
+
+printEvent1 :: CsEvent -> [(Int,Int)] -> Doc
+printEvent1 (CsEvent i1 ot ds1) cols = 
+    char 'i' <> int i1 <+> decimalZ ot <+> (hsep $ printColumns ds1 cols)
+
+-- | Never carry duration, just carry arguments.
+-- 
+printEvent :: CsEvent -> CsEvent -> [(Int,Int)] -> Doc
+printEvent (CsEvent i1 ot ds1) (CsEvent i2 _ ds2) cols
+    | i1 == i2  = prefix <+> (hsep $ printDiffColumns ds1 ds2 cols)
+    | otherwise = prefix <+> (hsep $ printColumns ds1 cols)
+  where
+    prefix = char 'i' <> int i1 <+> decimalZ ot
+
+
+printDiffColumns :: [Double] -> [Double] -> [(Int,Int)] -> [Doc]
+printDiffColumns (d:ds) (a:as) ((p,w):cs)
+    | d `tEq` a = paddedTextR "." w : printDiffColumns ds as cs
+    | otherwise = decimal p w d : printDiffColumns ds as cs
+
+printDiffColumns (d:ds) (a:as) []         
+    | d `tEq` a = paddedTextR "." 6 : printDiffColumns ds as []
+    | otherwise = decimalZ d : printDiffColumns ds as []
+
+printDiffColumns ds     []     cs         = printColumns ds cs
+    
+printDiffColumns []     _      _          = []
+
+
+-- | This is a long zip with a default width of 5.
+--
+printColumns :: [Double] -> [(Int,Int)] -> [Doc]
+printColumns (d:ds) ((p,w):cs) = decimal p w d : printColumns ds cs
+printColumns ds     []         = map decimalZ ds
+printColumns []     _          = []
+
 
 
 

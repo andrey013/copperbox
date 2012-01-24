@@ -22,6 +22,8 @@ module Majalan.Core.Utils.DocExtras
 
   , decimal
   , decimalString
+
+  , paddedTextR
  
   ) where
 
@@ -74,3 +76,7 @@ decimalString :: Int -> Int -> Double -> String
 decimalString prec colw d = step $ ($ "") $ showFFloat (Just prec) d
   where
     step ss = ss ++ replicate (colw - length ss) ' '
+
+
+paddedTextR :: String -> Int -> Doc
+paddedTextR ss w = text $ ss ++ replicate (w - length ss) ' '

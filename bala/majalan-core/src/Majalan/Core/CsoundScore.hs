@@ -4,7 +4,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Majalan.Core.CsoundScore
--- Copyright   :  (c) Stephen Tetley 2011
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -65,6 +65,15 @@ import Control.Applicative
 import qualified Data.ByteString.Char8 as B
 import Data.List ( sortBy )
 import qualified Data.Map as Map
+
+
+
+data CsEvent = CsEvent 
+      { instr_num :: Int
+      , event_args  :: [Double]
+      }
+
+
 
 
 
