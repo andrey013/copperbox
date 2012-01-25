@@ -68,15 +68,6 @@ import qualified Data.Map as Map
 
 
 
-data CsEvent = CsEvent 
-      { instr_num :: Int
-      , event_args  :: [Double]
-      }
-
-
-
-
-
 --------------------------------------------------------------------------------
 -- Instr map - per score assignment of instrument numbers
 

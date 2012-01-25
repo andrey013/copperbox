@@ -18,7 +18,11 @@
 module Majalan.Core.NoteList
   (
 
-    CsEvent(..)
+    ColumnSpecs
+  , columnSpecs
+
+
+  , CsEvent(..)
   , printEvents
  
   ) where
@@ -26,7 +30,7 @@ module Majalan.Core.NoteList
 import Majalan.Core.Utils.DocExtras
 
 -- import Control.Applicative hiding ( empty )
--- import qualified Data.Map as Map
+import qualified Data.IntMap as IM
 import Text.PrettyPrint.HughesPJ
 
 
@@ -35,6 +39,15 @@ data CsEvent = CsEvent
       , onset_time  :: Double
       , event_args  :: [Double]
       }
+
+
+
+
+type ColumnSpecs = IM.IntMap [(Int,Int)]
+
+
+columnSpecs :: [(Int,[(Int,Int)])] -> ColumnSpecs
+columnSpecs = IM.fromList
 
 
 
@@ -49,7 +62,7 @@ tEq a b = (abs (a-b)) < 0.0001
 decimalZ :: Double -> Doc
 decimalZ = decimal 3 6
 
-printEvents :: [CsEvent] -> [(Int,Int)] -> Doc
+printEvents :: [CsEvent] -> ColumnSpecs -> Doc
 printEvents []     _    = empty
 printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
   where
@@ -59,18 +72,22 @@ printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
 
 
 
-printEvent1 :: CsEvent -> [(Int,Int)] -> Doc
+printEvent1 :: CsEvent -> ColumnSpecs -> Doc
 printEvent1 (CsEvent i1 ot ds1) cols = 
-    char 'i' <> int i1 <+> decimalZ ot <+> (hsep $ printColumns ds1 cols)
+    char 'i' <> int i1 <+> decimalZ ot <+> (hsep $ printColumns ds1 icols)
+  where
+    icols  = IM.findWithDefault [] i1 cols
+
 
 -- | Never carry duration, just carry arguments.
 -- 
-printEvent :: CsEvent -> CsEvent -> [(Int,Int)] -> Doc
+printEvent :: CsEvent -> CsEvent -> ColumnSpecs -> Doc
 printEvent (CsEvent i1 ot ds1) (CsEvent i2 _ ds2) cols
-    | i1 == i2  = prefix <+> (hsep $ printDiffColumns ds1 ds2 cols)
-    | otherwise = prefix <+> (hsep $ printColumns ds1 cols)
+    | i1 == i2  = prefix <+> (hsep $ printDiffColumns ds1 ds2 icols)
+    | otherwise = prefix <+> (hsep $ printColumns ds1 icols)
   where
     prefix = char 'i' <> int i1 <+> decimalZ ot
+    icols  = IM.findWithDefault [] i1 cols
 
 
 printDiffColumns :: [Double] -> [Double] -> [(Int,Int)] -> [Doc]

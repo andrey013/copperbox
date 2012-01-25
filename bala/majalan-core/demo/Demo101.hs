@@ -7,12 +7,20 @@ module Demo101 where
 
 
 import Majalan.Core
-import qualified Majalan.Core.NoteList as New
+import qualified Majalan.Core.NoteList as N
 
 import System.Directory
 import System.Process
 
 import qualified Data.ByteString.Char8 as B
+
+
+dummy = N.printEvents [e1,e2,e3] (N.columnSpecs [])
+  where
+    e1 = N.CsEvent 101 0 [0.75, 1.0]
+    e2 = N.CsEvent 101 1 [0.50, 1.0]
+    e3 = N.CsEvent 101 2 [0.25, 1.0]
+
 
 main :: IO ()
 main = do
