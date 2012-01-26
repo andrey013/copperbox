@@ -23,6 +23,7 @@ module Majalan.Core.NoteList
 
 
   , CsEvent(..)
+  , CsValue(..)
   , printEvents
  
   ) where
@@ -37,10 +38,19 @@ import Text.PrettyPrint.HughesPJ
 data CsEvent = CsEvent 
       { instr_num   :: Int
       , onset_time  :: Double
-      , event_args  :: [Double]
+      , event_args  :: [CsValue]
       }
+  deriving (Eq,Ord,Show)
 
 
+data CsValue = I Int | D Double
+  deriving (Ord,Show)
+  
+
+instance Eq CsValue where
+  I i == I j = i == j
+  D d == D e = d `tEq` e
+  _   == _   = False
 
 
 type ColumnSpecs = IM.IntMap [(Int,Int)]
@@ -59,8 +69,18 @@ columnSpecs = IM.fromList
 tEq :: Double -> Double -> Bool
 tEq a b = (abs (a-b)) < 0.0001
 
-decimalZ :: Double -> Doc
-decimalZ = decimal 3 6
+
+
+valueZ :: CsValue -> Doc
+valueZ (D d) = doubleZ d
+valueZ (I i) = intColumn 6 i
+
+value :: (Int,Int) -> CsValue -> Doc
+value (p,w) (D d) = decimal p w d
+value (_,w) (I i) = intColumn w i
+
+doubleZ :: Double -> Doc
+doubleZ = decimal 3 6
 
 printEvents :: [CsEvent] -> ColumnSpecs -> Doc
 printEvents []     _    = empty
@@ -74,7 +94,7 @@ printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
 
 printEvent1 :: CsEvent -> ColumnSpecs -> Doc
 printEvent1 (CsEvent i1 ot ds1) cols = 
-    char 'i' <> int i1 <+> decimalZ ot <+> (hsep $ printColumns ds1 icols)
+    char 'i' <> int i1 <+> doubleZ ot <+> (hsep $ printColumns ds1 icols)
   where
     icols  = IM.findWithDefault [] i1 cols
 
@@ -86,18 +106,18 @@ printEvent (CsEvent i1 ot ds1) (CsEvent i2 _ ds2) cols
     | i1 == i2  = prefix <+> (hsep $ printDiffColumns ds1 ds2 icols)
     | otherwise = prefix <+> (hsep $ printColumns ds1 icols)
   where
-    prefix = char 'i' <> int i1 <+> decimalZ ot
+    prefix = char 'i' <> int i1 <+> doubleZ ot
     icols  = IM.findWithDefault [] i1 cols
 
 
-printDiffColumns :: [Double] -> [Double] -> [(Int,Int)] -> [Doc]
-printDiffColumns (d:ds) (a:as) ((p,w):cs)
-    | d `tEq` a = paddedTextR "." w : printDiffColumns ds as cs
-    | otherwise = decimal p w d : printDiffColumns ds as cs
+printDiffColumns :: [CsValue] -> [CsValue] -> [(Int,Int)] -> [Doc]
+printDiffColumns (v:vs) (a:as) (s:ss)
+    | v == a    = paddedTextR "." (snd s) : printDiffColumns vs as ss
+    | otherwise = value s v : printDiffColumns vs as ss
 
-printDiffColumns (d:ds) (a:as) []         
-    | d `tEq` a = paddedTextR "." 6 : printDiffColumns ds as []
-    | otherwise = decimalZ d : printDiffColumns ds as []
+printDiffColumns (v:vs) (a:as) []
+    | v == a    = paddedTextR "." 6 : printDiffColumns vs as []
+    | otherwise = valueZ v : printDiffColumns vs as []
 
 printDiffColumns ds     []     cs         = printColumns ds cs
     
@@ -106,10 +126,11 @@ printDiffColumns []     _      _          = []
 
 -- | This is a long zip with a default width of 5.
 --
-printColumns :: [Double] -> [(Int,Int)] -> [Doc]
-printColumns (d:ds) ((p,w):cs) = decimal p w d : printColumns ds cs
-printColumns ds     []         = map decimalZ ds
-printColumns []     _          = []
+printColumns :: [CsValue] -> [(Int,Int)] -> [Doc]
+printColumns (v:vs) (s:ss) = value s v : printColumns vs ss
+printColumns vs     []     = map valueZ vs
+printColumns []     _      = []
+
 
 
 

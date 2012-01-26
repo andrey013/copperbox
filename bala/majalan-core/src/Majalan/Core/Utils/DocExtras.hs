@@ -24,6 +24,8 @@ module Majalan.Core.Utils.DocExtras
   , decimalString
 
   , paddedTextR
+
+  , intColumn
  
   ) where
 
@@ -80,3 +82,8 @@ decimalString prec colw d = step $ ($ "") $ showFFloat (Just prec) d
 
 paddedTextR :: String -> Int -> Doc
 paddedTextR ss w = text $ ss ++ replicate (w - length ss) ' '
+
+
+intColumn :: Int -> Int -> Doc
+intColumn colw i = 
+    let ss = show i in text $ ss ++ replicate (colw - length ss) ' '

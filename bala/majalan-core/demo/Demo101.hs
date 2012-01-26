@@ -8,6 +8,7 @@ module Demo101 where
 
 import Majalan.Core
 import qualified Majalan.Core.NoteList as N
+import Majalan.Core.NoteList ( CsValue(..) )
 
 import System.Directory
 import System.Process
@@ -17,9 +18,9 @@ import qualified Data.ByteString.Char8 as B
 
 dummy = N.printEvents [e1,e2,e3] (N.columnSpecs [])
   where
-    e1 = N.CsEvent 101 0 [0.75, 1.0]
-    e2 = N.CsEvent 101 1 [0.50, 1.0]
-    e3 = N.CsEvent 101 2 [0.25, 1.0]
+    e1 = N.CsEvent 101 0 [D 0.75, I 1, D 10.0]
+    e2 = N.CsEvent 101 1 [D 0.50, I 1, D 12.0]
+    e3 = N.CsEvent 101 2 [D 0.25, I 1, D 14.5]
 
 
 main :: IO ()
