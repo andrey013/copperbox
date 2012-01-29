@@ -1,0 +1,52 @@
+name:             orchsyn
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Music
+synopsis:         Generate Csound orchestras
+description:
+  Generate Csound orchestras / instruments.
+  .
+  (c) Stephen Tetley 2011
+  .
+
+build-type:         Simple
+stability:          half baked
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+
+library
+  hs-source-dirs:     src
+  build-depends:      base              <  5,
+                      containers        >= 0.3      && <= 0.6,
+                      pretty,
+                      syb,
+                      data-reify
+
+  exposed-modules:
+    Orchsyn.Language.Expr,
+    Orchsyn.Language.Operators,
+    Orchsyn.Language.Prelude,
+    Orchsyn.Language.PrettyPrint,
+    Orchsyn.Language.PrimAst,
+    Orchsyn.Utils.PrettyExtras,
+    Orchsyn.Utils.PrettyExpr,
+    Orchsyn.Utils.HList
+
+  other-modules:
+      
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
