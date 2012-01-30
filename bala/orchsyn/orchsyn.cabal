@@ -30,6 +30,7 @@ library
 
   exposed-modules:
     Orchsyn.Language.Expr,
+    Orchsyn.Language.Functions,
     Orchsyn.Language.Operators,
     Orchsyn.Language.Prelude,
     Orchsyn.Language.PrettyPrint,

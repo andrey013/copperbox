@@ -36,7 +36,12 @@ module Orchsyn.Utils.PrettyExpr
   , mult_op
   , divide_op
   , unary_negate
+
+  , logical_and
+  , logical_or
   , power_of
+  , modulus_op
+
 
   ) where
 
@@ -190,7 +195,15 @@ divide_op       = infixL 7 "/"
 unary_negate    :: Rator
 unary_negate    = prefix 9 "-"
 
+logical_and     :: Rator
+logical_and     = infixL 3 "&&"
 
+logical_or      :: Rator
+logical_or      = infixL 2 "||"
 
 power_of        :: Rator
 power_of        = infixL 4 "^"
+
+
+modulus_op      :: Rator
+modulus_op      = infixL 7 "%"

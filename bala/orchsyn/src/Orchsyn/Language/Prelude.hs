@@ -26,5 +26,5 @@ module Orchsyn.Language.Prelude
 
 import Prelude hiding 
   ( 
-    (^)
+    (&&), (||), (^)
   )

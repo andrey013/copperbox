@@ -10,25 +10,47 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Operators.
+-- Builtin Csound operators.
 --
 --------------------------------------------------------------------------------
 
 
 module Orchsyn.Language.Operators
   (
-   
-    (^)
+
+    (&&)
+  , (||)   
+  , (^)
+  , (%)
+
   ) where
 
 import Orchsyn.Language.Expr
 import Orchsyn.Utils.PrettyExpr
 
-import Prelude hiding ( (^) )
+import Prelude ()
+
+
+
+infixr 3 &&
+
+(&&) :: Expr -> Expr -> Expr
+(&&) = BinE logical_and
+
+infixr 2 ||
+
+
+(||) :: Expr -> Expr -> Expr
+(||) = BinE logical_or
 
 infixr 8 ^
 
 (^)  :: Expr -> Expr -> Expr
 (^)  = BinE power_of
 
+
+infixl 7 %
+
+(%) :: Expr -> Expr -> Expr
+(%) = BinE modulus_op
 

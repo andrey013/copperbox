@@ -3,6 +3,7 @@
 module Demo01 where
 
 import Orchsyn.Language.Expr
+import Orchsyn.Language.Functions
 import Orchsyn.Language.Operators
 import Orchsyn.Language.PrettyPrint
 import Orchsyn.Language.PrimAst
