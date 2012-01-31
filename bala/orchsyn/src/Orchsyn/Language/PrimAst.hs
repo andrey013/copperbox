@@ -47,8 +47,8 @@ data OrchDef = OrchDef
 -- | Glabls can be assignment to global variables
 -- or initialization statements e.g. for @zak@.
 --
-data Global = AssignG Var Expr
-            | OpcodeG Var String [Expr]
+data Global = AssignG Var DExpr
+            | OpcodeG Var String [DExpr]
   deriving (Eq, Ord, Show, Data, Typeable)
 
 
@@ -63,10 +63,10 @@ data InstDef = InstDef
 
 type Var = String
 
-data ArgDef = ArgDef Var Expr
+data ArgDef = ArgDef Var DExpr
   deriving (Eq, Ord, Show, Data, Typeable)
 
-data VarDef = VarDef Var Expr
+data VarDef = VarDef Var DExpr
   deriving (Eq, Ord, Show, Data, Typeable)
 
 data GotoSpec = IGoto | KGoto | TIGoto | Goto
@@ -78,9 +78,9 @@ type Label = String
 -- | Opcodes can assign to 0 (e.g. @out@), 1 (the common case) 
 -- or more variables (e.g. @xyin@ assigns to two variables).
 --
-data Stmt = AssignS Var Expr
-          | OpcodeS [Var] String [Expr]
-          | IfS  Expr GotoSpec Label
+data Stmt = AssignS Var DExpr
+          | OpcodeS [Var] String [DExpr]
+          | IfS  DExpr GotoSpec Label
           | LabelS Label [Stmt]
   deriving (Eq, Ord, Show, Data, Typeable)
 

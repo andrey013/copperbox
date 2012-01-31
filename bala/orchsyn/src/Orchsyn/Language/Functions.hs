@@ -54,7 +54,7 @@ module Orchsyn.Language.Functions
 
 import Orchsyn.Language.Expr
 
-import Prelude ()
+import Prelude ( ($), (.) )
 
 --------------------------------------------------------------------------------
 -- Math functions
@@ -62,99 +62,107 @@ import Prelude ()
 
 -- | I or K rate only.
 --
-int       :: Expr -> Expr
-int       = FunCallE "int"
+int       :: IK_Rate rate
+          => Expr rate -> Expr rate
+int       = liftE1 $ FunCallE "int"
 
 
 -- | I or K rate only.
 --
-frac      :: Expr -> Expr
-frac      = FunCallE "frac"
+frac      :: IK_Rate rate
+          => Expr rate -> Expr rate
+frac      = liftE1 $ FunCallE "frac"
 
 
 -- | I or K rate only.
 --
-powoftwo  :: Expr -> Expr   
-powoftwo  = FunCallE "powoftwo"
+powoftwo  :: IK_Rate rate
+          => Expr rate -> Expr rate
+powoftwo  = liftE1 $ FunCallE "powoftwo"
 
 
 -- | I or K rate only.
 --
-logbtwo   :: Expr -> Expr
-logbtwo   = FunCallE "logbtwo"
+logbtwo   :: IK_Rate rate
+          => Expr rate -> Expr rate
+logbtwo   = liftE1 $ FunCallE "logbtwo"
 
 
 
-abs       :: Expr -> Expr
-abs       = FunCallE "abs"
+abs       :: Expr rate -> Expr rate
+abs       = liftE1 $ FunCallE "abs"
 
-exp       :: Expr -> Expr
-exp       = FunCallE "exp"
+exp       :: Expr rate -> Expr rate
+exp       = liftE1 $ FunCallE "exp"
 
-log       :: Expr -> Expr
-log       = FunCallE "log"
+log       :: Expr rate -> Expr rate
+log       = liftE1 $ FunCallE "log"
 
-log10     :: Expr -> Expr
-log10     = FunCallE "log10"
+log10     :: Expr rate -> Expr rate
+log10     = liftE1 $ FunCallE "log10"
 
-sqrt      :: Expr -> Expr
-sqrt      = FunCallE "sqrt"
+sqrt      :: Expr rate -> Expr rate
+sqrt      = liftE1 $ FunCallE "sqrt"
 
 
 --------------------------------------------------------------------------------
 -- Trig functions
 
-sin       :: Expr -> Expr
-sin       = FunCallE "sin"
+sin       :: Expr rate -> Expr rate
+sin       = liftE1 $ FunCallE "sin"
 
-cos       :: Expr -> Expr
-cos       = FunCallE "cos"
+cos       :: Expr rate -> Expr rate
+cos       = liftE1 $ FunCallE "cos"
 
-tan       :: Expr -> Expr
-tan       = FunCallE "tan"
+tan       :: Expr rate -> Expr rate
+tan       = liftE1 $ FunCallE "tan"
 
 
-sininv    :: Expr -> Expr
-sininv    = FunCallE "sininv"
+sininv    :: Expr rate -> Expr rate
+sininv    = liftE1 $ FunCallE "sininv"
 
-cosinv    :: Expr -> Expr
-cosinv    = FunCallE "cosinv"
+cosinv    :: Expr rate -> Expr rate
+cosinv    = liftE1 $ FunCallE "cosinv"
 
-taninv    :: Expr -> Expr
-taninv    = FunCallE "taninv"
+taninv    :: Expr rate -> Expr rate
+taninv    = liftE1 $ FunCallE "taninv"
 
-sinh      :: Expr -> Expr
-sinh      = FunCallE "sinh"
+sinh      :: Expr rate -> Expr rate
+sinh      = liftE1 $ FunCallE "sinh"
 
-cosh      :: Expr -> Expr
-cosh      = FunCallE "cosh"
+cosh      :: Expr rate -> Expr rate
+cosh      = liftE1 $ FunCallE "cosh"
 
-tanh      :: Expr -> Expr
-tanh      = FunCallE "tanh"
+tanh      :: Expr rate -> Expr rate
+tanh      = liftE1 $ FunCallE "tanh"
 
 --------------------------------------------------------------------------------
 -- Amplitude functions
 
 -- | I or K rate only.
 --
-dbamp     :: Expr -> Expr
-dbamp     = FunCallE "dbamp"
+dbamp     :: IK_Rate rate
+          => Expr rate -> Expr rate
+dbamp     = liftE1 $ FunCallE "dbamp"
 
 
 -- | 
-ampdb     :: Expr -> Expr
-ampdb     = FunCallE "ampdb"
+ampdb     :: IK_Rate rate
+          => Expr rate -> Expr rate
+ampdb     = liftE1 $ FunCallE "ampdb"
 
 --------------------------------------------------------------------------------
 -- Random functions
 
 -- | I or K rate only.
 --
-rnd       :: Expr -> Expr
-rnd       = FunCallE "rnd"
+rnd       :: IK_Rate rate
+          => Expr rate -> Expr rate
+rnd       = liftE1 $ FunCallE "rnd"
  
 -- | I or K rate only.
 --
-birnd     :: Expr -> Expr
-birnd     = FunCallE "birnd"
+birnd     :: IK_Rate rate
+          => Expr rate -> Expr rate
+birnd     = liftE1 $ FunCallE "birnd"
 

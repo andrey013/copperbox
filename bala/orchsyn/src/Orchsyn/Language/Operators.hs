@@ -28,29 +28,29 @@ module Orchsyn.Language.Operators
 import Orchsyn.Language.Expr
 import Orchsyn.Utils.PrettyExpr
 
-import Prelude ()
+import Prelude ( ($) )
 
 
 
 infixr 3 &&
 
-(&&) :: Expr -> Expr -> Expr
-(&&) = BinE logical_and
+(&&) :: Expr rate -> Expr rate -> Expr rate
+(&&) = liftE2 $ BinE logical_and
 
 infixr 2 ||
 
 
-(||) :: Expr -> Expr -> Expr
-(||) = BinE logical_or
+(||) :: Expr rate -> Expr rate -> Expr rate
+(||) = liftE2 $ BinE logical_or
 
 infixr 8 ^
 
-(^)  :: Expr -> Expr -> Expr
-(^)  = BinE power_of
+(^)  :: Expr rate -> Expr rate -> Expr rate
+(^)  = liftE2 $ BinE power_of
 
 
 infixl 7 %
 
-(%) :: Expr -> Expr -> Expr
-(%) = BinE modulus_op
+(%) :: Expr rate -> Expr rate -> Expr rate
+(%) = liftE2 $ BinE modulus_op
 
