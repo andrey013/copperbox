@@ -67,7 +67,8 @@ module Majalan.Core.GenRoutines
 
   ) where
 
-import Majalan.Core.ScoreInternal
+import Majalan.Core.Score
+import Majalan.Core.NoteList
 
 
 
@@ -92,7 +93,7 @@ gen9 ix sz xs = GenStmt ix sz 9 (double3 xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen10 :: Int -> Int -> [Double] -> GenStmt
-gen10 ix sz xs = GenStmt ix sz 10 (map CsDouble xs)
+gen10 ix sz xs = GenStmt ix sz 10 (map D xs)
 
 
 -- | Generate composite waveforms from weighted sums of simple 
@@ -115,7 +116,7 @@ gen19 ix sz xs = GenStmt ix sz 19 (double4 xs)
 -- ZSnd needs extending to handle this optional cases... 
 --
 gen11 :: Int -> Int -> Int -> GenStmt
-gen11 ix sz nh  = GenStmt ix sz 11 [ CsInt nh ]
+gen11 ix sz nh  = GenStmt ix sz 11 [ I nh ]
 
 
 --------------------------------------------------------------------------------
@@ -134,7 +135,7 @@ gen11 ix sz nh  = GenStmt ix sz 11 [ CsInt nh ]
 gen5 :: Int -> Int -> [(Double, Int) ] -> GenStmt
 gen5 ix sz xs = GenStmt ix sz 5 (concatMap fn xs)
   where
-    fn (d,i) = [CsDouble d, CsInt i]
+    fn (d,i) = [D d, I i]
 
 
 -- | Construct a table of cubic polynomial segments.
@@ -150,11 +151,11 @@ gen5 ix sz xs = GenStmt ix sz 5 (concatMap fn xs)
 --
 gen6 :: Int -> Int -> Double 
      -> [(Int,Double, Int,Double, Int,Double)] -> GenStmt
-gen6 ix sz a xs = GenStmt ix sz 6 (CsDouble a : concatMap fn xs)
+gen6 ix sz a xs = GenStmt ix sz 6 (D a : concatMap fn xs)
   where
-    fn (n,b,n1,c,n2,d) = [ CsInt n,  CsDouble b
-                         , CsInt n1, CsDouble c
-                         , CsInt n2, CsDouble d 
+    fn (n,b,n1,c,n2,d) = [ I n,  D b
+                         , I n1, D c
+                         , I n2, D d 
                          ]
 
 
@@ -170,7 +171,7 @@ gen6 ix sz a xs = GenStmt ix sz 6 (CsDouble a : concatMap fn xs)
 gen7 :: Int -> Int -> [(Double, Int)] -> GenStmt
 gen7 ix sz xs = GenStmt ix sz 7 (concatMap fn xs)
   where
-    fn (a,n) = [ CsDouble a, CsInt n ] 
+    fn (a,n) = [ D a, I n ] 
 
 
 
@@ -186,9 +187,9 @@ gen7 ix sz xs = GenStmt ix sz 7 (concatMap fn xs)
 -- Note - potentially the segment list should be three * two-tuples.
 --
 gen8 :: Int -> Int -> Double -> [(Int,Double)] -> GenStmt
-gen8 ix sz a xs = GenStmt ix sz 8 (CsDouble a : concatMap fn xs)
+gen8 ix sz a xs = GenStmt ix sz 8 (D a : concatMap fn xs)
   where
-    fn (n,b) = [ CsInt n, CsDouble b ] 
+    fn (n,b) = [ I n, D b ] 
 
 
 -- | Construct exponential curves in breakpoint fashion.
@@ -198,9 +199,9 @@ gen8 ix sz a xs = GenStmt ix sz 8 (CsDouble a : concatMap fn xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen25 :: Int -> Int -> Int -> [(Int,Int)] -> GenStmt
-gen25 ix sz a xs = GenStmt ix sz 25 (CsInt a : concatMap fn xs)
+gen25 ix sz a xs = GenStmt ix sz 25 (I a : concatMap fn xs)
   where
-    fn (n,b) = [ CsInt n, CsInt b ] 
+    fn (n,b) = [ I n, I b ] 
 
 
 -- | Construct straight lines in brreakpoint fashion.
@@ -210,9 +211,9 @@ gen25 ix sz a xs = GenStmt ix sz 25 (CsInt a : concatMap fn xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen27 :: Int -> Int -> Int -> [(Int,Int)] -> GenStmt
-gen27 ix sz a xs = GenStmt ix sz 27 (CsInt a : concatMap fn xs)
+gen27 ix sz a xs = GenStmt ix sz 27 (I a : concatMap fn xs)
   where
-    fn (n,b) = [ CsInt n, CsInt b ] 
+    fn (n,b) = [ I n, I b ] 
 
 
 --------------------------------------------------------------------------------
@@ -233,7 +234,7 @@ gen27 ix sz a xs = GenStmt ix sz 27 (CsInt a : concatMap fn xs)
 -- 
 gen1 :: Int -> Int -> String -> Double -> Int -> Int -> GenStmt
 gen1 ix sz fc skip fmt ch = 
-    GenStmt ix sz 1 [CsString fc, CsDouble skip, CsInt fmt, CsInt ch]
+    GenStmt ix sz 1 [S fc, D skip, I fmt, I ch]
 
 
 -- | Read numeric values from a text file.
@@ -243,7 +244,7 @@ gen1 ix sz fc skip fmt ch =
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen23 :: Int -> Int -> String -> GenStmt
-gen23 ix sz file_path = GenStmt ix sz 23 [CsString file_path]
+gen23 ix sz file_path = GenStmt ix sz 23 [S file_path]
 
 
 -- | Read a time-tagged trajectory from a file.
@@ -254,7 +255,7 @@ gen23 ix sz file_path = GenStmt ix sz 23 [CsString file_path]
 -- score. Csound itself handles the allocation size.
 -- 
 gen28 :: Int -> String -> GenStmt
-gen28 ix file_name = GenStmt ix 0 28 [CsString file_name]
+gen28 ix file_name = GenStmt ix 0 28 [S file_name]
 
 
 --------------------------------------------------------------------------------
@@ -267,7 +268,7 @@ gen28 ix file_name = GenStmt ix 0 28 [CsString file_name]
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen2 :: Int -> Int -> [Int] -> GenStmt
-gen2 ix sz xs = GenStmt ix sz 2 (map CsInt xs)
+gen2 ix sz xs = GenStmt ix sz 2 (map I xs)
 
 -- | /Negative/ version of gen2.
 --
@@ -276,7 +277,7 @@ gen2 ix sz xs = GenStmt ix sz 2 (map CsInt xs)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 genN2 :: Int -> Int -> [Int] -> GenStmt
-genN2 ix sz xs = GenStmt ix sz (-2) (map CsInt xs)
+genN2 ix sz xs = GenStmt ix sz (-2) (map I xs)
 
 
 -- | Generate a step table from the supplied pairs.
@@ -303,15 +304,15 @@ data Gen20Window = HAMMING | HANNING | BARTLETT | BLACKMAN
 
 
 gen20Opts :: Gen20Window -> Int -> [CsValue]
-gen20Opts HAMMING         mx = [CsInt 1, CsInt mx]     
-gen20Opts HANNING         mx = [CsInt 2, CsInt mx]     
-gen20Opts BARTLETT        mx = [CsInt 3, CsInt mx]     
-gen20Opts BLACKMAN        mx = [CsInt 4, CsInt mx]
-gen20Opts BLACKMAN_HARRIS mx = [CsInt 5, CsInt mx]
-gen20Opts (GAUSSIAN y)    mx = [CsInt 6, CsInt mx, CsInt y]
-gen20Opts (KAISER y)      mx = [CsInt 7, CsInt mx, CsInt y]
-gen20Opts RECTANGLE       mx = [CsInt 8, CsInt mx]
-gen20Opts SYNC            mx = [CsInt 9, CsInt mx]
+gen20Opts HAMMING         mx = [I 1, I mx]     
+gen20Opts HANNING         mx = [I 2, I mx]     
+gen20Opts BARTLETT        mx = [I 3, I mx]     
+gen20Opts BLACKMAN        mx = [I 4, I mx]
+gen20Opts BLACKMAN_HARRIS mx = [I 5, I mx]
+gen20Opts (GAUSSIAN y)    mx = [I 6, I mx, I y]
+gen20Opts (KAISER y)      mx = [I 7, I mx, I y]
+gen20Opts RECTANGLE       mx = [I 8, I mx]
+gen20Opts SYNC            mx = [I 9, I mx]
 
 
 -- | Generate functions of different windows.
@@ -348,17 +349,17 @@ data Gen21Dist = UNIFORM | LINEAR | TRIANGULAR | EXPON
   deriving (Eq,Ord,Show)
 
 gen21Opts :: Gen21Dist -> Double -> [CsValue]
-gen21Opts UNIFORM         lv = [CsInt 1, CsDouble lv]
-gen21Opts LINEAR          lv = [CsInt 2, CsDouble lv]
-gen21Opts TRIANGULAR      lv = [CsInt 3, CsDouble lv]     
-gen21Opts EXPON           lv = [CsInt 4, CsDouble lv]     
-gen21Opts BIEXPON         lv = [CsInt 5, CsDouble lv]
-gen21Opts DIST_GAUSSIAN   lv = [CsInt 6, CsDouble lv]
-gen21Opts CAUCHY          lv = [CsInt 7, CsDouble lv]
-gen21Opts POSITIVE_CAUCHY lv = [CsInt 8, CsDouble lv]     
-gen21Opts (BETA a b)      lv = [CsInt 9, CsDouble lv, CsInt a, CsInt b]
-gen21Opts (WEIBULL a)     lv = [CsInt 10, CsDouble lv, CsInt a]
-gen21Opts POISSON         lv = [CsInt 11, CsDouble lv]
+gen21Opts UNIFORM         lv = [I 1, D lv]
+gen21Opts LINEAR          lv = [I 2, D lv]
+gen21Opts TRIANGULAR      lv = [I 3, D lv]     
+gen21Opts EXPON           lv = [I 4, D lv]     
+gen21Opts BIEXPON         lv = [I 5, D lv]
+gen21Opts DIST_GAUSSIAN   lv = [I 6, D lv]
+gen21Opts CAUCHY          lv = [I 7, D lv]
+gen21Opts POSITIVE_CAUCHY lv = [I 8, D lv]     
+gen21Opts (BETA a b)      lv = [I 9, D lv, I a, I b]
+gen21Opts (WEIBULL a)     lv = [I 10, D lv, I a]
+gen21Opts POISSON         lv = [I 11, D lv]
 
 
 -- | Generate tabels of random distributions.
@@ -382,7 +383,7 @@ gen21 ix sz dist lv = GenStmt ix sz 21 (gen21Opts dist lv)
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen3 :: Int -> Int -> Int -> Int -> [(Double,Double)] -> GenStmt
-gen3 ix sz x1 x2 xs = GenStmt ix sz 3 (CsInt x1 : CsInt x2 : double2 xs)
+gen3 ix sz x1 x2 xs = GenStmt ix sz 3 (I x1 : I x2 : double2 xs)
 
 
 -- | Store a Chebyshev polynomial of the first kind.
@@ -393,7 +394,7 @@ gen3 ix sz x1 x2 xs = GenStmt ix sz 3 (CsInt x1 : CsInt x2 : double2 xs)
 --
 gen13 :: Int -> Int -> Int -> Int -> [Double] -> GenStmt
 gen13 ix sz x1 x2 xs = 
-    GenStmt ix sz 13 (CsInt x1 : CsInt x2 : map CsDouble xs)
+    GenStmt ix sz 13 (I x1 : I x2 : map D xs)
 
 
 -- | Store a Chebyshev polynomial of the second kind.
@@ -404,7 +405,7 @@ gen13 ix sz x1 x2 xs =
 --
 gen14 :: Int -> Int -> Int -> Int -> [Double] -> GenStmt
 gen14 ix sz x1 x2 xs = 
-    GenStmt ix sz 14 (CsInt x1 : CsInt x2 : map CsDouble xs)
+    GenStmt ix sz 14 (I x1 : I x2 : map D xs)
 
 
 -- | Generate two tables of stored polynomials.
@@ -415,7 +416,7 @@ gen14 ix sz x1 x2 xs =
 --
 gen15 :: Int -> Int -> Int -> Int -> [(Double,Double)] -> GenStmt
 gen15 ix sz x1 x2 xs = 
-    GenStmt ix sz 15 (CsInt x1 : CsInt x2 : double2 xs)
+    GenStmt ix sz 15 (I x1 : I x2 : double2 xs)
 
 --------------------------------------------------------------------------------
 -- Amplitude scaling
@@ -428,7 +429,7 @@ gen15 ix sz x1 x2 xs =
 --
 gen4 :: Int -> Int -> Int -> Int -> GenStmt
 gen4 ix sz src src_mode = 
-    GenStmt ix sz 4 [CsInt src, CsInt src_mode]
+    GenStmt ix sz 4 [I src, I src_mode]
 
 
 -- | Generate a normalizing function.
@@ -438,14 +439,14 @@ gen4 ix sz src src_mode =
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 gen12 :: Int -> Int -> Int -> GenStmt
-gen12 ix sz xint = GenStmt ix sz 12 [CsInt xint]
+gen12 ix sz xint = GenStmt ix sz 12 [I xint]
 
 -- | Negative version of 'gen12'.
 --
 -- @size@ must be a power of 2 or power-of-2 plus 1.
 --
 genN12 :: Int -> Int -> Int -> GenStmt
-genN12 ix sz xint = GenStmt ix sz (-12) [CsInt xint]
+genN12 ix sz xint = GenStmt ix sz (-12) [I xint]
 
 
 
@@ -457,22 +458,22 @@ genN12 ix sz xint = GenStmt ix sz (-12) [CsInt xint]
 int2 :: [(Int,Int)] -> [CsValue]
 int2 = concatMap fn 
   where
-    fn (a,b) = [CsInt a, CsInt b]
+    fn (a,b) = [I a, I b]
 
 
 double2 :: [(Double,Double)] -> [CsValue]
 double2 = concatMap fn 
   where
-    fn (a,b) = [CsDouble a, CsDouble b]
+    fn (a,b) = [D a, D b]
 
 
 double3 :: [(Double,Double,Double)] -> [CsValue]
 double3 = concatMap fn 
   where
-    fn (a,b,c) = [CsDouble a, CsDouble b, CsDouble c]
+    fn (a,b,c) = [D a, D b, D c]
 
              
 double4 :: [(Double,Double,Double,Double)] -> [CsValue]
 double4 = concatMap fn 
   where
-    fn (a,b,c,d) = [CsDouble a, CsDouble b, CsDouble c, CsDouble d]
+    fn (a,b,c,d) = [D a, D b, D c, D d]

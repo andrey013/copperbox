@@ -21,6 +21,7 @@ module Majalan.Core.NoteList
     ColumnSpecs
   , columnSpecs
 
+  , valueZ
 
   , CsEvent(..)
   , CsValue(..)
@@ -30,7 +31,6 @@ module Majalan.Core.NoteList
 
 import Majalan.Core.Utils.DocExtras
 
--- import Control.Applicative hiding ( empty )
 import qualified Data.IntMap as IM
 import Text.PrettyPrint.HughesPJ
 
@@ -43,13 +43,14 @@ data CsEvent = CsEvent
   deriving (Eq,Ord,Show)
 
 
-data CsValue = I Int | D Double
+data CsValue = I Int | D Double | S String
   deriving (Ord,Show)
   
 
 instance Eq CsValue where
   I i == I j = i == j
   D d == D e = d `tEq` e
+  S a == S b = a == b
   _   == _   = False
 
 
@@ -74,10 +75,12 @@ tEq a b = (abs (a-b)) < 0.0001
 valueZ :: CsValue -> Doc
 valueZ (D d) = doubleZ d
 valueZ (I i) = intColumn 6 i
+valueZ (S s) = doubleQuotes $ text s
 
 value :: (Int,Int) -> CsValue -> Doc
 value (p,w) (D d) = decimal p w d
 value (_,w) (I i) = intColumn w i
+value _     (S s) = doubleQuotes $ text s
 
 doubleZ :: Double -> Doc
 doubleZ = decimal 3 6

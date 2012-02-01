@@ -17,7 +17,10 @@
 module Majalan.Core.Utils.DocExtras
   (
 
-    dtrunc
+    angles
+  , vconcat
+   
+  , dtrunc
   , truncateDouble
 
   , decimal
@@ -33,6 +36,14 @@ import Numeric
 import Text.PrettyPrint.HughesPJ
 
 
+angles :: Doc -> Doc
+angles d = char '<' <> d <> char '>'
+
+
+vconcat :: [Doc] -> Doc 
+vconcat []     = empty
+vconcat [a]    = a
+vconcat (a:as) = a $+$ vconcat as
 
 -- | Truncate the printed decimal representation of a Double.
 -- The is prefered to 'showFFloat' from Numeric as it produces

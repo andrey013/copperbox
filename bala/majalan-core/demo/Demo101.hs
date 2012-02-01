@@ -26,43 +26,27 @@ dummy = N.printEvents [e1,e2,e3] (N.columnSpecs [])
 main :: IO ()
 main = do
     createDirectoryIfMissing True "./out/" 
-    either print sk $ runScoreM instr_tbl my_sco
+    writeUnifiedFile "out/cs101.csd" flags orch01 cols sco01
+    _ <- system "csound out/cs101.csd"
     return ()
   where
-    sk ans = do { writeUnifiedFile "out/cs101.csd" flags orch01 ans
-                ; _ <- system "csound out/cs101.csd"
-                ; return ()
-                }
     flags = flags_wav_file_out "out/cs101.wav"
 
-    my_sco = sco01 `scoOver` sco01
 
+cols = columnSpecs []
 
+sco01 :: Score
+sco01 = Score [ gen10 1 4096 [1] ] $ 
+              [ i101    0 0.75 
+              , i101    2 0.50
+              , i101    4 0.25
+              ]
 
-sco01 :: RScore
-sco01 = prefixGens [ gen10 1 4096 [1] ] $ 
-          frame [ i101    0 0.75 
-                , i101    1 0.50
-                , i101    2 0.25
-                ]
-
-
-
-instr_tbl :: InstrMap
-instr_tbl = buildInstrMap [ (101, instr_name_101) ]
-
---
--- Scores support /link time/ resolution of instrument 
--- numbers (and f-tables)...
---
-
-instr_name_101 :: B.ByteString
-instr_name_101 = B.pack "instr_101_unique_name"
 
 -- | st * dur
 --
-i101 :: Double -> Double -> Note
-i101 start dur = absNote instr_name_101 start dur [] 
+i101 :: Double -> Double -> CsEvent
+i101 start dur = CsEvent 101 start [D dur]
 
 
 
