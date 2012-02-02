@@ -27,22 +27,17 @@ library
   hs-source-dirs:     src
   build-depends:      base              <  5,
                       containers        >= 0.3      && <= 0.6,
-                      bytestring        <  1.0
+                      pretty            < 1.2
 
   exposed-modules:
     Majalan.Core,
-    Majalan.Core.Basis,
-    Majalan.Core.CsoundScore,
     Majalan.Core.GenRoutines,
     Majalan.Core.OutputCsound,
-    Majalan.Core.Timespan
+    Majalan.Core.Score
 
   other-modules:
-    Majalan.Core.CSDDoc,
-    Majalan.Core.ScoreInternal,
-    Majalan.Core.Utils.FormatCombinators,
-    Majalan.Core.Utils.JoinList,
-    Majalan.Core.Utils.HList
+    Majalan.Core.Internal.CSDDoc,
+    Majalan.Core.Internal.PrettyExtras
       
   extensions:
     

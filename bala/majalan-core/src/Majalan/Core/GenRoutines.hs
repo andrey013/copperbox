@@ -68,8 +68,6 @@ module Majalan.Core.GenRoutines
   ) where
 
 import Majalan.Core.Score
-import Majalan.Core.NoteList
-
 
 
 --------------------------------------------------------------------------------

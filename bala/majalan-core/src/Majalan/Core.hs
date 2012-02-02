@@ -22,7 +22,6 @@ module Majalan.Core
   (
 
     module Majalan.Core.GenRoutines
-  , module Majalan.Core.NoteList
   , module Majalan.Core.OutputCsound
   , module Majalan.Core.Score
 
@@ -30,7 +29,6 @@ module Majalan.Core
 
 
 import Majalan.Core.GenRoutines
-import Majalan.Core.NoteList
 import Majalan.Core.OutputCsound
 import Majalan.Core.Score
 

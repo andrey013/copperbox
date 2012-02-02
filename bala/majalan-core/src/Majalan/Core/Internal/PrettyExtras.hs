@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Majalan.Core.Utils.DocExtras
+-- Module      :  Majalan.Core.Internal.PrettyExtras
 -- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
@@ -14,7 +14,7 @@
 --
 --------------------------------------------------------------------------------
 
-module Majalan.Core.Utils.DocExtras
+module Majalan.Core.Internal.PrettyExtras
   (
 
     angles

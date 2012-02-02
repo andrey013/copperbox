@@ -2,19 +2,19 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Majalan.Core.CSDDoc
--- Copyright   :  (c) Stephen Tetley 2011
+-- Module      :  Majalan.Core.Internal.CSDDoc
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Doc combinators for the XML-like CSD file.
+-- Csound specific Doc builders.
 --
 --------------------------------------------------------------------------------
 
-module Majalan.Core.CSDDoc
+module Majalan.Core.Internal.CSDDoc
   (
 
     csdStartTag
@@ -31,7 +31,7 @@ module Majalan.Core.CSDDoc
 
   ) where
 
-import Majalan.Core.Utils.DocExtras
+import Majalan.Core.Internal.PrettyExtras
 
 import Text.PrettyPrint.HughesPJ
 

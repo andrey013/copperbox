@@ -31,8 +31,7 @@ module Majalan.Core.OutputCsound
 
   ) where
 
-import Majalan.Core.CSDDoc
-import Majalan.Core.NoteList
+import Majalan.Core.Internal.CSDDoc
 import Majalan.Core.Score
 
 import Text.PrettyPrint.HughesPJ
