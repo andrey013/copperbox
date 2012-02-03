@@ -54,9 +54,10 @@ data GenStmt = GenStmt
 
 
 data CsEvent = CsEvent 
-      { instr_num   :: Int
-      , onset_time  :: Double
-      , event_args  :: [CsValue]
+      { instr_num       :: Int
+      , event_onset     :: Double
+      , event_duration  :: Double 
+      , event_args      :: [CsValue]
       }
   deriving (Eq,Ord,Show)
 
@@ -120,20 +121,21 @@ printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
 
 
 printEvent1 :: CsEvent -> ColumnSpecs -> Doc
-printEvent1 (CsEvent i1 ot ds1) cols = 
-    char 'i' <> int i1 <+> doubleZ ot <+> (hsep $ printColumns ds1 icols)
+printEvent1 (CsEvent i1 ot dn ds1) cols = 
+    char 'i' <> int i1 <+> doubleZ ot <+> doubleZ dn 
+             <+> (hsep $ printColumns ds1 icols)
   where
     icols  = IM.findWithDefault [] i1 cols
 
 
--- | Never carry duration, just carry arguments.
+-- | Never carry onset or duration, just carry arguments.
 -- 
 printEvent :: CsEvent -> CsEvent -> ColumnSpecs -> Doc
-printEvent (CsEvent i1 ot ds1) (CsEvent i2 _ ds2) cols
+printEvent (CsEvent i1 ot dn ds1) (CsEvent i2 _ _ ds2) cols
     | i1 == i2  = prefix <+> (hsep $ printDiffColumns ds1 ds2 icols)
     | otherwise = prefix <+> (hsep $ printColumns ds1 icols)
   where
-    prefix = char 'i' <> int i1 <+> doubleZ ot
+    prefix = char 'i' <> int i1 <+> doubleZ ot <+> doubleZ dn
     icols  = IM.findWithDefault [] i1 cols
 
 

@@ -37,7 +37,7 @@ sco01 = Score [ gen10 1 4096 [1] ] $
 -- | st * dur
 --
 i101 :: Double -> Double -> CsEvent
-i101 start dur = CsEvent 101 start [D dur]
+i101 start dur = CsEvent 101 start dur []
 
 
 
