@@ -56,7 +56,7 @@ infixr 5 ><
 -- | Internally represent Onset times (and durations) as Double.
 -- 
 -- Only in a final conversion step are ticks (MIDI\'s 
--- representation)use.
+-- representation) used.
 -- 
 type OnsetTime = Double
 

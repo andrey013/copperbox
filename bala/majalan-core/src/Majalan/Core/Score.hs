@@ -38,8 +38,8 @@ import Text.PrettyPrint.HughesPJ
 -- can printed separately.
 -- 
 data Score = Score
-      { tables      :: [GenStmt]
-      , note_list   :: [CsEvent] 
+      { score_tables    :: [GenStmt]
+      , score_systems   :: [[CsEvent]]
       }
   deriving (Eq,Ord,Show)
 
@@ -81,10 +81,10 @@ columnSpecs = IM.fromList
 
 
 buildScoreDoc :: ColumnSpecs -> Score -> Doc
-buildScoreDoc cols (Score ts ns) = gens $+$ notes
+buildScoreDoc cols (Score ts ss) = gens $+$ syss
   where
-    gens  = vconcat $ map printGenStmt ts
-    notes = printEvents ns cols
+    gens = vconcat $ map printGenStmt ts
+    syss = printSystems cols ss
 
 
 
@@ -110,9 +110,16 @@ value _     (S s) = doubleQuotes $ text s
 doubleZ :: Double -> Doc
 doubleZ = decimal 3 6
 
-printEvents :: [CsEvent] -> ColumnSpecs -> Doc
-printEvents []     _    = empty
-printEvents (c:cs) cols = printEvent1 c cols $+$ step cs c
+
+printSystems :: ColumnSpecs -> [[CsEvent]] -> Doc
+printSystems cols = vsep1 . map (printEvents cols)
+  where
+    vsep1 []     = empty
+    vsep1 (x:xs) = x $+$ vsep1 xs
+
+printEvents :: ColumnSpecs -> [CsEvent] -> Doc
+printEvents _    []     = empty
+printEvents cols (c:cs) = printEvent1 c cols $+$ step cs c
   where
     step []     _   = empty
     step (a:as) b   = printEvent a b cols $+$ step as a 

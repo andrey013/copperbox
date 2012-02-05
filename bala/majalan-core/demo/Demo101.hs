@@ -27,11 +27,12 @@ cols :: ColumnSpecs
 cols = columnSpecs []
 
 sco01 :: Score
-sco01 = Score [ gen10 1 4096 [1] ] $ 
-              [ i101    0 0.75 
-              , i101    2 0.50
-              , i101    4 0.25
-              ]
+sco01 = Score [ gen10 1 4096 [1] ] [sys1]
+  where
+    sys1 = [ i101    0 0.75 
+           , i101    2 0.50
+           , i101    4 0.25
+           ]
 
 
 -- | st * dur

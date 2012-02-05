@@ -44,13 +44,22 @@ import Majalan.Core                             -- package: majalan-core
 
 import Data.List ( sort )
 import Data.Monoid
-import Data.Word
 import Prelude hiding ( reverse )
 
 
 
 type Onset = Double
 
+--
+-- Note - 02 Feb 2012
+--
+-- There is a good case for functorial notelists, but functorial
+-- map will not be able to access onset or duration (as this 
+-- could invalidate the cached measurements).
+--
+-- Thus the prototype event would typically be a function from 
+-- onset and duration to CsEvent.
+--
 
 -- | EventList datatype - internally this is a binary tree of
 -- lists. The binary tree enables efficient concatenation during
@@ -184,9 +193,9 @@ toList = sort . toListH . outer 0
 -- | @stretch@ also stretches the initial onset if there is one.
 --
 stretch :: Double -> EventList -> EventList
-stretch sx es = One { init_delay  = sx * init_delay es
-                    , list_dur    = sx * list_dur es
-                    , leaf_list   = toListH $ outer 0 es }
+stretch sx evts = One { init_delay  = sx * init_delay evts
+                      , list_dur    = sx * list_dur evts
+                      , leaf_list   = toListH $ outer 0 evts }
   where
     outer dt (One _ d1 xs)  = inner (dt+d1) xs
     outer dt (Cat _ d1 l r) = outer (dt+d1) l `appendH` outer (dt+d1) r
@@ -209,11 +218,11 @@ stretchEvt sx e = let d = durationEvt e in setDuration (d * sx) e
 -- even if the list ends in silence.
 --
 reverse :: EventList -> EventList
-reverse es = One { init_delay  = 0
-                 , list_dur    = tot
-                 , leaf_list   = toListH $ outer 0 es }
+reverse evts = One { init_delay  = 0
+                   , list_dur    = tot
+                   , leaf_list   = toListH $ outer 0 evts }
   where
-    tot                      = list_dur es
+    tot                      = list_dur evts
     outer dly (One d1 _ xs)  = inner (dly+d1) xs
     outer dly (Cat d1 _ l r) = outer (dly+d1) l `appendH` outer (dly+d1) r
 

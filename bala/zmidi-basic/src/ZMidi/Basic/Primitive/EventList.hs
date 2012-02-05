@@ -222,8 +222,6 @@ stretchEvent1 _  (Instant e)     = Instant e
 stretchEvent1 sx (OnOff e0 d e1) = OnOff e0 (d * sx) e1
 
 
--- NOT WORKING ....
-
 -- | We do not explicitly have a trailing delay, however 
 -- preserving the list duration means that any subsequent 
 -- concatenation we be placed at the end of the list 

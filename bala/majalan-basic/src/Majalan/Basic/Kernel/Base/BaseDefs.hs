@@ -1,11 +1,9 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE TypeFamilies               #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Majalan.Basic.Kernel.Base.BaseDefs
--- Copyright   :  (c) Stephen Tetley 2011
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -18,56 +16,36 @@
 module Majalan.Basic.Kernel.Base.BaseDefs
   ( 
 
-    OnsetDbl
-  , Tempo
-  , UNil(..)
+    (><)
+  , OnsetTime
+  , BPM
   
   , InterpretUnit(..)
-  , normalizeF
-  , dinterpF
-  , uconvert1
-  , uconvertF
+  , uconvert
   
   ) where
 
 
-import Majalan.Core                             -- package: majalan-core
 
 import Data.Monoid
 
 
+infixr 5 ><
 
-
-
-type OnsetDbl = Double
-
-
--- | Tempo is beats-per-minute. 
+-- | @concat@
 --
-newtype Tempo = Tempo { getTempo :: Double }
-  deriving (Eq,Ord,Num,Floating,Fractional,Real,RealFrac,RealFloat)
-
-instance Show Tempo where
-  showsPrec p d = showsPrec p (getTempo d)
-
-
-
--- | The empty data type - i.e. @()@ - wrapped with a phantom unit 
--- parameter.
+-- > infixr 5 ><
 --
-data UNil   u = UNil          deriving (Eq,Ord,Read,Show)
+(><) :: Monoid a => a -> a -> a
+(><) = mappend
 
-type instance DUnit (UNil u) = u
+-- | Internally represent Onset times (and durations) as Double.
+--
+type OnsetTime = Double
 
-
-
-instance Functor UNil where
-  fmap _ UNil = UNil
-
-
-instance Monoid (UNil u) where
-  mempty        = UNil
-  _ `mappend` _ = UNil
+-- | Beats per minute - just an alias to Double.
+--
+type BPM      = Double
 
 
 
@@ -106,14 +84,14 @@ instance Monoid (UNil u) where
 
 
 class Num u => InterpretUnit u where
-  normalize :: Tempo -> u -> Double
-  dinterp   :: Tempo -> Double -> u
+  normalize :: BPM -> u -> Double
+  dinterp   :: BPM -> Double -> u
 
 instance InterpretUnit Double where
   normalize _ = id
   dinterp _   = id
 
-
+{-
 -- | 'normalize' an object that gives access to its unit at the 
 -- functor position.
 --
@@ -125,12 +103,15 @@ normalizeF bpm = fmap (normalize bpm)
 --
 dinterpF :: (Functor t, InterpretUnit u) => Tempo -> t Double -> t u
 dinterpF bpm = fmap (dinterp bpm)
+-}
 
 -- | Convert a scalar value from one unit to another.
 --
-uconvert1 :: (InterpretUnit u, InterpretUnit u1) => Tempo -> u -> u1
-uconvert1 bpm = dinterp bpm . normalize bpm
+uconvert :: (InterpretUnit u, InterpretUnit u1) => BPM -> u -> u1
+uconvert bpm = dinterp bpm . normalize bpm
 
+
+{-
 -- | Unit convert an object that gives access to its unit at the
 -- Functor position.
 --
@@ -140,7 +121,7 @@ uconvertF :: (Functor t, InterpretUnit u, InterpretUnit u1)
           => Tempo -> t u -> t u1
 uconvertF bpm = fmap (uconvert1 bpm)
 
-
+-}
 
 {-
 

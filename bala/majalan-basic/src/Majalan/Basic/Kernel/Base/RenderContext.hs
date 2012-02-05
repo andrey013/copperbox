@@ -3,8 +3,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Majalan.Basic.Kernel.Base.Context
--- Copyright   :  (c) Stephen Tetley 2011
+-- Module      :  Majalan.Basic.Kernel.Base.RenderContext
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
 -- Maintainer  :  stephen.tetley@gmail.com
@@ -15,14 +15,14 @@
 --
 --------------------------------------------------------------------------------
 
-module Majalan.Basic.Kernel.Base.Context
+module Majalan.Basic.Kernel.Base.RenderContext
   (
-    Context(..)
-  , ContextM(..)
+    RenderContext(..)
+  , RenderContextM(..)
+
+  , RenderContextF
+
   , UCtx
-
-  , ContextF
-
 
   , initialContext
 
@@ -53,7 +53,7 @@ import Majalan.Basic.Kernel.Base.DurationUnits
 
 import Control.Applicative
 
--- | Context
+-- | RenderContext
 --
 -- Note - factors in the context are not universal, some and may 
 -- be ignored by a partical Object (notelist, etc.).
@@ -64,8 +64,8 @@ import Control.Applicative
 -- @unit_duration@ - duration for instruments that have no dynamic
 -- prolongation.
 --
-data Context uctx = Context
-      { ctx_tempo               :: Tempo
+data RenderContext uctx = RenderContext
+      { ctx_tempo               :: BPM
       , ctx_amplitude           :: Double
       , ctx_staccato_factor     :: Double   -- range 0 .. 1.0
       , ctx_global_tuning       :: Double   -- usually 440.0 (A4)
@@ -73,7 +73,7 @@ data Context uctx = Context
       }
 
 
-type ContextF uctx = Context uctx -> Context uctx
+type RenderContextF uctx = RenderContext uctx -> RenderContext uctx
 
 
 
@@ -90,16 +90,16 @@ type family UCtx m :: *
 -- > localize = local
 --
 
-class (Applicative m, Monad m) => ContextM (m :: * -> *) where
-  askCtx    :: r ~ UCtx m  => m (Context r)
-  asksCtx   :: r ~ UCtx m => (Context r -> a) -> m a
-  localize  :: r ~ UCtx m => ContextF r -> m a -> m a
+class (Applicative m, Monad m) => RenderContextM (m :: * -> *) where
+  askCtx    :: r ~ UCtx m  => m (RenderContext r)
+  asksCtx   :: r ~ UCtx m => (RenderContext r -> a) -> m a
+  localize  :: r ~ UCtx m => RenderContextF r -> m a -> m a
 
   asksCtx f  = f <$> askCtx
 
 
-initialContext :: uctx -> Context uctx
-initialContext uc = Context
+initialContext :: uctx -> RenderContext uctx
+initialContext uc = RenderContext
       { ctx_tempo               = 120
       , ctx_amplitude           = 31662.8
       , ctx_staccato_factor     = 1.0
@@ -121,7 +121,7 @@ initialContext uc = Context
 -- Unlike Wumpus, different instruments have very different 
 -- parameters so we can\'t have a universal context. The only 
 -- useful component this module can provide is the typeclass
--- @ContextM@.
+-- @RenderContextM@.
 --
 -- Update: there is a design option to have a parameteric context 
 -- though: 
@@ -131,54 +131,54 @@ initialContext uc = Context
 
 
 
-normalizeCtx :: (ContextM m, InterpretUnit u)
+normalizeCtx :: (RenderContextM m, InterpretUnit u)
              => u -> m Double
 normalizeCtx du = (\bpm -> normalize bpm du) <$> get_tempo
 
-dinterpCtx :: (ContextM m, InterpretUnit u)
+dinterpCtx :: (RenderContextM m, InterpretUnit u)
            => Double -> m u
 dinterpCtx u = (\bpm -> dinterp bpm u) <$> get_tempo
 
 
 
-get_user_context :: (ContextM m, uctx ~ UCtx m) => m uctx
+get_user_context :: (RenderContextM m, uctx ~ UCtx m) => m uctx
 get_user_context = asksCtx ctx_user_context
 
 
-get_tempo :: ContextM m => m Tempo
+get_tempo :: RenderContextM m => m BPM
 get_tempo = asksCtx ctx_tempo
 
-set_tempo :: Tempo -> ContextF uctx
+set_tempo :: BPM -> RenderContextF uctx
 set_tempo bpm = (\s -> s { ctx_tempo = bpm})
 
-get_one_beat :: (ContextM m, InterpretUnit u) => m u
+get_one_beat :: (RenderContextM m, InterpretUnit u) => m u
 get_one_beat = normalizeCtx (1::Beat) >>= dinterpCtx 
 
 
-get_amplitude :: ContextM m => m Double 
+get_amplitude :: RenderContextM m => m Double 
 get_amplitude = asksCtx ctx_amplitude
 
 
-amplitude :: Double -> ContextF uctx
+amplitude :: Double -> RenderContextF uctx
 amplitude a = (\s -> s { ctx_amplitude = a})
 
-scale_amplitude    :: Double -> ContextF uctx
+scale_amplitude    :: Double -> RenderContextF uctx
 scale_amplitude d  = (\s a -> s { ctx_amplitude = a * d })
                          <*> ctx_amplitude
 
-get_staccato_factor :: ContextM m => m Double
+get_staccato_factor :: RenderContextM m => m Double
 get_staccato_factor = asksCtx ctx_staccato_factor
 
 
-staccato_factor :: Double -> ContextF uctx
+staccato_factor :: Double -> RenderContextF uctx
 staccato_factor sd = (\s -> s { ctx_staccato_factor = sd })
 
 
 
 
-get_global_tuning :: ContextM m => m Double
+get_global_tuning :: RenderContextM m => m Double
 get_global_tuning = asksCtx ctx_global_tuning
 
 
-global_tuning :: Double -> ContextF uctx
+global_tuning :: Double -> RenderContextF uctx
 global_tuning hz = (\s -> s { ctx_global_tuning = hz })
