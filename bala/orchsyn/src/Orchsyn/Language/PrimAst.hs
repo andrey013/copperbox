@@ -22,12 +22,11 @@ module Orchsyn.Language.PrimAst
     OrchDef(..) 
   , Global(..)
   , InstDef(..)
-  , Var
   , ArgDef(..)
   , VarDef(..)
   , Label
   , GotoSpec(..)
-  , Stmt(..)
+  , PrimStmt(..)
 
   ) where
 
@@ -57,11 +56,10 @@ data InstDef = InstDef
       { inst_num        :: Int
       , arg_defs        :: [ArgDef]
       , var_defs        :: [VarDef]
-      , body_stmts      :: [Stmt]
+      , body_stmts      :: [PrimStmt]
       }
   deriving (Eq, Ord, Show, Data, Typeable)
 
-type Var = String
 
 data ArgDef = ArgDef Var DExpr
   deriving (Eq, Ord, Show, Data, Typeable)
@@ -78,10 +76,10 @@ type Label = String
 -- | Opcodes can assign to 0 (e.g. @out@), 1 (the common case) 
 -- or more variables (e.g. @xyin@ assigns to two variables).
 --
-data Stmt = AssignS Var DExpr
-          | OpcodeS [Var] String [DExpr]
-          | IfS  DExpr GotoSpec Label
-          | LabelS Label [Stmt]
+data PrimStmt = AssignS Var DExpr
+              | OpcodeS [Var] String [DExpr]
+              | IfS  DExpr GotoSpec Label
+              | LabelS Label [PrimStmt]
   deriving (Eq, Ord, Show, Data, Typeable)
 
 

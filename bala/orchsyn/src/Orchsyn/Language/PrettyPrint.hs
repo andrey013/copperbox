@@ -20,8 +20,11 @@ module Orchsyn.Language.PrettyPrint
     
     prettyPrint
 
+  , ppInstDef
+
   ) where
 
+import Orchsyn.Language.Expr
 import Orchsyn.Language.PrimAst
 import Orchsyn.Utils.PrettyExtras
 
@@ -34,6 +37,7 @@ import Text.PrettyPrint.HughesPJ
 prettyPrint :: OrchDef -> Doc
 prettyPrint = ppOrchDef
 
+
 ppOrchDef :: OrchDef -> Doc
 ppOrchDef (OrchDef []    insts) = vconcatSpace $ map ppInstDef insts
 ppOrchDef (OrchDef gvars insts) = 
@@ -45,10 +49,10 @@ ppOrchDef (OrchDef gvars insts) =
 
 ppGlobal :: Global -> Doc
 ppGlobal (AssignG s e)     = 
-    indent $ padStringR 9 s <+> char '=' <+> format e
+    indent $ padStringR 9 (varname s) <+> char '=' <+> format e
 
 ppGlobal (OpcodeG s op es) = 
-    indent $ padStringR 9 s <+> padStringR 9 op <+> arglist (map format es)
+    indent $ padStringR 9 (varname s) <+> padStringR 9 op <+> arglist (map format es)
 
 ppInstDef :: InstDef -> Doc
 ppInstDef (InstDef name args vars stmts) = 
@@ -63,15 +67,17 @@ ppInstDef (InstDef name args vars stmts) =
         instr_start = text "instr" <+> int name
         arg_block   = vconcat $ map ppArgDef args
         var_block   = vconcat $ map ppVarDef vars
-        stmt_block  = vconcat $ map ppStmt stmts
+        stmt_block  = vconcat $ map ppPrimStmt stmts
         instr_end   = text "endin"   
 
 
 ppArgDef :: ArgDef -> Doc
-ppArgDef (ArgDef s e) = indent $ padStringR 9 s <+> char '=' <+> format e
+ppArgDef (ArgDef s e) = 
+    indent $ padStringR 9 (varname s) <+> char '=' <+> format e
 
 ppVarDef :: VarDef -> Doc
-ppVarDef (VarDef s e) = indent $ padStringR 9 s <+> char '=' <+> format e
+ppVarDef (VarDef s e) = 
+    indent $ padStringR 9 (varname s) <+> char '=' <+> format e
 
 ppGotoSpec :: GotoSpec -> Doc
 ppGotoSpec IGoto  = text "igoto"
@@ -79,28 +85,28 @@ ppGotoSpec KGoto  = text "kgoto"
 ppGotoSpec TIGoto = text "tigoto"
 ppGotoSpec Goto   = text "goto"
 
-ppStmt :: Stmt -> Doc
-ppStmt (AssignS s e)     = 
-    indent $ padStringR 9 s <+> char '=' <+> format e
+ppPrimStmt :: PrimStmt -> Doc
+ppPrimStmt (AssignS s e)     = 
+    indent $ padStringR 9 (varname s) <+> char '=' <+> format e
 
-ppStmt (OpcodeS vs op es) = 
+ppPrimStmt (OpcodeS vs op es) = 
     indent $ varlist vs <+> padStringR 9 op <+> arglist (map format es)
 
-ppStmt (IfS e gspec lbl) = 
+ppPrimStmt (IfS e gspec lbl) = 
     indent $ padStringR 9 "if" <+> format e <+> ppGotoSpec gspec <+> text lbl
 
-ppStmt (LabelS lbl es) = 
-    vconcat $ lbl_line : map ppStmt es 
+ppPrimStmt (LabelS lbl es) = 
+    vconcat $ lbl_line : map ppPrimStmt es 
   where
     lbl_line = text lbl <> char ':' 
 
 -- | varlist attemps to print a width 9 string, except for multiple
 -- assignments where it doesn\'t care.
 --
-varlist :: [String] -> Doc
+varlist :: [Var] -> Doc
 varlist []  = text $ replicate 9 ' '
-varlist [s] = padStringR 9 s
-varlist vs  = arglist $ map text vs
+varlist [s] = padStringR 9 (varname s)
+varlist vs  = arglist $ map (text .varname) vs
 
 
 indent :: Doc -> Doc

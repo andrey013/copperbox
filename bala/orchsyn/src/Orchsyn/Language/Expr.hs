@@ -28,15 +28,28 @@ module Orchsyn.Language.Expr
   , KR 
   , AR
 
-  , DataRate
+  , DataRate(..)
 
   , Rate        -- opaque
   , dataRate
+  , TypeRate
+  , typeRate
+
   , KA_Rate
   , IK_Rate
 
   -- * Expressions
+  , Var(..)
+  , varname
+
   , Expr
+  , uniRate
+  , rateOf
+
+  , iexpr
+  , kexpr
+  , aexpr
+
   , liftE1
   , liftE2
 
@@ -66,8 +79,7 @@ type AR = Expr ARate
 -- rather than a rate.
 --
 data DataRate = I | K | A 
-  deriving (Bounded,Enum,Eq,Ord,Show)
-
+  deriving (Bounded,Enum,Eq,Ord,Show, Data, Typeable)
 
 
 -- Note - the classes are exported opaquely. This is because there
@@ -75,8 +87,8 @@ data DataRate = I | K | A
 
 
 class Rate rate where
-  dataRate :: rate -> DataRate
-
+  dataRate :: Expr rate -> DataRate
+  
 instance Rate IInit where
   dataRate _ = I
 
@@ -85,6 +97,13 @@ instance Rate KRate where
 
 instance Rate ARate where
   dataRate _ = A
+
+class TypeRate rate where
+  typeRate :: DExpr -> Expr rate
+
+instance TypeRate IInit where typeRate = Expr
+instance TypeRate KRate where typeRate = Expr
+instance TypeRate ARate where typeRate = Expr
 
 
 class Rate rate => KA_Rate rate
@@ -101,16 +120,54 @@ instance IK_Rate KRate
 --------------------------------------------------------------------------------
 -- Expressions
 
+data Var = Var DataRate Int
+         | INamed String                -- I rate (init) only
+  deriving (Eq, Ord, Show, Data, Typeable)
+
+varname :: Var -> String
+varname (INamed ss) = ss
+varname (Var r i)   = case r of
+    I -> 'i' : show i
+    K -> 'k' : show i
+    A -> 'a' : show i
+
+
 newtype Expr rate = Expr { getExpr :: DExpr }
   deriving (Eq, Show)
 
 
+-- | Coerce to the untyped /universal/ rate.
+--
+-- (Extract an untyped Expr from a typed Expr).
+-- 
+uniRate :: Expr rate -> DExpr
+uniRate = getExpr
+
+-- | Type-level extraction of rate.
+-- 
+-- @rateOf@ does not need to inspect its argument.
+--
+rateOf :: Expr rate -> rate
+rateOf _e1 = undefined
+
+
+iexpr :: DExpr -> Expr IInit
+iexpr = Expr
+
+kexpr :: DExpr -> Expr KRate
+kexpr = Expr
+
+aexpr :: DExpr -> Expr ARate
+aexpr = Expr
+
+
 -- | String data is used by @soundin@ for example.
 --
-data DExpr = VarE String
+data DExpr = VarE Var
            | FloatE  Double
            | StringE String    
            | IntE    Int
+           | PfieldE Int
            | BinE Rator DExpr DExpr
            | UnaryE  Rator DExpr 
            | FunCallE String DExpr
@@ -164,10 +221,11 @@ instance Format DExpr where
 
 
 buildExpr :: DExpr -> DocExpr
-buildExpr (VarE s)       = Atom $ text s
+buildExpr (VarE s)       = Atom $ text $ varname s
 buildExpr (FloatE d)     = Atom $ dtrunc d
 buildExpr (StringE s)    = Atom $ doubleQuotes $ text s
 buildExpr (IntE i)       = Atom $ int i
+buildExpr (PfieldE i)    = Atom $ char 'p' <> int i
 buildExpr (BinE op a b)  = Binary (buildExpr a) op (buildExpr b)
 buildExpr (UnaryE op a)  = Unary op (buildExpr a)
 buildExpr (FunCallE s a) = Atom $ text s <> parens (format a)
