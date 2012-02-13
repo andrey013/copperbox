@@ -32,8 +32,6 @@ module Orchsyn.Language.Expr
 
   , Rate        -- opaque
   , dataRate
-  , TypeRate
-  , typeRate
 
   , KA_Rate
   , IK_Rate
@@ -54,6 +52,9 @@ module Orchsyn.Language.Expr
   , liftE2
 
   , DExpr(..)
+
+  , LVal(..)
+  , rval
 
   ) where
 
@@ -98,12 +99,6 @@ instance Rate KRate where
 instance Rate ARate where
   dataRate _ = A
 
-class TypeRate rate where
-  typeRate :: DExpr -> Expr rate
-
-instance TypeRate IInit where typeRate = Expr
-instance TypeRate KRate where typeRate = Expr
-instance TypeRate ARate where typeRate = Expr
 
 
 class Rate rate => KA_Rate rate
@@ -125,8 +120,8 @@ data Var = Var DataRate Int
   deriving (Eq, Ord, Show, Data, Typeable)
 
 varname :: Var -> String
-varname (INamed ss) = ss
-varname (Var r i)   = case r of
+varname (INamed ss)  = ss
+varname (Var r i)    = case r of
     I -> 'i' : show i
     K -> 'k' : show i
     A -> 'a' : show i
@@ -140,7 +135,7 @@ newtype Expr rate = Expr { getExpr :: DExpr }
 --
 -- (Extract an untyped Expr from a typed Expr).
 -- 
-uniRate :: Expr rate -> DExpr
+uniRate :: Rate rate => Expr rate -> DExpr
 uniRate = getExpr
 
 -- | Type-level extraction of rate.
@@ -233,3 +228,12 @@ buildExpr (CondE p t f)  = Atom $ parens body
   where
     body = hsep [ format p, char '?', format t, char ':', format f ]
 
+--------------------------------------------------------------------------------
+-- L-values
+
+data LVal rate = LVal Var
+  deriving (Eq, Show)
+
+
+rval :: LVal rate -> Expr rate
+rval (LVal v) = Expr $ VarE v

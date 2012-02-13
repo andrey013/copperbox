@@ -20,19 +20,52 @@ import Text.PrettyPrint.HughesPJ
 e01 = 4 ^ 5
 
 dummy1 = execInstr $ do
-  a1 :: AR <- tablei (5 :: AR) 1
+  a1 <- newAVar $ tablei (5 :: AR) 1
   return a1
 
 demo01 = ppInstDef $ instrument 4 $ do
-   a1 :: AR <- init (5 :: IR)
-   k1 :: KR <- init (6 :: IR)
+   a1 <- newAVar $ init (5 :: IR)
+   a1 $= (rval a1) * 0.75
+   k1 <- newAVar $ init (6 :: IR)
    return ()
 
-newtype EnvSpec rate = EnvSpec { getEnvSpec :: Expr IInit -> Instr (Expr rate) }
 
-env_line :: (KA_Rate rate, MakeVar rate, TypeRate rate) 
+type Signal rate  = Expr rate
+type SignalM rate = Instr (Signal rate)
+
+newtype EnvSpec rate = EnvSpec { getEnvSpec :: Signal IInit -> SignalM rate }
+
+
+-- | Note - we can have literal calls to p4 in the instrument
+-- and perform a transformation to recover @idur@ as a decl and 
+-- var-use.
+--
+runEnv :: EnvSpec rate -> SignalM rate
+runEnv env = getEnvSpec env $ iexpr $ PfieldE 4
+
+-- | Alternatively we can make a signal transformer out of an 
+-- envelope by applying with multiplication.
+
+
+-- sin (oscil) and noise are definitely signals.
+
+
+-- Could Instr take an environment of P-fields?
+-- Any /vars/ would not be bounds they could
+
+
+{-
+
+-- | Maybe it would be better for @line@ envelope to take two 
+-- Doubles. The only advantage of taking Exprs is that they can 
+-- accommodate P-fields (they can also accommodate bad types like 
+-- String).
+-- 
+env_line :: (KA_Rate rate, TypeRate rate) 
          => Expr IInit -> Expr IInit -> EnvSpec rate
-env_line v1 v2 = EnvSpec $ \idur -> line v1 idur v2
+env_line v1 v2 = EnvSpec $ \idur -> newKVar $ line v1 idur v2
+
+-}
 
 --
 -- All instruments have idur - if it is unused, the compiler

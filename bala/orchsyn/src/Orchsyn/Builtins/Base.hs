@@ -102,35 +102,26 @@ import Prelude hiding ( init, negate, (&&), (||), (^)
 -- Also, a backslash in the input string will need escaping with 
 -- another baskslash to be transmitted to Csound.
 --
-printf :: (MakeVar rate, TypeRate rate) 
-       => String -> [Expr rate] -> Instr ()
+printf :: Rate rate
+       => String -> [Expr rate] -> Opcode0 rate
 printf ss es = opcodeStmt0 "printf" (e1 : map uniRate es) 
   where
     e1 = StringE ss
-
-
--- tablei :: (MakeVar rate, TypeRate rate) => Expr rate -> Instr (Expr rate)
--- tablei e1 = opcodeStmt "tablei" (rateOf e1) [uniRate e1] 
-
 
 
 
 -- | Shocking, but this fools the compiler as @undefined@ is never
 -- demanded.
 --
-init :: (MakeVar rate, TypeRate rate) 
-     => Expr IInit -> Instr (Expr rate)
-init ia = opcodeStmt1 "init" (rateOf undefined) [ uniRate ia ] 
+init :: Expr IInit -> Opcode1 rate
+init ia = opcodeStmt1 "init" [ uniRate ia ] 
 
 
 
--- tival :: Expr IR
--- tival = Expr $ ZeroOp "tival"
 
-
-divz :: (MakeVar rate, TypeRate rate) 
-     => Expr IInit -> Expr IInit -> Expr IInit -> Instr (Expr rate)
-divz ia ib isubst = opcodeStmt1 "divz" (rateOf undefined) args 
+divz :: Rate rate
+     => Expr IInit -> Expr IInit -> Expr IInit -> Opcode1 rate
+divz ia ib isubst = opcodeStmt1 "divz" args 
   where
     args= [ uniRate ia, uniRate ib, uniRate isubst ]
                      
@@ -285,38 +276,37 @@ birnd     = liftE1 $ FunCallE "birnd"
 -- Opcode equivalents of functions
 
 
--- Not sure how to handle these...
 
-sum :: [Expr ARate] -> Instr (Expr ARate)
-sum xs = opcodeStmt1 "sum" (rateOf undefined) (map uniRate xs) 
-
-
-product :: [Expr ARate] -> Instr (Expr ARate)
-product xs = opcodeStmt1 "product" (rateOf undefined) (map uniRate xs) 
+sum :: [Expr ARate] -> Opcode1 ARate
+sum xs = opcodeStmt1 "sum" (map uniRate xs) 
 
 
-
-pow :: (MakeVar rate, TypeRate rate) 
-    => Expr rate -> Expr rate -> Instr (Expr rate)
-pow a b = opcodeStmt1 "pow" (rateOf a) [ uniRate a, uniRate b ]
+product :: [Expr ARate] -> Opcode1 ARate
+product xs = opcodeStmt1 "product" (map uniRate xs) 
 
 
-taninv2 ::  (MakeVar rate, TypeRate rate) 
-        => Expr rate -> Expr rate -> Instr (Expr rate)
-taninv2 a b = opcodeStmt1 "taninv2" (rateOf a) [ uniRate a, uniRate b ]
+
+pow :: Rate rate
+    => Expr rate -> Expr rate -> Opcode1 rate
+pow a b = opcodeStmt1 "pow" [ uniRate a, uniRate b ]
+
+
+taninv2 :: Rate rate 
+        => Expr rate -> Expr rate -> Opcode1 rate
+taninv2 a b = opcodeStmt1 "taninv2" [ uniRate a, uniRate b ]
 
 
 mac :: Expr ARate -> Expr KRate -> [(Expr ARate, Expr KRate)]
-    -> Instr (Expr ARate)
+    -> Opcode1 ARate
 mac asig1 ksig1 xs = 
-    opcodeStmt1 "mac" (rateOf undefined) args
+    opcodeStmt1 "mac" args
   where
     args     = uniRate asig1 : uniRate ksig1 : concatMap fn xs
     fn (a,b) = [uniRate a, uniRate b]
 
-maca :: Expr ARate -> Expr ARate -> [Expr ARate] -> Instr (Expr ARate)
+maca :: Expr ARate -> Expr ARate -> [Expr ARate] -> Opcode1 ARate
 maca asig1 asig2 xs = 
-    opcodeStmt1 "maca" (rateOf asig1) args 
+    opcodeStmt1 "maca" args 
   where
     args = uniRate asig1 : uniRate asig2 : map uniRate xs
 
@@ -363,16 +353,16 @@ cpsoct    = liftE1 $ FunCallE "cpsoct"
 -- Design note - here Csound uses @x@ for the version with more 
 -- args. Is this a convention used elsewhere?
 
-cps2pch :: Expr IInit -> Expr IInit -> Instr (Expr IInit)
+cps2pch :: Expr IInit -> Expr IInit -> Opcode1 IInit
 cps2pch ipch ieq  = 
-    opcodeStmt1 "cps2pch" (rateOf undefined) [ uniRate ipch, uniRate ieq ] 
+    opcodeStmt1 "cps2pch" [ uniRate ipch, uniRate ieq ] 
 
 
 
 cpsxpch :: Expr IInit -> Expr IInit -> Expr IInit -> Expr IInit 
-        -> Instr (Expr IInit)
+        -> Opcode1 IInit
 cpsxpch ipch ieq irep ibase = 
-    opcodeStmt1 "cps2pch" (rateOf undefined) args
+    opcodeStmt1 "cps2pch" args
   where
     args = map uniRate [ ipch, ieq, irep, ibase ]
                         
