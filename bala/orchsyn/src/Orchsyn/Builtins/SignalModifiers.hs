@@ -489,7 +489,7 @@ delayr idlt =
 
 
 -- | No answer ...
-delayw :: Expr ARate -> Instr ()
+delayw :: Expr ARate -> Opcode0 ()
 delayw asigar = 
     opcodeStmt0 "delayw" args
   where

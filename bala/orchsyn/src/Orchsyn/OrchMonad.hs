@@ -20,11 +20,13 @@ module Orchsyn.OrchMonad
 
 
   -- * Monadic building
-
-    Instr
-  , runInstr
-  , execInstr
-
+    
+    Code
+  , runCode
+  , execCode
+  , PfDecls
+  , init_pfs
+  , addPfs
   , instrument
 
 
@@ -68,7 +70,8 @@ module Orchsyn.OrchMonad
 
   , assignStmt
 
-  , pfieldDecl
+  , pfieldBind
+  , iInitDecls
 
   ) where
 
@@ -80,14 +83,14 @@ import Orchsyn.Utils.HList
 import Control.Applicative
 import Control.Monad
 import Data.Monoid
+import qualified Data.IntMap as IM
 
 
+newtype CodeW = CodeW { getCodeW :: H Stmt }
 
-newtype InstrBody = InstrBody { getInstrBody :: H Stmt }
-
-instance Monoid InstrBody where
-  mempty = InstrBody emptyH
-  InstrBody a `mappend` InstrBody b = InstrBody $ a `appendH` b
+instance Monoid CodeW where
+  mempty = CodeW emptyH
+  CodeW a `mappend` CodeW b = CodeW $ a `appendH` b
 
 data Fresh = Fresh 
       { fresh_i :: Int
@@ -110,71 +113,94 @@ nextA :: Fresh -> (Int,Fresh)
 nextA a = let i = fresh_a a in (i, a { fresh_a = i+1})
 
 
+-- | Aliasing p-fields to i-rate variables improves the
+-- readability of the generated code.
 
--- | Instrument is a State-Writer monad.
+type PfDecls = IM.IntMap Var -- (Expr IInit)
+
+
+-- | Returns either an rval pointing to a declared P-field, or
+-- a pfield expression.
+--
+getPfield :: Int -> PfDecls -> Expr IInit
+getPfield i env = 
+    maybe (iexpr $ PfieldE i) (iexpr . VarE) $ IM.lookup i env
+
+
+init_pfs :: PfDecls
+init_pfs = IM.fromList [(3, INamed "idur"), (4, INamed "iamp")]
+
+-- | Counting starts from 5...
+--
+addPfs :: [String] -> PfDecls -> PfDecls
+addPfs xs pfs = 
+    foldr (\(i,s) -> IM.insert i (INamed s)) pfs $ zip [5..] xs
+
+-- | Code is a Reader-State-Writer monad.
 -- 
-newtype Instr a = Instr { getInstr :: Fresh -> (a, Fresh, InstrBody) }
+newtype Code a = Code { getCode :: PfDecls -> Fresh -> (a, Fresh, CodeW) }
 
 
 
-instance Functor Instr where
-  fmap f ma = Instr $ \s -> let (a,s1,w1) = getInstr ma s in (f a, s1, w1)
+instance Functor Code where
+  fmap f ma = Code $ \r s -> let (a,s1,w1) = getCode ma r s 
+                             in (f a, s1, w1)
 
 
-instance Applicative Instr where
-  pure a    = Instr $ \s -> (a,s,mempty)
-  mf <*> ma = Instr $ \s -> let (f,s1,w1) = getInstr mf s 
-                                (a,s2,w2) = getInstr ma s1
-                            in (f a, s2, w1 `mappend` w2) 
+instance Applicative Code where
+  pure a    = Code $ \_ s -> (a,s,mempty)
+  mf <*> ma = Code $ \r s -> let (f,s1,w1) = getCode mf r s 
+                                 (a,s2,w2) = getCode ma r s1
+                             in (f a, s2, w1 `mappend` w2) 
 
 
-instance Monad Instr where
+instance Monad Code where
   return  = pure
-  m >>= k = Instr $ \s -> let (a,s1,w1) = getInstr m s
-                              (b,s2,w2) = getInstr (k a) s1
-                          in (b, s2, w1 `mappend` w2)
+  m >>= k = Code $ \r s -> let (a,s1,w1) = getCode m r s
+                               (b,s2,w2) = getCode (k a) r s1
+                           in (b, s2, w1 `mappend` w2)
 
 
-
-runInstr :: Instr a -> (a, [Stmt])
-runInstr ma = post $ getInstr ma init_fresh
+runCode :: PfDecls -> Code a -> (a, [Stmt])
+runCode pfs ma = post $ getCode ma pfs init_fresh
   where
-    post (a,_,w) = (a, toListH $ getInstrBody w)
+    post (a,_,w) = (a, toListH $ getCodeW w)
 
-execInstr :: Instr a -> [Stmt]
-execInstr = snd . runInstr
+execCode :: PfDecls -> Code a -> [Stmt]
+execCode pfs = snd . runCode pfs 
 
 
-instrument :: Int -> Instr a -> InstDef
-instrument n ma = InstDef
+instrument :: Int -> PfDecls -> Code a -> InstDef
+instrument n pfs ma = InstDef
     { inst_num    = n
     , arg_defs    = []
     , var_defs    = []
     , body_stmts  = stmts
     }
   where
-    stmts = map stmtToPrimStmt $ execInstr ma
+    stmts = map stmtToPrimStmt $ execCode pfs ma
 
-sets :: (Fresh -> (a,Fresh)) -> Instr a
-sets fn = Instr $ \s -> let (a,s1) = fn s in (a, s1, mempty)
+sets :: (Fresh -> (a,Fresh)) -> Code a
+sets fn = Code $ \_ s -> let (a,s1) = fn s in (a, s1, mempty)
 
-tell :: Stmt -> Instr ()
-tell a = Instr $ \s -> ((),s, InstrBody $ wrapH a)
+tell :: Stmt -> Code ()
+tell a = Code $ \_ s -> ((), s, CodeW $ wrapH a)
 
-
+asks :: (PfDecls -> a) -> Code a
+asks f = Code $ \r s -> (f r, s, mempty)
 
 --------------------------------------------------------------------------------
 -- The instrument building \"API\".
 
 
-ivar :: Instr (LVal IInit)
+ivar :: Code (LVal IInit)
 ivar = fmap (LVal . Var I) $ sets nextI
 
 
-kvar :: Instr (LVal KRate)
+kvar :: Code (LVal KRate)
 kvar = fmap (LVal . Var K) $ sets nextK
 
-avar :: Instr (LVal ARate)
+avar :: Code (LVal ARate)
 avar = fmap (LVal . Var A) $ sets nextA
 
 
@@ -219,7 +245,7 @@ avar = fmap (LVal . Var A) $ sets nextA
 
 
 
--- (#=) :: LVal rate -> Opcode1 rate -> Instr ()
+-- (#=) :: LVal rate -> Opcode1 rate -> Code ()
 
 -- Csound assignment:
 -- 
@@ -234,68 +260,68 @@ avar = fmap (LVal . Var A) $ sets nextA
 -- > asoc2         $= a * kenv
 
 
-type Opcode0 rate = Instr ()
-type Opcode1 rate = LVal rate -> Instr ()
-type Opcode2 rate = (LVal rate, LVal rate) -> Instr ()
-type Opcode3 rate = (LVal rate, LVal rate, LVal rate) -> Instr ()
-type Opcode4 rate = (LVal rate, LVal rate, LVal rate, LVal rate) -> Instr ()
+type Opcode0 rate = Code ()
+type Opcode1 rate = LVal rate -> Code ()
+type Opcode2 rate = (LVal rate, LVal rate) -> Code ()
+type Opcode3 rate = (LVal rate, LVal rate, LVal rate) -> Code ()
+type Opcode4 rate = (LVal rate, LVal rate, LVal rate, LVal rate) -> Code ()
 
 
 
-newIVarE :: Expr IInit -> Instr (LVal IInit)
+newIVarE :: Expr IInit -> Code (LVal IInit)
 newIVarE e1 = ivar >>= \v1 -> assignStmt (uniRate e1) v1 >> return v1
 
-newIVar :: Opcode1 IInit -> Instr (LVal IInit)
+newIVar :: Opcode1 IInit -> Code (LVal IInit)
 newIVar op = ivar >>= \v1 -> op v1 >> return v1
 
-newIVar2 :: Opcode2 IInit -> Instr (LVal IInit, LVal IInit)
+newIVar2 :: Opcode2 IInit -> Code (LVal IInit, LVal IInit)
 newIVar2 op = liftM2 (,) ivar ivar >>= \ans -> op ans  >> return ans
 
-newIVar3 :: Opcode3 IInit -> Instr (LVal IInit, LVal IInit, LVal IInit)
+newIVar3 :: Opcode3 IInit -> Code (LVal IInit, LVal IInit, LVal IInit)
 newIVar3 op = 
     liftM3 (,,) ivar ivar ivar >>= \ans -> op ans  >> return ans
 
 newIVar4 :: Opcode4 IInit 
-         -> Instr (LVal IInit, LVal IInit, LVal IInit, LVal IInit)
+         -> Code (LVal IInit, LVal IInit, LVal IInit, LVal IInit)
 newIVar4 op = 
     liftM4 (,,,) ivar ivar ivar ivar >>= \ans -> op ans  >> return ans
 
 
 
-newKVarE :: Expr ARate -> Instr (LVal ARate)
+newKVarE :: Expr ARate -> Code (LVal ARate)
 newKVarE e1 = avar >>= \v1 -> assignStmt (uniRate e1) v1 >> return v1
 
-newKVar :: Opcode1 ARate -> Instr (LVal ARate)
+newKVar :: Opcode1 ARate -> Code (LVal ARate)
 newKVar op = avar >>= \v1 -> op v1 >> return v1
 
-newKVar2 :: Opcode2 ARate -> Instr (LVal ARate, LVal ARate)
+newKVar2 :: Opcode2 ARate -> Code (LVal ARate, LVal ARate)
 newKVar2 op = liftM2 (,) avar avar >>= \ans -> op ans  >> return ans
 
-newKVar3 :: Opcode3 ARate -> Instr (LVal ARate, LVal ARate, LVal ARate)
+newKVar3 :: Opcode3 ARate -> Code (LVal ARate, LVal ARate, LVal ARate)
 newKVar3 op = 
     liftM3 (,,) avar avar avar >>= \ans -> op ans  >> return ans
 
 newKVar4 :: Opcode4 ARate 
-         -> Instr (LVal ARate, LVal ARate, LVal ARate, LVal ARate)
+         -> Code (LVal ARate, LVal ARate, LVal ARate, LVal ARate)
 newKVar4 op = 
     liftM4 (,,,) avar avar avar avar >>= \ans -> op ans  >> return ans
 
 
-newAVarE :: Expr ARate -> Instr (LVal ARate)
+newAVarE :: Expr ARate -> Code (LVal ARate)
 newAVarE e1 = avar >>= \v1 -> assignStmt (uniRate e1) v1 >> return v1
 
-newAVar :: Opcode1 ARate -> Instr (LVal ARate)
+newAVar :: Opcode1 ARate -> Code (LVal ARate)
 newAVar op = avar >>= \v1 -> op v1 >> return v1
 
-newAVar2 :: Opcode2 ARate -> Instr (LVal ARate, LVal ARate)
+newAVar2 :: Opcode2 ARate -> Code (LVal ARate, LVal ARate)
 newAVar2 op = liftM2 (,) avar avar >>= \ans -> op ans  >> return ans
 
-newAVar3 :: Opcode3 ARate -> Instr (LVal ARate, LVal ARate, LVal ARate)
+newAVar3 :: Opcode3 ARate -> Code (LVal ARate, LVal ARate, LVal ARate)
 newAVar3 op = 
     liftM3 (,,) avar avar avar >>= \ans -> op ans  >> return ans
 
 newAVar4 :: Opcode4 ARate 
-         -> Instr (LVal ARate, LVal ARate, LVal ARate, LVal ARate)
+         -> Code (LVal ARate, LVal ARate, LVal ARate, LVal ARate)
 newAVar4 op = 
     liftM4 (,,,) avar avar avar avar >>= \ans -> op ans  >> return ans
 
@@ -305,12 +331,12 @@ infixl 1 #=, $=
 
 -- | Reassign a variable with the result of calling an opcode.
 --
-(#=) :: LVal rate -> Opcode1 rate -> Instr ()
+(#=) :: LVal rate -> Opcode1 rate -> Code ()
 (#=) l op = op l 
 
 -- | Reassign a variable to the value of the expression.
 --
-($=) :: Rate rate => LVal rate -> Expr rate -> Instr ()
+($=) :: Rate rate => LVal rate -> Expr rate -> Code ()
 ($=) l e = assignStmt (uniRate e) l
 
 
@@ -353,7 +379,7 @@ opcodeStmt4 opco args = \(LVal v1, LVal v2, LVal v3, LVal v4) ->
     tell $ OpcodeS [v1, v2, v3, v4] opco args
 
 
-assignStmt :: DExpr -> LVal rate -> Instr ()
+assignStmt :: DExpr -> LVal rate -> Code ()
 assignStmt rhs (LVal v) = tell $ AssignS v rhs
 
 
@@ -369,5 +395,16 @@ assignStmt rhs (LVal v) = tell $ AssignS v rhs
 -- Both opcodes and exprs can re-asssign.
 
 
-pfieldDecl :: String -> Int -> Instr ()
-pfieldDecl iname num = tell $ AssignS (INamed iname) (PfieldE num)
+
+
+-- | Extract a binding for the pfield - this may be either a 
+-- reference to a declared variable or just a pfield access 
+-- e.g. @p5@.
+--
+pfieldBind :: Int -> Code (Expr IInit)
+pfieldBind i = asks (getPfield i)
+
+iInitDecls :: Code ()
+iInitDecls = asks (IM.toList) >>= mapM_ fn 
+  where
+    fn (i,v) = tell $ AssignS v (PfieldE i)

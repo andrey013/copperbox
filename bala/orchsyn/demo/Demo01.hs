@@ -19,19 +19,20 @@ import Text.PrettyPrint.HughesPJ
 
 e01 = 4 ^ 5
 
-dummy1 = execInstr $ do
+dummy1 = execCode init_pfs $ do
   a1 <- newAVar $ tablei (5 :: AR) 1
   return a1
 
-demo01 = ppInstDef $ instrument 4 $ do
+demo01 = ppInstDef $ instrument 4 init_pfs $ do
+   iInitDecls
    a1 <- newAVar $ init (5 :: IR)
-   a1 $= (rval a1) * 0.75
+   a1 $= rval a1 * 0.75
    k1 <- newAVar $ init (6 :: IR)
    return ()
 
 
 type Signal rate  = Expr rate
-type SignalM rate = Instr (Signal rate)
+type SignalM rate = Code (Signal rate)
 
 newtype EnvSpec rate = EnvSpec { getEnvSpec :: Signal IInit -> SignalM rate }
 
