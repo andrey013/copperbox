@@ -1,0 +1,65 @@
+name:             hpj-pretty-expr
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Pretty Printer
+synopsis:         Pretty print expressions with reasonable parens.
+description:
+  .
+  Pretty print expression syntax accounting for infix, prefix,
+  postfix and n-ary operators, inserting parens where necessary.
+  .
+  This is Norman Ramsey\'s code from the paper \"Unparsing 
+  Expressions With Prefix and Postfix Operators\" with a change 
+  to support customizing the maximum precedence level.
+  .
+  It also includes catalogues of expression pretty printers and 
+  operators for Haskell-like, C-like and Ocaml-like languages.
+  If your expression language is close enough to one of these
+  languages, writing an expression pretty pretty should be only a
+  little more work than writing a pretty printer that 
+  parenthesizes everywhere.
+  .
+  .
+  Changelog
+  .
+  v0.1.0:
+  .
+  * Initial release. 
+  .
+  
+build-type:         Simple
+stability:          unstable
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base < 5,
+                      pretty > 1.0 && < 1.4
+  
+  exposed-modules:
+    Text.PrettyPrint.HughesPJ.PrettyExpr,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.C99Like,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.C99Ops,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellLike,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellOps,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.OcamlLike,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.OcamlOps
+
+  other-modules:
+    
+  extensions:
+    
+
+  ghc-options:
+  
+  includes: 
+  
+
+  
+  
