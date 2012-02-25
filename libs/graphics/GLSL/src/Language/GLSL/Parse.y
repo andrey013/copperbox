@@ -13,7 +13,7 @@
 --------------------------------------------------------------------------------
 
 {
-{-# OPTIONS -Wall #-}
+
 
 module Language.GLSL.Parse where
 
@@ -24,16 +24,10 @@ import Language.GLSL.Tokens
 
 
 import Control.Monad.Identity
-import Data.Sequence
-
-
-parseGlsl :: FilePath -> String -> TranslUnit
-parseGlsl path contents  = 
-  case runIdentity (runParseT glslParser path contents) of
-    Left (ParseErr err) -> error err
-    Right a             -> a 
 
 }
+
+
 
 %name glslParser translation_unit
 
@@ -73,7 +67,7 @@ parseGlsl path contents  =
   IN                  { L _ Tk_kw_in                }
   OUT                 { L _ Tk_kw_out               }
   INOUT               { L _ Tk_kw_inout             }  
-  UNIFORM             { L _ Tk_kw_uniform           } 
+  UNIFORM             { L _ Tk_kw_uniform           }
   VARYING             { L _ Tk_kw_varying           }
   CENTROID            { L _ Tk_kw_centroid          }
   MAT2X2              { L _ Tk_kw_mat2x2            }
@@ -144,15 +138,15 @@ parseGlsl path contents  =
   PLUS                { L _ Tk_p_plus               }
   STAR                { L _ Tk_p_star               }
   SLASH               { L _ Tk_p_slash              }
-  PERCENT             { L _ Tk_p_percent            } 
+  PERCENT             { L _ Tk_p_percent            }
 
   LEFT_ANGLE          { L _ Tk_p_left_angle         }
   RIGHT_ANGLE         { L _ Tk_p_right_angle        }
-  VERTICAL_BAR        { L _ Tk_p_vertical_bar       }  
-  CARET               { L _ Tk_p_caret              }   
+  VERTICAL_BAR        { L _ Tk_p_vertical_bar       }
+  CARET               { L _ Tk_p_caret              }
   AMPERSAND           { L _ Tk_p_ampersand          }
-  QUESTION            { L _ Tk_p_question           }  
-     
+  QUESTION            { L _ Tk_p_question           }
+
   INVARIANT           { L _ Tk_kw_invariant         }
 
 
@@ -171,7 +165,7 @@ primary_expression :: { Expr }
 
 postfix_expression :: { Expr }
   : primary_expression                  { $1 }
-  | postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET 
+  | postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET
                                         { ArrayAccessExpr $1 $3 }
   | function_call                       { $1 }
   | postfix_expression DOT FIELD_SELECTION
@@ -184,26 +178,26 @@ integer_expression :: { Expr }
 
 function_call :: { Expr }
   : function_call_or_method   { $1 }
-  
+
 function_call_or_method :: { Expr }
   : function_call_generic               { $1 }
-  | postfix_expression DOT function_call_generic    
+  | postfix_expression DOT function_call_generic
                                         { MethodAccessExpr $1 $3 }
-  
+
 function_call_generic :: { Expr }
-  : function_call_header_with_parameters RIGHT_PAREN        
-                              { (uncurry FunCallExpr) $1 }
-  | function_call_header_no_parameters RIGHT_PAREN          
-                              { (uncurry FunCallExpr) $1 }
-  
-function_call_header_no_parameters :: { (Ident, (Seq Expr)) }
-  : function_call_header VOID           { ($1, empty) }
-  | function_call_header                { ($1, empty) }
-  
-function_call_header_with_parameters :: { (Ident, (Seq Expr)) }
-  : function_call_header assignment_expression    { ($1,wrap $2) } 
+  : function_call_header_with_parameters RIGHT_PAREN
+                              { (\(s,hs) -> FunCallExpr s (toListH hs)) $1 }
+  | function_call_header_no_parameters RIGHT_PAREN
+                              { (\(s,hs) -> FunCallExpr s (toListH hs)) $1 }
+
+function_call_header_no_parameters :: { (Ident, H Expr) }
+  : function_call_header VOID           { ($1, emptyH) }
+  | function_call_header                { ($1, emptyH) }
+
+function_call_header_with_parameters :: { (Ident, H Expr) }
+  : function_call_header assignment_expression    { ($1, wrapH $2) }
   | function_call_header_with_parameters COMMA assignment_expression
-                                                  { $1 `snoc` $3 }
+                                                  { (\(s,hs) a -> (s,hs `snocH` a)) $1 $3 }
 function_call_header :: { Ident }
   : function_identifier LEFT_PAREN                { $1 }
 
@@ -219,7 +213,7 @@ unary_expression :: { Expr }
   | unary_operator unary_expression   { UnaryExpr $1 $2 }
 
 unary_operator :: { UnaryOp }
-  : PLUS                      { PlusOp }      
+  : PLUS                      { PlusOp }
   | DASH                      { MinusOp }
   | BANG                      { LNotOp }
   | TILDE                     { NotOp }
@@ -234,7 +228,7 @@ multiplicative_expression :: { Expr }
                               { BinaryExpr RemainderOp $1 $3 }
 
 additive_expression :: { Expr }
-  : multiplicative_expression 
+  : multiplicative_expression
                               { $1 }
   | additive_expression PLUS multiplicative_expression
                               { BinaryExpr AddOp $1 $3 }
@@ -243,7 +237,7 @@ additive_expression :: { Expr }
 
 shift_expression :: { Expr }
   : additive_expression       { $1 }
-  | shift_expression LEFT_OP additive_expression 
+  | shift_expression LEFT_OP additive_expression
                               { BinaryExpr ShiftLOp $1 $3 }
   | shift_expression RIGHT_OP additive_expression
                               { BinaryExpr ShiftROp $1 $3 }
@@ -269,34 +263,34 @@ equality_expression :: { Expr }
 and_expression :: { Expr }
   : equality_expression     { $1 }
   | and_expression AMPERSAND equality_expression
-                            { BinaryExpr AndOp $1 $3 } 
+                            { BinaryExpr AndOp $1 $3 }
 
 exclusive_or_expression :: { Expr }
   : and_expression          { $1 }
   | exclusive_or_expression CARET and_expression
-                            { BinaryExpr XorOp $1 $3 } 
+                            { BinaryExpr XorOp $1 $3 }
 
 inclusive_or_expression :: { Expr }
-  : exclusive_or_expression 
+  : exclusive_or_expression
                             { $1 }
   | inclusive_or_expression VERTICAL_BAR exclusive_or_expression
-                            { BinaryExpr OrOp $1 $3 } 
-                            
+                            { BinaryExpr OrOp $1 $3 }
+
 logical_and_expression :: { Expr }
-  : inclusive_or_expression          
+  : inclusive_or_expression
                             { $1 }
   | logical_and_expression AND_OP inclusive_or_expression
                             { BinaryExpr LandOp $1 $3 }
-                            
+
 logical_xor_expression :: { Expr }
-  : logical_and_expression 
+  : logical_and_expression
                             { $1 }
   | logical_xor_expression XOR_OP logical_and_expression
                             { BinaryExpr LxorOp $1 $3 }
-                            
-                            
+
+
 logical_or_expression :: { Expr }
-  : logical_xor_expression  
+  : logical_xor_expression
                             { $1 }
   | logical_or_expression OR_OP logical_xor_expression
                             { BinaryExpr LorOp $1 $3 }
@@ -305,14 +299,14 @@ conditional_expression :: { Expr }
   : logical_or_expression   { $1 }
   | logical_or_expression QUESTION expression COLON assignment_expression
                             { TernaryExpr $1 $3 $5 }
-                            
+
 assignment_expression :: { Expr }
   : conditional_expression  { $1 }
   | unary_expression assignment_operator assignment_expression
                             { AssignExpr $2 $1 $3 }
 
 
-assignment_operator :: { AssignOp } 
+assignment_operator :: { AssignOp }
   : EQUAL                     { AssignOp }
   | MUL_ASSIGN                { MulAssign }
   | DIV_ASSIGN                { DivAssign }
@@ -324,16 +318,16 @@ assignment_operator :: { AssignOp }
   | AND_ASSIGN                { AndAssign }
   | XOR_ASSIGN                { XorAssign }
   | OR_ASSIGN                 { OrAssign }
-               
-  
+
+
 expression :: { Expr }
-  : expression_seq     { CommaExpr $1 }
+: expression_list     { CommaExpr $ toListH $1 }
 
 
-expression_seq :: { Seq Expr }
-  : assignment_expression     { wrap $1 }
-  | expression_seq COMMA assignment_expression
-                              { $1 `snoc` $3 }
+expression_list :: { H Expr }
+  : assignment_expression     { wrapH $1 }
+  | expression_list COMMA assignment_expression
+                              { $1 `snocH` $3 }
 
 
 constant_expression :: { Expr }
@@ -342,20 +336,20 @@ constant_expression :: { Expr }
 declaration :: { Decl }
   : function_prototype SEMICOLON      { FunProtoDecl $1 }
   | init_declarator_list SEMICOLON    { InitDeclr $1 }
-  
+
 function_prototype :: { FunProto }
-  : function_declarator RIGHT_PAREN   
-                    { (\((ty,name),se) -> FunProto ty name se) $1 }
-  
-function_declarator :: { ((FullType,Ident),Seq ParamDecl) }
-  : function_header                   { ($1,empty) }
+  : function_declarator RIGHT_PAREN
+                    { (\((ty,name),se) -> FunProto ty name (toListH se)) $1 }
+
+function_declarator :: { ((FullType,Ident), H ParamDecl) }
+  : function_header                   { ($1, emptyH) }
   | function_header_with_parameters   { $1 }
 
-function_header_with_parameters :: { ((FullType,Ident), Seq ParamDecl) }
+function_header_with_parameters :: { ((FullType,Ident), H ParamDecl) }
   : function_header parameter_declaration
-                                      { ($1,wrap $2) }
+                                      { ($1, wrapH $2) }
   | function_header_with_parameters COMMA parameter_declaration
-                                      { $1 `snoc` $3 }
+                                      { (\(t,hs) a -> (t, hs `snocH` a)) $1 $3  }
 
 function_header :: { (FullType,Ident) }
   : fully_specified_type IDENTIFIER LEFT_PAREN
@@ -372,11 +366,11 @@ parameter_declaration :: { ParamDecl }
   | parameter_qualifier parameter_declarator
                               { Declarator Nothing $1 $2 }
   | type_qualifier parameter_qualifier parameter_type_specifier
-                              { Specifier (Just $1) $2 $3 }  
+                              { Specifier (Just $1) $2 $3 }
   | parameter_qualifier parameter_type_specifier
                               { Specifier Nothing $1 $2 }
-                                      
-                                      
+
+
 parameter_qualifier :: { ParamQual }
   : IN                        { In }
   | OUT                       { Out }
@@ -389,44 +383,44 @@ parameter_type_specifier :: { TypeSpec }
 init_declarator_list :: { Declrs }
   : single_declaration        { $1 }
   | init_declarator_list COMMA IDENTIFIER
-                              { $1 `snoc` (ScalarDeclr $3 Nothing) }
+                              { $1 `snocDeclr` (ScalarDeclr $3 Nothing) }
   | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                              { $1 `snoc` (ArrayDeclr $3 Nothing Nothing) }
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression 
+                              { $1 `snocDeclr` (ArrayDeclr $3 Nothing Nothing) }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET
-                              { $1 `snoc` (ArrayDeclr $3 (Just $5) Nothing) }                                        
-  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET 
+                              { $1 `snocDeclr` (ArrayDeclr $3 (Just $5) Nothing) }
+  | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET
                                         RIGHT_BRACKET EQUAL initializer
-                              { $1 `snoc` (ArrayDeclr $3 Nothing (Just $7)) }
+                              { $1 `snocDeclr` (ArrayDeclr $3 Nothing (Just $7)) }
   | init_declarator_list COMMA IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                              { $1 `snoc` (ArrayDeclr $3 (Just $5) (Just $8)) }                                        
+                              { $1 `snocDeclr` (ArrayDeclr $3 (Just $5) (Just $8)) }
   | init_declarator_list COMMA IDENTIFIER EQUAL initializer
-                              { $1 `snoc` (ScalarDeclr $3 (Just $5)) }
+                              { $1 `snocDeclr` (ScalarDeclr $3 (Just $5)) }
 
 single_declaration :: { Declrs }
-  : fully_specified_type      
-                    { Declr $1 empty }
+  : fully_specified_type
+                    { Declr $1 [] }
   | fully_specified_type IDENTIFIER
-                    { Declr $1 (singleton $ ScalarDeclr $2 Nothing) }
+                    { Declr $1 [ScalarDeclr $2 Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                    { Declr $1 (singleton $ ArrayDeclr $2 Nothing Nothing) }
-  | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression 
+                    { Declr $1 [ArrayDeclr $2 Nothing Nothing] }
+  | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET
-                    { Declr $1 (singleton $ ArrayDeclr $2 (Just $4) Nothing) }
+                    { Declr $1 [ArrayDeclr $2 (Just $4) Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET EQUAL initializer
-                    { Declr $1 (singleton $ ArrayDeclr $2 Nothing (Just $6)) }
+                    { Declr $1 [ArrayDeclr $2 Nothing (Just $6)] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                    { Declr $1 (singleton $ ArrayDeclr $2 (Just $4) (Just $7)) }
+                    { Declr $1 [ArrayDeclr $2 (Just $4) (Just $7)] }
   | fully_specified_type IDENTIFIER EQUAL initializer
-                    { Declr $1 (singleton $ ScalarDeclr $2 (Just $4))  }
-  | INVARIANT IDENTIFIER      
-                    { InvariantDeclr $2 empty }
-                            
+                    { Declr $1 [ScalarDeclr $2 (Just $4)]  }
+  | INVARIANT IDENTIFIER
+                    { InvariantDeclr $2 [] }
+
 fully_specified_type :: { FullType }
-  : type_specifier                      { (Nothing,$1) }
-  | type_qualifier type_specifier       { (Just $1,$2) }
+  : type_specifier                      { (Nothing, $1) }
+  | type_qualifier type_specifier       { (Just $1, $2) }
 
 
 type_qualifier :: { TypeQual }
@@ -442,7 +436,7 @@ type_specifier :: { TypeSpec }
   : type_specifier_nonarray   { ScalarType $1 }
   | type_specifier_nonarray LEFT_BRACKET constant_expression RIGHT_BRACKET
                               { ArrayType $1 $3 }
-  
+
 type_specifier_nonarray :: { ScalarTypeSpec }
   : VOID                { SlVoid }
   | FLOAT               { SlFloat }
@@ -457,7 +451,7 @@ type_specifier_nonarray :: { ScalarTypeSpec }
   | IVEC2               { IVec2 }
   | IVEC3               { IVec3 }
   | IVEC4               { IVec4 }
-  | MAT2                { Mat2 } 
+  | MAT2                { Mat2 }
   | MAT3                { Mat3 }
   | MAT4                { Mat4 }
   | MAT2X2              { Mat2x2 }
@@ -480,23 +474,23 @@ type_specifier_nonarray :: { ScalarTypeSpec }
 
 struct_specifier :: { Struct }
   : STRUCT IDENTIFIER LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { Struct (Just $2) $4 }
+                              { Struct (Just $2) (toListH $4) }
   | STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { Struct Nothing $3 }
-                              
-struct_declaration_list :: {  Seq StructDeclr }
-  : struct_declaration                  { wrap $1 }
-  | struct_declaration_list struct_declaration    
-                                        { $1 `snoc` $2 }
+                              { Struct Nothing (toListH $3) }
+
+struct_declaration_list :: { H StructDeclr }
+  : struct_declaration                  { wrapH $1 }
+  | struct_declaration_list struct_declaration
+                                        { $1 `snocH` $2 }
 
 struct_declaration :: { StructDeclr }
-  : type_specifier struct_declarator_list SEMICOLON         
-                              { StructDeclr $1 $2  }
-  
-struct_declarator_list :: { Seq StructDeclrElement }
-  : struct_declarator         { wrap $1 }
+  : type_specifier struct_declarator_list SEMICOLON
+                              { StructDeclr $1 (toListH $2)  }
+
+struct_declarator_list :: { H StructDeclrElement }
+  : struct_declarator         { wrapH $1 }
   | struct_declarator_list COMMA struct_declarator
-                              { $1 `snoc` $3 }
+                              { $1 `snocH` $3 }
 
 struct_declarator :: { StructDeclrElement }
   : IDENTIFIER                { StructScalarDeclr $1 }
@@ -521,22 +515,22 @@ simple_statement :: { Stmt }
   | jump_statement            { $1 }
 
 compound_statement :: { Stmt }
-  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt empty }
-  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $ toListH $2 }
 
 statement_no_new_scope :: { Stmt }
   : compound_statement_no_new_scope     { $1 }
   | simple_statement                    { $1 }
 
 compound_statement_no_new_scope :: { Stmt }
-  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt empty }
-  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $2 }
+  : LEFT_BRACE RIGHT_BRACE                        { CompoundStmt [] }
+  | LEFT_BRACE statement_list RIGHT_BRACE         { CompoundStmt $ toListH $2 }
 
 
-  
-statement_list :: { Seq Stmt }
-  : statement                           { wrap $1 }
-  | statement_list statement            { $1 `snoc` $2 }
+
+statement_list :: { H Stmt }
+  : statement                           { wrapH $1 }
+  | statement_list statement            { $1 `snocH` $2 }
 
 expression_statement :: { Stmt }
   : SEMICOLON                 { ExprStmt Nothing }
@@ -582,11 +576,14 @@ jump_statement :: { Stmt }
   | RETURN expression SEMICOLON         { Return (Just $2) }
   | DISCARD SEMICOLON                   { Discard }
 
-   
+-- This production looks dodgy...   
 translation_unit :: { TranslUnit }
-  : external_declaration                          { wrap $1 }
-  | translation_unit external_declaration         { $1 `snoc` $2 }
-                                          
+  : global_decl_list                    { TranslUnit $ toListH $1 }
+
+global_decl_list :: { H GblDecl }
+  : external_declaration                          { wrapH $1 }
+  | global_decl_list external_declaration         { $1 `snocH` $2 }
+
 external_declaration :: { GblDecl }
   : function_definition       { GblFunDef $1 }
   | declaration               { GblDecl $1 }
@@ -599,6 +596,31 @@ function_definition :: { FunDef }
 {
 
 
+-- Hughes List
+
+type H a = [a] -> [a]
+
+wrapH :: a -> H a
+wrapH = (:)
+
+snocH :: H a -> a -> H a
+snocH f a = f . (a:)
+
+emptyH :: H a
+emptyH = id
+
+toListH :: H a -> [a]
+toListH f = f $ []
+
+snocDeclr :: Declrs -> DeclrElement -> Declrs
+snocDeclr (Declr ty xs)         x = Declr ty (xs++[x])
+snocDeclr (InvariantDeclr s xs) x = InvariantDeclr s (xs++[x])
+
+parseGlsl :: FilePath -> String -> TranslUnit
+parseGlsl path contents  =
+  case runIdentity (runParseT glslParser path contents) of
+    Left (ParseErr err) -> error err
+    Right a             -> a
 
 
 unwrapExpr :: Stmt -> Expr

@@ -53,7 +53,7 @@ data SrcPosn = SrcPosn {
     }
   deriving (Eq,Show)
 
-instance Monad m => Applicative (ParseT m) where
+instance (Functor m, Monad m) => Applicative (ParseT m) where
   pure = return
   (<*>) = ap
 
@@ -113,11 +113,11 @@ getLexerState :: Monad m => ParseT m LexerState
 getLexerState = gets lex_state
 
 
-getPosition :: Monad m => ParseT m SrcPosn
+getPosition :: (Functor m, Monad m) => ParseT m SrcPosn
 getPosition = src_loc <$> gets lex_state
 
 
-getCurrentLine :: Monad m => ParseT m String
+getCurrentLine :: (Functor m, Monad m) => ParseT m String
 getCurrentLine = (takeWhile notNl . rest_of_input) <$> gets lex_state where
     notNl '\n' = False
     notNl _    = True
@@ -147,13 +147,13 @@ instance Error ParseErr where
   noMsg     = ParseErr ""
   strMsg s  = ParseErr s  
 
-parseError :: Monad m => tok -> ParseT m a
+parseError :: (Monad m, Functor m) => tok -> ParseT m a
 parseError _ = reportError "parse error"
 
-lexError :: Monad m => tok -> ParseT m a
+lexError :: (Functor m, Monad m) => tok -> ParseT m a
 lexError _ = reportError "lex error" 
 
-reportError :: Monad m => String -> ParseT m a
+reportError :: (Functor m, Monad m) => String -> ParseT m a
 reportError s = do 
     pos <- getPosition
     ln  <- getCurrentLine 

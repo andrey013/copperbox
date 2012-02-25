@@ -7,7 +7,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Language.GLSL.Syntax
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -24,23 +24,7 @@ module Language.GLSL.Syntax  where
 
 import Data.Generics.Basics
 import Data.Generics.Instances()
-import Data.Sequence
 
-class Snoc a b | a -> b where
-  snoc :: a -> b -> a
-
-class Wrap a b where
-  wrap :: a -> b
-
-instance Snoc (Seq a) a where
-  snoc = (|>)
-    
-instance Wrap a (Seq a) where
-  wrap = singleton
-  
-instance Snoc (z, Seq a) a where
-  snoc (z,sa) a = (z,sa |> a)  
-  
 
 type Ident = String
 
@@ -48,14 +32,9 @@ type Ident = String
 type FieldSelector = Char 
 type FieldSelection = [FieldSelector]
 
-data TranslUnit = TranslUnit (Seq GblDecl)
+data TranslUnit = TranslUnit [GblDecl]
   deriving (Eq,Show,Typeable,Data)
 
-instance Snoc TranslUnit GblDecl where
-  snoc (TranslUnit se) e = TranslUnit (se |> e)
-
-instance Wrap GblDecl TranslUnit where
-  wrap = TranslUnit . singleton
   
 data GblDecl = GblFunDef FunDef
              | GblDecl Decl 
@@ -80,14 +59,11 @@ data Decl = FunProtoDecl FunProto
 -- more concrete syntax than abstract (should simplify to one declr / one type)  
 data Declrs = 
         Declr          FullType 
-                       (Seq DeclrElement)
+                       [DeclrElement]
       | InvariantDeclr Ident 
-                       (Seq DeclrElement)   -- too permissive but seemingly legal
+                       [DeclrElement]   -- too permissive but seemingly legal
   deriving (Eq,Show,Typeable,Data)
 
-instance Snoc Declrs DeclrElement where
-  snoc (Declr ty se)          e = Declr ty (se |> e)
-  snoc (InvariantDeclr ty se) e = InvariantDeclr ty (se |> e)
 
 data DeclrElement = 
         ScalarDeclr Ident                   
@@ -98,16 +74,14 @@ data DeclrElement =
   deriving (Eq,Show,Typeable,Data)
   
 data Struct = Struct (Maybe Ident)
-                     (Seq StructDeclr)
+                     [StructDeclr]
   deriving (Eq,Show,Typeable,Data)
 
 data StructDeclr = 
         StructDeclr TypeSpec
-                    (Seq StructDeclrElement)
+                    [StructDeclrElement]
   deriving (Eq,Show,Typeable,Data)
 
-instance Snoc StructDeclr StructDeclrElement where
-  snoc (StructDeclr ty se) e =  StructDeclr ty (se |> e)
   
 data StructDeclrElement = 
         StructScalarDeclr Ident                   
@@ -116,48 +90,48 @@ data StructDeclrElement =
   deriving (Eq,Show,Typeable,Data)
 
 -- p70
-data UnaryOp = PreIncOp           -- ++a
-             | PreDecOp           -- --a
-             | PostIncOp          -- a++
-             | PostDecOp          -- a--
-             | PlusOp             -- +
-             | MinusOp            -- -
-             | LNotOp             -- !
-             | NotOp              -- ~
+data UnaryOp = PreIncOp
+             | PreDecOp
+             | PostIncOp
+             | PostDecOp
+             | PlusOp   
+             | MinusOp  
+             | LNotOp   
+             | NotOp
   deriving (Eq,Show,Typeable,Data)
 
-data BinaryOp = MulOp             -- *
-              | DivOp             -- /
-              | RemainderOp       -- %
-              | AddOp             -- +
-              | SubOp             -- - 
-              | ShiftLOp          -- <<
-              | ShiftROp          -- >>
-              | LtOp              -- <
-              | GtOp              -- >
-              | LteOp             -- <=
-              | GteOp             -- >=
-              | EqOp              -- ==
-              | NeqOp             -- !=
-              | AndOp             -- &
-              | XorOp             -- ^
-              | OrOp              -- |
-              | LandOp            -- &&
-              | LxorOp            -- ^^
-              | LorOp             -- ||
+data BinaryOp = MulOp             
+              | DivOp             
+              | RemainderOp       
+              | AddOp             
+              | SubOp             
+              | ShiftLOp
+              | ShiftROp
+              | LtOp    
+              | GtOp    
+              | LteOp   
+              | GteOp   
+              | EqOp    
+              | NeqOp   
+              | AndOp   
+              | XorOp   
+              | OrOp    
+              | LandOp  
+              | LxorOp  
+              | LorOp
   deriving (Eq,Show,Typeable,Data)
   
-data AssignOp = AssignOp        -- =
-              | MulAssign       -- *=
-              | DivAssign       -- /=
-              | ModAssign       -- %= (illegal)
-              | AddAssign       -- +=
-              | SubAssign       -- -=
-              | LShiftAssign    -- <<=
-              | RShiftAssign    -- >>=
-              | AndAssign       -- &=
-              | XorAssign       -- ^=
-              | OrAssign        -- |=
+data AssignOp = AssignOp
+              | MulAssign
+              | DivAssign
+              | ModAssign
+              | AddAssign
+              | SubAssign
+              | LShiftAssign
+              | RShiftAssign
+              | AndAssign   
+              | XorAssign   
+              | OrAssign
   deriving (Eq,Show,Typeable,Data)
 
 data Expr = ConstantExpr Constant
@@ -182,8 +156,8 @@ data Expr = ConstantExpr Constant
           | MethodAccessExpr Expr 
                              Expr                                                   
           | FunCallExpr Ident
-                        (Seq Expr)    -- arguments are expressions
-          | CommaExpr   (Seq Expr)      -- seqeuence of expressions
+                        [Expr]    -- arguments are expressions
+          | CommaExpr   [Expr]      -- seqeuence of expressions
           
           | TernaryExpr Expr      -- (? :)
                         Expr
@@ -193,7 +167,7 @@ data Expr = ConstantExpr Constant
 
 data FunProto = FunProto FullType 
                          Ident 
-                         (Seq ParamDecl)
+                         [ParamDecl]
   deriving (Eq,Show,Typeable,Data)
 
 data ParamDecl = Declarator (Maybe TypeQual)
@@ -274,7 +248,7 @@ data ScalarTypeSpec = SlVoid
   deriving (Eq,Show,Typeable,Data)
  
 
-data Stmt = CompoundStmt (Seq Stmt)
+data Stmt = CompoundStmt [Stmt]
           | DeclStmt Decl
           | ExprStmt (Maybe Expr)
           | IfStmt   Expr

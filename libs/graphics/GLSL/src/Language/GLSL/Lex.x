@@ -209,7 +209,7 @@ $white ;
 
 type ParseM a = ParseT Identity a
 
-alexEOF :: Monad m => ParseT m Lexeme
+alexEOF :: (Functor m, Monad m) => ParseT m Lexeme
 alexEOF = (\pos -> L pos Tk_EOF) <$> getPosition
 
 

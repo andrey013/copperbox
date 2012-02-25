@@ -25,7 +25,6 @@ module Language.GLSL.Pretty where
 import Language.GLSL.Syntax
 
 import qualified Data.Foldable as F
-import Data.Sequence hiding (empty) 
 import Text.PrettyPrint.Leijen
 
 infixl 7 #
@@ -36,10 +35,10 @@ x # f = f x
 data Fixity = Prefix | Postfix 
   deriving (Eq,Show) 
 
-dfoldseq :: (a -> Doc) -> (Doc -> Doc -> Doc) -> Seq a -> Doc
-dfoldseq f g se = case viewl se of
-    EmptyL  -> empty
-    z :< sz -> F.foldl' (\a e -> a `g` (f e)) (f z) sz
+dfold :: (a -> Doc) -> (Doc -> Doc -> Doc) -> [a] -> Doc
+dfold f g ls = case ls of
+    []  -> empty
+    (z : sz) -> F.foldl' (\a e -> a `g` (f e)) (f z) sz
 
 commaSpace :: Doc -> Doc -> Doc
 commaSpace a b = a <> comma <> space <> b
@@ -64,7 +63,7 @@ arraySize (Just e) = brackets $ pretty e
 
 
 instance Pretty TranslUnit where
-  pretty (TranslUnit se) = dfoldseq pretty (<$>) se
+  pretty (TranslUnit se) = dfold pretty (<$>) se
   
 
 instance Pretty GblDecl where
@@ -87,9 +86,9 @@ instance Pretty Decl where
             
 instance Pretty Declrs where
   pretty (Declr ty se)             = 
-      ppFullType ty <+> dfoldseq pretty commaSpace se
+      ppFullType ty <+> dfold pretty commaSpace se
   pretty (InvariantDeclr ident se) = 
-      text "invariant" <+> text ident <+> dfoldseq pretty commaSpace se
+      text "invariant" <+> text ident <+> dfold pretty commaSpace se
 
 instance Pretty DeclrElement where 
   pretty (ScalarDeclr ident oin)      = text ident # optInitializer oin                   
@@ -101,11 +100,11 @@ instance Pretty Struct where
   pretty (Struct (Just name) se) = 
       text "struct" <+> text name <+> structbody se
 
-structbody :: Seq StructDeclr -> Doc
-structbody = braces . dfoldseq pretty semiLine
+structbody :: [StructDeclr] -> Doc
+structbody = braces . dfold pretty semiLine
 
 instance Pretty StructDeclr where
-  pretty (StructDeclr ty se) = pretty ty <+> dfoldseq pretty commaSpace se
+  pretty (StructDeclr ty se) = pretty ty <+> dfold pretty commaSpace se
 
 instance Pretty StructDeclrElement where 
   pretty (StructScalarDeclr ident)   = text ident                   
@@ -181,14 +180,14 @@ instance Pretty Expr where
   pretty (FieldAccessExpr e s)    = pretty e <> dot <> text s
   pretty (MethodAccessExpr e fc)  = pretty e <> dot <> pretty fc                    
   pretty (FunCallExpr ident se)   = 
-      pretty ident <> parens (dfoldseq pretty commaSpace se)
-  pretty (CommaExpr se)           = dfoldseq pretty commaSpace se
+      pretty ident <> parens (dfold pretty commaSpace se)
+  pretty (CommaExpr se)           = dfold pretty commaSpace se
   pretty (TernaryExpr ce te fe)   = pretty ce <+> char '?' <+> pretty te
                                               <+> colon    <+> pretty fe 
                         
 instance Pretty FunProto where
   pretty (FunProto ty ident se)   = 
-      ppFullType ty <> text ident <> parens (dfoldseq pretty commaSpace se)
+      ppFullType ty <> text ident <> parens (dfold pretty commaSpace se)
 
                          
 instance Pretty ParamDecl where
@@ -267,7 +266,7 @@ instance Pretty ScalarTypeSpec where
   pretty (TypeName s)         = text s
                          
 instance Pretty Stmt where
-  pretty (CompoundStmt se)        = braces $ dfoldseq pretty semiLine se
+  pretty (CompoundStmt se)        = braces $ dfold pretty semiLine se
   pretty (DeclStmt decl)          = pretty decl
   pretty (ExprStmt Nothing)       = empty -- correct?
   pretty (ExprStmt (Just e))      = pretty e

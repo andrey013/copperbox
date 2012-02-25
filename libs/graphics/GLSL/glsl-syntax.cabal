@@ -1,0 +1,45 @@
+name:             glsl-syntax
+version:          0.1.0
+license:          BSD3
+license-file:     LICENSE
+copyright:        Stephen Tetley <stephen.tetley@gmail.com>
+maintainer:       Stephen Tetley <stephen.tetley@gmail.com>
+homepage:         http://code.google.com/p/copperbox/
+category:         Graphics
+synopsis:         Parser for the OpenGL Shading Language
+description:
+
+build-type:         Simple
+stability:          experimental
+cabal-version:      >= 1.2
+
+extra-source-files:
+
+library
+  hs-source-dirs:     src
+  build-depends:      base          < 5, 
+                      array         >= 0.3.0 && < 0.3.4,
+                      containers    >= 0.4   && < 0.4.4,
+                      mtl           >= 2.0   && < 2.4,
+                      syb           >= 0.3   && < 0.5,
+                      wl-pprint     < 2
+
+  
+  exposed-modules:
+    Language.GLSL.Lex,
+    Language.GLSL.Parse,
+    Language.GLSL.ParseMonad,
+    Language.GLSL.Pretty,
+    Language.GLSL.Syntax,
+    Language.GLSL.Token
+  
+  other-modules:
+  
+  extensions:
+
+  ghc-options:  -Wall 
+  
+
+  
+  
+  
