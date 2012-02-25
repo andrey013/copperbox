@@ -22,6 +22,7 @@ module Text.PrettyPrint.HughesPJ.PrettyExpr
     Assoc(..)
   , Fixity(..)
   , Precedence
+  , Spacing(..)
   , Rator
   , DocE(..)
 
@@ -31,6 +32,10 @@ module Text.PrettyPrint.HughesPJ.PrettyExpr
   , infixL
   , infixR
   , infixNone
+
+
+  -- * Useful 
+  , literal
 
   -- * Turn a DocE into a Doc with an Unparser
   , Unparser(..)
@@ -73,7 +78,12 @@ data Fixity = Prefix
 --
 type Precedence = Int
 
-type Rator = (String, Precedence, Fixity)
+
+data Spacing = Space
+             | NoSpace
+  deriving (Bounded, Enum, Eq, Ord, Show)
+
+type Rator = (String, Spacing, Precedence, Fixity)
 
 data DocE = Atom Doc
           | Binary Rator DocE DocE
@@ -84,36 +94,36 @@ instance Show DocE where
   show de = let fn = unparser (makeUnparser 16) in show (fn de)
 
 
--- | Specify a prefix operator, supplying its precedence and
--- its representation as a String.
+-- | Specify a prefix operator, supplying its precedence, spacing 
+-- and its representation as a String.
 --
-prefix :: Precedence -> String -> Rator 
-prefix i s = (s,i,Prefix)
+prefix :: Precedence -> Spacing -> String -> Rator 
+prefix i sp s = (s,sp,i,Prefix)
 
 
--- | Specify a postfix operator, supplying its precedence and
--- its representation as a String.
+-- | Specify a postfix operator, supplying its precedence, spacing 
+-- and its representation as a String.
 --
-postfix :: Precedence -> String -> Rator 
-postfix i s = (s,i,Postfix)
+postfix :: Precedence -> Spacing -> String -> Rator 
+postfix i sp s = (s,sp,i,Postfix)
 
 -- | Specify a left-associative, infix operator, supplying its 
--- precedence and its representation as a String.
+-- precedence, spacing and its representation as a String.
 --
-infixL :: Precedence -> String -> Rator 
-infixL i s = (s,i, Infix AssocLeft)
+infixL :: Precedence -> Spacing -> String -> Rator 
+infixL i sp s = (s,sp,i, Infix AssocLeft)
 
 -- | Specify a right-associative, infix operator, supplying its 
--- precedence and its representation as a String.
+-- precedence, spacing and its representation as a String.
 --
-infixR :: Precedence -> String -> Rator 
-infixR i s = (s,i, Infix AssocRight)
+infixR :: Precedence -> Spacing -> String -> Rator 
+infixR i sp s = (s,sp,i, Infix AssocRight)
 
 -- | Specify a none-associative, infix operator, supplying its 
--- precedence and its representation as a String.
+-- precedence, spacing and its representation as a String.
 --
-infixNone :: Precedence -> String -> Rator 
-infixNone i s = (s,i, Infix AssocNone)
+infixNone :: Precedence -> Spacing -> String -> Rator 
+infixNone i sp s = (s,sp,i, Infix AssocNone)
 
 
 
@@ -121,34 +131,40 @@ infixNone i s = (s,i, Infix AssocNone)
 -- tuple.
 --
 higher :: Rator -> Rator -> Bool
-higher (_,i,_) (_,j,_) = i > j
+higher (_,_,i,_) (_,_,j,_) = i > j
 
 -- | Local helper.
 --
 equalPrec :: Rator -> Rator -> Bool
-equalPrec (_,i,_) (_,j,_) = i == j
+equalPrec (_,_,i,_) (_,_,j,_) = i == j
 
 
 bothFixity :: Fixity -> Rator -> Rator -> Bool
-bothFixity fx (_,_,a) (_,_,b) = fx == a && fx == b
+bothFixity fx (_,_,_,a) (_,_,_,b) = fx == a && fx == b
         
 rator_fixity :: Rator -> Fixity
-rator_fixity (_,_,fx) = fx
+rator_fixity (_,_,_,fx) = fx
 
 isPostfix :: Rator -> Bool
-isPostfix (_,_,a) = a == Postfix
+isPostfix (_,_,_,a) = a == Postfix
 
 isPrefix :: Rator -> Bool
-isPrefix (_,_,a) = a == Prefix
+isPrefix (_,_,_,a) = a == Prefix
 
 ppInfix :: Doc -> Rator -> Doc -> Doc
-ppInfix a (op,_,_) b = a <+> text op <+> b
+ppInfix a (op,sp,_,_) b
+    | sp == Space = a <+> text op <+> b
+    | otherwise   = a <> text op <> b
   
 ppPrefix :: Rator -> Doc -> Doc
-ppPrefix  (op,_,_) a = text op <> a
+ppPrefix  (op,sp,_,_) a 
+    | sp == Space = text op <+> a
+    | otherwise   = text op <> a
 
 ppPostfix :: Doc -> Rator -> Doc
-ppPostfix a (op,_,_) = a <> text op 
+ppPostfix a (op,sp,_,_) 
+    | sp == Space = a <+> text op 
+    | otherwise   = a <> text op 
 
 
 type Fragment = (Rator, Doc)  
@@ -183,6 +199,18 @@ noparensRight kid parent
     | otherwise             = False
 
 
+--------------------------------------------------------------------------------
+-- Utility functions
+
+
+literal                 :: String -> DocE
+literal                 = Atom . text
+
+
+
+
+--------------------------------------------------------------------------------
+
 -- | An Unparser is a so-called /first-class module/ where
 -- the maximum precedence level is configurable.
 -- 
@@ -204,7 +232,7 @@ makeUnparser :: Precedence -> Unparser
 makeUnparser maxprec = Unparser { unparser = unP }
   where
     maxrator :: Rator
-    maxrator =  ("<max-precedence sentinel>", maxprec, Infix AssocNone)
+    maxrator =  ("<max-precedence sentinel>", Space, maxprec, Infix AssocNone)
 
     unP :: DocE -> Doc      
     unP = snd . go

@@ -2,7 +2,7 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellOps
+-- Module      :  Text.PrettyPrint.HughesPJ.PrettyExpr.Haskell
 -- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD3
 --
@@ -10,12 +10,12 @@
 -- Stability   :  unstable
 -- Portability :  GHC
 --
--- Pre-defined common Haskell operators with associated fixity 
+-- Common Haskell operator pretty printerss with associated fixity 
 -- and associativity. 
 --
 --------------------------------------------------------------------------------
 
-module Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellOps 
+module Text.PrettyPrint.HughesPJ.PrettyExpr.Haskell
   (
 
   -- * Unparse a DocE
@@ -24,68 +24,70 @@ module Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellOps
   -- * Haskell operators
 
   -- ** Precedence 9
-  , list_index
-  , fun_compose
-  , text_negate_op
+  , listIndexB
+  , composeB
+  , negateU
 
   -- ** Precedence 8
-  , power_of
-  , power_of_frac
-  , exp_log
+  , powerOfB
+  , powerOfFracB
+  , expLogB
 
   -- ** Precedence 7
-  , multiply_op  
-  , divide_op
-  , text_div_op
-  , text_mod_op
-  , text_rem_op
-  , text_quot_op
+  , multiplyB  
+  , divideB
+  , divB
+  , modB
+  , remB
+  , quotB
 
   -- ** Precedence 6
-  , add_op
-  , subtract_op 
+  , addB
+  , subtractB 
 
   -- ** Precedence 5
-  , cons_op
-  , concat_op
+  , consB
+  , concatB
 
   -- ** Precedence 4
-  , equal_op
-  , not_equal_op
-  , less_than
-  , less_than_equal
-  , greater_than
-  , greater_than_equal
-  , text_elem_op
-  , text_not_elem_op
+  , equalB
+  , notEqualB
+  , lessThanB
+  , lessThanEqB
+  , greaterThanB
+  , greaterThanEqB
+  , elemB
+  , notElemB
 
 
   -- * Precedence 3
-  , logical_and
+  , logicalAndB
 
   -- * Precedence 2
-  , logical_or
+  , logicalOrB
 
   -- * Precedence 1
-  , monadic_seq
-  , monadic_bind
+  , monadicSeqB
+  , monadicBindB
 
   -- * Precedence 0
-  , apply_op
-  , strict_apply_op
-  , text_seq_op
+  , applyB
+  , strictApplyB
+  , seqB
 
   ) where
 
 import Text.PrettyPrint.HughesPJ
 import Text.PrettyPrint.HughesPJ.PrettyExpr
 
--- | Run an unparser for Haskell-like languages.
+-- | Run an unparser for Haskell-like language expressions.
 -- 
 -- Haskell has maximum precedence of 9.
 --
 unparse :: DocE -> Doc
 unparse = unparser $ makeUnparser 9
+
+
 
 
 --------------------------------------------------------------------------------
@@ -95,16 +97,16 @@ unparse = unparser $ makeUnparser 9
 --
 -- > !! (infixl 9)
 --
-list_index              :: Rator
-list_index              = infixL 9 "!!"
+listIndexB              :: DocE -> DocE -> DocE
+listIndexB              = Binary $ infixL 9 NoSpace "!!"
 
 
 -- | Function composition operator.
 -- 
 -- > . (infixr 9)
 --
-fun_compose             :: Rator
-fun_compose             = infixR 9 "."
+composeB                :: DocE -> DocE -> DocE
+composeB                = Binary $ infixR 9 Space "."
 
 
 
@@ -113,8 +115,8 @@ fun_compose             = infixR 9 "."
 -- 
 -- > negate (unary)
 --
-text_negate_op          :: Rator
-text_negate_op           = prefix 9 "negate"
+negateU                 :: DocE -> DocE
+negateU                 = Unary $ prefix 9 Space "negate"
 
 --------------------------------------------------------------------------------
 -- Precedence 8
@@ -123,16 +125,17 @@ text_negate_op           = prefix 9 "negate"
 -- 
 -- > ^ (infixr 8)
 --
-power_of                :: Rator
-power_of                = infixR 8 "^"
+powerOfB                :: DocE -> DocE -> DocE
+powerOfB                = Binary $ infixR 8 Space "^"
+
 
 -- | Power-of operator (Fractional constraint), negative powers 
 -- allowed .
 -- 
 -- > ^^ (infixr 8)
 --
-power_of_frac           :: Rator
-power_of_frac           = infixR 8 "^^"
+powerOfFracB            :: DocE -> DocE -> DocE
+powerOfFracB            = Binary $ infixR 8 Space "^^"
 
 
 -- | Exponent log (?) operator.
@@ -142,8 +145,8 @@ power_of_frac           = infixR 8 "^^"
 --
 -- > x ** y == exp (log x * y)
 --  
-exp_log                 :: Rator
-exp_log                 = infixR 8 "**"
+expLogB                 :: DocE -> DocE -> DocE
+expLogB                 = Binary $ infixR 8 Space "**"
 
 --------------------------------------------------------------------------------
 -- Precedence 7
@@ -152,47 +155,47 @@ exp_log                 = infixR 8 "**"
 -- 
 -- > * (infixl 7)
 --
-multiply_op             :: Rator
-multiply_op             = infixL 7 "*"
+multiplyB               :: DocE -> DocE -> DocE
+multiplyB               = Binary $ infixL 7 Space "*"
 
 
 -- | Division operator (Fractional).
 -- 
 -- > / (infixl 7)
 --
-divide_op               :: Rator
-divide_op               = infixL 7 "/"
+divideB                 :: DocE -> DocE -> DocE
+divideB                 = Binary $ infixL 7 Space "/"
 
 
 -- | Division operator, (Int) textual representation.
 -- 
 -- > `div` (infixl 7)
 --
-text_div_op             :: Rator
-text_div_op             = infixL 7 "`div`"
+divB                    :: DocE -> DocE -> DocE
+divB                    = Binary $ infixL 7 Space "`div`"
 
 
 -- | Modulus operator, textual representation.
 -- 
 -- > `mod` (infixl 7)
 --
-text_mod_op             :: Rator
-text_mod_op             = infixL 7 "`mod`"
+modB                    :: DocE -> DocE -> DocE
+modB                    = Binary $ infixL 7 Space "`mod`"
 
 
 -- | Remainder operator, textual representation.
 -- 
 -- > `rem` (infixl 7)
 --
-text_rem_op             :: Rator
-text_rem_op             = infixL 7 "`rem`"
+remB                    :: DocE -> DocE -> DocE
+remB                    = Binary $ infixL 7 Space "`rem`"
 
 -- | Quotient operator, textual representation.
 -- 
 -- > `quot` (infixl 7)
 --
-text_quot_op            :: Rator
-text_quot_op            = infixL 7 "`quot`"
+quotB                   :: DocE -> DocE -> DocE
+quotB                   = Binary $ infixL 7 Space "`quot`"
 
 
 --------------------------------------------------------------------------------
@@ -203,16 +206,16 @@ text_quot_op            = infixL 7 "`quot`"
 -- 
 -- > + (infixl 6)
 --
-add_op                  :: Rator
-add_op                  = infixL 6 "+"
+addB                    :: DocE -> DocE -> DocE
+addB                    = Binary $ infixL 6 Space "+"
 
 
 -- | Subtraction operator.
 -- 
 -- > - (infixl 6)
 --
-subtract_op             :: Rator
-subtract_op             = infixL 6 "-"
+subtractB               :: DocE -> DocE -> DocE
+subtractB               = Binary $ infixL 6 Space "-"
 
 --------------------------------------------------------------------------------
 -- Precedence 5
@@ -221,15 +224,15 @@ subtract_op             = infixL 6 "-"
 -- 
 -- > : (infixr 5)
 --
-cons_op                 :: Rator
-cons_op                 = infixR 5 ":"
+consB                   :: DocE -> DocE -> DocE
+consB                   = Binary $ infixR 5 NoSpace ":"
 
 -- | Concatenation operator (Lists).
 -- 
 -- > ++ (infixr 5)
 --
-concat_op               :: Rator
-concat_op               = infixR 5 "++"
+concatB                 :: DocE -> DocE -> DocE
+concatB                 = Binary $ infixR 5 NoSpace "++"
 
 
 --------------------------------------------------------------------------------
@@ -240,62 +243,62 @@ concat_op               = infixR 5 "++"
 -- 
 -- > == (infix 4)
 --
-equal_op                :: Rator
-equal_op                = infixNone 4 "=="
+equalB                  :: DocE -> DocE -> DocE
+equalB                  = Binary $ infixNone 4 Space "=="
 
 -- | Inequality testing operator (non-associative).
 -- 
 -- > /= (infix 4)
 --
-not_equal_op            :: Rator
-not_equal_op            = infixNone 4 "/="
+notEqualB               :: DocE -> DocE -> DocE
+notEqualB               = Binary $ infixNone 4 Space "/="
 
 
 -- | Less than operator (non-associative).
 -- 
 -- > < (infix 4)
 --
-less_than               :: Rator
-less_than               = infixNone 4 "<"
+lessThanB               :: DocE -> DocE -> DocE
+lessThanB               = Binary $ infixNone 4 Space "<"
 
 
 -- | Less than or equal operator (non-associative).
 -- 
 -- > <= (infix 4)
 --
-less_than_equal         :: Rator
-less_than_equal         = infixNone 4 "<="
+lessThanEqB             :: DocE -> DocE -> DocE
+lessThanEqB             = Binary $ infixNone 4 Space "<="
 
 -- | Greater than operator (non-associative).
 -- 
 -- > > (infix 4)
 --
-greater_than            :: Rator
-greater_than            = infixNone 4 ">"
+greaterThanB            :: DocE -> DocE -> DocE
+greaterThanB            = Binary $ infixNone 4 Space ">"
 
 
 -- | Greater than or equal operator (non-associative).
 -- 
 -- > >= (infix 4)
 --
-greater_than_equal      :: Rator
-greater_than_equal      = infixNone 4 ">="
+greaterThanEqB          :: DocE -> DocE -> DocE
+greaterThanEqB          = Binary $ infixNone 4 Space ">="
 
 
 -- | Elem - list membership operator, textual representation.
 -- 
 -- > `elem` (infix 4)
 --
-text_elem_op            :: Rator
-text_elem_op            = infixNone 4 "`elem`"
+elemB                   :: DocE -> DocE -> DocE
+elemB                   = Binary $ infixNone 4 Space "`elem`"
 
 -- | notElem - list non-membership operator, textual 
 -- representation.
 -- 
 -- > `notElem` (infix 4)
 --
-text_not_elem_op        :: Rator
-text_not_elem_op        = infixNone 4 "`notElem`"
+notElemB                :: DocE -> DocE -> DocE
+notElemB                = Binary $ infixNone 4 Space "`notElem`"
 
 --------------------------------------------------------------------------------
 -- Precedence 3
@@ -304,8 +307,8 @@ text_not_elem_op        = infixNone 4 "`notElem`"
 -- 
 -- > && (infixr 3)
 --
-logical_and             :: Rator
-logical_and             = infixR 3 "&&"
+logicalAndB             :: DocE -> DocE -> DocE
+logicalAndB             = Binary $ infixR 3 Space "&&"
 
 
 
@@ -316,8 +319,8 @@ logical_and             = infixR 3 "&&"
 -- 
 -- > || (infixr 2)
 --
-logical_or              :: Rator
-logical_or              = infixR 2 "||"
+logicalOrB              :: DocE -> DocE -> DocE
+logicalOrB              = Binary $ infixR 2 Space "||"
 
 
 --------------------------------------------------------------------------------
@@ -328,16 +331,16 @@ logical_or              = infixR 2 "||"
 -- 
 -- > >> (infixl 1)
 --
-monadic_seq             :: Rator
-monadic_seq             = infixL 1 ">>"
+monadicSeqB             :: DocE -> DocE -> DocE
+monadicSeqB             = Binary $ infixL 1 Space ">>"
 
 
 -- | Monadic bind operator.
 -- 
 -- > >>= (infixl 1)
 --
-monadic_bind            :: Rator
-monadic_bind            = infixL 1 ">>="
+monadicBindB            :: DocE -> DocE -> DocE
+monadicBindB            = Binary $ infixL 1 Space ">>="
 
 --------------------------------------------------------------------------------
 -- Precedence 0
@@ -346,16 +349,16 @@ monadic_bind            = infixL 1 ">>="
 -- 
 -- > $ (infixr 0)
 --
-apply_op                :: Rator
-apply_op                = infixR 0 "$"
+applyB                  :: DocE -> DocE -> DocE
+applyB                  = Binary $ infixR 0 Space "$"
 
 
 -- | Strict function application operator.
 -- 
 -- > $! (infixr 0)
 --
-strict_apply_op         :: Rator
-strict_apply_op         = infixR 0 "$!"
+strictApplyB            :: DocE -> DocE -> DocE
+strictApplyB            = Binary $ infixR 0 Space "$!"
 
 
 -- | seq binary operator - forces left-hand side, returns
@@ -363,8 +366,8 @@ strict_apply_op         = infixR 0 "$!"
 -- 
 -- > `seq` (infixr 0)
 --
-text_seq_op             :: Rator
-text_seq_op             = infixR 0 "`seq`"
+seqB                    :: DocE -> DocE -> DocE
+seqB                    = Binary $ infixR 0 Space "`seq`"
 
 
 

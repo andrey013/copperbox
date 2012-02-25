@@ -4,10 +4,10 @@
 module Demo01 where
 
 import Text.PrettyPrint.HughesPJ.PrettyExpr     -- package: hpj-pretty-expr
-import Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellLike
+import Text.PrettyPrint.HughesPJ.PrettyExpr.Haskell
 
-import qualified Text.PrettyPrint.HughesPJ.PrettyExpr.C99Like as C
-import qualified Text.PrettyPrint.HughesPJ.PrettyExpr.OcamlLike as O
+import qualified Text.PrettyPrint.HughesPJ.PrettyExpr.C99 as C
+import qualified Text.PrettyPrint.HughesPJ.PrettyExpr.Ocaml as O
 
 import Text.PrettyPrint.HughesPJ
 
@@ -31,8 +31,8 @@ buildExpr (Neg a)        = negateU (buildExpr a)
 
 binaryDE :: BinOp -> DocE -> DocE -> DocE
 binaryDE AddO = addB 
-binaryDE MinO = subB
-binaryDE MulO = mulB
+binaryDE MinO = subtractB
+binaryDE MulO = multiplyB
 binaryDE DivO = divB
 
 ppTerm :: Expr -> Doc

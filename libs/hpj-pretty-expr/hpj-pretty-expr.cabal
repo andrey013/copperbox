@@ -44,12 +44,9 @@ library
   
   exposed-modules:
     Text.PrettyPrint.HughesPJ.PrettyExpr,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.C99Like,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.C99Ops,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellLike,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.HaskellOps,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.OcamlLike,
-    Text.PrettyPrint.HughesPJ.PrettyExpr.OcamlOps
+    Text.PrettyPrint.HughesPJ.PrettyExpr.C99,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.Haskell,
+    Text.PrettyPrint.HughesPJ.PrettyExpr.Ocaml
 
   other-modules:
     
