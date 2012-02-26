@@ -21,7 +21,7 @@
 module Language.GLSL.Lex where
 
 import Language.GLSL.ParseMonad
-import Language.GLSL.Tokens
+import Language.GLSL.Token
 
 import Control.Applicative
 import Control.Monad.Identity
@@ -46,8 +46,7 @@ $identifier             = [$nondigit $digit]
 
 
 @integer = $digit+
-
-
+@float   = $digit+ \. $digit+
 
 glsl :-
 
@@ -56,6 +55,7 @@ $white ;
 -- Comment - cpp -E seems to fill in with lines like `# 1 "<command line>"`
 <0> {
   ^\# [.]*     { skip }
+  ^\/\/[.]*    { skip }
 }
   
 
@@ -202,7 +202,11 @@ $white ;
 
 } 
 
+-- float constants
+<0> { 
 
+   @float                     { floatLiteral }
+}
 
 
 {
@@ -215,23 +219,27 @@ alexEOF = (\pos -> L pos Tk_EOF) <$> getPosition
 
 
   
-data Lexeme = L SrcPosn GlslToken
-  deriving (Eq, Show)
 
 intLiteral :: AlexInput -> Int -> ParseM Lexeme
 intLiteral = usingInput L (Tk_lit_int . read)
 
 -- TODO - watch out for an error on read 
 octLiteral :: AlexInput -> Int -> ParseM Lexeme
-octLiteral = usingInput L (Tk_lit_int . read . traf) where
-  traf ('0':s) = '0':'o':s
-  traf s       = s    -- this will probably cause a read error which is bad
+octLiteral = usingInput L (Tk_lit_int . read . traf) 
+  where
+    traf ('0':s) = '0':'o':s
+    traf s       = s    -- this will probably cause a read error which is bad
 
 hexLiteral :: AlexInput -> Int -> ParseM Lexeme
 hexLiteral = usingInput L (Tk_lit_int . read)
 
+
+floatLiteral :: AlexInput -> Int -> ParseM Lexeme
+floatLiteral = usingInput L Tk_lit_float
+
 boolLiteral :: AlexInput -> Int -> ParseM Lexeme
-boolLiteral = usingInput L (Tk_lit_bool . fn) where 
+boolLiteral = usingInput L (Tk_lit_bool . fn) 
+  where 
     fn "true"   = True
     fn "false"  = False
 
@@ -287,7 +295,7 @@ andBegin action code input len = do
 
 
 skip :: LexerState -> Int -> ParseM Lexeme 
-skip input len = lexToken
+skip _input _len = lexToken
 
 
 }

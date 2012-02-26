@@ -1,7 +1,4 @@
 {-# LANGUAGE DeriveDataTypeable         #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE FunctionalDependencies     #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# OPTIONS -Wall #-}
 
 --------------------------------------------------------------------------------
@@ -20,7 +17,38 @@
 
 
 
-module Language.GLSL.Syntax  where
+module Language.GLSL.Syntax 
+  (
+    Ident
+  , FieldSelector
+  , FieldSelection
+  
+  , TranslUnit(..)
+  , GblDecl(..)
+  , FunDef(..)
+  , Constant(..)
+  , Decl(..)
+  , Declrs(..)
+  , DeclrElement(..)
+  , Struct(..)
+  , StructDeclr(..)
+  , StructDeclrElement(..)
+  , UnaryOp(..)
+  , BinaryOp(..)
+  , AssignOp(..)
+  , Expr(..)
+  , FunProto(..)
+  , ParamDecl(..)
+  , ParamDeclr(..)
+  , ParamQual(..)
+  , FullType
+  , TypeQual(..)
+  , VaryingQual(..)
+  , TypeSpec(..)
+  , ScalarTypeSpec(..)
+  , Stmt(..)
+
+  )  where
 
 import Data.Generics.Basics
 import Data.Generics.Instances()

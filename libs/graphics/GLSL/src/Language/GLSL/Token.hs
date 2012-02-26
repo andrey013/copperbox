@@ -2,8 +2,8 @@
 
 --------------------------------------------------------------------------------
 -- |
--- Module      :  Language.GLSL.Tokens
--- Copyright   :  (c) Stephen Tetley 2009
+-- Module      :  Language.GLSL.Token
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,7 +15,12 @@
 --------------------------------------------------------------------------------
 
 
-module Language.GLSL.Tokens  where
+module Language.GLSL.Token 
+  (
+
+    GlslToken(..)
+
+  ) where
 
 data GlslToken 
     -- keywords
@@ -81,7 +86,6 @@ data GlslToken
     | Tk_lit_int Integer
     | Tk_lit_float String
     | Tk_lit_bool Bool
-    | Tk_field_selection String
     
     | Tk_kw_invariant
 

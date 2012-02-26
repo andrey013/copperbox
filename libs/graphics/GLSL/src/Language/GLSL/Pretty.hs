@@ -289,6 +289,6 @@ instance Pretty Stmt where
   pretty Discard                  = text "discard"
 
 ifThen :: Expr -> Stmt -> Doc
-ifThen e s =   text "if" <+> parens (pretty e) <$> pretty s
+ifThen e s = text "if" <+> parens (pretty e) <$> pretty s
                                 
   

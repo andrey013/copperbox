@@ -20,7 +20,7 @@ module Language.GLSL.Parse where
 import Language.GLSL.Lex
 import Language.GLSL.ParseMonad
 import Language.GLSL.Syntax
-import Language.GLSL.Tokens
+import Language.GLSL.Token
 
 
 import Control.Monad.Identity
@@ -94,7 +94,6 @@ import Control.Monad.Identity
   FLOATCONSTANT       { L _ (Tk_lit_float $$)       }
   INTCONSTANT         { L _ (Tk_lit_int $$)         }
   BOOLCONSTANT        { L _ (Tk_lit_bool $$)        }
-  FIELD_SELECTION     { L _ (Tk_field_selection $$) }
   
   LEFT_OP             { L _ Tk_left_op              }
   RIGHT_OP            { L _ Tk_right_op             }
@@ -163,12 +162,17 @@ primary_expression :: { Expr }
   | BOOLCONSTANT                        { ConstantExpr (BoolConst $1) }
   | LEFT_PAREN expression RIGHT_PAREN   { $2 }
 
+  
+-- Note - should be a FIELD_SELECTION after DOT, but the lexer does
+-- not have access to structures to decide when an identifier
+-- is a field.
+  
 postfix_expression :: { Expr }
   : primary_expression                  { $1 }
   | postfix_expression LEFT_BRACKET integer_expression RIGHT_BRACKET
                                         { ArrayAccessExpr $1 $3 }
   | function_call                       { $1 }
-  | postfix_expression DOT FIELD_SELECTION
+  | postfix_expression DOT IDENTIFIER
                                         { FieldAccessExpr $1 $3 }
   | postfix_expression INC_OP           { UnaryExpr PostIncOp $1 }
   | postfix_expression DEC_OP           { UnaryExpr PostDecOp $1 }
@@ -201,10 +205,12 @@ function_call_header_with_parameters :: { (Ident, H Expr) }
 function_call_header :: { Ident }
   : function_identifier LEFT_PAREN                { $1 }
 
+-- Changed from original grammar as FIELD_SELECTION is not
+-- distinguished from IDENTIFIER
+
 function_identifier :: { Ident }
   : type_specifier            { constructorIdent $1 }
   | IDENTIFIER                { $1 }
-  | FIELD_SELECTION           { $1 }      -- synonymous with Ident
 
 unary_expression :: { Expr }
   : postfix_expression                { $1 }
@@ -321,7 +327,7 @@ assignment_operator :: { AssignOp }
 
 
 expression :: { Expr }
-: expression_list     { CommaExpr $ toListH $1 }
+  : expression_list     { CommaExpr $ toListH $1 }
 
 
 expression_list :: { H Expr }
@@ -576,7 +582,7 @@ jump_statement :: { Stmt }
   | RETURN expression SEMICOLON         { Return (Just $2) }
   | DISCARD SEMICOLON                   { Discard }
 
--- This production looks dodgy...   
+
 translation_unit :: { TranslUnit }
   : global_decl_list                    { TranslUnit $ toListH $1 }
 
