@@ -13,6 +13,9 @@
 --
 -- Datatypes to describe GLSL (the OpenGL Shading Language).
 -- 
+-- ABANDONED - FunProto and Declaration (probably) do not 
+-- properly model GLSL syntax.
+-- 
 --------------------------------------------------------------------------------
 
 
@@ -24,22 +27,22 @@ module Language.GLSL.Syntax
   , FieldSelection
   
   , TranslUnit(..)
-  , GblDecl(..)
+  , ExtDeclaration(..)
   , FunDef(..)
   , Constant(..)
-  , Decl(..)
-  , Declrs(..)
+  , Declaration(..)
+  , SingleDeclaration(..)
   , DeclrElement(..)
-  , Struct(..)
-  , StructDeclr(..)
-  , StructDeclrElement(..)
+  , StructSpecifier(..)
+  , StructDeclaration(..)
+  , StructDeclarator(..)
   , UnaryOp(..)
   , BinaryOp(..)
   , AssignOp(..)
   , Expr(..)
   , FunProto(..)
   , ParamDecl(..)
-  , ParamDeclr(..)
+  , ParamDeclarator(..)
   , ParamQual(..)
   , FullType
   , TypeQual(..)
@@ -60,12 +63,12 @@ type Ident = String
 type FieldSelector = Char 
 type FieldSelection = [FieldSelector]
 
-data TranslUnit = TranslUnit [GblDecl]
+data TranslUnit = TranslUnit [ExtDeclaration]
   deriving (Eq,Show,Typeable,Data)
 
   
-data GblDecl = GblFunDef FunDef
-             | GblDecl Decl 
+data ExtDeclaration = ExtFunDef FunDef
+                    | ExtDeclaration Declaration 
   deriving (Eq,Show,Typeable,Data)
 
 data FunDef = FunDef FunProto 
@@ -79,17 +82,17 @@ data Constant = IntConst    Integer
   deriving (Eq,Show,Typeable,Data)
 
 
-data Decl = FunProtoDecl FunProto
-          | InitDeclr Declrs         -- more concrete syntax than abstract
+data Declaration = FunProtoDecl FunProto
+                 | InitDeclr SingleDeclaration  -- should this be a list?
   deriving (Eq,Show,Typeable,Data)
 
 
 -- more concrete syntax than abstract (should simplify to one declr / one type)  
-data Declrs = 
-        Declr          FullType 
-                       [DeclrElement]
-      | InvariantDeclr Ident 
-                       [DeclrElement]   -- too permissive but seemingly legal
+data SingleDeclaration = 
+        SingleDeclaration    FullType 
+                             [DeclrElement]
+      | InvariantDeclaration Ident 
+                             [DeclrElement]   -- too permissive but seemingly legal
   deriving (Eq,Show,Typeable,Data)
 
 
@@ -101,19 +104,19 @@ data DeclrElement =
                     (Maybe Expr)                         
   deriving (Eq,Show,Typeable,Data)
   
-data Struct = Struct (Maybe Ident)
-                     [StructDeclr]
+data StructSpecifier = StructSpec (Maybe Ident)
+                                  [StructDeclaration]
   deriving (Eq,Show,Typeable,Data)
 
-data StructDeclr = 
-        StructDeclr TypeSpec
-                    [StructDeclrElement]
+data StructDeclaration = 
+        StructDeclaration TypeSpec
+                          [StructDeclarator]
   deriving (Eq,Show,Typeable,Data)
 
   
-data StructDeclrElement = 
-        StructScalarDeclr Ident                   
-      | StructArrayDeclr  Ident
+data StructDeclarator = 
+        StructScalarDeclarator Ident                   
+      | StructArrayDeclarator  Ident
                           Expr     -- array size expr                        
   deriving (Eq,Show,Typeable,Data)
 
@@ -200,13 +203,13 @@ data FunProto = FunProto FullType
 
 data ParamDecl = Declarator (Maybe TypeQual)
                             ParamQual
-                            ParamDeclr
+                            ParamDeclarator
                | Specifier  (Maybe TypeQual)
                             ParamQual
                             TypeSpec
   deriving (Eq,Show,Typeable,Data)
 
-data ParamDeclr = 
+data ParamDeclarator = 
         ParamScalarDeclr TypeSpec
                          Ident
       | ParamArrayDeclr  TypeSpec
@@ -271,13 +274,13 @@ data ScalarTypeSpec = SlVoid
                     | SamplerCube
                     | Sampler1DShadow
                     | Sampler2DShadow
-                    | StructType Struct
+                    | StructType StructSpecifier
                     | TypeName String
   deriving (Eq,Show,Typeable,Data)
  
 
 data Stmt = CompoundStmt [Stmt]
-          | DeclStmt Decl
+          | DeclStmt Declaration
           | ExprStmt (Maybe Expr)
           | IfStmt   Expr
                      Stmt

@@ -8,7 +8,10 @@ homepage:         http://code.google.com/p/copperbox/
 category:         Graphics
 synopsis:         Parser for the OpenGL Shading Language
 description:
-
+  .
+  ABANDONED - The syntax data types, particularly FunProto and 
+  Declaration do not appear to properly model GLSL syntax.
+  .
 build-type:         Simple
 stability:          experimental
 cabal-version:      >= 1.2

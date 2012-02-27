@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 -- |
 -- Module      :  Language.GLSL.Parse
--- Copyright   :  (c) Stephen Tetley 2009
+-- Copyright   :  (c) Stephen Tetley 2012
 -- License     :  BSD-style (see the LICENSE file in the distribution)
 --
 -- Maintainer  :  Stephen Tetley <stephen.tetley@gmail.com>
@@ -15,7 +15,12 @@
 {
 
 
-module Language.GLSL.Parse where
+module Language.GLSL.Parse 
+  (
+
+    parseGlsl
+    
+  ) where
 
 import Language.GLSL.Lex
 import Language.GLSL.ParseMonad
@@ -339,7 +344,7 @@ expression_list :: { H Expr }
 constant_expression :: { Expr }
   : conditional_expression    { $1 }
 
-declaration :: { Decl }
+declaration :: { Declaration }
   : function_prototype SEMICOLON      { FunProtoDecl $1 }
   | init_declarator_list SEMICOLON    { InitDeclr $1 }
 
@@ -361,7 +366,7 @@ function_header :: { (FullType,Ident) }
   : fully_specified_type IDENTIFIER LEFT_PAREN
                                       { ($1,$2) }
 
-parameter_declarator :: { ParamDeclr }
+parameter_declarator :: { ParamDeclarator }
   : type_specifier IDENTIFIER         { ParamScalarDeclr $1 $2 }
   | type_specifier IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
                                       { ParamArrayDeclr $1 $2 $4 }
@@ -386,7 +391,7 @@ parameter_type_specifier :: { TypeSpec }
   : type_specifier    { $1 }
 
 
-init_declarator_list :: { Declrs }
+init_declarator_list :: { SingleDeclaration }
   : single_declaration        { $1 }
   | init_declarator_list COMMA IDENTIFIER
                               { $1 `snocDeclr` (ScalarDeclr $3 Nothing) }
@@ -404,25 +409,25 @@ init_declarator_list :: { Declrs }
   | init_declarator_list COMMA IDENTIFIER EQUAL initializer
                               { $1 `snocDeclr` (ScalarDeclr $3 (Just $5)) }
 
-single_declaration :: { Declrs }
+single_declaration :: { SingleDeclaration }
   : fully_specified_type
-                    { Declr $1 [] }
+                    { SingleDeclaration $1 [] }
   | fully_specified_type IDENTIFIER
-                    { Declr $1 [ScalarDeclr $2 Nothing] }
+                    { SingleDeclaration $1 [ScalarDeclr $2 Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET
-                    { Declr $1 [ArrayDeclr $2 Nothing Nothing] }
+                    { SingleDeclaration $1 [ArrayDeclr $2 Nothing Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET
-                    { Declr $1 [ArrayDeclr $2 (Just $4) Nothing] }
+                    { SingleDeclaration $1 [ArrayDeclr $2 (Just $4) Nothing] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET RIGHT_BRACKET EQUAL initializer
-                    { Declr $1 [ArrayDeclr $2 Nothing (Just $6)] }
+                    { SingleDeclaration $1 [ArrayDeclr $2 Nothing (Just $6)] }
   | fully_specified_type IDENTIFIER LEFT_BRACKET constant_expression
                                         RIGHT_BRACKET EQUAL initializer
-                    { Declr $1 [ArrayDeclr $2 (Just $4) (Just $7)] }
+                    { SingleDeclaration $1 [ArrayDeclr $2 (Just $4) (Just $7)] }
   | fully_specified_type IDENTIFIER EQUAL initializer
-                    { Declr $1 [ScalarDeclr $2 (Just $4)]  }
+                    { SingleDeclaration $1 [ScalarDeclr $2 (Just $4)]  }
   | INVARIANT IDENTIFIER
-                    { InvariantDeclr $2 [] }
+                    { InvariantDeclaration $2 [] }
 
 fully_specified_type :: { FullType }
   : type_specifier                      { (Nothing, $1) }
@@ -478,30 +483,30 @@ type_specifier_nonarray :: { ScalarTypeSpec }
   | struct_specifier    { StructType $1 }
   | TYPE_NAME           { TypeName $1 }
 
-struct_specifier :: { Struct }
+struct_specifier :: { StructSpecifier }
   : STRUCT IDENTIFIER LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { Struct (Just $2) (toListH $4) }
+                              { StructSpec (Just $2) (toListH $4) }
   | STRUCT LEFT_BRACE struct_declaration_list RIGHT_BRACE
-                              { Struct Nothing (toListH $3) }
+                              { StructSpec Nothing (toListH $3) }
 
-struct_declaration_list :: { H StructDeclr }
+struct_declaration_list :: { H StructDeclaration }
   : struct_declaration                  { wrapH $1 }
   | struct_declaration_list struct_declaration
                                         { $1 `snocH` $2 }
 
-struct_declaration :: { StructDeclr }
+struct_declaration :: { StructDeclaration }
   : type_specifier struct_declarator_list SEMICOLON
-                              { StructDeclr $1 (toListH $2)  }
+                              { StructDeclaration $1 (toListH $2)  }
 
-struct_declarator_list :: { H StructDeclrElement }
+struct_declarator_list :: { H StructDeclarator }
   : struct_declarator         { wrapH $1 }
   | struct_declarator_list COMMA struct_declarator
                               { $1 `snocH` $3 }
 
-struct_declarator :: { StructDeclrElement }
-  : IDENTIFIER                { StructScalarDeclr $1 }
+struct_declarator :: { StructDeclarator }
+  : IDENTIFIER                { StructScalarDeclarator $1 }
   | IDENTIFIER LEFT_BRACKET constant_expression RIGHT_BRACKET
-                              { StructArrayDeclr $1 $3 }
+                              { StructArrayDeclarator $1 $3 }
 
 initializer :: { Expr }
   : assignment_expression     { $1 }
@@ -586,13 +591,13 @@ jump_statement :: { Stmt }
 translation_unit :: { TranslUnit }
   : global_decl_list                    { TranslUnit $ toListH $1 }
 
-global_decl_list :: { H GblDecl }
+global_decl_list :: { H ExtDeclaration }
   : external_declaration                          { wrapH $1 }
   | global_decl_list external_declaration         { $1 `snocH` $2 }
 
-external_declaration :: { GblDecl }
-  : function_definition       { GblFunDef $1 }
-  | declaration               { GblDecl $1 }
+external_declaration :: { ExtDeclaration }
+  : function_definition       { ExtFunDef $1 }
+  | declaration               { ExtDeclaration $1 }
 
 function_definition :: { FunDef }
   : function_prototype compound_statement_no_new_scope
@@ -618,15 +623,15 @@ emptyH = id
 toListH :: H a -> [a]
 toListH f = f $ []
 
-snocDeclr :: Declrs -> DeclrElement -> Declrs
-snocDeclr (Declr ty xs)         x = Declr ty (xs++[x])
-snocDeclr (InvariantDeclr s xs) x = InvariantDeclr s (xs++[x])
+snocDeclr :: SingleDeclaration -> DeclrElement -> SingleDeclaration
+snocDeclr (SingleDeclaration ty xs)   x = SingleDeclaration ty (xs++[x])
+snocDeclr (InvariantDeclaration s xs) x = InvariantDeclaration s (xs++[x])
 
-parseGlsl :: FilePath -> String -> TranslUnit
+parseGlsl :: FilePath -> String -> Either String TranslUnit
 parseGlsl path contents  =
   case runIdentity (runParseT glslParser path contents) of
-    Left (ParseErr err) -> error err
-    Right a             -> a
+    Left (ParseErr err) -> Left err
+    Right ans           -> Right ans
 
 
 unwrapExpr :: Stmt -> Expr

@@ -66,9 +66,9 @@ instance Pretty TranslUnit where
   pretty (TranslUnit se) = dfold pretty (<$>) se
   
 
-instance Pretty GblDecl where
-  pretty (GblFunDef e) = pretty e
-  pretty (GblDecl e)   = pretty e 
+instance Pretty ExtDeclaration where
+  pretty (ExtFunDef e)      = pretty e
+  pretty (ExtDeclaration e) = pretty e 
   
 instance Pretty FunDef where
   pretty (FunDef proto stmt) = pretty proto <+> braces (pretty stmt)
@@ -80,14 +80,14 @@ instance Pretty Constant where
   pretty (BoolConst False)    = text "false"
   
   
-instance Pretty Decl where
+instance Pretty Declaration where
   pretty (FunProtoDecl proto) = pretty proto <> semi
   pretty (InitDeclr declrs)   = pretty declrs <> semi   
             
-instance Pretty Declrs where
-  pretty (Declr ty se)             = 
+instance Pretty SingleDeclaration where
+  pretty (SingleDeclaration ty se)             = 
       ppFullType ty <+> dfold pretty commaSpace se
-  pretty (InvariantDeclr ident se) = 
+  pretty (InvariantDeclaration ident se) = 
       text "invariant" <+> text ident <+> dfold pretty commaSpace se
 
 instance Pretty DeclrElement where 
@@ -95,20 +95,20 @@ instance Pretty DeclrElement where
   pretty (ArrayDeclr  ident oas oin)  = 
       text ident <> arraySize oas # optInitializer oin
            
-instance Pretty Struct where 
-  pretty (Struct Nothing se)     = text "struct" <+> structbody se
-  pretty (Struct (Just name) se) = 
+instance Pretty StructSpecifier where 
+  pretty (StructSpec Nothing se)     = text "struct" <+> structbody se
+  pretty (StructSpec (Just name) se) = 
       text "struct" <+> text name <+> structbody se
 
-structbody :: [StructDeclr] -> Doc
+structbody :: [StructDeclaration] -> Doc
 structbody = braces . dfold pretty semiLine
 
-instance Pretty StructDeclr where
-  pretty (StructDeclr ty se) = pretty ty <+> dfold pretty commaSpace se
+instance Pretty StructDeclaration where
+  pretty (StructDeclaration ty se) = pretty ty <+> dfold pretty commaSpace se
 
-instance Pretty StructDeclrElement where 
-  pretty (StructScalarDeclr ident)   = text ident                   
-  pretty (StructArrayDeclr  ident e) = text ident <> brackets (pretty e)
+instance Pretty StructDeclarator where 
+  pretty (StructScalarDeclarator ident)   = text ident                   
+  pretty (StructArrayDeclarator  ident e) = text ident <> brackets (pretty e)
                           
                           
 instance Pretty UnaryOp where
@@ -204,7 +204,7 @@ prefixTypeQual :: Maybe TypeQual -> Doc
 prefixTypeQual (Just tq) = pretty tq <> space
 prefixTypeQual Nothing   = empty                          
 
-instance Pretty ParamDeclr where 
+instance Pretty ParamDeclarator where 
   pretty (ParamScalarDeclr ts ident)   = pretty ts <+> text ident
   pretty (ParamArrayDeclr  ts ident e) = 
       pretty ts <+> text ident <> brackets (pretty e)
