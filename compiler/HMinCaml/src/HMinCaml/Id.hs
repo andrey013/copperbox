@@ -1,27 +1,48 @@
-{-# LANGUAGE FlexibleContexts           #-}
 {-# OPTIONS -Wall #-}
 
+--------------------------------------------------------------------------------
 -- |
--- Module: HMinCaml.Id
--- License: as per original MinCaml
+-- Module      :  HMinCaml.Id
+-- Copyright   :  (c) Stephen Tetley 2012
+-- License     :  BSD3
 --
--- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
--- Stability: unstable
--- Portability: ghc
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC
 --
--- Identifiers
+-- Identifiers.
 --
+--------------------------------------------------------------------------------
 
-module HMinCaml.Id where
+module HMinCaml.Id 
+  ( 
+    IdS
+  , IdL
+
+  , idOfType
+
+  ) where
 
 
-type Id = String
-type TyId = Int
+import qualified HMinCaml.Type as T
 
-data Label = L String
-  deriving (Eq,Show)
 
-newId :: String -> Int -> Id
-newId s x = s ++ show x
-  
-    
+type IdS = String
+
+-- | Labels 
+--
+newtype IdL = IdL String
+  deriving (Eq,Ord,Show)
+
+
+idOfType :: T.Type -> Maybe String
+idOfType T.Unit         = Just "u"
+idOfType T.Bool         = Just "b"
+idOfType T.Int          = Just "i"
+idOfType T.Float        = Just "d"
+idOfType (T.Fun {})     = Just "f"
+idOfType (T.Tuple {})   = Just "t"
+idOfType (T.Array {})   = Just "a" 
+idOfType (T.Var {})     = Nothing
+idOfType (T.TypeLoc {}) = Nothing
+

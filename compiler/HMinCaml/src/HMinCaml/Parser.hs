@@ -1,57 +1,67 @@
 {-# OPTIONS -Wall #-}
-{-# OPTIONS -fno-warn-orphans #-}
 
+--------------------------------------------------------------------------------
 -- |
--- Module: HMinCaml.Parser
--- License: as per original MinCaml
+-- Module      :  HMinCaml.Parser
+-- Copyright   :  (c) Stephen Tetley 2012
+-- License     :  BSD3
 --
--- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
--- Stability: unstable
--- Portability: ghc
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC
 --
--- Parser
+-- Parser.
 --
+--------------------------------------------------------------------------------
 
-module HMinCaml.Parser where
+module HMinCaml.Parser 
+  (
+   
+    parseMinCaml
+  , parseMinCamlString
+
+  ) where
 
 import HMinCaml.Id
 import HMinCaml.Lexer
 import HMinCaml.Syntax
-import HMinCaml.Type
+import qualified HMinCaml.Type as T
 
 import Control.Applicative
-import Control.Monad
-import Text.ParserCombinators.Parsec
-import Text.ParserCombinators.Parsec.Expr
+import Text.Parsec
+import Text.Parsec.Expr
 
+import Data.Functor.Identity
 
--- | An Applicative instance for Parsec. 
-instance Applicative (GenParser tok st) where
-  pure = return
-  (<*>) = ap
+-- Need a Parser with Int state...
+
   
 parseMinCaml :: FilePath -> IO (Either String Expr)
-parseMinCaml path = do 
-  ans <- parseFromFile expr path
-  case ans of 
-    Left err    -> return $ Left (show err)
-    Right a     -> return $ Right a
+parseMinCaml path = parseMinCamlString <$> readFile path 
     
+
+
+parseMinCamlString :: String -> Either String Expr
+parseMinCamlString ss = 
+  case runParser expr 1 "" ss of
+    Left err    -> Left (show err)
+    Right a     -> Right a
     
   
-addtyp :: Id -> (Id,Type)
-addtyp x = (x, TVar Nothing)
+nextloc :: MLParser T.Type
+nextloc = getState >>= \i -> putState (i+1) >> return (T.TypeLoc i)
 
-expr :: Parser Expr
+
+expr :: MLParser Expr
 expr = buildExpressionParser table term >>= termk
   where
     termk e = maybe e id <$> optionMaybe (choice [appExpr, semiExpr])
       where                 
         appExpr     = (\arglist -> App e arglist)  <$> actualArgs 
-        semiExpr    = (\e2 -> Let ("",TUnit) e e2) <$> (reservedOp ";"  *> expr)
+        semiExpr    = (\e2 -> Let ("",T.Unit) e e2) <$> (reservedOp ";"  *> expr)
         
         
-simpleExpr :: Parser Expr
+simpleExpr :: MLParser Expr
 simpleExpr = arrExpr =<< choice [ parene, boole, inte, floate, 
                                   ident, unitOrExpr]
   where
@@ -59,7 +69,7 @@ simpleExpr = arrExpr =<< choice [ parene, boole, inte, floate,
     boole       = Bool  <$> choice [ True   <$ reserved "true", 
                                      False  <$ reserved "false"]
     inte        = Int   <$> int
-    floate      = Float <$> float
+    floate      = Float <$> double
     ident       = Var   <$> identifier
     unitOrExpr  = maybe Unit id <$> parens (optionMaybe expr)
 
@@ -69,9 +79,9 @@ simpleExpr = arrExpr =<< choice [ parene, boole, inte, floate,
     
     
 
-term :: Parser Expr
+term :: MLParser Expr
 term = choice [ simpleExpr, notExpr,  ifThenElse
-                , letExpr, tupleExpr, arrayCreate ]
+              , letExpr, tupleExpr, arrayCreate ]
   where
     notExpr     = Not <$> (reserved "not" *> expr)
     
@@ -90,19 +100,19 @@ term = choice [ simpleExpr, notExpr,  ifThenElse
                         Nothing -> do b <- optionMaybe (parens pat)
                                       maybe dolet lettuple b
       where
-        dolet         = (\s e1 e2 -> Let (addtyp s) e1 e2) <$>
-                            identifier <*> (reservedOp "="  *> expr) 
-                                       <*> (reserved   "in" *> expr)
+        dolet         = (\tid e1 e2 -> Let tid e1 e2) <$>
+                            typedId <*> (reservedOp "="  *> expr) 
+                                    <*> (reserved   "in" *> expr)
         letrec        = LetRec <$> fundef <*> (reserved "in" *> expr)
         
         lettuple pt   = (\e1 e2 -> LetTuple pt e1 e2) <$>
                             (reservedOp "=" *> expr) <*> (reserved "in" *> expr)
     
     arrayCreate = Array <$> 
-                      (reserved "Array.create" *> simpleExpr) <*> simpleExpr                             
-                                    
+                      (reserved "Array.create" *> simpleExpr) <*> simpleExpr
+
         
-table :: OperatorTable Char () Expr
+table :: OperatorTable String Int Identity Expr
 table = [ [ prefixf   (reserved "not")      exprNegate 
           , prefixOp  "-."                  FNeg
           ]
@@ -127,33 +137,33 @@ exprNegate :: Expr -> Expr
 exprNegate (Float d)  = Float $ negate d
 exprNegate e          = Neg e
 
-binary    :: String   -> (a -> a -> a) -> Assoc -> Operator Char () a
-prefixf   :: Parser b -> (a -> a)      -> Operator Char () a
-prefixOp  :: String   -> (a -> a)      -> Operator Char () a
-postfix   :: String   -> (a -> a)      -> Operator Char () a
+binary    :: String     -> (a -> a -> a) -> Assoc -> Operator String Int Identity a
+prefixf   :: MLParser b -> (a -> a)               -> Operator String Int Identity a
+prefixOp  :: String     -> (a -> a)               -> Operator String Int Identity a
+-- postfix   :: String   -> (a -> a)              -> Operator String Int Identity a
 
 binary    s fun assoc = Infix    (fun <$ reservedOp s) assoc
 prefixf   p fun       = Prefix   (fun <$ p)
 prefixOp  s fun       = Prefix   (fun <$ reservedOp s)
-postfix   s fun       = Postfix  (fun <$ reservedOp s)
+-- postfix   s fun       = Postfix  (fun <$ reservedOp s)
 
 
     
-fundef :: Parser Fundef
-fundef = Fundef <$> 
-    (addtyp <$> identifier) <*> formalArgs <*> (reservedOp "=" *> expr)
+fundef :: MLParser Fundef
+fundef = Fundef <$> typedId <*> formalArgs <*> (reservedOp "=" *> expr)
 
-formalArgs :: Parser [(Id, Type)]
-formalArgs = many1 (addtyp <$> identifier)
+formalArgs :: MLParser [(IdS, T.Type)]
+formalArgs = many1 typedId
 
-actualArgs :: Parser [Expr]
+actualArgs :: MLParser [Expr]
 actualArgs = many1 simpleExpr  
     
-elems :: Parser [Expr]
+elems :: MLParser [Expr]
 elems = commaSep expr
 
-pat :: Parser [(Id,Type)]
-pat = commaSep (addtyp <$> identifier)
+pat :: MLParser [(IdS,T.Type)]
+pat = commaSep typedId
 
 
-    
+typedId :: MLParser (IdS, T.Type)
+typedId = (,) <$> identifier <*> nextloc

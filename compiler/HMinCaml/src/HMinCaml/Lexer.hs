@@ -1,23 +1,48 @@
 {-# OPTIONS -Wall #-}
 
+--------------------------------------------------------------------------------
 -- |
--- Module: HMinCaml.Lexer
--- License: as per original MinCaml
+-- Module      :  HMinCaml.Parser
+-- Copyright   :  (c) Stephen Tetley 2012
+-- License     :  BSD3
 --
--- Maintainer: Stephen Tetley <stephen.tetley@gmail.com>
--- Stability: unstable
--- Portability: ghc
+-- Maintainer  :  stephen.tetley@gmail.com
+-- Stability   :  unstable
+-- Portability :  GHC
 --
--- Parser
+-- Parser.
 --
+--------------------------------------------------------------------------------
 
-module HMinCaml.Lexer where
+module HMinCaml.Lexer 
+   ( 
 
-import Text.ParserCombinators.Parsec
-import qualified Text.ParserCombinators.Parsec.Token as P
-import Text.ParserCombinators.Parsec.Language
+     MLParser
 
-lexer :: P.TokenParser ()
+   , lexer
+
+   , identifier
+   , reservedOp
+   , commaSep
+   , int
+   , double
+   , reserved 
+   , symbol
+   , parens
+   , dot
+
+   ) where
+
+import Text.Parsec
+import Text.Parsec.String
+import Text.Parsec.Language ( emptyDef )
+import Text.Parsec.Token ( GenLanguageDef(..) )
+import qualified Text.Parsec.Token as P
+
+
+type MLParser a = GenParser Char Int a
+
+lexer :: P.TokenParser Int
 lexer = P.makeTokenParser $ emptyDef
   { identStart        = letter <|> char '_'
   , identLetter       = alphaNum <|> oneOf "_'"
@@ -38,35 +63,32 @@ lexer = P.makeTokenParser $ emptyDef
                         ]
   }
 
-identifier      :: CharParser () String
+identifier      :: MLParser  String
 identifier      = P.identifier lexer
 
-reservedOp      :: String -> CharParser () ()
+reservedOp      :: String -> MLParser ()
 reservedOp      = P.reservedOp lexer
 
-commaSep        :: CharParser () a -> CharParser () [a]
+commaSep        :: MLParser a -> MLParser [a]
 commaSep        = P.commaSep lexer
 
-int             :: CharParser () Int
+int             :: MLParser Int
 int             = P.integer lexer >>= return . fromIntegral
 
-float           :: CharParser () Float
-float           = P.float lexer >>= return . fromRational . toRational
+double          :: MLParser Double
+double          = P.float lexer
 
-reserved       :: String -> CharParser () ()
+reserved        :: String -> MLParser ()
 reserved        = P.reserved lexer
 
-symbol          :: String -> CharParser () String
+symbol          :: String -> MLParser String
 symbol          = P.symbol lexer
 
-
-
-
-parens          :: CharParser () a -> CharParser () a
+parens          :: MLParser a -> MLParser a
 parens          = P.parens lexer
 
 
-dot             :: CharParser () String
+dot             :: MLParser String
 dot             = P.dot lexer
 
 
