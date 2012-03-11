@@ -435,13 +435,23 @@ tab         = char '\t'
 space       :: Parser Char
 space       = satisfy isSpace
 
-
+-- | Lexeme is quite subtle, it must definitely consume some 
+-- blank input or be at the end of file.
+--
+-- Just doing:
+--
+-- > many space
+--
+-- Is wrong as the parser wont necesarily consume the full input.
+--
 lexeme      :: Parser a -> Parser a
-lexeme p    = p <* many space
+lexeme p    = p <* (eof <|> some_spaces) 
+  where
+    some_spaces = many1 space >> return ()
 
 
 naturalParser :: Num a => (Char -> a) -> Parser a
-naturalParser conv = post 0 <$> many1 digit
+naturalParser conv = post 0 <$> eagerSome digit
   where
     post ac (c:cs) = post (ac * 10 + (conv c)) cs
     post ac []     = ac

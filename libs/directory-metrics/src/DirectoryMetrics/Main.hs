@@ -21,7 +21,7 @@ import DirectoryMetrics.ParserCombinators
 import DirectoryMetrics.WindowsParser
 
 
-import System.IO
+-- import System.IO
 import System.Environment
 import System.Console.GetOpt
 
