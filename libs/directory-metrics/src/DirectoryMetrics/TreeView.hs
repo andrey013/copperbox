@@ -10,7 +10,7 @@
 -- Stability   :  experimental
 -- Portability :  to be determined
 --
--- Parser for output from Windows @dir@ command.
+-- Print a tree.
 --
 -----------------------------------------------------------------------------
 

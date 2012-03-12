@@ -21,6 +21,7 @@ module DirectoryMetrics.HierSyntax
   , File(..)            -- re-export
   , DateTime(..)        -- re-export
 
+  , directoryFullPath
   , streamFlat
 
   ) where
@@ -40,6 +41,9 @@ data Directory = Directory
     }
   deriving (Eq,Show)
 
+
+directoryFullPath :: Directory -> String
+directoryFullPath d = dir_pathto d ++ ('\\': dir_name d)
 
 {-
 -- | Dir listings are depth first...
@@ -92,7 +96,7 @@ insertT a dir = case dir_subdirs dir of
 
 
 descendent :: F.Directory -> Directory -> Bool
-descendent fd dir = (dir_pathto dir) `isPrefixOf` (F.dir_pathto fd)
+descendent fd dir = (directoryFullPath dir) `isPrefixOf` (F.dir_pathto fd)
 
 
 node1 :: F.Directory -> Directory

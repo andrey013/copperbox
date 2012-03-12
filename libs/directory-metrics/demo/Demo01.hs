@@ -3,16 +3,46 @@
 module Demo01 where
 
 import DirectoryMetrics.Main
-import DirectoryMetrics.WindowsParser
-import DirectoryMetrics.ParserCombinators
 import DirectoryMetrics.HierSyntax
+import DirectoryMetrics.ParserCombinators
+import DirectoryMetrics.SizeMetrics
+import DirectoryMetrics.StructureMetrics
+import DirectoryMetrics.TreeView
+import DirectoryMetrics.WindowsParser
 
 import Control.Applicative
+import Data.Monoid
 
 demo01 = main2 [] ["input/metrics.txt"] []
 demo02 = main2 [] ["input/haskell-libs.txt"] []
 
 demo03 = fmap head <$> toplevelsFromFile "input/metrics.txt"
+
+demo04 :: IO ()
+demo04 = do 
+    ans <- toplevelsFromFile "input/metrics.txt"
+    case ans of
+      Left err -> error $ show err
+      Right xs -> putStr $ "... " ++ (show $ sk xs)
+  where
+    sk = sizeMetricsF . streamFlat
+
+demo05 = fmap sk <$> toplevelsFromFile "input/haskell-libs.txt"
+  where
+    sk = bothMetricsF . streamFlat
+
+demo06 = fmap sk <$> toplevelsFromFile "input/metrics.txt"
+  where
+    sk = bothMetricsF . streamFlat
+
+demo05x = toplevelsFromFile "input/haskell-libs.txt" >>= 
+          either (error "here") sk
+  where
+    sk = drawDirectories . streamFlat
+
+demo05z = fmap sk <$> toplevelsFromFile "input/haskell-libs.txt"
+  where
+    sk = map kidDepths . streamFlat
 
 
 -- Should succeed...
