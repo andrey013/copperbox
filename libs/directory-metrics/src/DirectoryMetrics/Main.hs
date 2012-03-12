@@ -17,10 +17,13 @@
 
 module DirectoryMetrics.Main where
 
+import DirectoryMetrics.HierSyntax
 import DirectoryMetrics.ParserCombinators
+import DirectoryMetrics.TreeView
 import DirectoryMetrics.WindowsParser
 
 
+import Data.Tree ( drawForest )
 -- import System.IO
 import System.Environment
 import System.Console.GetOpt
@@ -59,4 +62,6 @@ main2  _ _ errors = putStrLn (concat errors ++ usageInfo header options)
 
 action1 :: FilePath -> IO ()
 action1 path = 
-    parseFromFile path toplevels >>= either print print
+    parseFromFile path toplevels >>= either print sk 
+  where
+    sk = drawDirectories . streamFlat

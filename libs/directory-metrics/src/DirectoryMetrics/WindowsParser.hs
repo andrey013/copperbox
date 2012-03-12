@@ -66,8 +66,8 @@ dirContent :: Parser DirContent
 dirContent = 
     post <$> dateTime <*> eitherOf (reserved "<DIR>") csInteger <*> restOfLine
   where
-    post dt (Left _)   rest = SD $ SubDir dt rest
-    post dt (Right sz) rest = F  $ File dt sz rest
+    post dt (Left _)   rest = D $ SubDir dt rest
+    post dt (Right sz) rest = F $ File dt sz rest
       
 
 dateTime :: Parser DateTime

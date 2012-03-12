@@ -41,8 +41,8 @@ data Directory = Directory
     }
   deriving (Eq,Show)
 
-data DirContent = SD   SubDir
-                | F    File
+data DirContent = D SubDir
+                | F File
   deriving (Eq,Show)
 
 data SubDir = SubDir DateTime String
@@ -74,14 +74,14 @@ invalid_date_time = DateTime
 dirChildren :: Directory -> [DirContent]
 dirChildren (Directory _ xs) = filter notLink xs
   where
-    notLink (SD (SubDir _ name)) = name /= "." && name /= ".."
-    notLink (F {})               = True
+    notLink (D (SubDir _ name)) = name /= "." && name /= ".."
+    notLink (F {})              = True
 
 
 dirSubDirs :: Directory -> [SubDir]
 dirSubDirs (Directory _ xs) = foldr fn [] xs
   where
-    fn (SD (SubDir dt name)) ac 
+    fn (D (SubDir dt name)) ac 
         | name /= "." || name /= ".." = SubDir dt name : ac
     fn _                     ac = ac
 
@@ -97,9 +97,9 @@ dirFiles (Directory _ xs) = foldr fn [] xs
 dirDateTime :: Directory -> DateTime
 dirDateTime (Directory _ cs) = fn cs
   where 
-    fn (SD (SubDir dt name):_) | name == "." = dt
-    fn (_:xs)                  = fn xs
-    fn []                      = invalid_date_time
+    fn (D (SubDir dt name):_) | name == "." = dt
+    fn (_:xs)                 = fn xs
+    fn []                     = invalid_date_time
 
 
 dirIsChild :: String -> Directory -> Bool

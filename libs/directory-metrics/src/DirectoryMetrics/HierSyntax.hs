@@ -17,13 +17,9 @@
 
 module DirectoryMetrics.HierSyntax 
   (
-    Level1(..)
-
+    Directory(..)
   , File(..)            -- re-export
-  , SubDirectory(..)
-
-  -- * Re-export
-  , DateTime(..)
+  , DateTime(..)        -- re-export
 
   , streamFlat
 
@@ -33,28 +29,19 @@ module DirectoryMetrics.HierSyntax
 import qualified DirectoryMetrics.FlatSyntax as F
 import DirectoryMetrics.FlatSyntax ( DateTime(..), File(..) )
 
-import Data.List
+import Data.List ( foldl', isPrefixOf )
 
-data Level1 = Level1
-    { lvl_one_pathto            :: String
-    , lvl_one_name              :: String
-    , lvl_one_datetime          :: DateTime
-    , lvl_one_subdirs           :: [SubDirectory]
-    , lvl_one_files             :: [File]
+data Directory = Directory
+    { dir_pathto            :: String
+    , dir_name              :: String
+    , dir_datetime          :: DateTime
+    , dir_subdirs           :: [Directory]
+    , dir_files             :: [File]
     }
   deriving (Eq,Show)
 
 
-data SubDirectory = SubDir 
-      { sub_dir_name            :: String
-      , sub_dir_datetime        :: DateTime
-      , sub_dir_children        :: [SubDirectory]
-      , sub_dir_files           :: [File]
-      }
-  deriving (Eq,Show)
-
-
-
+{-
 -- | Dir listings are depth first...
 --
 -- Note - in the flat representation the first directory is special
@@ -74,16 +61,61 @@ streamFlat (root:subs) = aggregate (F.dirSubDirs root) subs
 
     aggregate _                 _  = []
 
+-}
+
+
+streamFlat :: [F.Directory] -> [Directory]
+streamFlat = topDown
+
+
+topDown :: [F.Directory] -> [Directory]
+topDown = foldl' (flip insert) []
+
+
+-- | /Forest/ insert
+--
+insert :: F.Directory -> [Directory] -> [Directory]
+insert a [] = [node1 a]
+insert a (d:ds) 
+   | a `descendent` d = insertT a d : ds
+   | otherwise        = d : insert a ds
+
+
+
+
+-- | /Tree/ insert
+--
+insertT :: F.Directory -> Directory -> Directory
+insertT a dir = case dir_subdirs dir of
+   [] -> dir { dir_subdirs = [node1 a] }
+   xs -> dir { dir_subdirs = insert a xs }
+
+
+descendent :: F.Directory -> Directory -> Bool
+descendent fd dir = (dir_pathto dir) `isPrefixOf` (F.dir_pathto fd)
+
+
+node1 :: F.Directory -> Directory
+node1 dir = Directory
+    { dir_pathto        = pathto
+    , dir_name          = name
+    , dir_datetime      = F.dirDateTime dir
+    , dir_subdirs       = []
+    , dir_files         = F.dirFiles dir
+    }
+  where
+    (pathto,name) = pathSplit $ F.dir_pathto dir
 
 spans :: String -> [F.Directory] -> ([F.Directory], [F.Directory])
 spans root = span (F.dirIsChild root)
 
-mapHead :: (a -> [b]) -> [a] -> [b]
-mapHead f []    = []
-mapHead f (a:_) = f a
 
-descend1 :: String -> [F.Directory] -> ([SubDirectory], [F.Directory])
-descend1 _         []         = ([],[])
-descend1 root_path subs@(s:_)
-    | not (root_path `isPrefixOf` F.dir_pathto s) = ([],subs)
-    | otherwise  = undefined
+
+pathSplit :: String -> (String,String)
+pathSplit = post . foldr fn (False,[],[]) 
+  where
+    fn '\\' (False,ds,ss) = (True,    ds,   ss)
+    fn c    (False,ds,ss) = (False,   ds, c:ss)
+    fn c    (True, ds,ss) = (True,  c:ds,   ss)
+
+    post (_,b,c)          = (b,c)
