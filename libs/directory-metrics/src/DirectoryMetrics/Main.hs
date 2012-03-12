@@ -75,3 +75,5 @@ bothMetrics d = (sizeMetrics d, structMetrics d)
 bothMetricsF :: [Directory] -> [(SizeMetrics,StructMetrics)]
 bothMetricsF = map bothMetrics
 
+
+

@@ -5,6 +5,7 @@ module Demo01 where
 import DirectoryMetrics.Main
 import DirectoryMetrics.HierSyntax
 import DirectoryMetrics.ParserCombinators
+import DirectoryMetrics.Pretty
 import DirectoryMetrics.SizeMetrics
 import DirectoryMetrics.StructureMetrics
 import DirectoryMetrics.TreeView
@@ -29,20 +30,29 @@ demo04 = do
 
 demo05 = fmap sk <$> toplevelsFromFile "input/haskell-libs.txt"
   where
-    sk = bothMetricsF . streamFlat
-
-demo06 = fmap sk <$> toplevelsFromFile "input/metrics.txt"
-  where
-    sk = bothMetricsF . streamFlat
+    sk = map ppBothMetrics . bothMetricsF . streamFlat
 
 demo05x = toplevelsFromFile "input/haskell-libs.txt" >>= 
           either (error "here") sk
   where
     sk = drawDirectories . streamFlat
 
-demo05z = fmap sk <$> toplevelsFromFile "input/haskell-libs.txt"
+demo06 = fmap sk <$> toplevelsFromFile "input/metrics.txt"
   where
-    sk = map kidDepths . streamFlat
+    sk = map ppBothMetrics . bothMetricsF . streamFlat
+    
+
+demo07 :: IO ()
+demo07 = do 
+    ans <- toplevelsFromFile "input/haskell-libs.txt"
+    case ans of
+      Left err -> error $ show err
+      Right xs -> mapM_ (putStrLn . show) $ sk xs
+  where
+    sk = map ppBothMetrics . bothMetricsF . streamFlat
+
+
+
 
 
 -- Should succeed...

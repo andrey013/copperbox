@@ -51,6 +51,10 @@ data SizeMetrics = SizeMetrics
     }
   deriving Show
 
+-- Note - metrics should be /presented/ with the name of the name
+-- of the top level directory.
+
+
 instance Monoid SizeMetrics where
   mempty = SizeMetrics 0 0 mempty mempty
 
